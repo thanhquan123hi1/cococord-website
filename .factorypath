@@ -1,0 +1,4 @@
+<factorypath>
+    <factorypathentry kind="VARJAR" id="M2_REPO/org/springframework/boot/spring-boot-configuration-processor/3.5.8/spring-boot-configuration-processor-3.5.8.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" enabled="true" runInBatchMode="false"/>
+</factorypath>
