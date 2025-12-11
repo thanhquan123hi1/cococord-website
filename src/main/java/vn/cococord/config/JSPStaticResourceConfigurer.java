@@ -43,6 +43,7 @@ public class JSPStaticResourceConfigurer implements LifecycleListener {
 
 	}
 
+	@SuppressWarnings("null")
 	private URL getUrl() {
 
 		final URL location = this.getClass().getProtectionDomain().getCodeSource().getLocation();
