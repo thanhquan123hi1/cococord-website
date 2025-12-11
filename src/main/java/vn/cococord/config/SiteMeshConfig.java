@@ -1,31 +1,13 @@
 package vn.cococord.config;
 
-import org.sitemesh.builder.SiteMeshFilterBuilder;
-import org.sitemesh.config.ConfigurableSiteMeshFilter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * SiteMesh Configuration - DISABLED
+ * Tạm thời vô hiệu hóa SiteMesh để tránh conflict với JSP rendering
+ */
 @Configuration
 public class SiteMeshConfig {
-
-    @Bean
-    public FilterRegistrationBean<ConfigurableSiteMeshFilter> siteMeshFilter() {
-        FilterRegistrationBean<ConfigurableSiteMeshFilter> filterRegistrationBean = new FilterRegistrationBean<>();
-        filterRegistrationBean.setFilter(new ConfigurableSiteMeshFilter() {
-            @Override
-            protected void applyCustomConfiguration(SiteMeshFilterBuilder builder) {
-            	builder.addDecoratorPath("/admin/*", "admin.jsp");
-                builder.addDecoratorPath("/*", "web.jsp");
-                
-                // Các đường dẫn loại trừ
-                builder.addExcludedPath("/login");
-                builder.addExcludedPath("/register");
-                builder.addExcludedPath("/upload/**");
-                builder.addExcludedPath("/api/*");
-            }
-        });
-        filterRegistrationBean.addUrlPatterns("/*");
-        return filterRegistrationBean;
-    }
+    // SiteMesh filter đã được vô hiệu hóa
+    // Login và Register pages sẽ tự quản lý CSS/JS
 }
