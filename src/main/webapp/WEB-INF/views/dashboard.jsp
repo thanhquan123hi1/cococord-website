@@ -39,6 +39,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="/chat">
+                            <i class="bi bi-chat-dots"></i> Chat
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/profile">
                             <i class="bi bi-person"></i> Profile
                         </a>
@@ -94,6 +99,15 @@
                                         <p class="card-text display-4">0</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h3>Quick Actions</h3>
+                            <div class="d-grid gap-2 col-md-6">
+                                <a href="/chat" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-chat-dots-fill"></i> Go to Chat
+                                </a>
                             </div>
                         </div>
 

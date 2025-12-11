@@ -45,4 +45,9 @@ public class ViewController {
     public String forgotPassword() {
         return "forgot-password";
     }
+
+    @GetMapping("/chat")
+    public String chat() {
+        return "chat";
+    }
 }

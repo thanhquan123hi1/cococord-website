@@ -65,13 +65,13 @@ public class SecurityConfig {
 
                         // View pages (allow access, auth handled by JavaScript)
                         .requestMatchers("/login", "/register", "/forgot-password").permitAll()
-                        .requestMatchers("/dashboard", "/profile", "/sessions", "/change-password").permitAll()
+                        .requestMatchers("/dashboard", "/profile", "/sessions", "/change-password", "/chat").permitAll()
 
                         // Swagger/API docs (if needed)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         // Static resources
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/WEB-INF/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/WEB-INF/**", "/**/*.html").permitAll()
 
                         // WebSocket
                         .requestMatchers("/ws/**").permitAll()
