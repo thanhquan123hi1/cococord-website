@@ -10,21 +10,20 @@ import org.springframework.web.bind.annotation.*;
 import vn.cococord.dto.request.*;
 import vn.cococord.dto.response.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * REST Controller for Server Management
- * Handles CRUD operations for servers, members, roles, channels, and invite links
+ * Handles CRUD operations for servers, members, roles, channels, and invite
+ * links
  */
 @RestController
 @RequestMapping("/api/servers")
 @RequiredArgsConstructor
 public class ServerController {
 
-    // TODO: Inject services when implemented
-    // private final ServerService serverService;
+    private final vn.cococord.service.ServerService serverService;
 
     /**
      * GET /api/servers
@@ -33,8 +32,8 @@ public class ServerController {
     @GetMapping
     public ResponseEntity<List<ServerResponse>> getMyServers(
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getServersByUsername(userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<ServerResponse> servers = serverService.getServersByUsername(userDetails.getUsername());
+        return ResponseEntity.ok(servers);
     }
 
     /**
@@ -45,8 +44,8 @@ public class ServerController {
     public ResponseEntity<ServerResponse> getServer(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getServerById(serverId, userDetails.getUsername())
-        return ResponseEntity.ok(ServerResponse.builder().build());
+        ServerResponse server = serverService.getServerById(serverId, userDetails.getUsername());
+        return ResponseEntity.ok(server);
     }
 
     /**
@@ -57,8 +56,8 @@ public class ServerController {
     public ResponseEntity<ServerResponse> createServer(
             @Valid @RequestBody CreateServerRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.createServer(request, userDetails.getUsername())
-        return ResponseEntity.status(HttpStatus.CREATED).body(ServerResponse.builder().build());
+        ServerResponse server = serverService.createServer(request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(server);
     }
 
     /**
@@ -70,8 +69,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @Valid @RequestBody UpdateServerRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.updateServer(serverId, request, userDetails.getUsername())
-        return ResponseEntity.ok(ServerResponse.builder().build());
+        ServerResponse server = serverService.updateServer(serverId, request, userDetails.getUsername());
+        return ResponseEntity.ok(server);
     }
 
     /**
@@ -82,7 +81,7 @@ public class ServerController {
     public ResponseEntity<MessageResponse> deleteServer(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.deleteServer(serverId, userDetails.getUsername())
+        serverService.deleteServer(serverId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Server deleted successfully"));
     }
 
@@ -94,7 +93,7 @@ public class ServerController {
     public ResponseEntity<MessageResponse> leaveServer(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.leaveServer(serverId, userDetails.getUsername())
+        serverService.leaveServer(serverId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Left server successfully"));
     }
 
@@ -108,8 +107,8 @@ public class ServerController {
     public ResponseEntity<List<ServerMemberResponse>> getServerMembers(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getServerMembers(serverId, userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<ServerMemberResponse> members = serverService.getServerMembers(serverId, userDetails.getUsername());
+        return ResponseEntity.ok(members);
     }
 
     /**
@@ -121,7 +120,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @Valid @RequestBody InviteMemberRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.inviteMember(serverId, request, userDetails.getUsername())
+        // TODO: Implement serverService.inviteMember(serverId, request,
+        // userDetails.getUsername())
         return ResponseEntity.status(HttpStatus.CREATED).body(ServerMemberResponse.builder().build());
     }
 
@@ -135,7 +135,8 @@ public class ServerController {
             @PathVariable Long userId,
             @Valid @RequestBody(required = false) KickMemberRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.kickMember(serverId, userId, request, userDetails.getUsername())
+        KickMemberRequest kickRequest = request != null ? request : new KickMemberRequest();
+        serverService.kickMember(serverId, kickRequest, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Member kicked successfully"));
     }
 
@@ -149,7 +150,7 @@ public class ServerController {
             @RequestParam Long userId,
             @Valid @RequestBody BanMemberRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.banMember(serverId, userId, request, userDetails.getUsername())
+        serverService.banMember(serverId, request, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Member banned successfully"));
     }
 
@@ -162,7 +163,7 @@ public class ServerController {
             @PathVariable Long serverId,
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.unbanMember(serverId, userId, userDetails.getUsername())
+        serverService.unbanMember(serverId, userId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Member unbanned successfully"));
     }
 
@@ -174,7 +175,8 @@ public class ServerController {
     public ResponseEntity<List<Map<String, Object>>> getBannedMembers(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getBannedMembers(serverId, userDetails.getUsername())
+        // TODO: Implement serverService.getBannedMembers(serverId,
+        // userDetails.getUsername())
         return ResponseEntity.ok(List.of());
     }
 
@@ -188,8 +190,8 @@ public class ServerController {
     public ResponseEntity<List<RoleResponse>> getRoles(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getRoles(serverId, userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<RoleResponse> roles = serverService.getServerRoles(serverId, userDetails.getUsername());
+        return ResponseEntity.ok(roles);
     }
 
     /**
@@ -201,8 +203,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @Valid @RequestBody CreateRoleRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.createRole(serverId, request, userDetails.getUsername())
-        return ResponseEntity.status(HttpStatus.CREATED).body(RoleResponse.builder().build());
+        RoleResponse role = serverService.createRole(serverId, request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(role);
     }
 
     /**
@@ -215,7 +217,8 @@ public class ServerController {
             @PathVariable Long roleId,
             @Valid @RequestBody CreateRoleRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.updateRole(serverId, roleId, request, userDetails.getUsername())
+        // TODO: Implement serverService.updateRole(serverId, roleId, request,
+        // userDetails.getUsername())
         return ResponseEntity.ok(RoleResponse.builder().build());
     }
 
@@ -228,7 +231,7 @@ public class ServerController {
             @PathVariable Long serverId,
             @PathVariable Long roleId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.deleteRole(serverId, roleId, userDetails.getUsername())
+        serverService.deleteRole(serverId, roleId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Role deleted successfully"));
     }
 
@@ -242,7 +245,8 @@ public class ServerController {
             @PathVariable Long userId,
             @RequestParam Long roleId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.assignRole(serverId, userId, roleId, userDetails.getUsername())
+        // TODO: Implement serverService.assignRole(serverId, userId, roleId,
+        // userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Role assigned successfully"));
     }
 
@@ -256,8 +260,8 @@ public class ServerController {
     public ResponseEntity<List<InviteLinkResponse>> getInviteLinks(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getInviteLinks(serverId, userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<InviteLinkResponse> invites = serverService.getServerInviteLinks(serverId, userDetails.getUsername());
+        return ResponseEntity.ok(invites);
     }
 
     /**
@@ -269,8 +273,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @Valid @RequestBody CreateInviteLinkRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.createInviteLink(serverId, request, userDetails.getUsername())
-        return ResponseEntity.status(HttpStatus.CREATED).body(InviteLinkResponse.builder().build());
+        InviteLinkResponse invite = serverService.createInviteLink(serverId, request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(invite);
     }
 
     /**
@@ -282,7 +286,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @PathVariable String inviteCode,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.deleteInviteLink(serverId, inviteCode, userDetails.getUsername())
+        // TODO: Implement serverService.deleteInviteLink(serverId, inviteCode,
+        // userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Invite link deleted successfully"));
     }
 
@@ -294,8 +299,8 @@ public class ServerController {
     public ResponseEntity<ServerResponse> joinServerByInvite(
             @PathVariable String inviteCode,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.joinServerByInvite(inviteCode, userDetails.getUsername())
-        return ResponseEntity.ok(ServerResponse.builder().build());
+        ServerResponse server = serverService.joinServerByInvite(inviteCode, userDetails.getUsername());
+        return ResponseEntity.ok(server);
     }
 
     // ===== CATEGORY MANAGEMENT =====
@@ -308,7 +313,8 @@ public class ServerController {
     public ResponseEntity<List<CategoryResponse>> getCategories(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.getCategories(serverId, userDetails.getUsername())
+        // TODO: Implement serverService.getCategories(serverId,
+        // userDetails.getUsername())
         return ResponseEntity.ok(List.of());
     }
 
@@ -321,7 +327,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @Valid @RequestBody CreateCategoryRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.createCategory(serverId, request, userDetails.getUsername())
+        // TODO: Implement serverService.createCategory(serverId, request,
+        // userDetails.getUsername())
         return ResponseEntity.status(HttpStatus.CREATED).body(CategoryResponse.builder().build());
     }
 
@@ -335,7 +342,8 @@ public class ServerController {
             @PathVariable Long categoryId,
             @Valid @RequestBody CreateCategoryRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.updateCategory(serverId, categoryId, request, userDetails.getUsername())
+        // TODO: Implement serverService.updateCategory(serverId, categoryId, request,
+        // userDetails.getUsername())
         return ResponseEntity.ok(CategoryResponse.builder().build());
     }
 
@@ -348,7 +356,8 @@ public class ServerController {
             @PathVariable Long serverId,
             @PathVariable Long categoryId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement serverService.deleteCategory(serverId, categoryId, userDetails.getUsername())
+        // TODO: Implement serverService.deleteCategory(serverId, categoryId,
+        // userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Category deleted successfully"));
     }
 }

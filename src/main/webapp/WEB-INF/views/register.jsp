@@ -146,11 +146,6 @@
     <script src="/js/auth.js"></script>
     
     <script>
-            // Redirect if already logged in
-            if (isLoggedIn()) {
-                window.location.href = '/dashboard';
-            }
-
             // Toggle password visibility
             function togglePasswordVisibility(fieldId) {
                 const field = document.getElementById(fieldId);

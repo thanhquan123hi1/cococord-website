@@ -161,6 +161,7 @@ public class AuthController {
         response.put("avatarUrl", user.getAvatarUrl());
         response.put("status", user.getStatus());
         response.put("createdAt", user.getCreatedAt());
+        response.put("lastLogin", user.getLastLogin());
 
         return ResponseEntity.ok(response);
     }

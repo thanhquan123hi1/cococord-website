@@ -157,6 +157,47 @@ function updateNavigation() {
     }
 }
 
+// Format date helper
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 7) {
+        return date.toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } else if (days > 0) {
+        return days + ' ngày trước';
+    } else if (hours > 0) {
+        return hours + ' giờ trước';
+    } else if (minutes > 0) {
+        return minutes + ' phút trước';
+    } else {
+        return 'Vừa xong';
+    }
+}
+
+// Format datetime helper
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateNavigation();

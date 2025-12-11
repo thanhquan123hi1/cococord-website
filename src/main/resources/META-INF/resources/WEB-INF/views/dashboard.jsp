@@ -5,14 +5,14 @@
     <title>Trang chủ - CoCoCord</title>
 </head>
 <body>
-    <div class="container mt-5">
-        <!-- Welcome Card -->
+    <div class="container" style="padding: 40px 0;">
+        <!-- Welcome Section -->
         <div class="row">
-            <div class="col-md-8 mx-auto">
-                <div class="card shadow-sm">
+            <div class="col-lg-8 mx-auto">
+                <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center mb-4">
-                            <div class="avatar-lg me-3">
+                            <div class="me-3">
                                 <img id="user-avatar" src="" alt="Avatar" class="rounded-circle" 
                                      style="width: 80px; height: 80px; object-fit: cover; display: none;">
                                 <div id="user-avatar-placeholder" class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
@@ -21,98 +21,93 @@
                                 </div>
                             </div>
                             <div class="flex-grow-1">
-                                <h3 class="mb-1">Xin chào, <span id="display-name"></span>! 👋</h3>
+                                <h3 class="mb-1">Xin chào, <span id="display-name" class="text-primary"></span>! 👋</h3>
                                 <p class="text-muted mb-0">
-                                    <i class="bi bi-person"></i> <span id="username"></span>
+                                    <i class="bi bi-person-badge"></i> <span id="username"></span>
                                     <br>
                                     <i class="bi bi-envelope"></i> <span id="email"></span>
                                 </p>
                             </div>
                         </div>
 
-                        <div class="row text-center">
+                        <div class="row g-3 text-center">
                             <div class="col-md-4">
                                 <div class="p-3 bg-light rounded">
                                     <i class="bi bi-calendar-check text-primary" style="font-size: 2rem;"></i>
-                                    <h6 class="mt-2">Tham gia</h6>
-                                    <p class="text-muted small mb-0" id="created-at"></p>
+                                    <h6 class="mt-2 mb-1">Tham gia</h6>
+                                    <p class="text-muted small mb-0" id="created-at">-</p>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="p-3 bg-light rounded">
                                     <i class="bi bi-clock-history text-success" style="font-size: 2rem;"></i>
-                                    <h6 class="mt-2">Đăng nhập lần cuối</h6>
-                                    <p class="text-muted small mb-0" id="last-login"></p>
+                                    <h6 class="mt-2 mb-1">Đăng nhập gần nhất</h6>
+                                    <p class="text-muted small mb-0" id="last-login">-</p>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="p-3 bg-light rounded">
-                                    <i class="bi bi-shield-lock text-warning" style="font-size: 2rem;"></i>
-                                    <h6 class="mt-2">Phiên đăng nhập</h6>
-                                    <p class="text-muted small mb-0"><span id="session-count">0</span> phiên</p>
+                                    <i class="bi bi-shield-check text-info" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2 mb-1">Trạng thái</h6>
+                                    <p class="text-muted small mb-0">
+                                        <span class="badge bg-success" id="user-status">Online</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Quick Actions -->
-        <div class="row mt-4">
-            <div class="col-md-8 mx-auto">
+                <!-- Quick Actions -->
                 <h5 class="mb-3"><i class="bi bi-lightning-fill text-warning"></i> Thao tác nhanh</h5>
-                <div class="row g-3">
+                <div class="row g-3 mb-4">
                     <div class="col-md-4">
                         <a href="/profile" class="text-decoration-none">
-                            <div class="card h-100 hover-shadow">
-                                <div class="card-body text-center">
+                            <div class="card h-100 border-0 shadow-sm hover-card">
+                                <div class="card-body text-center p-4">
                                     <i class="bi bi-person-fill-gear text-primary" style="font-size: 2.5rem;"></i>
-                                    <h6 class="mt-3">Chỉnh sửa hồ sơ</h6>
-                                    <p class="text-muted small">Cập nhật thông tin cá nhân</p>
+                                    <h6 class="mt-3 mb-2">Chỉnh sửa hồ sơ</h6>
+                                    <p class="text-muted small mb-0">Cập nhật thông tin cá nhân</p>
                                 </div>
                             </div>
                         </a>
                     </div>
                     <div class="col-md-4">
                         <a href="/sessions" class="text-decoration-none">
-                            <div class="card h-100 hover-shadow">
-                                <div class="card-body text-center">
-                                    <i class="bi bi-shield-check text-success" style="font-size: 2.5rem;"></i>
-                                    <h6 class="mt-3">Quản lý phiên</h6>
-                                    <p class="text-muted small">Xem và quản lý thiết bị</p>
+                            <div class="card h-100 border-0 shadow-sm hover-card">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-shield-lock text-success" style="font-size: 2.5rem;"></i>
+                                    <h6 class="mt-3 mb-2">Quản lý phiên</h6>
+                                    <p class="text-muted small mb-0">Xem và quản lý thiết bị</p>
                                 </div>
                             </div>
                         </a>
                     </div>
                     <div class="col-md-4">
                         <a href="/change-password" class="text-decoration-none">
-                            <div class="card h-100 hover-shadow">
-                                <div class="card-body text-center">
+                            <div class="card h-100 border-0 shadow-sm hover-card">
+                                <div class="card-body text-center p-4">
                                     <i class="bi bi-key-fill text-warning" style="font-size: 2.5rem;"></i>
-                                    <h6 class="mt-3">Đổi mật khẩu</h6>
-                                    <p class="text-muted small">Bảo mật tài khoản</p>
+                                    <h6 class="mt-3 mb-2">Đổi mật khẩu</h6>
+                                    <p class="text-muted small mb-0">Bảo mật tài khoản</p>
                                 </div>
                             </div>
                         </a>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Active Sessions -->
-        <div class="row mt-4">
-            <div class="col-md-8 mx-auto">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
+                <!-- Active Sessions -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-0 py-3">
                         <h5 class="mb-0">
                             <i class="bi bi-laptop"></i> Phiên đăng nhập đang hoạt động
+                            <span class="badge bg-primary ms-2" id="session-count">0</span>
                         </h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         <div id="sessions-list">
-                            <div class="text-center text-muted">
-                                <div class="spinner-border" role="status">
+                            <div class="text-center p-4">
+                                <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Đang tải...</span>
                                 </div>
                             </div>
@@ -130,83 +125,116 @@
                 window.location.href = '/login';
             }
 
-            // Load user info
+            // Load user information
             async function loadUserInfo() {
                 try {
                     const response = await fetchWithAuth('/api/auth/me');
-                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load user info');
+                    }
 
-                    if (response.ok) {
-                        document.getElementById('display-name').textContent = data.displayName || data.username;
-                        document.getElementById('username').textContent = '@' + data.username;
-                        document.getElementById('email').textContent = data.email;
-                        document.getElementById('created-at').textContent = formatDate(data.createdAt);
-                        
-                        if (data.lastLoginAt) {
-                            document.getElementById('last-login').textContent = formatDate(data.lastLoginAt);
-                        } else {
-                            document.getElementById('last-login').textContent = 'Lần đầu đăng nhập';
-                        }
+                    const user = await response.json();
 
-                        // Set avatar
-                        if (data.avatarUrl) {
-                            document.getElementById('user-avatar').src = data.avatarUrl;
-                            document.getElementById('user-avatar').style.display = 'block';
-                            document.getElementById('user-avatar-placeholder').style.display = 'none';
-                        }
+                    // Display user info
+                    document.getElementById('display-name').textContent = user.displayName || user.username;
+                    document.getElementById('username').textContent = '@' + user.username;
+                    document.getElementById('email').textContent = user.email;
+                    document.getElementById('created-at').textContent = formatDate(user.createdAt);
+                    document.getElementById('last-login').textContent = user.lastLogin ? formatDate(user.lastLogin) : 'Lần đầu đăng nhập';
+
+                    // Display status
+                    const statusBadge = document.getElementById('user-status');
+                    if (user.status) {
+                        const statusMap = {
+                            'ONLINE': { text: 'Online', class: 'bg-success' },
+                            'OFFLINE': { text: 'Offline', class: 'bg-secondary' },
+                            'IDLE': { text: 'Idle', class: 'bg-warning' },
+                            'DO_NOT_DISTURB': { text: 'Đừng làm phiền', class: 'bg-danger' },
+                            'INVISIBLE': { text: 'Ẩn', class: 'bg-dark' }
+                        };
+                        const status = statusMap[user.status] || { text: 'Unknown', class: 'bg-secondary' };
+                        statusBadge.textContent = status.text;
+                        statusBadge.className = 'badge ' + status.class;
+                    }
+
+                    // Display avatar
+                    if (user.avatarUrl) {
+                        document.getElementById('user-avatar').src = user.avatarUrl;
+                        document.getElementById('user-avatar').style.display = 'block';
+                        document.getElementById('user-avatar-placeholder').style.display = 'none';
                     }
                 } catch (error) {
                     console.error('Error loading user info:', error);
+                    showAlert('danger', 'Không thể tải thông tin người dùng');
                 }
             }
 
-            // Load sessions
+            // Load active sessions
             async function loadSessions() {
                 try {
                     const response = await fetchWithAuth('/api/auth/sessions');
-                    const sessions = await response.json();
-
-                    if (response.ok) {
-                        document.getElementById('session-count').textContent = sessions.length;
-                        
-                        const sessionsList = document.getElementById('sessions-list');
-                        if (sessions.length === 0) {
-                            sessionsList.innerHTML = '<p class="text-muted text-center">Không có phiên nào đang hoạt động</p>';
-                        } else {
-                            sessionsList.innerHTML = sessions.map(session => `
-                                <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-${session.isCurrent ? 'laptop' : 'phone'} text-primary me-3" style="font-size: 1.5rem;"></i>
-                                        <div>
-                                            <h6 class="mb-0">
-                                                ${session.deviceInfo}
-                                                ${session.isCurrent ? '<span class="badge bg-success ms-2">Hiện tại</span>' : ''}
-                                            </h6>
-                                            <small class="text-muted">
-                                                <i class="bi bi-geo-alt"></i> ${session.ipAddress} • 
-                                                ${formatDate(session.createdAt)}
-                                            </small>
-                                        </div>
-                                    </div>
-                                    ${!session.isCurrent ? `
-                                        <button class="btn btn-sm btn-outline-danger" onclick="revokeSession(${session.id})">
-                                            <i class="bi bi-x-circle"></i> Thu hồi
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            `).join('');
-                        }
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load sessions');
                     }
+
+                    const sessions = await response.json();
+                    const sessionsList = document.getElementById('sessions-list');
+                    const sessionCount = document.getElementById('session-count');
+
+                    sessionCount.textContent = sessions.length;
+
+                    if (sessions.length === 0) {
+                        sessionsList.innerHTML = '<p class="text-muted text-center p-4">Không có phiên nào đang hoạt động</p>';
+                        return;
+                    }
+
+                    sessionsList.innerHTML = sessions.map(session => `
+                        <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <i class="bi bi-${getDeviceIcon(session.deviceInfo)} text-primary me-3" style="font-size: 1.8rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">
+                                        ${session.deviceInfo || 'Unknown Device'}
+                                        ${session.isCurrent ? '<span class="badge bg-success ms-2">Hiện tại</span>' : ''}
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt"></i> ${session.ipAddress} • 
+                                        <i class="bi bi-clock"></i> ${formatDate(session.createdAt)}
+                                    </small>
+                                </div>
+                            </div>
+                            ${!session.isCurrent ? `
+                                <button class="btn btn-sm btn-outline-danger" onclick="revokeSession(${session.id})">
+                                    <i class="bi bi-x-circle"></i> Thu hồi
+                                </button>
+                            ` : ''}
+                        </div>
+                    `).join('');
                 } catch (error) {
                     console.error('Error loading sessions:', error);
                     document.getElementById('sessions-list').innerHTML = 
-                        '<p class="text-danger text-center">Không thể tải danh sách phiên</p>';
+                        '<p class="text-danger text-center p-4">Không thể tải danh sách phiên đăng nhập</p>';
+                }
+            }
+
+            // Get device icon based on device info
+            function getDeviceIcon(deviceInfo) {
+                if (!deviceInfo) return 'laptop';
+                const info = deviceInfo.toLowerCase();
+                if (info.includes('mobile') || info.includes('android') || info.includes('iphone')) {
+                    return 'phone';
+                } else if (info.includes('tablet') || info.includes('ipad')) {
+                    return 'tablet';
+                } else {
+                    return 'laptop';
                 }
             }
 
             // Revoke session
             async function revokeSession(sessionId) {
-                if (!confirm('Bạn có chắc muốn thu hồi phiên này?')) {
+                if (!confirm('Bạn có chắc muốn thu hồi phiên này? Thiết bị sẽ bị đăng xuất.')) {
                     return;
                 }
 
@@ -217,38 +245,17 @@
 
                     if (response.ok) {
                         showAlert('success', 'Thu hồi phiên thành công!');
-                        loadSessions();
+                        loadSessions(); // Reload sessions list
                     } else {
                         showAlert('danger', 'Không thể thu hồi phiên!');
                     }
                 } catch (error) {
-                    showAlert('danger', 'Có lỗi xảy ra: ' + error.message);
+                    console.error('Error revoking session:', error);
+                    showAlert('danger', 'Có lỗi xảy ra khi thu hồi phiên');
                 }
             }
 
-            function formatDate(dateString) {
-                const date = new Date(dateString);
-                const now = new Date();
-                const diff = now - date;
-                const seconds = Math.floor(diff / 1000);
-                const minutes = Math.floor(seconds / 60);
-                const hours = Math.floor(minutes / 60);
-                const days = Math.floor(hours / 24);
-
-                if (days > 7) {
-                    return date.toLocaleDateString('vi-VN');
-                } else if (days > 0) {
-                    return days + ' ngày trước';
-                } else if (hours > 0) {
-                    return hours + ' giờ trước';
-                } else if (minutes > 0) {
-                    return minutes + ' phút trước';
-                } else {
-                    return 'Vừa xong';
-                }
-            }
-
-            // Load data on page load
+            // Load all data on page load
             loadUserInfo();
             loadSessions();
         </script>

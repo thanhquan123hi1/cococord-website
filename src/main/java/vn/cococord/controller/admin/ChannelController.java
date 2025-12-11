@@ -23,8 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChannelController {
 
-    // TODO: Inject services when implemented
-    // private final ChannelService channelService;
+    private final vn.cococord.service.ChannelService channelService;
 
     /**
      * GET /api/channels/{channelId}
@@ -34,8 +33,8 @@ public class ChannelController {
     public ResponseEntity<ChannelResponse> getChannel(
             @PathVariable Long channelId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.getChannelById(channelId, userDetails.getUsername())
-        return ResponseEntity.ok(ChannelResponse.builder().build());
+        ChannelResponse channel = channelService.getChannelById(channelId, userDetails.getUsername());
+        return ResponseEntity.ok(channel);
     }
 
     /**
@@ -47,8 +46,8 @@ public class ChannelController {
             @PathVariable Long serverId,
             @Valid @RequestBody CreateChannelRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.createChannel(serverId, request, userDetails.getUsername())
-        return ResponseEntity.status(HttpStatus.CREATED).body(ChannelResponse.builder().build());
+        ChannelResponse channel = channelService.createChannel(serverId, request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(channel);
     }
 
     /**
@@ -60,8 +59,8 @@ public class ChannelController {
             @PathVariable Long channelId,
             @Valid @RequestBody UpdateChannelRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.updateChannel(channelId, request, userDetails.getUsername())
-        return ResponseEntity.ok(ChannelResponse.builder().build());
+        ChannelResponse channel = channelService.updateChannel(channelId, request, userDetails.getUsername());
+        return ResponseEntity.ok(channel);
     }
 
     /**
@@ -72,7 +71,7 @@ public class ChannelController {
     public ResponseEntity<MessageResponse> deleteChannel(
             @PathVariable Long channelId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.deleteChannel(channelId, userDetails.getUsername())
+        channelService.deleteChannel(channelId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Channel deleted successfully"));
     }
 
@@ -84,8 +83,8 @@ public class ChannelController {
     public ResponseEntity<List<ChannelResponse>> getServerChannels(
             @PathVariable Long serverId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.getServerChannels(serverId, userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<ChannelResponse> channels = channelService.getServerChannels(serverId, userDetails.getUsername());
+        return ResponseEntity.ok(channels);
     }
 
     /**
@@ -97,8 +96,8 @@ public class ChannelController {
             @PathVariable Long channelId,
             @RequestParam Integer position,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.updateChannelPosition(channelId, position, userDetails.getUsername())
-        return ResponseEntity.ok(ChannelResponse.builder().build());
+        ChannelResponse channel = channelService.updateChannelPosition(channelId, position, userDetails.getUsername());
+        return ResponseEntity.ok(channel);
     }
 
     /**
@@ -110,7 +109,8 @@ public class ChannelController {
             @PathVariable Long channelId,
             @RequestParam(required = false) Long categoryId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement channelService.moveToCategory(channelId, categoryId, userDetails.getUsername())
+        // TODO: Implement channelService.moveToCategory(channelId, categoryId,
+        // userDetails.getUsername())
         return ResponseEntity.ok(ChannelResponse.builder().build());
     }
 }

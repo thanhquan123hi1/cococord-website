@@ -14,5 +14,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // 'upload' ở gốc dự án
         registry.addResourceHandler("/upload/**")
                 .addResourceLocations("file:upload/");
+
+        // Cấu hình static resources (CSS, JS, images)
+        registry.addResourceHandler("/css/**")
+                .addResourceLocations("classpath:/static/css/");
+
+        registry.addResourceHandler("/js/**")
+                .addResourceLocations("classpath:/static/js/");
+
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("classpath:/static/images/");
     }
 }
