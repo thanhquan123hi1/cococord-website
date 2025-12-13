@@ -14,10 +14,10 @@ import vn.cococord.entity.mongodb.Message;
 import vn.cococord.entity.mysql.User;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.exception.UnauthorizedException;
-import vn.cococord.repository.MessageRepository;
-import vn.cococord.repository.UserRepository;
-import vn.cococord.service.ChannelService;
-import vn.cococord.service.MessageService;
+import vn.cococord.repository.IMessageRepository;
+import vn.cococord.repository.IUserRepository;
+import vn.cococord.service.IChannelService;
+import vn.cococord.service.IMessageService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,11 +28,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @SuppressWarnings("null")
-public class MessageServiceImpl implements MessageService {
+public class MessageServiceImpl implements IMessageService {
 
-    private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
-    private final ChannelService channelService;
+    private final IMessageRepository messageRepository;
+    private final IUserRepository userRepository;
+    private final IChannelService channelService;
 
     @Override
     public ChatMessageResponse sendMessage(SendMessageRequest request, String username) {

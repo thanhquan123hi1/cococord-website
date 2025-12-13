@@ -21,6 +21,7 @@ public class FriendRequestResponse {
     private String receiverUsername;
     private String receiverDisplayName;
     private String receiverAvatarUrl;
-    private String status; // PENDING, ACCEPTED, DECLINED
+    private String status; // PENDING, ACCEPTED, REJECTED, CANCELLED
     private LocalDateTime createdAt;
+    private LocalDateTime respondedAt;
 }

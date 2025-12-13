@@ -23,7 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ServerController {
 
-    private final vn.cococord.service.ServerService serverService;
+    private final vn.cococord.service.IServerService serverService;
 
     /**
      * GET /api/servers

@@ -11,10 +11,10 @@ import vn.cococord.entity.mysql.Channel;
 import vn.cococord.entity.mysql.Server;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.exception.UnauthorizedException;
-import vn.cococord.repository.ChannelRepository;
-import vn.cococord.repository.ServerRepository;
-import vn.cococord.service.ChannelService;
-import vn.cococord.service.ServerService;
+import vn.cococord.repository.IChannelRepository;
+import vn.cococord.repository.IServerRepository;
+import vn.cococord.service.IChannelService;
+import vn.cococord.service.IServerService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,11 +24,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 @SuppressWarnings("null")
-public class ChannelServiceImpl implements ChannelService {
+public class ChannelServiceImpl implements IChannelService {
 
-    private final ChannelRepository channelRepository;
-    private final ServerRepository serverRepository;
-    private final ServerService serverService;
+    private final IChannelRepository channelRepository;
+    private final IServerRepository serverRepository;
+    private final IServerService serverService;
 
     @Override
     public ChannelResponse createChannel(Long serverId, CreateChannelRequest request, String username) {

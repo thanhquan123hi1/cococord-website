@@ -13,5 +13,5 @@ import lombok.NoArgsConstructor;
 public class SendFriendRequestRequest {
 
     @NotNull(message = "User ID is required")
-    private Long userId;
+    private Long receiverUserId;
 }

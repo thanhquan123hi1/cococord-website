@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SiteMesh 3 configuration.
+
+  Note: In this project we also keep an equivalent programmatic configuration
+  in vn.cococord.config.SiteMeshConfig to ensure compatibility in Spring Boot JAR mode.
+-->
+<sitemesh>
+    <decorator name="public" page="/WEB-INF/decorators/public.jsp" />
+    <decorator name="app" page="/WEB-INF/decorators/app.jsp" />
+
+    <!-- Public pages (use public.jsp) -->
+    <mapping path="/" decorator="public" />
+    <mapping path="/login" decorator="public" />
+    <mapping path="/register" decorator="public" />
+    <mapping path="/forgot-password" decorator="public" />
+    <mapping path="/reset-password" decorator="public" />
+
+    <!-- App pages (use app.jsp) -->
+    <mapping path="/chat/*" decorator="app" />
+
+    <!-- Excludes: do not decorate static or API endpoints -->
+    <excludes>
+        <pattern>/api/*</pattern>
+        <pattern>/graphql/*</pattern>
+        <pattern>/ws/*</pattern>
+        <pattern>/css/*</pattern>
+        <pattern>/js/*</pattern>
+        <pattern>/images/*</pattern>
+        <pattern>/webjars/*</pattern>
+        <pattern>/static/*</pattern>
+        <pattern>/favicon.ico</pattern>
+        <pattern>/h2-console/*</pattern>
+        <pattern>/WEB-INF/*</pattern>
+    </excludes>
+</sitemesh>

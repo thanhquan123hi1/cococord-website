@@ -5,18 +5,24 @@
 
 const ChatApp = {
     stompClient: null,
-    currentChannelId: 1,
+    currentChannelId: null,
+    currentServerId: null,
     currentUserId: null,
     currentUsername: null,
     currentDisplayName: null,
     typingTimeout: null,
     isTyping: false,
     messagesCache: new Map(),
+    serversCache: [],
+    channelsCache: [],
+    channelSubscription: null,
+    deleteSubscription: null,
+    typingSubscription: null,
 
     /**
      * Initialize the chat application
      */
-    init() {
+    async init() {
         console.log('Initializing CoCoCord Chat...');
         
         // Get user info from localStorage
@@ -30,14 +36,14 @@ const ChatApp = {
             return;
         }
 
+        // Load user's servers
+        await this.loadServers();
+
         // Connect to WebSocket
         this.connectWebSocket();
 
         // Setup event listeners
         this.setupEventListeners();
-
-        // Load initial messages for default channel
-        this.loadChannelMessages(this.currentChannelId);
     },
 
     /**
@@ -74,9 +80,6 @@ const ChatApp = {
     onConnected(frame) {
         console.log('Connected to WebSocket:', frame);
 
-        // Subscribe to channel messages
-        this.subscribeToChannel(this.currentChannelId);
-
         // Subscribe to personal error queue
         this.stompClient.subscribe('/user/queue/errors', (message) => {
             console.error('Error from server:', message.body);
@@ -85,6 +88,12 @@ const ChatApp = {
 
         // Update presence
         this.updatePresence('ONLINE');
+
+        // Subscribe to current channel if exists
+        if (this.currentChannelId) {
+            this.subscribeToChannel(this.currentChannelId);
+            this.loadChannelMessages(this.currentChannelId);
+        }
 
         this.showNotification('Connected to chat server', 'success');
     },
@@ -104,25 +113,199 @@ const ChatApp = {
      * Subscribe to a channel for realtime messages
      */
     subscribeToChannel(channelId) {
+        // Unsubscribe from previous channel
+        if (this.channelSubscription) {
+            this.channelSubscription.unsubscribe();
+        }
+        if (this.deleteSubscription) {
+            this.deleteSubscription.unsubscribe();
+        }
+        if (this.typingSubscription) {
+            this.typingSubscription.unsubscribe();
+        }
+
         // Subscribe to new messages
-        this.stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
+        this.channelSubscription = this.stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
             const chatMessage = JSON.parse(message.body);
             this.onMessageReceived(chatMessage);
         });
 
         // Subscribe to message deletions
-        this.stompClient.subscribe(`/topic/channel/${channelId}/delete`, (message) => {
-            const messageId = message.body;
+        this.deleteSubscription = this.stompClient.subscribe(`/topic/channel/${channelId}/delete`, (message) => {
+            const messageId = message.body.replace(/"/g, '');
             this.onMessageDeleted(messageId);
         });
 
         // Subscribe to typing indicators
-        this.stompClient.subscribe(`/topic/channel/${channelId}/typing`, (message) => {
+        this.typingSubscription = this.stompClient.subscribe(`/topic/channel/${channelId}/typing`, (message) => {
             const typingNotif = JSON.parse(message.body);
             this.onUserTyping(typingNotif);
         });
 
         console.log(`Subscribed to channel ${channelId}`);
+    },
+
+    /**
+     * Load user's servers from API
+     */
+    async loadServers() {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch('/api/servers', {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load servers');
+            }
+
+            this.serversCache = await response.json();
+            this.renderServers();
+
+            // If user has servers, load first server's channels
+            if (this.serversCache.length > 0) {
+                await this.selectServer(this.serversCache[0].id);
+            } else {
+                // Show welcome message for no servers
+                this.showNoServersMessage();
+            }
+        } catch (error) {
+            console.error('Error loading servers:', error);
+            this.showNotification('Failed to load servers', 'error');
+        }
+    },
+
+    /**
+     * Render servers in the server list sidebar
+     */
+    renderServers() {
+        const serverList = document.querySelector('.server-list');
+        const homeBtn = serverList.querySelector('.server-home');
+        const divider = serverList.querySelector('.server-divider');
+        const addBtn = serverList.querySelector('.server-add');
+
+        // Remove existing server icons (except home, divider, add)
+        serverList.querySelectorAll('.server-icon').forEach(el => el.remove());
+
+        // Add server icons
+        this.serversCache.forEach(server => {
+            const serverIcon = document.createElement('div');
+            serverIcon.className = 'server-icon';
+            serverIcon.setAttribute('data-server-id', server.id);
+            serverIcon.setAttribute('title', server.name);
+            
+            if (server.iconUrl) {
+                serverIcon.innerHTML = `<img src="${server.iconUrl}" alt="${this.escapeHtml(server.name)}">`;
+            } else {
+                // Use first letter as placeholder
+                serverIcon.textContent = server.name.charAt(0).toUpperCase();
+            }
+            
+            serverIcon.addEventListener('click', () => this.selectServer(server.id));
+            
+            // Insert before add button
+            serverList.insertBefore(serverIcon, addBtn);
+        });
+    },
+
+    /**
+     * Select a server and load its channels
+     */
+    async selectServer(serverId) {
+        this.currentServerId = serverId;
+        
+        // Update server name in header
+        const server = this.serversCache.find(s => s.id === serverId);
+        if (server) {
+            document.getElementById('server-name').textContent = server.name;
+        }
+
+        // Update active state
+        document.querySelectorAll('.server-icon').forEach(icon => {
+            icon.classList.toggle('active', parseInt(icon.dataset.serverId) === serverId);
+        });
+
+        // Load channels
+        await this.loadChannels(serverId);
+    },
+
+    /**
+     * Load channels for a server
+     */
+    async loadChannels(serverId) {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`/api/channels/servers/${serverId}/channels`, {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load channels');
+            }
+
+            this.channelsCache = await response.json();
+            this.renderChannels();
+
+            // Select first text channel
+            const firstTextChannel = this.channelsCache.find(c => c.type === 'TEXT');
+            if (firstTextChannel) {
+                this.switchChannel(firstTextChannel.id);
+            }
+        } catch (error) {
+            console.error('Error loading channels:', error);
+            this.showNotification('Failed to load channels', 'error');
+        }
+    },
+
+    /**
+     * Render channels in the channel sidebar
+     */
+    renderChannels() {
+        const textChannelsContainer = document.getElementById('text-channels');
+        const voiceChannelsContainer = document.getElementById('voice-channels');
+
+        textChannelsContainer.innerHTML = '';
+        voiceChannelsContainer.innerHTML = '';
+
+        this.channelsCache.forEach(channel => {
+            const channelItem = document.createElement('div');
+            channelItem.className = 'channel-item';
+            channelItem.setAttribute('data-channel-id', channel.id);
+            channelItem.setAttribute('data-channel-type', channel.type.toLowerCase());
+
+            const icon = channel.type === 'VOICE' ? 'bi-volume-up-fill' : 'bi-hash';
+            channelItem.innerHTML = `
+                <i class="bi ${icon} channel-icon"></i>
+                <span class="channel-name">${this.escapeHtml(channel.name)}</span>
+            `;
+
+            channelItem.addEventListener('click', () => {
+                if (channel.type === 'TEXT') {
+                    this.switchChannel(channel.id);
+                }
+            });
+
+            if (channel.type === 'VOICE') {
+                voiceChannelsContainer.appendChild(channelItem);
+            } else {
+                textChannelsContainer.appendChild(channelItem);
+            }
+        });
+    },
+
+    /**
+     * Show message when user has no servers
+     */
+    showNoServersMessage() {
+        document.getElementById('server-name').textContent = 'Welcome!';
+        document.getElementById('channel-name').textContent = 'No servers yet';
+        document.getElementById('channel-topic').textContent = 'Create or join a server to start chatting';
     },
 
     /**
@@ -467,11 +650,20 @@ const ChatApp = {
         container.innerHTML = '';
         this.messagesCache.clear();
         
-        // Subscribe to new channel
-        this.subscribeToChannel(channelId);
+        // Update channel info in header
+        const channel = this.channelsCache.find(c => c.id === channelId);
+        if (channel) {
+            document.getElementById('channel-name').textContent = channel.name;
+            document.getElementById('channel-topic').textContent = channel.topic || `Welcome to #${channel.name}!`;
+            document.getElementById('chat-header-channel-name').textContent = channel.name;
+            document.getElementById('message-input').setAttribute('placeholder', `Message #${channel.name}`);
+        }
         
-        // Load messages
-        this.loadChannelMessages(channelId);
+        // Subscribe to new channel if connected
+        if (this.stompClient && this.stompClient.connected) {
+            this.subscribeToChannel(channelId);
+            this.loadChannelMessages(channelId);
+        }
         
         // Update UI
         document.querySelectorAll('.channel-item').forEach(item => {
@@ -513,18 +705,165 @@ const ChatApp = {
             }
         });
         
-        // Channel switching
-        document.querySelectorAll('.channel-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const channelId = parseInt(item.dataset.channelId);
-                this.switchChannel(channelId);
-            });
-        });
-        
         // Handle beforeunload to update presence
         window.addEventListener('beforeunload', () => {
             this.updatePresence('OFFLINE');
         });
+
+        // Server add button
+        document.querySelector('.server-add').addEventListener('click', () => {
+            this.openModal('create-server-modal');
+        });
+
+        // Channel add buttons
+        document.querySelectorAll('.add-channel-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openModal('create-channel-modal');
+            });
+        });
+
+        // Create server form
+        document.getElementById('create-server-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.createServer();
+        });
+
+        // Create channel form
+        document.getElementById('create-channel-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.createChannel();
+        });
+
+        // Channel type selector
+        document.querySelectorAll('.channel-type-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.channel-type-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+    },
+
+    /**
+     * Open modal
+     */
+    openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    },
+
+    /**
+     * Close modal
+     */
+    closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    },
+
+    /**
+     * Create a new server
+     */
+    async createServer() {
+        const name = document.getElementById('server-name-input').value.trim();
+        const description = document.getElementById('server-description-input').value.trim();
+
+        if (!name) {
+            this.showNotification('Server name is required', 'error');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch('/api/servers', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    description: description,
+                    isPublic: true,
+                    maxMembers: 1000
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create server');
+            }
+
+            const server = await response.json();
+            this.serversCache.push(server);
+            this.renderServers();
+            this.selectServer(server.id);
+            this.closeModal('create-server-modal');
+            
+            // Clear form
+            document.getElementById('server-name-input').value = '';
+            document.getElementById('server-description-input').value = '';
+            
+            this.showNotification('Server created successfully!', 'success');
+        } catch (error) {
+            console.error('Error creating server:', error);
+            this.showNotification('Failed to create server', 'error');
+        }
+    },
+
+    /**
+     * Create a new channel
+     */
+    async createChannel() {
+        const name = document.getElementById('channel-name-input').value.trim().toLowerCase().replace(/\s+/g, '-');
+        const topic = document.getElementById('channel-topic-input').value.trim();
+        const type = document.querySelector('input[name="channel-type"]:checked').value;
+
+        if (!name) {
+            this.showNotification('Channel name is required', 'error');
+            return;
+        }
+
+        if (!this.currentServerId) {
+            this.showNotification('No server selected', 'error');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`/api/channels/servers/${this.currentServerId}/channels`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    type: type,
+                    topic: topic,
+                    isPrivate: false
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create channel');
+            }
+
+            const channel = await response.json();
+            this.channelsCache.push(channel);
+            this.renderChannels();
+            
+            if (channel.type === 'TEXT') {
+                this.switchChannel(channel.id);
+            }
+            
+            this.closeModal('create-channel-modal');
+            
+            // Clear form
+            document.getElementById('channel-name-input').value = '';
+            document.getElementById('channel-topic-input').value = '';
+            
+            this.showNotification('Channel created successfully!', 'success');
+        } catch (error) {
+            console.error('Error creating channel:', error);
+            this.showNotification('Failed to create channel', 'error');
+        }
     },
 
     /**
@@ -536,11 +875,30 @@ const ChatApp = {
     },
 
     /**
-     * Show notification
+     * Show notification as toast
      */
     showNotification(message, type = 'info') {
-        // Simple console log for now, can be enhanced with toast notifications
         console.log(`[${type.toUpperCase()}] ${message}`);
+        
+        // Create toast container if not exists
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // Create toast
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        // Remove after 4 seconds
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideIn 0.3s ease-out reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
     },
 
     /**

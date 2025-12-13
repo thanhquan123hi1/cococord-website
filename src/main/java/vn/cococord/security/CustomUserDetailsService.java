@@ -8,16 +8,17 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import vn.cococord.entity.mysql.User;
-import vn.cococord.repository.UserRepository;
+import vn.cococord.repository.IUserRepository;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final IUserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
@@ -40,12 +41,19 @@ public class CustomUserDetailsService implements UserDetailsService {
                 true,
                 true,
                 !user.getIsBanned(),
-                getAuthorities());
+                getAuthorities(user));
     }
 
-    private Collection<? extends GrantedAuthority> getAuthorities() {
-        // Default role for all users
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    private Collection<? extends GrantedAuthority> getAuthorities(User user) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+
+        // Add role-based authority
+        if (user.getRole() != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+        }
+
+        return authorities;
     }
 
     @SuppressWarnings("null")
@@ -56,6 +64,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                getAuthorities());
+                getAuthorities(user));
     }
 }

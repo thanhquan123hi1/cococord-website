@@ -7,7 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import vn.cococord.dto.response.ChatMessageResponse;
-import vn.cococord.service.MessageService;
+import vn.cococord.service.IMessageService;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MessageRestController {
 
-    private final MessageService messageService;
+    private final IMessageService messageService;
 
     /**
      * GET /api/messages/channel/{channelId}

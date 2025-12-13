@@ -93,10 +93,10 @@ Xây dựng một ứng dụng chat realtime đầy đủ tính năng giống Di
 
 ### V. Friend System & Direct Message
 
-- [ ] Gửi / Chấp nhận / Từ chối / Hủy kết bạn
-- [ ] Block user
-- [ ] Chat 1-1 realtime
-- [ ] Group DM (nhóm chat riêng tưtối đa 10 người)
+- [x] Gửi / Chấp nhận / Từ chối / Hủy kết bạn
+- [x] Block user
+- [x] Chat 1-1 realtime
+- [x] Group DM (nhóm chat riêng tư tối đa 10 người)
 
 ### VI. Realtime Notification
 
