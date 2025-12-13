@@ -13,6 +13,7 @@ import vn.cococord.dto.response.DMGroupResponse;
 import vn.cococord.dto.response.FriendRequestResponse;
 import vn.cococord.dto.response.MessageResponse;
 import vn.cococord.dto.response.UserProfileResponse;
+import vn.cococord.service.IFriendService;
 
 import java.util.List;
 
@@ -25,9 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FriendController {
 
-    // TODO: Inject services when implemented
-    // private final FriendService friendService;
-    // private final DMService dmService;
+    private final IFriendService friendService;
 
     // ===== FRIEND MANAGEMENT =====
 
@@ -38,8 +37,8 @@ public class FriendController {
     @GetMapping
     public ResponseEntity<List<UserProfileResponse>> getFriends(
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.getFriends(userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<UserProfileResponse> friends = friendService.getFriends(userDetails.getUsername());
+        return ResponseEntity.ok(friends);
     }
 
     /**
@@ -49,8 +48,8 @@ public class FriendController {
     @GetMapping("/requests")
     public ResponseEntity<List<FriendRequestResponse>> getFriendRequests(
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.getFriendRequests(userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<FriendRequestResponse> requests = friendService.getAllFriendRequests(userDetails.getUsername());
+        return ResponseEntity.ok(requests);
     }
 
     /**
@@ -60,8 +59,19 @@ public class FriendController {
     @GetMapping("/requests/pending")
     public ResponseEntity<List<FriendRequestResponse>> getPendingFriendRequests(
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.getPendingRequests(userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<FriendRequestResponse> requests = friendService.getPendingRequests(userDetails.getUsername());
+        return ResponseEntity.ok(requests);
+    }
+
+    /**
+     * GET /api/friends/requests/sent
+     * Get sent friend requests
+     */
+    @GetMapping("/requests/sent")
+    public ResponseEntity<List<FriendRequestResponse>> getSentFriendRequests(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        List<FriendRequestResponse> requests = friendService.getSentRequests(userDetails.getUsername());
+        return ResponseEntity.ok(requests);
     }
 
     /**
@@ -72,8 +82,8 @@ public class FriendController {
     public ResponseEntity<FriendRequestResponse> sendFriendRequest(
             @Valid @RequestBody SendFriendRequestRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.sendFriendRequest(request, userDetails.getUsername())
-        return ResponseEntity.status(HttpStatus.CREATED).body(FriendRequestResponse.builder().build());
+        FriendRequestResponse response = friendService.sendFriendRequest(request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -84,7 +94,7 @@ public class FriendController {
     public ResponseEntity<MessageResponse> acceptFriendRequest(
             @PathVariable Long requestId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.acceptFriendRequest(requestId, userDetails.getUsername())
+        friendService.acceptFriendRequest(requestId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Friend request accepted"));
     }
 
@@ -96,8 +106,20 @@ public class FriendController {
     public ResponseEntity<MessageResponse> declineFriendRequest(
             @PathVariable Long requestId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.declineFriendRequest(requestId, userDetails.getUsername())
+        friendService.declineFriendRequest(requestId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Friend request declined"));
+    }
+
+    /**
+     * POST /api/friends/requests/{requestId}/cancel
+     * Cancel sent friend request
+     */
+    @PostMapping("/requests/{requestId}/cancel")
+    public ResponseEntity<MessageResponse> cancelFriendRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        friendService.cancelFriendRequest(requestId, userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Friend request cancelled"));
     }
 
     /**
@@ -108,7 +130,7 @@ public class FriendController {
     public ResponseEntity<MessageResponse> removeFriend(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.removeFriend(userId, userDetails.getUsername())
+        friendService.removeFriend(userId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Friend removed successfully"));
     }
 
@@ -121,8 +143,8 @@ public class FriendController {
     @GetMapping("/blocked")
     public ResponseEntity<List<UserProfileResponse>> getBlockedUsers(
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.getBlockedUsers(userDetails.getUsername())
-        return ResponseEntity.ok(List.of());
+        List<UserProfileResponse> blockedUsers = friendService.getBlockedUsers(userDetails.getUsername());
+        return ResponseEntity.ok(blockedUsers);
     }
 
     /**
@@ -133,7 +155,7 @@ public class FriendController {
     public ResponseEntity<MessageResponse> blockUser(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.blockUser(userId, userDetails.getUsername())
+        friendService.blockUser(userId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("User blocked successfully"));
     }
 
@@ -145,11 +167,12 @@ public class FriendController {
     public ResponseEntity<MessageResponse> unblockUser(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement friendService.unblockUser(userId, userDetails.getUsername())
+        friendService.unblockUser(userId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("User unblocked successfully"));
     }
 
     // ===== DIRECT MESSAGE GROUPS =====
+    // TODO: Implement DMService and related endpoints
 
     /**
      * GET /api/friends/dm-groups
@@ -158,7 +181,6 @@ public class FriendController {
     @GetMapping("/dm-groups")
     public ResponseEntity<List<DMGroupResponse>> getDMGroups(
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement dmService.getDMGroups(userDetails.getUsername())
         return ResponseEntity.ok(List.of());
     }
 
@@ -170,7 +192,6 @@ public class FriendController {
     public ResponseEntity<DMGroupResponse> createDMGroup(
             @Valid @RequestBody CreateDMGroupRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement dmService.createDMGroup(request, userDetails.getUsername())
         return ResponseEntity.status(HttpStatus.CREATED).body(DMGroupResponse.builder().build());
     }
 
@@ -182,7 +203,6 @@ public class FriendController {
     public ResponseEntity<DMGroupResponse> getDMGroup(
             @PathVariable Long groupId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement dmService.getDMGroupById(groupId, userDetails.getUsername())
         return ResponseEntity.ok(DMGroupResponse.builder().build());
     }
 
@@ -194,7 +214,6 @@ public class FriendController {
     public ResponseEntity<MessageResponse> leaveDMGroup(
             @PathVariable Long groupId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement dmService.leaveDMGroup(groupId, userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Left DM group successfully"));
     }
 
@@ -207,7 +226,6 @@ public class FriendController {
             @PathVariable Long groupId,
             @RequestParam Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement dmService.addMember(groupId, userId, userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Member added to DM group"));
     }
 
@@ -220,7 +238,6 @@ public class FriendController {
             @PathVariable Long groupId,
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement dmService.removeMember(groupId, userId, userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Member removed from DM group"));
     }
 }

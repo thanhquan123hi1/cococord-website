@@ -8,8 +8,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import vn.cococord.dto.request.EditMessageRequest;
 import vn.cococord.dto.request.SendMessageRequest;
+import vn.cococord.dto.request.SendDirectMessageRequest;
 import vn.cococord.dto.response.ChatMessageResponse;
-import vn.cococord.service.MessageService;
+import vn.cococord.entity.mongodb.DirectMessage;
+import vn.cococord.service.IMessageService;
+import vn.cococord.service.IDirectMessageService;
 
 import java.security.Principal;
 
@@ -23,7 +26,8 @@ import java.security.Principal;
 @SuppressWarnings("null")
 public class WebSocketMessageController {
 
-    private final MessageService messageService;
+    private final IMessageService messageService;
+    private final IDirectMessageService directMessageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
@@ -148,6 +152,114 @@ public class WebSocketMessageController {
         messagingTemplate.convertAndSend("/topic/presence", presence);
     }
 
+    /**
+     * Send direct message (DM or Group DM)
+     * Client sends to: /app/dm.sendMessage
+     * Broadcast to: /topic/dm/{dmGroupId}
+     */
+    @MessageMapping("/dm.sendMessage")
+    public void sendDirectMessage(@Payload DirectMessagePayload payload, Principal principal) {
+        try {
+            String username = principal.getName();
+            log.info("Received DM from user: {} to DM group: {}", username, payload.getDmGroupId());
+
+            // Save direct message
+            DirectMessage message = directMessageService.sendDirectMessageWithAttachments(
+                    payload.getDmGroupId(),
+                    payload.getSenderId(),
+                    payload.getContent(),
+                    payload.getAttachmentUrls());
+
+            // Broadcast to all members of this DM group
+            messagingTemplate.convertAndSend(
+                    "/topic/dm/" + payload.getDmGroupId(),
+                    message);
+
+            log.info("Direct message broadcast to DM group: {}", payload.getDmGroupId());
+        } catch (Exception e) {
+            log.error("Error sending direct message: {}", e.getMessage(), e);
+
+            messagingTemplate.convertAndSendToUser(
+                    principal.getName(),
+                    "/queue/errors",
+                    "Failed to send direct message: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Edit direct message
+     * Client sends to: /app/dm.editMessage
+     */
+    @MessageMapping("/dm.editMessage")
+    public void editDirectMessage(@Payload DirectMessageEditPayload payload, Principal principal) {
+        try {
+            String username = principal.getName();
+            log.info("User: {} editing DM: {}", username, payload.getMessageId());
+
+            DirectMessage message = directMessageService.editDirectMessage(
+                    payload.getMessageId(),
+                    payload.getSenderId(),
+                    payload.getNewContent());
+
+            // Broadcast edited message to DM group
+            messagingTemplate.convertAndSend(
+                    "/topic/dm/" + message.getDmGroupId(),
+                    message);
+
+            log.info("Edited DM broadcast to DM group: {}", message.getDmGroupId());
+        } catch (Exception e) {
+            log.error("Error editing direct message: {}", e.getMessage(), e);
+
+            messagingTemplate.convertAndSendToUser(
+                    principal.getName(),
+                    "/queue/errors",
+                    "Failed to edit direct message: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Delete direct message
+     * Client sends to: /app/dm.deleteMessage
+     */
+    @MessageMapping("/dm.deleteMessage")
+    public void deleteDirectMessage(@Payload DirectMessageDeletePayload payload, Principal principal) {
+        try {
+            String username = principal.getName();
+            log.info("User: {} deleting DM: {}", username, payload.getMessageId());
+
+            directMessageService.deleteDirectMessage(payload.getMessageId(), payload.getUserId());
+
+            // Notify DM group about deletion
+            messagingTemplate.convertAndSend(
+                    "/topic/dm/" + payload.getDmGroupId() + "/delete",
+                    payload.getMessageId());
+
+            log.info("DM deletion broadcast to DM group: {}", payload.getDmGroupId());
+        } catch (Exception e) {
+            log.error("Error deleting direct message: {}", e.getMessage(), e);
+
+            messagingTemplate.convertAndSendToUser(
+                    principal.getName(),
+                    "/queue/errors",
+                    "Failed to delete direct message: " + e.getMessage());
+        }
+    }
+
+    /**
+     * User typing in DM
+     * Client sends to: /app/dm.typing
+     */
+    @MessageMapping("/dm.typing")
+    public void userTypingInDM(@Payload DMTypingNotification notification, Principal principal) {
+        String username = principal.getName();
+        notification.setUsername(username);
+
+        // Broadcast typing indicator to DM group (except sender)
+        messagingTemplate.convertAndSend(
+                "/topic/dm/" + notification.getDmGroupId() + "/typing",
+                notification);
+    }
+
     // DTOs for WebSocket messages
     public static class TypingNotification {
         private Long channelId;
@@ -203,6 +315,148 @@ public class WebSocketMessageController {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+    }
+
+    // DTOs for Direct Message WebSocket
+    public static class DirectMessagePayload {
+        private Long dmGroupId;
+        private Long senderId;
+        private String content;
+        private java.util.List<String> attachmentUrls;
+
+        public DirectMessagePayload() {
+        }
+
+        public Long getDmGroupId() {
+            return dmGroupId;
+        }
+
+        public void setDmGroupId(Long dmGroupId) {
+            this.dmGroupId = dmGroupId;
+        }
+
+        public Long getSenderId() {
+            return senderId;
+        }
+
+        public void setSenderId(Long senderId) {
+            this.senderId = senderId;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+
+        public java.util.List<String> getAttachmentUrls() {
+            return attachmentUrls;
+        }
+
+        public void setAttachmentUrls(java.util.List<String> attachmentUrls) {
+            this.attachmentUrls = attachmentUrls;
+        }
+    }
+
+    public static class DirectMessageEditPayload {
+        private String messageId;
+        private Long senderId;
+        private String newContent;
+
+        public DirectMessageEditPayload() {
+        }
+
+        public String getMessageId() {
+            return messageId;
+        }
+
+        public void setMessageId(String messageId) {
+            this.messageId = messageId;
+        }
+
+        public Long getSenderId() {
+            return senderId;
+        }
+
+        public void setSenderId(Long senderId) {
+            this.senderId = senderId;
+        }
+
+        public String getNewContent() {
+            return newContent;
+        }
+
+        public void setNewContent(String newContent) {
+            this.newContent = newContent;
+        }
+    }
+
+    public static class DirectMessageDeletePayload {
+        private String messageId;
+        private Long dmGroupId;
+        private Long userId;
+
+        public DirectMessageDeletePayload() {
+        }
+
+        public String getMessageId() {
+            return messageId;
+        }
+
+        public void setMessageId(String messageId) {
+            this.messageId = messageId;
+        }
+
+        public Long getDmGroupId() {
+            return dmGroupId;
+        }
+
+        public void setDmGroupId(Long dmGroupId) {
+            this.dmGroupId = dmGroupId;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+    }
+
+    public static class DMTypingNotification {
+        private Long dmGroupId;
+        private String username;
+        private boolean isTyping;
+
+        public DMTypingNotification() {
+        }
+
+        public Long getDmGroupId() {
+            return dmGroupId;
+        }
+
+        public void setDmGroupId(Long dmGroupId) {
+            this.dmGroupId = dmGroupId;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public boolean isTyping() {
+            return isTyping;
+        }
+
+        public void setTyping(boolean typing) {
+            isTyping = typing;
         }
     }
 }

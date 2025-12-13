@@ -1,32 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Đăng ký - CoCoCord</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <!-- Alert Container -->
-    <div class="container mt-3">
-        <div id="alert-container"></div>
-    </div>
-    
     <div class="container">
         <div class="row justify-content-center" style="padding: 40px 0;">
             <div class="col-md-6 col-lg-5">
@@ -83,13 +55,12 @@
                                            minlength="8"
                                            placeholder="Ít nhất 8 ký tự"
                                            autocomplete="new-password">
-                                    <button class="btn btn-outline-secondary" type="button" 
-                                            onclick="togglePasswordVisibility('password')">
-                                        <i class="bi bi-eye" id="password-icon"></i>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
                                 <div class="form-text">
-                                    Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)
+                                    Mật khẩu phải có ít nhất 8 ký tự
                                 </div>
                             </div>
 
@@ -98,6 +69,144 @@
                                     <i class="bi bi-lock-fill"></i> Xác nhận mật khẩu <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group">
+                                    <input type="password" class="form-control" id="confirmPassword" 
+                                           name="confirmPassword" required 
+                                           placeholder="Nhập lại mật khẩu"
+                                           autocomplete="new-password">
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                                <label class="form-check-label" for="agreeTerms">
+                                    Tôi đồng ý với <a href="#" class="text-decoration-none">Điều khoản sử dụng</a> 
+                                    và <a href="#" class="text-decoration-none">Chính sách bảo mật</a>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="register-btn">
+                                <i class="bi bi-person-plus"></i> Đăng ký
+                            </button>
+
+                            <div class="text-center">
+                                <p class="text-muted mb-0">
+                                    Đã có tài khoản? 
+                                    <a href="${pageContext.request.contextPath}/login" class="text-decoration-none fw-bold">Đăng nhập ngay</a>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            // Toggle password visibility
+            document.getElementById('togglePassword').addEventListener('click', function() {
+                const passwordInput = document.getElementById('password');
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            });
+
+            document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+                const passwordInput = document.getElementById('confirmPassword');
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            });
+
+            // Handle register form submission
+            document.getElementById('register-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (password !== confirmPassword) {
+                    showAlert('Mật khẩu xác nhận không khớp!', 'danger');
+                    return;
+                }
+                
+                const btn = document.getElementById('register-btn');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đăng ký...';
+                
+                const formData = {
+                    username: document.getElementById('username').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    displayName: document.getElementById('displayName').value.trim(),
+                    password: password
+                };
+                
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showAlert('Đăng ký thành công! Đang chuyển đến trang đăng nhập...', 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = '${pageContext.request.contextPath}/login';
+                        }, 1500);
+                    } else {
+                        showAlert(data.message || 'Đăng ký thất bại. Vui lòng thử lại.', 'danger');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                } catch (error) {
+                    console.error('Register error:', error);
+                    showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
+
+            function showAlert(message, type) {
+                const alertContainer = document.getElementById('alert-container');
+                if (!alertContainer) return;
+                
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show`;
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                alertContainer.appendChild(alert);
+                
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+            }
+    </script>
                                     <input type="password" class="form-control" id="confirmPassword" 
                                            name="confirmPassword" required 
                                            placeholder="Nhập lại mật khẩu"
@@ -146,11 +255,6 @@
     <script src="/js/auth.js"></script>
     
     <script>
-            // Redirect if already logged in
-            if (isLoggedIn()) {
-                window.location.href = '/dashboard';
-            }
-
             // Toggle password visibility
             function togglePasswordVisibility(fieldId) {
                 const field = document.getElementById(fieldId);

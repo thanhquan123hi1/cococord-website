@@ -1,0 +1,76 @@
+type Query {
+  # Get all friends
+  friends: [UserProfile!]!
+
+  # Get friend requests
+  friendRequests: [FriendRequest!]!
+  pendingFriendRequests: [FriendRequest!]!
+  sentFriendRequests: [FriendRequest!]!
+
+  # Get blocked users
+  blockedUsers: [UserProfile!]!
+}
+
+type Mutation {
+  # Send friend request
+  sendFriendRequest(receiverUserId: ID!): FriendRequest!
+
+  # Accept friend request
+  acceptFriendRequest(requestId: ID!): MessageResult!
+
+  # Decline friend request
+  declineFriendRequest(requestId: ID!): MessageResult!
+
+  # Cancel sent friend request
+  cancelFriendRequest(requestId: ID!): MessageResult!
+
+  # Remove friend
+  removeFriend(friendId: ID!): MessageResult!
+
+  # Block user
+  blockUser(userId: ID!): MessageResult!
+
+  # Unblock user
+  unblockUser(userId: ID!): MessageResult!
+}
+
+type UserProfile {
+  id: ID!
+  username: String!
+  email: String!
+  displayName: String!
+  avatarUrl: String
+  bio: String
+  status: UserStatus!
+  customStatus: String
+  isOnline: Boolean!
+  createdAt: String!
+}
+
+type FriendRequest {
+  id: ID!
+  sender: UserProfile!
+  receiver: UserProfile!
+  status: FriendRequestStatus!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type MessageResult {
+  success: Boolean!
+  message: String!
+}
+
+enum UserStatus {
+  ONLINE
+  IDLE
+  DO_NOT_DISTURB
+  INVISIBLE
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #5865f2;
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            background: #2d2d30;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #3e3e42;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background: #43b581;
+            color: white;
+        }
+        
+        .status.disconnected {
+            background: #f04747;
+            color: white;
+        }
+        
+        .status.connecting {
+            background: #faa61a;
+            color: white;
+        }
+        
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            color: #d4d4d4;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        button {
+            background: #5865f2;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #4752c4;
+        }
+        
+        button:disabled {
+            background: #4f545c;
+            cursor: not-allowed;
+        }
+        
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #3e3e42;
+            margin-bottom: 15px;
+        }
+        
+        .message {
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #2d2d30;
+            border-radius: 4px;
+            border-left: 3px solid #5865f2;
+        }
+        
+        .message.sent {
+            border-left-color: #43b581;
+        }
+        
+        .message.received {
+            border-left-color: #faa61a;
+        }
+        
+        .message.error {
+            border-left-color: #f04747;
+            background: #3d2a2a;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: #72767d;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        code {
+            background: #1e1e1e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 CoCoCord WebSocket Test Client</h1>
+        
+        <!-- Connection Section -->
+        <div class="section">
+            <h2>Connection</h2>
+            <div id="status" class="status disconnected">Disconnected</div>
+            
+            <input type="text" id="token" placeholder="JWT Token (paste from localStorage)" value="">
+            <div class="grid">
+                <button onclick="connect()">Connect</button>
+                <button onclick="disconnect()">Disconnect</button>
+            </div>
+        </div>
+        
+        <!-- Send Message Section -->
+        <div class="section">
+            <h2>Send Message</h2>
+            <input type="number" id="channelId" placeholder="Channel ID" value="1">
+            <textarea id="messageContent" placeholder="Message content" rows="3"></textarea>
+            <button onclick="sendMessage()" id="sendBtn" disabled>Send Message</button>
+        </div>
+        
+        <!-- Edit Message Section -->
+        <div class="section">
+            <h2>Edit Message</h2>
+            <input type="text" id="editMessageId" placeholder="Message ID to edit">
+            <textarea id="editContent" placeholder="New content" rows="2"></textarea>
+            <button onclick="editMessage()" id="editBtn" disabled>Edit Message</button>
+        </div>
+        
+        <!-- Delete Message Section -->
+        <div class="section">
+            <h2>Delete Message</h2>
+            <input type="text" id="deleteMessageId" placeholder="Message ID to delete">
+            <button onclick="deleteMessage()" id="deleteBtn" disabled>Delete Message</button>
+        </div>
+        
+        <!-- Messages Log -->
+        <div class="section">
+            <h2>Messages Log</h2>
+            <div class="messages" id="messagesLog"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="section">
+            <h2>📖 Instructions</h2>
+            <ol style="padding-left: 20px; line-height: 1.8;">
+                <li>Login to your account at <code>http://localhost:8080/login</code></li>
+                <li>Open browser console and run: <code>localStorage.getItem('accessToken')</code></li>
+                <li>Copy the token and paste it in the "JWT Token" field above</li>
+                <li>Click "Connect" button</li>
+                <li>Once connected, you can send, edit, and delete messages</li>
+                <li>Open multiple browser tabs to test real-time sync</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+    
+    <script>
+        let stompClient = null;
+        let currentChannelId = 1;
+        
+        function updateStatus(status, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status ' + status;
+            statusEl.textContent = message;
+        }
+        
+        function logMessage(type, content) {
+            const log = document.getElementById('messagesLog');
+            const time = new Date().toLocaleTimeString();
+            const msg = document.createElement('div');
+            msg.className = 'message ' + type;
+            msg.innerHTML = `<div class="message-time">${time}</div><div>${content}</div>`;
+            log.appendChild(msg);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function connect() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                alert('Please enter JWT token');
+                return;
+            }
+            
+            updateStatus('connecting', 'Connecting...');
+            logMessage('sent', 'Connecting to WebSocket...');
+            
+            const socket = new SockJS('http://localhost:8080/ws');
+            stompClient = window.Stomp.Stomp.over(socket);
+            
+            stompClient.connect(
+                { 'Authorization': 'Bearer ' + token },
+                onConnected,
+                onError
+            );
+        }
+        
+        function onConnected(frame) {
+            updateStatus('connected', 'Connected to WebSocket');
+            logMessage('received', '✅ Connected successfully!');
+            
+            // Enable buttons
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('editBtn').disabled = false;
+            document.getElementById('deleteBtn').disabled = false;
+            
+            // Subscribe to channel
+            currentChannelId = document.getElementById('channelId').value || 1;
+            subscribeToChannel(currentChannelId);
+            
+            // Subscribe to errors
+            stompClient.subscribe('/user/queue/errors', (message) => {
+                logMessage('error', '❌ Error: ' + message.body);
+            });
+        }
+        
+        function onError(error) {
+            updateStatus('disconnected', 'Connection failed');
+            logMessage('error', '❌ Connection error: ' + error);
+            
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('editBtn').disabled = true;
+            document.getElementById('deleteBtn').disabled = true;
+        }
+        
+        function subscribeToChannel(channelId) {
+            // Subscribe to messages
+            stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
+                const msg = JSON.parse(message.body);
+                logMessage('received', `📨 New message from ${msg.username}: ${msg.content} (ID: ${msg.id})`);
+            });
+            
+            // Subscribe to deletions
+            stompClient.subscribe(`/topic/channel/${channelId}/delete`, (message) => {
+                logMessage('received', `🗑️ Message deleted: ${message.body}`);
+            });
+            
+            // Subscribe to typing
+            stompClient.subscribe(`/topic/channel/${channelId}/typing`, (message) => {
+                const typing = JSON.parse(message.body);
+                logMessage('received', `⌨️ ${typing.username} is typing...`);
+            });
+            
+            logMessage('sent', `Subscribed to channel ${channelId}`);
+        }
+        
+        function disconnect() {
+            if (stompClient) {
+                stompClient.disconnect();
+                updateStatus('disconnected', 'Disconnected');
+                logMessage('sent', 'Disconnected from WebSocket');
+                
+                document.getElementById('sendBtn').disabled = true;
+                document.getElementById('editBtn').disabled = true;
+                document.getElementById('deleteBtn').disabled = true;
+            }
+        }
+        
+        function sendMessage() {
+            const channelId = document.getElementById('channelId').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (!content) {
+                alert('Please enter message content');
+                return;
+            }
+            
+            const message = {
+                channelId: parseInt(channelId),
+                content: content,
+                parentMessageId: null,
+                threadId: null
+            };
+            
+            stompClient.send('/app/chat.sendMessage', {}, JSON.stringify(message));
+            logMessage('sent', `📤 Sent: ${content}`);
+            
+            document.getElementById('messageContent').value = '';
+        }
+        
+        function editMessage() {
+            const messageId = document.getElementById('editMessageId').value;
+            const content = document.getElementById('editContent').value;
+            
+            if (!messageId || !content) {
+                alert('Please enter message ID and new content');
+                return;
+            }
+            
+            const editRequest = {
+                messageId: messageId,
+                content: content
+            };
+            
+            stompClient.send('/app/chat.editMessage', {}, JSON.stringify(editRequest));
+            logMessage('sent', `✏️ Edit request for message ${messageId}`);
+            
+            document.getElementById('editMessageId').value = '';
+            document.getElementById('editContent').value = '';
+        }
+        
+        function deleteMessage() {
+            const messageId = document.getElementById('deleteMessageId').value;
+            
+            if (!messageId) {
+                alert('Please enter message ID');
+                return;
+            }
+            
+            stompClient.send('/app/chat.deleteMessage', {}, JSON.stringify(messageId));
+            logMessage('sent', `🗑️ Delete request for message ${messageId}`);
+            
+            document.getElementById('deleteMessageId').value = '';
+        }
+        
+        function clearLog() {
+            document.getElementById('messagesLog').innerHTML = '';
+        }
+        
+        // Auto-fill token from localStorage if available
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                document.getElementById('token').value = token;
+                logMessage('received', 'Token loaded from localStorage');
+            }
+        });
+    </script>
+</body>
+</html>

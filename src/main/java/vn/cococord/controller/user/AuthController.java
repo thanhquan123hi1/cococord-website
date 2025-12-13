@@ -11,8 +11,8 @@ import vn.cococord.dto.request.*;
 import vn.cococord.dto.response.AuthResponse;
 import vn.cococord.dto.response.MessageResponse;
 import vn.cococord.dto.response.UserSessionResponse;
-import vn.cococord.service.AuthService;
-import vn.cococord.service.UserService;
+import vn.cococord.service.IAuthService;
+import vn.cococord.service.IUserService;
 
 import java.util.List;
 
@@ -21,8 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
-    private final UserService userService;
+    private final IAuthService authService;
+    private final IUserService userService;
 
     /**
      * 1.1 Login endpoint

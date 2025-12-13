@@ -56,6 +56,11 @@ public class User {
     @Builder.Default
     private Boolean isBanned = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    private Role role = Role.USER;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isEmailVerified = false;
@@ -108,5 +113,9 @@ public class User {
 
     public enum UserStatus {
         ONLINE, IDLE, DO_NOT_DISTURB, OFFLINE, INVISIBLE
+    }
+
+    public enum Role {
+        USER, MODERATOR, ADMIN
     }
 }

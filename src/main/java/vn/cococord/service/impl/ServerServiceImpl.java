@@ -11,7 +11,7 @@ import vn.cococord.exception.BadRequestException;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.exception.UnauthorizedException;
 import vn.cococord.repository.*;
-import vn.cococord.service.ServerService;
+import vn.cococord.service.IServerService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,14 +22,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 @SuppressWarnings("null")
-public class ServerServiceImpl implements ServerService {
+public class ServerServiceImpl implements IServerService {
 
-    private final ServerRepository serverRepository;
-    private final ServerMemberRepository serverMemberRepository;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final InviteLinkRepository inviteLinkRepository;
-    private final ChannelRepository channelRepository;
+    private final IServerRepository serverRepository;
+    private final IServerMemberRepository serverMemberRepository;
+    private final IUserRepository userRepository;
+    private final IRoleRepository roleRepository;
+    private final IInviteLinkRepository inviteLinkRepository;
+    private final IChannelRepository channelRepository;
 
     @Override
     public ServerResponse createServer(CreateServerRequest request, String username) {

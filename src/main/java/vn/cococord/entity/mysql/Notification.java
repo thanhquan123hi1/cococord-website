@@ -48,14 +48,27 @@ public class Notification {
     private String metadata;
 
     public enum NotificationType {
-        FRIEND_REQUEST,
-        FRIEND_ACCEPTED,
-        SERVER_INVITE,
-        SERVER_KICKED,
-        SERVER_BANNED,
-        MENTION,
-        REPLY,
-        ROLE_ASSIGNED,
-        SYSTEM
+        // Friend-related notifications
+        FRIEND_REQUEST, // Nhận lời mời kết bạn
+        FRIEND_ACCEPTED, // Lời mời kết bạn được chấp nhận
+        FRIEND_REMOVED, // Bị xóa bạn
+
+        // Direct message notifications
+        NEW_DIRECT_MESSAGE, // Tin nhắn mới trong DM
+        NEW_GROUP_DM, // Được thêm vào nhóm DM mới
+        REMOVED_FROM_GROUP_DM, // Bị xóa khỏi nhóm DM
+
+        // Server-related notifications
+        SERVER_INVITE, // Nhận lời mời vào server
+        SERVER_KICKED, // Bị kick khỏi server
+        SERVER_BANNED, // Bị ban khỏi server
+
+        // Mention & replies
+        MENTION, // Được @ trong tin nhắn
+        REPLY, // Có người reply tin nhắn
+
+        // Role & System
+        ROLE_ASSIGNED, // Được gán role mới
+        SYSTEM // Thông báo từ hệ thống
     }
 }

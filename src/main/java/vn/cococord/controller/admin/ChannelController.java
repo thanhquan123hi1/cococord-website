@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChannelController {
 
-    private final vn.cococord.service.ChannelService channelService;
+    private final vn.cococord.service.IChannelService channelService;
 
     /**
      * GET /api/channels/{channelId}

@@ -21,6 +21,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.DispatcherType;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -58,20 +60,23 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Allow internal forwards (JSP rendering, SiteMesh decorators) and error pages
+                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         // Public endpoints
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
 
                         // View pages (allow access, auth handled by JavaScript)
-                        .requestMatchers("/login", "/register", "/forgot-password").permitAll()
-                        .requestMatchers("/dashboard", "/profile", "/sessions", "/change-password").permitAll()
+                        .requestMatchers("/login", "/register", "/forgot-password", "/reset-password").permitAll()
+                        .requestMatchers("/profile", "/sessions", "/change-password", "/chat").permitAll()
+                        .requestMatchers("/admin", "/admin/**").permitAll()
 
                         // Swagger/API docs (if needed)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         // Static resources
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/WEB-INF/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/WEB-INF/**", "/**/*.html").permitAll()
 
                         // WebSocket
                         .requestMatchers("/ws/**").permitAll()
