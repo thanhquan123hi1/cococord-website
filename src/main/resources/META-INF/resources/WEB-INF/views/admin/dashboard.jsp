@@ -195,8 +195,8 @@
                 </a>
             </li>
             <li class="nav-item mt-4">
-                <a class="nav-link" href="/chat">
-                    <i class="bi bi-arrow-left"></i> Back to Chat
+                <a class="nav-link" href="/">
+                    <i class="bi bi-arrow-left"></i> Back to Home
                 </a>
             </li>
             <li class="nav-item">
@@ -319,7 +319,7 @@
             });
             if (response.status === 401 || response.status === 403) {
                 alert('Access denied. Admin privileges required.');
-                window.location.href = '/chat';
+                window.location.href = '/';
                 return null;
             }
             return response.json();

@@ -30,7 +30,6 @@
     
     <!-- Custom CSS for App -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat.css">
     
     <%
         if (sitemeshContent != null) {
@@ -56,7 +55,6 @@
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js"></script>
     <script src="${pageContext.request.contextPath}/js/app.js"></script>
-    <script src="${pageContext.request.contextPath}/js/chat.js"></script>
 
     <%
         if (sitemeshContent != null) {

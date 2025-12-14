@@ -50,8 +50,10 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         return dmGroupRepository.findOneToOneDM(userId1, userId2)
                 .orElseGet(() -> {
                     // Create new 1-1 DM
+                    @SuppressWarnings("null")
                     User user1 = userRepository.findById(userId1)
                             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId1));
+                    @SuppressWarnings("null")
                     User user2 = userRepository.findById(userId2)
                             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId2));
 
@@ -60,7 +62,9 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
                             .isGroup(false)
                             .build();
 
-                    dmGroup = dmGroupRepository.save(dmGroup);
+                    @SuppressWarnings("null")
+                    DirectMessageGroup savedGroup = dmGroupRepository.save(dmGroup);
+                    dmGroup = savedGroup;
 
                     // Add both users as members
                     DirectMessageMember member1 = DirectMessageMember.builder()
@@ -88,6 +92,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
             throw new IllegalArgumentException("Group DM cannot have more than " + MAX_GROUP_DM_MEMBERS + " members");
         }
 
+        @SuppressWarnings("null")
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Owner not found: " + ownerId));
 
@@ -97,7 +102,9 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
                 .name(groupName)
                 .build();
 
-        dmGroup = dmGroupRepository.save(dmGroup);
+        @SuppressWarnings("null")
+        DirectMessageGroup savedGroup2 = dmGroupRepository.save(dmGroup);
+        dmGroup = savedGroup2;
 
         // Add owner as member
         DirectMessageMember ownerMember = DirectMessageMember.builder()
@@ -111,6 +118,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         uniqueMemberIds.remove(ownerId); // Remove owner if included
 
         for (Long memberId : uniqueMemberIds) {
+            @SuppressWarnings("null")
             User user = userRepository.findById(memberId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found: " + memberId));
 
@@ -128,6 +136,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public void addMemberToGroup(Long dmGroupId, Long userId, Long requestingUserId) {
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -151,9 +160,11 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
             throw new IllegalArgumentException("User is already a member");
         }
 
+        @SuppressWarnings("null")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        @SuppressWarnings("null")
         User adder = userRepository.findById(requestingUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Requesting user not found"));
 
@@ -173,6 +184,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public void removeMemberFromGroup(Long dmGroupId, Long userId, Long requestingUserId) {
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -214,6 +226,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional(readOnly = true)
     public DirectMessageGroup getDMGroupById(Long dmGroupId, Long requestingUserId) {
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -228,6 +241,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public DirectMessageGroup updateGroupDM(Long dmGroupId, Long ownerId, String newName, String newIconUrl) {
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -253,6 +267,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public void deleteDMGroup(Long dmGroupId, Long requestingUserId) {
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -273,7 +288,9 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
 
         // Delete all members
         List<DirectMessageMember> members = dmMemberRepository.findByDmGroupId(dmGroupId);
-        dmMemberRepository.deleteAll(members);
+        @SuppressWarnings("null")
+        List<DirectMessageMember> toDelete = members;
+        dmMemberRepository.deleteAll(toDelete);
 
         // Delete group
         dmGroupRepository.delete(dmGroup);
@@ -296,6 +313,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
             throw new ForbiddenException("You are not a member of this DM group");
         }
 
+        @SuppressWarnings("null")
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -319,9 +337,12 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         }
 
         DirectMessage message = messageBuilder.build();
-        message = directMessageRepository.save(message);
+        @SuppressWarnings("null")
+        DirectMessage savedMessage = directMessageRepository.save(message);
+        message = savedMessage;
 
         // Send notifications to other members (except sender)
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -331,6 +352,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
                 .toList();
 
         for (Long memberId : memberIds) {
+            @SuppressWarnings("null")
             User receiver = userRepository.findById(memberId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
             String preview = content != null && !content.isBlank() ? content : "[Attachment]";
@@ -355,6 +377,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public DirectMessage editDirectMessage(String messageId, Long senderId, String newContent) {
+        @SuppressWarnings("null")
         DirectMessage message = directMessageRepository.findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
 
@@ -382,9 +405,11 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public void deleteDirectMessage(String messageId, Long requestingUserId) {
+        @SuppressWarnings("null")
         DirectMessage message = directMessageRepository.findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
 
+        @SuppressWarnings("null")
         DirectMessageGroup dmGroup = dmGroupRepository.findById(message.getDmGroupId())
                 .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
 
@@ -406,6 +431,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public void markAsRead(Long dmGroupId, Long userId) {
+        @SuppressWarnings("unused")
         DirectMessageMember member = dmMemberRepository.findByDmGroupIdAndUserId(dmGroupId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found in DM group"));
 

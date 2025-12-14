@@ -21,6 +21,5 @@
     
     <!-- Custom CSS for App -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat.css">
 </head>
 <body class="app-layout">

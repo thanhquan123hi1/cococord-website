@@ -47,4 +47,7 @@ public interface IDirectMessageMemberRepository extends JpaRepository<DirectMess
      */
     @Query("SELECT COUNT(m) FROM DirectMessageMember m WHERE m.user.id = :userId AND m.lastReadAt < :lastMessageTime")
     long countUnreadForUser(@Param("userId") Long userId, @Param("lastMessageTime") LocalDateTime lastMessageTime);
+
+    @Query("SELECT m.user.id FROM DirectMessageMember m WHERE m.dmGroup.id = :dmGroupId AND m.user.id <> :userId")
+    List<Long> findOtherUserIds(@Param("dmGroupId") Long dmGroupId, @Param("userId") Long userId);
 }

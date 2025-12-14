@@ -13,8 +13,8 @@
         return;
     }
     
-    // Verify token is still valid
-    fetch('/api/auth/verify', {
+    // Verify token is still valid (backend provides /api/auth/me)
+    fetch('/api/auth/me', {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${accessToken}`

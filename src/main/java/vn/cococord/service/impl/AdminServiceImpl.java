@@ -35,10 +35,14 @@ public class AdminServiceImpl implements IAdminService {
     public Page<UserProfileResponse> getAllUsers(Pageable pageable, String search) {
         Page<User> users;
         if (search != null && !search.trim().isEmpty()) {
-            users = userRepository.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            @SuppressWarnings("null")
+            Page<User> result = userRepository.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(
                     search, search, pageable);
+            users = result;
         } else {
-            users = userRepository.findAll(pageable);
+            @SuppressWarnings("null")
+            Page<User> result = userRepository.findAll(pageable);
+            users = result;
         }
         return users.map(this::mapUserToResponse);
     }
@@ -110,19 +114,26 @@ public class AdminServiceImpl implements IAdminService {
     public Page<ServerResponse> getAllServers(Pageable pageable, String search) {
         Page<Server> servers;
         if (search != null && !search.trim().isEmpty()) {
-            servers = serverRepository.findByNameContainingIgnoreCase(search, pageable);
+            @SuppressWarnings("null")
+            Page<Server> result = serverRepository.findByNameContainingIgnoreCase(search, pageable);
+            servers = result;
         } else {
-            servers = serverRepository.findAll(pageable);
+            @SuppressWarnings("null")
+            Page<Server> result = serverRepository.findAll(pageable);
+            servers = result;
         }
         return servers.map(this::mapServerToResponse);
     }
 
     @Override
     public void deleteServer(Long serverId, String adminUsername) {
+        @SuppressWarnings("null")
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
 
-        serverRepository.delete(server);
+        @SuppressWarnings("null")
+        Server toDelete = server;
+        serverRepository.delete(toDelete);
         log.info("Admin {} deleted server {}", adminUsername, server.getName());
     }
 
@@ -152,8 +163,10 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     private User getUserById(Long userId) {
-        return userRepository.findById(userId)
+        @SuppressWarnings("null")
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return user;
     }
 
     private UserProfileResponse mapUserToResponse(User user) {

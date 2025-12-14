@@ -115,7 +115,7 @@
                 showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
                 
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}/chat';
+                    window.location.href = '${pageContext.request.contextPath}/friends';
                 }, 1000);
             } else {
                 showAlert(data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.', 'danger');

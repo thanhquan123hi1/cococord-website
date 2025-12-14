@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import vn.cococord.dto.request.CreateGroupDMRequest;
 import vn.cococord.dto.request.SendDirectMessageRequest;
 import vn.cococord.dto.request.UpdateGroupDMRequest;
+import vn.cococord.dto.response.DirectMessageSidebarItemResponse;
 import vn.cococord.entity.mongodb.DirectMessage;
 import vn.cococord.entity.mysql.DirectMessageGroup;
 import vn.cococord.entity.mysql.User;
+import vn.cococord.repository.IDirectMessageMemberRepository;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IDirectMessageService;
 
@@ -30,6 +32,7 @@ import java.util.Map;
 public class DirectMessageController {
 
     private final IUserRepository userRepository;
+    private final IDirectMessageMemberRepository dmMemberRepository;
 
     private Long getUserIdFromUsername(String username) {
         User user = userRepository.findByUsername(username)
@@ -38,6 +41,43 @@ public class DirectMessageController {
     }
 
     private final IDirectMessageService directMessageService;
+
+    @GetMapping("/sidebar")
+    public ResponseEntity<List<DirectMessageSidebarItemResponse>> getSidebarItems(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getUserIdFromUsername(userDetails.getUsername());
+
+        List<DirectMessageGroup> dmGroups = directMessageService.getDMGroupsForUser(userId);
+        List<DirectMessageSidebarItemResponse> items = dmGroups.stream()
+                .filter(g -> g.getIsGroup() != null && !g.getIsGroup())
+                .limit(50)
+                .map(g -> {
+                    Long otherUserId = dmMemberRepository.findOtherUserIds(g.getId(), userId).stream().findFirst()
+                            .orElse(null);
+                    User other = otherUserId != null
+                            ? userRepository.findById(otherUserId).orElse(null)
+                            : null;
+
+                    long unread = 0;
+                    try {
+                        unread = directMessageService.getUnreadCount(g.getId(), userId);
+                    } catch (Exception ex) {
+                        // best-effort
+                    }
+
+                    return DirectMessageSidebarItemResponse.builder()
+                            .dmGroupId(g.getId())
+                            .userId(other != null ? other.getId() : null)
+                            .username(other != null ? other.getUsername() : null)
+                            .displayName(other != null ? other.getDisplayName() : null)
+                            .avatarUrl(other != null ? other.getAvatarUrl() : null)
+                            .unreadCount(unread)
+                            .build();
+                })
+                .toList();
+
+        return ResponseEntity.ok(items);
+    }
 
     /**
      * Get all DM groups for current user

@@ -118,7 +118,7 @@
             <li class="nav-item"><a class="nav-link" href="/admin/servers"><i class="bi bi-hdd-stack"></i> Servers</a></li>
             <li class="nav-item"><a class="nav-link active" href="/admin/stats"><i class="bi bi-graph-up"></i> Statistics</a></li>
             <li class="nav-item"><a class="nav-link" href="/admin/audit"><i class="bi bi-journal-text"></i> Audit Logs</a></li>
-            <li class="nav-item mt-4"><a class="nav-link" href="/chat"><i class="bi bi-arrow-left"></i> Back to Chat</a></li>
+            <li class="nav-item mt-4"><a class="nav-link" href="/"><i class="bi bi-arrow-left"></i> Back to Home</a></li>
         </ul>
     </nav>
 
@@ -224,7 +224,7 @@
             
             if (response.status === 403) {
                 alert('Access denied');
-                window.location.href = '/chat';
+                window.location.href = '/';
                 return;
             }
             

@@ -8,7 +8,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import vn.cococord.dto.request.EditMessageRequest;
 import vn.cococord.dto.request.SendMessageRequest;
-import vn.cococord.dto.request.SendDirectMessageRequest;
 import vn.cococord.dto.response.ChatMessageResponse;
 import vn.cococord.entity.mongodb.DirectMessage;
 import vn.cococord.service.IMessageService;

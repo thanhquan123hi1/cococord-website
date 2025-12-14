@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.cococord.dto.request.UpdateProfileRequest;
 import vn.cococord.dto.response.MessageResponse;
 import vn.cococord.dto.response.UserProfileResponse;
+import vn.cococord.service.IUserService;
 
 /**
  * REST Controller for User Profile Management
@@ -18,9 +19,7 @@ import vn.cococord.dto.response.UserProfileResponse;
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserProfileController {
-
-    // TODO: Inject services when implemented
-    // private final UserService userService;
+    private final IUserService userService;
 
     /**
      * GET /api/users/me
@@ -54,8 +53,7 @@ public class UserProfileController {
     public ResponseEntity<UserProfileResponse> getUserProfileByUsername(
             @PathVariable String username,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement userService.getUserProfile(username)
-        return ResponseEntity.ok(UserProfileResponse.builder().build());
+        return ResponseEntity.ok(userService.getUserProfileByUsername(username));
     }
 
     /**
@@ -90,7 +88,8 @@ public class UserProfileController {
     public ResponseEntity<MessageResponse> updateCustomStatus(
             @RequestParam String customStatus,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement userService.updateCustomStatus(customStatus, userDetails.getUsername())
+        // TODO: Implement userService.updateCustomStatus(customStatus,
+        // userDetails.getUsername())
         return ResponseEntity.ok(new MessageResponse("Custom status updated successfully"));
     }
 
@@ -113,7 +112,6 @@ public class UserProfileController {
     public ResponseEntity<java.util.List<UserProfileResponse>> searchUsers(
             @RequestParam String query,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: Implement userService.searchUsers(query)
-        return ResponseEntity.ok(java.util.List.of());
+        return ResponseEntity.ok(userService.searchUsers(query, userDetails.getUsername()));
     }
 }

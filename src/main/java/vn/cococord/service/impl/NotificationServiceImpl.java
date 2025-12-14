@@ -41,7 +41,9 @@ public class NotificationServiceImpl implements INotificationService {
                 .isRead(false)
                 .build();
 
-        notification = notificationRepository.save(notification);
+        @SuppressWarnings("null")
+        Notification saved = notificationRepository.save(notification);
+        notification = saved;
         NotificationResponse response = mapToResponse(notification);
 
         // Send real-time notification via WebSocket
@@ -196,10 +198,14 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     public boolean deleteNotification(Long notificationId, String username) {
         User user = getUserByUsername(username);
-        return notificationRepository.findById(notificationId)
+        @SuppressWarnings("null")
+        Long id = notificationId;
+        return notificationRepository.findById(id)
                 .filter(n -> n.getUser().getId().equals(user.getId()))
                 .map(n -> {
-                    notificationRepository.delete(n);
+                    @SuppressWarnings("null")
+                    Notification toDelete = n;
+                    notificationRepository.delete(toDelete);
                     sendNotificationCountUpdate(user.getId());
                     return true;
                 })
@@ -235,7 +241,9 @@ public class NotificationServiceImpl implements INotificationService {
 
     private void sendRealTimeNotification(Long userId, NotificationResponse notification) {
         try {
-            messagingTemplate.convertAndSend("/topic/user." + userId + ".notifications", notification);
+            @SuppressWarnings("null")
+            NotificationResponse notif = notification;
+            messagingTemplate.convertAndSend("/topic/user." + userId + ".notifications", notif);
             log.debug("Sent real-time notification to user {}", userId);
         } catch (Exception e) {
             log.error("Failed to send real-time notification to user {}: {}", userId, e.getMessage());

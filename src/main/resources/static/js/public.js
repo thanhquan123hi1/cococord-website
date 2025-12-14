@@ -76,22 +76,18 @@ function validatePassword(password) {
     if (publicPaths.includes(currentPath)) {
         const accessToken = localStorage.getItem('accessToken');
         
-        // If user is already logged in and trying to access public pages, redirect to dashboard
+        // If token exists on public pages, verify it and clear storage if invalid.
+        // Do NOT auto-redirect away from login/register (allows switching accounts).
         if (accessToken && currentPath !== '/') {
-            // Verify token is still valid
-            fetch('/api/auth/verify', {
+            // Verify token is still valid (backend provides /api/auth/me)
+            fetch('/api/auth/me', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`
                 }
             })
             .then(response => {
-                if (response.ok) {
-                    // Token is valid, redirect to dashboard
-                    if (currentPath === '/login' || currentPath === '/register') {
-                        window.location.href = '/chat';
-                    }
-                } else {
+                if (!response.ok) {
                     // Token is invalid, clear storage
                     localStorage.clear();
                 }

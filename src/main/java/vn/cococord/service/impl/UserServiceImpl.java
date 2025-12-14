@@ -3,7 +3,9 @@ package vn.cococord.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
 import vn.cococord.dto.response.UserSessionResponse;
+import vn.cococord.dto.response.UserProfileResponse;
 import vn.cococord.entity.mysql.User;
 import vn.cococord.entity.mysql.UserSession;
 import vn.cococord.exception.ResourceNotFoundException;
@@ -82,5 +84,50 @@ public class UserServiceImpl implements IUserService {
         public User getUserById(Long userId) {
                 return userRepository.findById(userId)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public UserProfileResponse getUserProfileByUsername(String username) {
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+                return convertToUserProfile(user);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<UserProfileResponse> searchUsers(String query, String currentUsername) {
+                String q = query == null ? "" : query.trim();
+                if (q.isEmpty()) {
+                        return List.of();
+                }
+
+                return userRepository
+                                .findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(q, q,
+                                                PageRequest.of(0, 10))
+                                .stream()
+                                .filter(u -> u.getUsername() != null
+                                                && !u.getUsername().equalsIgnoreCase(currentUsername))
+                                .map(this::convertToUserProfile)
+                                .collect(Collectors.toList());
+        }
+
+        private UserProfileResponse convertToUserProfile(User user) {
+                return UserProfileResponse.builder()
+                                .id(user.getId())
+                                .username(user.getUsername())
+                                .displayName(user.getDisplayName())
+                                .email(user.getEmail())
+                                .avatarUrl(user.getAvatarUrl())
+                                .bio(user.getBio())
+                                .customStatus(user.getCustomStatus())
+                                .status(user.getStatus() != null ? user.getStatus().name() : "OFFLINE")
+                                .isActive(user.getIsActive())
+                                .isBanned(user.getIsBanned())
+                                .isEmailVerified(user.getIsEmailVerified())
+                                .twoFactorEnabled(user.getTwoFactorEnabled())
+                                .lastLogin(user.getLastLogin())
+                                .createdAt(user.getCreatedAt())
+                                .build();
         }
 }

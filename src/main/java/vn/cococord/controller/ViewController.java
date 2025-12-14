@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class ViewController {
 
-    // ==================== PUBLIC PAGES (Landing Page Layout) ====================
-
     @GetMapping("/")
     public String index() {
         return "index"; // Landing page với Header/Footer
@@ -40,27 +38,24 @@ public class ViewController {
         return "reset-password"; // Reset password page với Header/Footer
     }
 
-    // ==================== AUTHENTICATED PAGES (Main App Layout)
-    // ====================
-
     @GetMapping("/dashboard")
     public String dashboard() {
-        return "redirect:/chat"; // Dashboard deprecated → go straight to chat
+        return "redirect:/friends";
     }
 
     @GetMapping("/chat")
     public String chat() {
-        return "chat/index"; // Chat interface
+        return "chat";
     }
 
     @GetMapping("/friends")
     public String friends() {
-        return "friends"; // Friends list
+        return "friends";
     }
 
     @GetMapping("/messages")
     public String messages() {
-        return "messages"; // Direct messages
+        return "messages";
     }
 
     @GetMapping("/profile")
