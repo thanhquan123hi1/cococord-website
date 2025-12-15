@@ -1,8 +1,141 @@
-/* Channel chat page styles (builds on app.css tokens) */
+/* ==================== CHAT PAGE STYLES ==================== */
+/* Discord-like Chat UI - Dark Theme */
+
+:root {
+    --discord-primary: #5865F2;
+    --discord-green: #57F287;
+    --discord-yellow: #FEE75C;
+    --discord-fuchsia: #EB459E;
+    --discord-red: #ED4245;
+    
+    --bg-primary: #313338;
+    --bg-secondary: #2B2D31;
+    --bg-tertiary: #1E1F22;
+    --bg-modifier-hover: rgba(79, 84, 92, 0.4);
+    --bg-modifier-selected: rgba(79, 84, 92, 0.6);
+    
+    --text-normal: #DBDEE1;
+    --text-muted: #949BA4;
+    --text-link: #00A8FC;
+    --text-positive: #23A55A;
+    
+    --channel-icon: #80848E;
+    --interactive-normal: #B5BAC1;
+    --interactive-hover: #DBDEE1;
+    --interactive-active: #FFFFFF;
+    
+    --status-online: #23A55A;
+    --status-idle: #F0B232;
+    --status-dnd: #F23F43;
+    --status-offline: #80848E;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'gg sans', 'Noto Sans', 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-normal);
+    overflow: hidden;
+}
+
+/* ==================== APP CONTAINER ==================== */
+#chatApp.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* Main area above user panel */
+#chatApp .app-main-area {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ==================== SERVER SIDEBAR ==================== */
+#chatApp .server-sidebar {
+    width: 72px;
+    background-color: var(--bg-tertiary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* Scrollable wrapper for server list */
+#chatApp .server-list-wrapper {
+    flex: 1;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
+
+#chatApp .server-list-wrapper::-webkit-scrollbar {
+    width: 0;
+    display: none;
+}
+
+#chatApp .server-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 8px 0;
+}
+
+/* Fixed actions at bottom of server sidebar */
+#chatApp .server-actions-fixed {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 12px 0;
+    flex-shrink: 0;
+}
 
 #chatApp .server-item {
     position: relative;
-    user-select: none;
+    width: 48px;
+    height: 48px;
+    background-color: var(--bg-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease-out;
+    color: var(--discord-green);
+    font-size: 20px;
+    text-decoration: none;
+}
+
+#chatApp .server-item:hover,
+#chatApp .server-item.active {
+    background-color: var(--discord-primary);
+    border-radius: 16px;
+    color: white;
+}
+
+#chatApp .server-item.home-btn {
+    background-color: var(--bg-primary);
+    color: var(--text-normal);
+}
+
+#chatApp .server-item.home-btn:hover {
+    background-color: var(--discord-primary);
+    color: white;
 }
 
 #chatApp .server-item img {
@@ -10,124 +143,1320 @@
     height: 100%;
     border-radius: inherit;
     object-fit: cover;
-    display: block;
 }
 
 #chatApp .server-item .server-initial {
-    font-weight: 800;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text-normal);
 }
 
+#chatApp .server-item:hover .server-initial,
+#chatApp .server-item.active .server-initial {
+    color: white;
+}
+
+#chatApp .server-divider {
+    width: 32px;
+    height: 2px;
+    background-color: var(--bg-modifier-hover);
+    margin: 4px 0;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+#chatApp .server-actions {
+    display: none; /* Hidden - using server-actions-fixed instead */
+}
+
+#chatApp .add-server-btn {
+    color: var(--discord-green);
+}
+
+#chatApp .add-server-btn:hover {
+    background-color: var(--discord-green);
+    color: white;
+}
+
+#chatApp .discover-btn {
+    color: var(--discord-green);
+}
+
+#chatApp .discover-btn:hover {
+    background-color: var(--discord-green);
+    color: white;
+}
+
+/* Server pill indicator */
+#chatApp .server-item::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    width: 8px;
+    height: 0;
+    background-color: white;
+    border-radius: 0 4px 4px 0;
+    transition: height 0.15s ease-out;
+}
+
+#chatApp .server-item:hover::before {
+    height: 20px;
+}
+
+#chatApp .server-item.active::before {
+    height: 40px;
+}
+
+/* ==================== CHANNEL SIDEBAR ==================== */
+#chatApp .channel-sidebar {
+    width: 240px;
+    background-color: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+#chatApp .channel-header {
+    height: 48px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+#chatApp .channel-header:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+#chatApp .channel-header h5 {
+    color: var(--text-normal);
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#chatApp .channel-header i {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+/* Server Dropdown Menu */
+#chatApp .server-dropdown {
+    position: absolute;
+    top: 48px;
+    left: 72px;
+    width: 220px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 6px 8px;
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+}
+
+#chatApp .server-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    color: var(--interactive-normal);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+#chatApp .server-dropdown .dropdown-item:hover {
+    background-color: var(--discord-primary);
+    color: white;
+}
+
+#chatApp .server-dropdown .dropdown-item.text-danger:hover {
+    background-color: var(--discord-red);
+}
+
+#chatApp .server-dropdown .dropdown-divider {
+    height: 1px;
+    background-color: var(--bg-modifier-hover);
+    margin: 4px 0;
+}
+
+/* Channel List */
 #chatApp .channel-list {
-    padding-bottom: 8px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px;
+}
+
+#chatApp .channel-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatApp .channel-list::-webkit-scrollbar-thumb {
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+#chatApp .channel-category {
+    margin-top: 16px;
+}
+
+#chatApp .category-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px 6px 2px;
+    color: var(--channel-icon);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+}
+
+#chatApp .category-header:hover {
+    color: var(--interactive-hover);
+}
+
+#chatApp .category-header i {
+    font-size: 10px;
+    transition: transform 0.1s;
 }
 
 #chatApp .channel-item {
-    width: calc(100% - 8px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    margin: 1px 0;
+    border-radius: 4px;
+    color: var(--channel-icon);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+#chatApp .channel-item:hover {
+    background-color: var(--bg-modifier-hover);
+    color: var(--interactive-hover);
+}
+
+#chatApp .channel-item.active {
+    background-color: var(--bg-modifier-selected);
+    color: var(--interactive-active);
 }
 
 #chatApp .channel-item .hash {
-    opacity: 0.8;
+    color: var(--channel-icon);
+    font-weight: 500;
+    font-size: 20px;
+    width: 20px;
+    text-align: center;
 }
 
-/* Messages */
-#chatApp #messageList {
+#chatApp .channel-item.active .hash {
+    color: var(--text-normal);
+}
+
+#chatApp .channel-item .channel-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ==================== USER PANEL (Full Width at Bottom) ==================== */
+#chatApp .user-panel-full {
+    height: 52px;
+    background-color: #232428;
+    padding: 0 8px;
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-top: 1px solid var(--bg-tertiary);
 }
 
-#chatApp .message-row {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    gap: 12px;
-    padding: 6px 6px;
-    border-radius: 6px;
+/* Legacy user panel in channel sidebar - hidden */
+#chatApp .user-panel {
+    display: none;
 }
 
-#chatApp .message-row:hover {
-    background: rgba(0, 0, 0, 0.12);
+#chatApp .user-panel-full .user-info,
+#chatApp .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+    max-width: 200px;
 }
 
-#chatApp .message-avatar {
-    width: 40px;
-    height: 40px;
+#chatApp .user-panel-full .user-info:hover,
+#chatApp .user-info:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+#chatApp .user-panel-full .user-avatar,
+#chatApp .user-avatar {
+    position: relative;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: var(--primary-color);
+    background-color: var(--discord-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-weight: 800;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+#chatApp .user-panel-full .user-avatar img,
+#chatApp .user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+#chatApp .user-panel-full .status-indicator,
+#chatApp .status-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 3px solid #232428;
+    background-color: var(--status-offline);
+}
+
+#chatApp .user-panel-full .status-indicator.online,
+#chatApp .status-indicator.online {
+    background-color: var(--status-online);
+}
+
+#chatApp .user-panel-full .status-indicator.idle,
+#chatApp .status-indicator.idle {
+    background-color: var(--status-idle);
+}
+
+#chatApp .user-panel-full .status-indicator.dnd,
+#chatApp .status-indicator.dnd {
+    background-color: var(--status-dnd);
+}
+
+#chatApp .user-panel-full .user-details,
+#chatApp .user-details {
+    min-width: 0;
+    flex: 1;
+}
+
+#chatApp .user-panel-full .user-name,
+#chatApp .user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#chatApp .user-panel-full .user-status,
+#chatApp .user-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#chatApp .user-panel-full .user-controls,
+#chatApp .user-controls {
+    display: flex;
+    gap: 4px;
+}
+
+#chatApp .user-panel-full .control-btn,
+#chatApp .control-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: var(--interactive-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    font-size: 18px;
+}
+
+#chatApp .user-panel-full .control-btn:hover,
+#chatApp .control-btn:hover {
+    background-color: var(--bg-modifier-hover);
+    color: var(--interactive-hover);
+}
+
+#chatApp .user-panel-full .control-btn.muted,
+#chatApp .control-btn.muted {
+    color: var(--discord-red);
+}
+
+/* ==================== INVITE FRIENDS MODAL ==================== */
+.modal-invite-friends {
+    width: 440px;
+    max-width: 90vw;
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-invite-friends .modal-header-left {
+    padding: 16px 16px 0;
+    text-align: left;
+}
+
+.modal-invite-friends .modal-header-left h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--header-primary);
+    margin: 0;
+}
+
+.modal-invite-friends .modal-header-left h2 span {
+    color: var(--header-primary);
+}
+
+.modal-invite-friends .modal-body {
+    padding: 16px;
+}
+
+/* Search Bar */
+.invite-search-wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 0 12px;
+    margin-bottom: 16px;
+}
+
+.invite-search-wrapper i {
+    color: var(--text-muted);
+    font-size: 16px;
+    margin-right: 8px;
+}
+
+.invite-search-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 10px 0;
+    color: var(--text-normal);
+    font-size: 14px;
+    outline: none;
+}
+
+.invite-search-wrapper input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Friends List */
+.invite-friends-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.invite-friends-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.invite-friends-list::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thin-thumb);
+    border-radius: 4px;
+}
+
+.invite-friends-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.invite-friend-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 4px;
+    border-radius: 4px;
+    transition: background 0.1s;
+}
+
+.invite-friend-row:hover {
+    background: var(--bg-modifier-hover);
+}
+
+.invite-friend-avatar {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--discord-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.invite-friend-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.invite-friend-avatar .status-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--bg-secondary);
+}
+
+.invite-friend-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-invite {
+    padding: 6px 16px;
+    background: transparent;
+    border: 1px solid var(--discord-green);
+    border-radius: 3px;
+    color: var(--discord-green);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-invite:hover:not(:disabled) {
+    background: var(--discord-green);
+    color: white;
+}
+
+.btn-invite:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-invite.invited {
+    background: transparent;
+    border-color: var(--text-muted);
+    color: var(--text-muted);
+    cursor: default;
+}
+
+.invite-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Invite Link Section */
+.invite-link-section {
+    border-top: 1px solid var(--bg-modifier-hover);
+    padding-top: 16px;
+}
+
+.invite-link-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--header-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.invite-link-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.invite-link-wrapper input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: var(--text-normal);
+    font-size: 14px;
+    outline: none;
+}
+
+.btn-copy {
+    padding: 10px 16px;
+    background: var(--discord-primary);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.btn-copy:hover {
+    background: var(--discord-primary-hover);
+}
+
+.btn-copy.copied {
+    background: var(--discord-green);
+}
+
+.edit-invite-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-link);
+    text-decoration: none;
+}
+
+.edit-invite-link:hover {
+    text-decoration: underline;
+}
+
+/* ==================== MAIN CONTENT ==================== */
+#chatApp .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    min-width: 0;
+}
+
+#chatApp .content-header {
+    height: 48px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+
+#chatApp .channel-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+#chatApp .channel-icon {
+    color: var(--channel-icon);
+    font-size: 22px;
+}
+
+#chatApp .channel-info span {
+    color: var(--text-normal);
+    font-weight: 600;
+    font-size: 16px;
+}
+
+#chatApp .channel-topic {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 14px;
+    margin-left: 8px;
+    padding-left: 16px;
+    border-left: 1px solid var(--bg-modifier-hover);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#chatApp .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#chatApp .header-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--interactive-normal);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: color 0.1s;
+}
+
+#chatApp .header-btn:hover {
+    color: var(--interactive-hover);
+}
+
+#chatApp .header-btn.active {
+    color: var(--interactive-active);
+}
+
+#chatApp .header-search {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 0 6px;
+    height: 24px;
+    width: 144px;
+}
+
+#chatApp .header-search i {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+#chatApp .header-search input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-normal);
+    font-size: 14px;
+    width: 100%;
+}
+
+#chatApp .header-search input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ==================== MESSAGE LIST ==================== */
+#chatApp .content-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#chatApp .content-body::-webkit-scrollbar {
+    width: 16px;
+}
+
+#chatApp .content-body::-webkit-scrollbar-track {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    border: 4px solid var(--bg-primary);
+}
+
+#chatApp .content-body::-webkit-scrollbar-thumb {
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 4px solid var(--bg-primary);
+}
+
+/* Welcome Message */
+#chatApp .welcome-message {
+    padding: 16px;
+    text-align: left;
+    margin: auto 0 0 0;
+    padding-bottom: 16px;
+}
+
+#chatApp .welcome-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background-color: var(--bg-modifier-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+#chatApp .welcome-icon i {
+    font-size: 42px;
+    color: var(--text-normal);
+}
+
+#chatApp .welcome-message h2 {
+    color: var(--text-normal);
+    font-weight: 700;
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+#chatApp .welcome-message p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Message Row */
+#chatApp .message-row {
+    display: flex;
+    padding: 2px 48px 2px 72px;
+    position: relative;
+    margin-top: 17px;
+}
+
+#chatApp .message-row:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+#chatApp .message-row.continued {
+    margin-top: 0;
+}
+
+#chatApp .message-row.continued .message-avatar {
+    display: none;
+}
+
+#chatApp .message-row.continued .message-time-hover {
+    display: none;
+}
+
+#chatApp .message-row:hover .message-time-hover {
+    display: block;
+}
+
+#chatApp .message-avatar {
+    position: absolute;
+    left: 16px;
+    top: 2px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--discord-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 #chatApp .message-avatar img {
     width: 100%;
     height: 100%;
-    border-radius: inherit;
+    border-radius: 50%;
     object-fit: cover;
-    display: block;
 }
 
-#chatApp .message-meta {
+#chatApp .message-body {
+    flex: 1;
+    min-width: 0;
+}
+
+#chatApp .message-header {
     display: flex;
     align-items: baseline;
     gap: 8px;
 }
 
 #chatApp .message-author {
-    color: white;
-    font-weight: 700;
+    color: var(--text-normal);
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
 }
 
-#chatApp .message-time {
+#chatApp .message-author:hover {
+    text-decoration: underline;
+}
+
+#chatApp .message-timestamp {
     color: var(--text-muted);
     font-size: 12px;
 }
 
-#chatApp .message-content {
-    color: var(--text-primary);
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.35;
+#chatApp .message-time-hover {
+    position: absolute;
+    left: 16px;
+    top: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    display: none;
 }
 
-/* Composer */
+#chatApp .message-content {
+    color: var(--text-normal);
+    font-size: 16px;
+    line-height: 1.375;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* ==================== CHAT COMPOSER ==================== */
 #chatApp .chat-composer {
-    padding: 0 16px 16px;
+    padding: 0 16px 24px;
+    flex-shrink: 0;
+}
+
+#chatApp .composer-attachments {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 #chatApp .composer-box {
-    background: var(--dark-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
     display: flex;
-    gap: 10px;
     align-items: center;
-    padding: 10px 10px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 0 16px;
+    position: relative;
+}
+
+#chatApp .composer-btn {
+    width: 32px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    color: var(--interactive-normal);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: color 0.1s;
+}
+
+#chatApp .composer-btn:hover {
+    color: var(--interactive-hover);
 }
 
 #chatApp .composer-input {
     flex: 1;
     background: transparent;
-    border: 0;
+    border: none;
     outline: none;
-    color: var(--text-primary);
+    color: var(--text-normal);
+    font-size: 16px;
+    padding: 11px 0;
+    margin: 0 8px;
 }
 
 #chatApp .composer-input::placeholder {
     color: var(--text-muted);
 }
 
-#chatApp .composer-send {
-    background: var(--primary-color);
-    color: white;
-    border: 0;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-weight: 700;
+#chatApp .composer-tools {
+    display: flex;
+    gap: 4px;
 }
 
-#chatApp .members-empty {
-    padding: 8px;
+/* ==================== MEMBERS SIDEBAR ==================== */
+#chatApp .members-sidebar {
+    width: 240px;
+    background-color: var(--bg-secondary);
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding: 0 8px;
+}
+
+#chatApp .members-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatApp .members-sidebar::-webkit-scrollbar-thumb {
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+#chatApp .members-section {
+    padding: 16px 0;
+}
+
+#chatApp .members-category {
+    margin-bottom: 8px;
+}
+
+#chatApp .category-title {
+    display: block;
+    padding: 24px 8px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--channel-icon);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+#chatApp .members-list {
+    display: flex;
+    flex-direction: column;
+}
+
+#chatApp .member-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+#chatApp .member-item:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+#chatApp .member-avatar {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--discord-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+#chatApp .member-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+#chatApp .member-avatar .status-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-secondary);
+    background-color: var(--status-offline);
+}
+
+#chatApp .member-avatar .status-dot.online {
+    background-color: var(--status-online);
+}
+
+#chatApp .member-name {
+    color: var(--channel-icon);
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#chatApp .member-item.online .member-name {
+    color: var(--text-normal);
+}
+
+/* ==================== MODALS ==================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    width: 440px;
+    max-width: 90vw;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    padding: 24px 24px 0;
+    text-align: center;
+    position: relative;
+}
+
+.modal-header h3 {
+    color: var(--text-normal);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--interactive-normal);
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.modal-close:hover {
+    color: var(--interactive-hover);
+}
+
+.modal-body {
+    padding: 16px 24px;
+}
+
+.modal-desc {
     color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.discord-input {
+    width: 100%;
+    background-color: var(--bg-tertiary);
+    border: none;
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: var(--text-normal);
+    font-size: 16px;
+    outline: none;
+}
+
+.discord-input:focus {
+    outline: 2px solid var(--discord-primary);
+}
+
+.discord-input::placeholder {
+    color: var(--text-muted);
+}
+
+.modal-footer {
+    padding: 16px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background-color: var(--bg-secondary);
+    border-radius: 0 0 8px 8px;
+}
+
+.btn-primary {
+    background-color: var(--discord-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.btn-primary:hover {
+    background-color: #4752C4;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-normal);
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    text-decoration: underline;
+}
+
+/* Channel Type Selector */
+.channel-type-selector {
+    margin-bottom: 20px;
+}
+
+.channel-type-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.1s;
+}
+
+.channel-type-option:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+.channel-type-option.active {
+    border-color: var(--discord-primary);
+    background-color: var(--bg-modifier-hover);
+}
+
+.channel-type-option i {
+    font-size: 24px;
+    color: var(--text-muted);
+}
+
+.channel-type-option div {
+    flex: 1;
+}
+
+.channel-type-option strong {
+    display: block;
+    color: var(--text-normal);
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.channel-type-option span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.channel-name-input {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.channel-name-input .channel-prefix {
+    padding: 10px 0 10px 12px;
+    color: var(--text-muted);
+    font-size: 16px;
+}
+
+.channel-name-input .discord-input {
+    border-radius: 0;
+}
+
+/* ==================== USER SETTINGS DROPDOWN ==================== */
+.user-settings-dropdown {
+    position: fixed;
+    bottom: 60px;
+    left: 80px;
+    width: 200px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 6px 8px;
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+}
+
+.user-settings-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    color: var(--interactive-normal);
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.1s;
+}
+
+.user-settings-dropdown .dropdown-item:hover {
+    background-color: var(--discord-primary);
+    color: white;
+}
+
+.user-settings-dropdown .dropdown-item.text-danger:hover {
+    background-color: var(--discord-red);
+}
+
+.user-settings-dropdown .dropdown-divider {
+    height: 1px;
+    background-color: var(--bg-modifier-hover);
+    margin: 4px 0;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+    #chatApp .members-sidebar {
+        display: none;
+    }
+    
+    #chatApp .members-sidebar.show {
+        display: block;
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+    }
+}
+
+@media (max-width: 768px) {
+    #chatApp .channel-sidebar {
+        display: none;
+    }
+    
+    #chatApp .channel-sidebar.show {
+        display: flex;
+        position: fixed;
+        left: 72px;
+        top: 0;
+        height: 100vh;
+        z-index: 100;
+    }
 }
