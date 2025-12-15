@@ -1,43 +1,98 @@
-/* global SockJS, Stomp, fetchWithAuth, getAccessToken */
+/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout */
 
 (function () {
+    'use strict';
+
+    // ==================== DOM ELEMENTS ====================
     const el = {
+        // Server sidebar
         serverList: document.getElementById('serverList'),
+        addServerBtn: document.getElementById('addServerBtn'),
+        
+        // Channel sidebar
         serverName: document.getElementById('serverName'),
+        serverHeader: document.getElementById('serverHeader'),
+        serverDropdown: document.getElementById('serverDropdown'),
         channelList: document.getElementById('channelList'),
+        
+        // Server dropdown actions
+        invitePeopleBtn: document.getElementById('invitePeopleBtn'),
+        serverSettingsBtn: document.getElementById('serverSettingsBtn'),
+        createChannelBtn: document.getElementById('createChannelBtn'),
+        leaveServerBtn: document.getElementById('leaveServerBtn'),
+        
+        // Main content
         channelName: document.getElementById('channelName'),
+        channelTopic: document.getElementById('channelTopic'),
+        welcomeChannelName: document.getElementById('welcomeChannelName'),
         messageList: document.getElementById('messageList'),
         chatEmpty: document.getElementById('chatEmpty'),
         chatComposer: document.getElementById('chatComposer'),
         chatInput: document.getElementById('chatInput'),
+        
+        // Members sidebar
+        membersSidebar: document.getElementById('membersSidebar'),
+        membersToggleBtn: document.getElementById('membersToggleBtn'),
+        onlineMembersList: document.getElementById('onlineMembersList'),
+        offlineMembersList: document.getElementById('offlineMembersList'),
+        onlineCount: document.getElementById('onlineCount'),
+        offlineCount: document.getElementById('offlineCount'),
+        
+        // User panel
         ucpAvatar: document.getElementById('ucpAvatar'),
         ucpName: document.getElementById('ucpName'),
-        ucpStatus: document.getElementById('ucpStatus')
+        ucpStatus: document.getElementById('ucpStatus'),
+        ucpStatusIndicator: document.getElementById('ucpStatusIndicator'),
+        settingsBtn: document.getElementById('settingsBtn'),
+        userSettingsDropdown: document.getElementById('userSettingsDropdown'),
+        logoutBtn: document.getElementById('logoutBtn'),
+        
+        // Create Server Modal
+        createServerModal: document.getElementById('createServerModal'),
+        closeCreateServerModal: document.getElementById('closeCreateServerModal'),
+        serverNameInput: document.getElementById('serverNameInput'),
+        cancelCreateServer: document.getElementById('cancelCreateServer'),
+        confirmCreateServer: document.getElementById('confirmCreateServer'),
+        
+        // Create Channel Modal
+        createChannelModal: document.getElementById('createChannelModal'),
+        closeCreateChannelModal: document.getElementById('closeCreateChannelModal'),
+        channelNameInput: document.getElementById('channelNameInput'),
+        cancelCreateChannel: document.getElementById('cancelCreateChannel'),
+        confirmCreateChannel: document.getElementById('confirmCreateChannel'),
+        channelTypeOptions: document.querySelectorAll('.channel-type-option')
     };
 
+    // ==================== STATE ====================
     let stompClient = null;
     let channelSubscription = null;
+    let presenceSubscription = null;
 
     let servers = [];
     let channels = [];
+    let members = [];
+    let presenceMap = new Map(); // username -> status
 
     let activeServerId = null;
     let activeChannelId = null;
+    let selectedChannelType = 'TEXT';
+    let currentUser = null;
 
+    // ==================== UTILITIES ====================
     function getQueryParams() {
         const params = new URLSearchParams(window.location.search);
-        const serverId = params.get('serverId');
-        const channelId = params.get('channelId');
         return {
-            serverId: serverId ? Number(serverId) : null,
-            channelId: channelId ? Number(channelId) : null
+            serverId: params.get('serverId') ? Number(params.get('serverId')) : null,
+            channelId: params.get('channelId') ? Number(params.get('channelId')) : null
         };
     }
 
     function setQueryParams(next) {
         const params = new URLSearchParams(window.location.search);
         if (next.serverId != null) params.set('serverId', String(next.serverId));
+        else params.delete('serverId');
         if (next.channelId != null) params.set('channelId', String(next.channelId));
+        else params.delete('channelId');
         history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
     }
 
@@ -50,10 +105,29 @@
         return res.json();
     }
 
+    async function apiPost(url, body = {}) {
+        const res = await fetchWithAuth(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res || !res.ok) {
+            const text = res ? await res.text().catch(() => '') : '';
+            throw new Error(text || `Request failed: ${res ? res.status : 'no response'}`);
+        }
+        if (res.status === 204) return null;
+        return res.json();
+    }
+
     function formatTime(isoString) {
         if (!isoString) return '';
         const d = new Date(isoString);
         if (Number.isNaN(d.getTime())) return '';
+        const today = new Date();
+        const isToday = d.toDateString() === today.toDateString();
+        if (isToday) {
+            return 'Hôm nay lúc ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        }
         return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
     }
 
@@ -72,14 +146,20 @@
             .replaceAll("'", '&#039;');
     }
 
+    function isOnline(username) {
+        const status = presenceMap.get(username);
+        return status && String(status).toUpperCase() === 'ONLINE';
+    }
+
+    // ==================== RENDER FUNCTIONS ====================
     function renderServerList() {
         el.serverList.innerHTML = '';
 
         if (!servers.length) {
             const div = document.createElement('div');
             div.className = 'server-item';
-            div.title = 'No servers';
-            div.textContent = '?';
+            div.title = 'Chưa có server';
+            div.innerHTML = '<i class="bi bi-question-lg"></i>';
             el.serverList.appendChild(div);
             return;
         }
@@ -90,6 +170,7 @@
             btn.setAttribute('role', 'button');
             btn.setAttribute('tabindex', '0');
             btn.title = s.name || 'Server';
+            btn.dataset.serverId = s.id;
 
             if (s.iconUrl) {
                 const img = document.createElement('img');
@@ -120,38 +201,128 @@
 
         if (!channels.length) {
             const div = document.createElement('div');
-            div.style.padding = '8px';
-            div.style.color = 'var(--text-muted)';
-            div.textContent = 'Chưa có kênh.';
+            div.style.cssText = 'padding: 8px; color: var(--text-muted); font-size: 13px;';
+            div.textContent = 'Chưa có kênh nào.';
             el.channelList.appendChild(div);
             return;
         }
 
-        for (const c of channels) {
-            const item = document.createElement('div');
-            item.className = 'channel-item' + (String(c.id) === String(activeChannelId) ? ' active' : '');
-            item.setAttribute('role', 'button');
-            item.setAttribute('tabindex', '0');
+        // Group by category (if exists) or default
+        const textChannels = channels.filter(c => c.type !== 'VOICE');
+        const voiceChannels = channels.filter(c => c.type === 'VOICE');
 
-            const hash = document.createElement('span');
-            hash.className = 'hash';
-            hash.textContent = '#';
-            const name = document.createElement('span');
-            name.textContent = c.name || 'channel';
+        if (textChannels.length > 0) {
+            const category = document.createElement('div');
+            category.className = 'channel-category';
+            
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <i class="bi bi-chevron-down"></i>
+                <span>KÊNH VĂN BẢN</span>
+            `;
+            category.appendChild(header);
+            
+            const channelsContainer = document.createElement('div');
+            channelsContainer.className = 'channels-container';
+            
+            for (const c of textChannels) {
+                const item = document.createElement('div');
+                item.className = 'channel-item' + (String(c.id) === String(activeChannelId) ? ' active' : '');
+                item.setAttribute('role', 'button');
+                item.setAttribute('tabindex', '0');
+                item.dataset.channelId = c.id;
 
-            item.appendChild(hash);
-            item.appendChild(name);
+                item.innerHTML = `
+                    <span class="hash">#</span>
+                    <span class="channel-name">${escapeHtml(c.name || 'channel')}</span>
+                `;
 
-            item.addEventListener('click', () => selectChannel(c.id));
-            item.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    selectChannel(c.id);
-                }
-            });
+                // Use closure to capture correct channel id
+                const channelId = c.id;
+                item.addEventListener('click', function() { 
+                    selectChannel(channelId); 
+                });
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectChannel(channelId);
+                    }
+                });
 
-            el.channelList.appendChild(item);
+                channelsContainer.appendChild(item);
+            }
+            category.appendChild(channelsContainer);
+            el.channelList.appendChild(category);
         }
+
+        if (voiceChannels.length > 0) {
+            const category = document.createElement('div');
+            category.className = 'channel-category';
+            
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `
+                <i class="bi bi-chevron-down"></i>
+                <span>KÊNH THOẠI</span>
+            `;
+            category.appendChild(header);
+            
+            const channelsContainer = document.createElement('div');
+            channelsContainer.className = 'channels-container';
+            
+            for (const c of voiceChannels) {
+                const item = document.createElement('div');
+                item.className = 'channel-item' + (String(c.id) === String(activeChannelId) ? ' active' : '');
+                item.setAttribute('role', 'button');
+                item.setAttribute('tabindex', '0');
+                item.dataset.channelId = c.id;
+                
+                item.innerHTML = `
+                    <span class="hash"><i class="bi bi-volume-up"></i></span>
+                    <span class="channel-name">${escapeHtml(c.name || 'channel')}</span>
+                `;
+                
+                // Voice channels typically don't select like text channels
+                // but add click handler anyway
+                const channelId = c.id;
+                item.addEventListener('click', function() { 
+                    selectChannel(channelId); 
+                });
+                
+                channelsContainer.appendChild(item);
+            }
+            category.appendChild(channelsContainer);
+            el.channelList.appendChild(category);
+        }
+    }
+
+    function renderMembersList() {
+        const onlineMembers = members.filter(m => isOnline(m.username));
+        const offlineMembers = members.filter(m => !isOnline(m.username));
+
+        el.onlineCount.textContent = onlineMembers.length;
+        el.offlineCount.textContent = offlineMembers.length;
+
+        el.onlineMembersList.innerHTML = onlineMembers.map(m => `
+            <div class="member-item online" data-user-id="${m.id}">
+                <div class="member-avatar">
+                    ${m.avatarUrl ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">` : escapeHtml((m.displayName || m.username || 'U').charAt(0).toUpperCase())}
+                    <span class="status-dot online"></span>
+                </div>
+                <span class="member-name">${escapeHtml(m.displayName || m.username || 'User')}</span>
+            </div>
+        `).join('');
+
+        el.offlineMembersList.innerHTML = offlineMembers.map(m => `
+            <div class="member-item" data-user-id="${m.id}">
+                <div class="member-avatar">
+                    ${m.avatarUrl ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">` : escapeHtml((m.displayName || m.username || 'U').charAt(0).toUpperCase())}
+                    <span class="status-dot"></span>
+                </div>
+                <span class="member-name">${escapeHtml(m.displayName || m.username || 'User')}</span>
+            </div>
+        `).join('');
     }
 
     function clearMessages() {
@@ -165,49 +336,23 @@
 
         const row = document.createElement('div');
         row.className = 'message-row';
+        row.dataset.messageId = msg.id;
 
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        if (msg.avatarUrl) {
-            const img = document.createElement('img');
-            img.alt = msg.displayName || msg.username || 'User';
-            img.src = msg.avatarUrl;
-            avatar.innerHTML = '';
-            avatar.appendChild(img);
-        } else {
-            const initial = (msg.displayName || msg.username || 'U').trim().charAt(0).toUpperCase();
-            avatar.textContent = initial;
-        }
-
-        const body = document.createElement('div');
-
-        const meta = document.createElement('div');
-        meta.className = 'message-meta';
-
-        const author = document.createElement('span');
-        author.className = 'message-author';
-        // Show displayName with username#discriminator
         const displayName = msg.displayName || msg.username || 'User';
-        const discriminator = discriminatorFromId(msg.userId || msg.senderId);
-        author.textContent = displayName;
-        author.title = `${msg.username || 'user'}#${discriminator}`; // Full username on hover
+        const initial = displayName.trim().charAt(0).toUpperCase();
 
-        const time = document.createElement('span');
-        time.className = 'message-time';
-        time.textContent = formatTime(msg.createdAt);
-
-        meta.appendChild(author);
-        meta.appendChild(time);
-
-        const content = document.createElement('div');
-        content.className = 'message-content';
-        content.innerHTML = escapeHtml(msg.content || '');
-
-        body.appendChild(meta);
-        body.appendChild(content);
-
-        row.appendChild(avatar);
-        row.appendChild(body);
+        row.innerHTML = `
+            <div class="message-avatar">
+                ${msg.avatarUrl ? `<img src="${escapeHtml(msg.avatarUrl)}" alt="${escapeHtml(displayName)}">` : initial}
+            </div>
+            <div class="message-body">
+                <div class="message-header">
+                    <span class="message-author" title="${escapeHtml(msg.username || 'user')}#${discriminatorFromId(msg.userId || msg.senderId)}">${escapeHtml(displayName)}</span>
+                    <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
+                </div>
+                <div class="message-content">${escapeHtml(msg.content || '')}</div>
+            </div>
+        `;
 
         el.messageList.appendChild(row);
     }
@@ -216,35 +361,48 @@
         el.messageList.scrollTop = el.messageList.scrollHeight;
     }
 
+    // ==================== USER PANEL ====================
     async function loadMe() {
         try {
-            const me = await apiGet('/api/auth/me');
-            const displayName = me.displayName || me.username || 'User';
-            const discriminator = discriminatorFromId(me.id);
-            const fullUsername = `${me.username || 'user'}#${discriminator}`;
+            currentUser = await apiGet('/api/auth/me');
+            const displayName = currentUser.displayName || currentUser.username || 'User';
+            const discriminator = discriminatorFromId(currentUser.id);
+            const fullUsername = `${currentUser.username || 'user'}#${discriminator}`;
             
             el.ucpName.textContent = displayName;
             el.ucpName.title = fullUsername;
-            el.ucpStatus.textContent = me.customStatus || fullUsername;
+            el.ucpStatus.textContent = currentUser.customStatus || 'Trực tuyến';
+            el.ucpStatusIndicator.className = 'status-indicator online';
             
-            if (me.avatarUrl) {
-                el.ucpAvatar.innerHTML = `<img src="${me.avatarUrl}" alt="${displayName}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`;
+            if (currentUser.avatarUrl) {
+                el.ucpAvatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="${displayName}"><span class="status-indicator online" id="ucpStatusIndicator"></span>`;
             } else {
-                el.ucpAvatar.textContent = displayName.trim().charAt(0).toUpperCase();
+                el.ucpAvatar.innerHTML = `${displayName.trim().charAt(0).toUpperCase()}<span class="status-indicator online" id="ucpStatusIndicator"></span>`;
             }
+
+            // Add self to presence map
+            presenceMap.set(currentUser.username, 'ONLINE');
         } catch (e) {
-            // ignore
+            console.error('Failed to load user info', e);
         }
     }
 
+    // ==================== DATA LOADING ====================
     async function loadServers() {
         servers = await apiGet('/api/servers');
     }
 
     async function loadChannels(serverId) {
         channels = await apiGet(`/api/channels/servers/${serverId}/channels`);
-        // Sort by position if present
         channels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    }
+
+    async function loadMembers(serverId) {
+        try {
+            members = await apiGet(`/api/servers/${serverId}/members`);
+        } catch (e) {
+            members = [];
+        }
     }
 
     async function loadHistory(channelId) {
@@ -259,10 +417,11 @@
             el.chatEmpty.style.display = 'none';
             for (const m of items) appendMessage(m);
         }
-        el.chatComposer.style.display = 'block';
+        el.chatComposer.style.display = '';
         scrollToBottom();
     }
 
+    // ==================== WEBSOCKET ====================
     function ensureStompConnected() {
         if (stompClient && stompClient.connected) return Promise.resolve();
 
@@ -279,7 +438,25 @@
 
             stompClient.connect(
                 { Authorization: `Bearer ${token}` },
-                () => resolve(),
+                () => {
+                    // Subscribe to presence updates
+                    presenceSubscription = stompClient.subscribe('/topic/presence', (message) => {
+                        try {
+                            const presence = JSON.parse(message.body);
+                            if (presence?.username) {
+                                presenceMap.set(presence.username, presence.status);
+                                renderMembersList();
+                            }
+                        } catch (e) { /* ignore */ }
+                    });
+
+                    // Announce online
+                    try {
+                        stompClient.send('/app/presence.update', {}, JSON.stringify({ status: 'ONLINE' }));
+                    } catch (e) { /* ignore */ }
+
+                    resolve();
+                },
                 (err) => reject(err)
             );
         });
@@ -289,11 +466,7 @@
         await ensureStompConnected();
 
         if (channelSubscription) {
-            try {
-                channelSubscription.unsubscribe();
-            } catch (e) {
-                // ignore
-            }
+            try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
             channelSubscription = null;
         }
 
@@ -303,12 +476,11 @@
                 if (String(payload.channelId) !== String(activeChannelId)) return;
                 appendMessage(payload);
                 scrollToBottom();
-            } catch (e) {
-                // ignore
-            }
+            } catch (e) { /* ignore */ }
         });
     }
 
+    // ==================== SERVER/CHANNEL SELECTION ====================
     async function selectServer(serverId) {
         activeServerId = serverId;
         setQueryParams({ serverId, channelId: null });
@@ -319,8 +491,13 @@
         renderServerList();
         clearMessages();
 
-        await loadChannels(serverId);
+        await Promise.all([
+            loadChannels(serverId),
+            loadMembers(serverId)
+        ]);
+        
         renderChannelList();
+        renderMembersList();
 
         const nextChannelId = channels.length ? channels[0].id : null;
         if (nextChannelId != null) {
@@ -333,15 +510,339 @@
         setQueryParams({ serverId: activeServerId, channelId });
 
         const channel = channels.find(c => String(c.id) === String(channelId));
-        el.channelName.textContent = channel ? (channel.name || 'channel') : 'channel';
+        const channelName = channel ? (channel.name || 'channel') : 'channel';
+        
+        el.channelName.textContent = channelName;
+        el.welcomeChannelName.textContent = '#' + channelName;
+        el.chatInput.placeholder = `Nhắn #${channelName}`;
+        
+        if (channel?.topic) {
+            el.channelTopic.textContent = channel.topic;
+            el.channelTopic.style.display = '';
+        } else {
+            el.channelTopic.style.display = 'none';
+        }
 
         renderChannelList();
         await subscribeToChannel(channelId);
         await loadHistory(channelId);
     }
 
-    function wireComposer() {
-        el.chatComposer.addEventListener('submit', (e) => {
+    // ==================== MODALS ====================
+    function showCreateServerModal() {
+        el.createServerModal.style.display = 'flex';
+        el.serverNameInput.value = '';
+        el.serverNameInput.focus();
+    }
+
+    function hideCreateServerModal() {
+        el.createServerModal.style.display = 'none';
+    }
+
+    function showCreateChannelModal() {
+        el.createChannelModal.style.display = 'flex';
+        el.channelNameInput.value = '';
+        selectedChannelType = 'TEXT';
+        el.channelTypeOptions.forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.type === 'TEXT');
+        });
+        el.channelNameInput.focus();
+    }
+
+    function hideCreateChannelModal() {
+        el.createChannelModal.style.display = 'none';
+    }
+
+    async function createServer() {
+        const name = el.serverNameInput.value.trim();
+        if (!name) return;
+
+        try {
+            const newServer = await apiPost('/api/servers', { name });
+            hideCreateServerModal();
+            await loadServers();
+            renderServerList();
+            if (newServer?.id) {
+                await selectServer(newServer.id);
+            }
+        } catch (e) {
+            alert('Không thể tạo server: ' + (e.message || 'Lỗi'));
+        }
+    }
+
+    async function createChannel() {
+        const name = el.channelNameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+        if (!name || !activeServerId) return;
+
+        try {
+            await apiPost(`/api/channels/servers/${activeServerId}/channels`, {
+                name,
+                type: selectedChannelType
+            });
+            hideCreateChannelModal();
+            await loadChannels(activeServerId);
+            renderChannelList();
+        } catch (e) {
+            alert('Không thể tạo kênh: ' + (e.message || 'Lỗi'));
+        }
+    }
+
+    // ==================== INVITE FRIENDS MODAL ====================
+    let inviteCode = '';
+    let friendsList = [];
+    let invitedFriends = new Set();
+
+    async function showInviteFriendsModal() {
+        if (!activeServerId) return;
+        
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        const serverName = server?.name || 'Máy chủ';
+        invitedFriends.clear();
+
+        const modal = document.getElementById('inviteFriendsModal');
+        const serverNameEl = document.getElementById('inviteServerName');
+        const searchInput = document.getElementById('inviteFriendSearch');
+        
+        if (modal) modal.style.display = 'flex';
+        if (serverNameEl) serverNameEl.textContent = serverName;
+        if (searchInput) searchInput.value = '';
+
+        // Load friends and invite link
+        await Promise.all([loadFriendsForInvite(), generateInviteLink()]);
+        renderInviteFriendsList();
+    }
+
+    function hideInviteFriendsModal() {
+        const modal = document.getElementById('inviteFriendsModal');
+        if (modal) modal.style.display = 'none';
+        inviteCode = '';
+        friendsList = [];
+        invitedFriends.clear();
+    }
+
+    async function loadFriendsForInvite() {
+        try {
+            friendsList = await apiGet('/api/friends') || [];
+        } catch (err) {
+            console.error('Failed to load friends:', err);
+            friendsList = [];
+        }
+    }
+
+    async function generateInviteLink() {
+        if (!activeServerId) return;
+        
+        try {
+            const invite = await apiPost(`/api/servers/${activeServerId}/invites`, { maxUses: 0, expiresInDays: 7 });
+            
+            inviteCode = invite?.code || '';
+            const linkInput = document.getElementById('inviteLinkInput');
+            if (linkInput && inviteCode) {
+                linkInput.value = `${window.location.origin}/invite/${inviteCode}`;
+            }
+        } catch (err) {
+            console.error('Failed to generate invite:', err);
+            const linkInput = document.getElementById('inviteLinkInput');
+            if (linkInput) {
+                linkInput.value = 'Không thể tạo link mời';
+            }
+        }
+    }
+
+    function renderInviteFriendsList(filter = '') {
+        const container = document.getElementById('inviteFriendsList');
+        if (!container) return;
+
+        const q = filter.trim().toLowerCase();
+        const filtered = friendsList.filter(f => {
+            if (!q) return true;
+            const name = `${f.displayName || ''} ${f.username || ''}`.toLowerCase();
+            return name.includes(q);
+        });
+
+        if (!filtered.length) {
+            container.innerHTML = `<div class="invite-empty">${filter ? 'Không tìm thấy bạn bè' : 'Bạn chưa có bạn bè nào'}</div>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(friend => {
+            const avatarHtml = friend.avatarUrl 
+                ? `<img src="${escapeHtml(friend.avatarUrl)}" alt="">`
+                : `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${escapeHtml((friend.displayName || friend.username || 'U').charAt(0).toUpperCase())}</span>`;
+            
+            const invited = invitedFriends.has(friend.id);
+            const online = isOnline(friend.username);
+            
+            return `
+                <div class="invite-friend-row" data-friend-id="${friend.id}">
+                    <div class="invite-friend-avatar">
+                        ${avatarHtml}
+                        <span class="status-dot ${online ? 'online' : ''}"></span>
+                    </div>
+                    <span class="invite-friend-name">${escapeHtml(friend.displayName || friend.username || 'Unknown')}</span>
+                    <button class="btn-invite ${invited ? 'invited' : ''}" ${invited ? 'disabled' : ''} onclick="inviteFriendFromChat(${friend.id})">
+                        ${invited ? 'Đã mời' : 'Mời'}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function filterInviteFriends(query) {
+        renderInviteFriendsList(query);
+    }
+
+    async function inviteFriendFromChat(friendId) {
+        if (!activeServerId || !friendId) return;
+        
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        const serverName = server?.name || 'Máy chủ';
+        
+        // Mark as invited immediately for better UX
+        invitedFriends.add(friendId);
+        renderInviteFriendsList(document.getElementById('inviteFriendSearch')?.value || '');
+
+        try {
+            // Send DM with invite link
+            const friend = friendsList.find(f => f.id === friendId);
+            if (friend) {
+                // Find or create DM group with this friend
+                const res = await fetch(`/api/direct-messages/find-or-create?userId=${encodeURIComponent(friendId)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAccessToken()}`
+                    }
+                });
+                
+                if (res.ok) {
+                    const dmGroup = await res.json();
+                    if (dmGroup?.id) {
+                        const inviteLink = document.getElementById('inviteLinkInput')?.value || '';
+                        await fetch(`/api/direct-messages/${encodeURIComponent(dmGroup.id)}/messages`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${getAccessToken()}`
+                            },
+                            body: JSON.stringify({
+                                content: `Bạn được mời tham gia máy chủ ${serverName}!\n${inviteLink}`,
+                                attachmentUrls: []
+                            })
+                        });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Failed to send invite:', err);
+        }
+    }
+
+    // Make inviteFriendFromChat accessible globally for onclick
+    window.inviteFriendFromChat = inviteFriendFromChat;
+
+    async function copyInviteLink() {
+        const linkInput = document.getElementById('inviteLinkInput');
+        const copyBtn = document.getElementById('copyInviteLinkBtn');
+        
+        if (!linkInput?.value) return;
+
+        try {
+            await navigator.clipboard.writeText(linkInput.value);
+            if (copyBtn) {
+                copyBtn.textContent = 'Đã sao chép!';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.textContent = 'Sao chép';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            linkInput.select();
+            document.execCommand('copy');
+        }
+    }
+
+    // ==================== DROPDOWNS ====================
+    function toggleServerDropdown() {
+        const isVisible = el.serverDropdown.style.display !== 'none';
+        el.serverDropdown.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function toggleUserSettings() {
+        const isVisible = el.userSettingsDropdown.style.display !== 'none';
+        el.userSettingsDropdown.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function toggleMembersSidebar() {
+        el.membersSidebar.classList.toggle('show');
+        el.membersToggleBtn.classList.toggle('active');
+    }
+
+    // ==================== EVENT WIRING ====================
+    function wireEvents() {
+        // Server header dropdown
+        el.serverHeader?.addEventListener('click', toggleServerDropdown);
+        
+        // Server dropdown actions
+        el.createChannelBtn?.addEventListener('click', () => {
+            toggleServerDropdown();
+            showCreateChannelModal();
+        });
+        
+        el.invitePeopleBtn?.addEventListener('click', () => {
+            toggleServerDropdown();
+            showInviteFriendsModal();
+        });
+        
+        // Invite Friends Modal
+        document.getElementById('closeInviteFriendsModal')?.addEventListener('click', hideInviteFriendsModal);
+        document.getElementById('copyInviteLinkBtn')?.addEventListener('click', copyInviteLink);
+        document.getElementById('inviteFriendSearch')?.addEventListener('input', (e) => {
+            filterInviteFriends(e.target.value);
+        });
+        document.getElementById('inviteFriendsModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'inviteFriendsModal') hideInviteFriendsModal();
+        });
+        
+        // Add server button
+        el.addServerBtn?.addEventListener('click', showCreateServerModal);
+        
+        // Create server modal
+        el.closeCreateServerModal?.addEventListener('click', hideCreateServerModal);
+        el.cancelCreateServer?.addEventListener('click', hideCreateServerModal);
+        el.confirmCreateServer?.addEventListener('click', createServer);
+        el.serverNameInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createServer();
+        });
+        
+        // Create channel modal
+        el.closeCreateChannelModal?.addEventListener('click', hideCreateChannelModal);
+        el.cancelCreateChannel?.addEventListener('click', hideCreateChannelModal);
+        el.confirmCreateChannel?.addEventListener('click', createChannel);
+        el.channelNameInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createChannel();
+        });
+        
+        // Channel type selection
+        el.channelTypeOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                selectedChannelType = opt.dataset.type;
+                el.channelTypeOptions.forEach(o => o.classList.toggle('active', o === opt));
+            });
+        });
+        
+        // User settings
+        el.settingsBtn?.addEventListener('click', toggleUserSettings);
+        el.logoutBtn?.addEventListener('click', () => {
+            if (typeof logout === 'function') logout();
+        });
+        
+        // Members toggle
+        el.membersToggleBtn?.addEventListener('click', toggleMembersSidebar);
+        
+        // Chat composer
+        el.chatComposer?.addEventListener('submit', (e) => {
             e.preventDefault();
             const text = (el.chatInput.value || '').trim();
             if (!text || !activeChannelId) return;
@@ -356,10 +857,38 @@
 
             el.chatInput.value = '';
         });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!el.serverHeader?.contains(e.target) && !el.serverDropdown?.contains(e.target)) {
+                el.serverDropdown.style.display = 'none';
+            }
+            if (!el.settingsBtn?.contains(e.target) && !el.userSettingsDropdown?.contains(e.target)) {
+                el.userSettingsDropdown.style.display = 'none';
+            }
+        });
+        
+        // Close modals on overlay click
+        el.createServerModal?.addEventListener('click', (e) => {
+            if (e.target === el.createServerModal) hideCreateServerModal();
+        });
+        el.createChannelModal?.addEventListener('click', (e) => {
+            if (e.target === el.createChannelModal) hideCreateChannelModal();
+        });
+
+        // Announce offline on page unload
+        window.addEventListener('beforeunload', () => {
+            try {
+                if (stompClient?.connected) {
+                    stompClient.send('/app/presence.update', {}, JSON.stringify({ status: 'OFFLINE' }));
+                }
+            } catch (e) { /* ignore */ }
+        });
     }
 
+    // ==================== INITIALIZATION ====================
     async function init() {
-        wireComposer();
+        wireEvents();
         await loadMe();
 
         const qp = getQueryParams();
@@ -377,9 +906,14 @@
         const server = servers.find(s => String(s.id) === String(activeServerId));
         el.serverName.textContent = server ? (server.name || 'Server') : 'Server';
 
-        await loadChannels(activeServerId);
+        await Promise.all([
+            loadChannels(activeServerId),
+            loadMembers(activeServerId)
+        ]);
+        
         activeChannelId = qp.channelId || (channels.length ? channels[0].id : null);
         renderChannelList();
+        renderMembersList();
 
         if (!activeChannelId) {
             clearMessages();
@@ -387,14 +921,17 @@
         }
 
         const channel = channels.find(c => String(c.id) === String(activeChannelId));
-        el.channelName.textContent = channel ? (channel.name || 'channel') : 'channel';
+        const channelName = channel ? (channel.name || 'channel') : 'channel';
+        el.channelName.textContent = channelName;
+        el.welcomeChannelName.textContent = '#' + channelName;
+        el.chatInput.placeholder = `Nhắn #${channelName}`;
 
         await subscribeToChannel(activeChannelId);
         await loadHistory(activeChannelId);
     }
 
     init().catch((e) => {
-        console.error(e);
+        console.error('Chat init failed:', e);
         clearMessages();
     });
 })();

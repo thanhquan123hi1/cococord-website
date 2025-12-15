@@ -1,17 +1,34 @@
 package vn.cococord.controller.user;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.CreateGroupDMRequest;
 import vn.cococord.dto.request.SendDirectMessageRequest;
 import vn.cococord.dto.request.UpdateGroupDMRequest;
+import vn.cococord.dto.response.DMGroupMemberResponse;
+import vn.cococord.dto.response.DMGroupResponse;
 import vn.cococord.dto.response.DirectMessageSidebarItemResponse;
 import vn.cococord.entity.mongodb.DirectMessage;
 import vn.cococord.entity.mysql.DirectMessageGroup;
@@ -19,11 +36,6 @@ import vn.cococord.entity.mysql.User;
 import vn.cococord.repository.IDirectMessageMemberRepository;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IDirectMessageService;
-
-import jakarta.validation.Valid;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/direct-messages")
@@ -41,6 +53,34 @@ public class DirectMessageController {
     }
 
     private final IDirectMessageService directMessageService;
+
+    /**
+     * Convert DirectMessageGroup entity to DMGroupResponse DTO
+     */
+    private DMGroupResponse convertToResponse(DirectMessageGroup dmGroup) {
+        List<DMGroupMemberResponse> memberResponses = dmGroup.getMembers().stream()
+                .map(member -> DMGroupMemberResponse.builder()
+                        .id(member.getId())
+                        .userId(member.getUser().getId())
+                        .username(member.getUser().getUsername())
+                        .displayName(member.getUser().getDisplayName())
+                        .avatarUrl(member.getUser().getAvatarUrl())
+                        .joinedAt(member.getJoinedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return DMGroupResponse.builder()
+                .id(dmGroup.getId())
+                .name(dmGroup.getName())
+                .ownerId(dmGroup.getOwner().getId())
+                .ownerUsername(dmGroup.getOwner().getUsername())
+                .isGroup(dmGroup.getIsGroup())
+                .iconUrl(dmGroup.getIconUrl())
+                .createdAt(dmGroup.getCreatedAt())
+                .updatedAt(dmGroup.getUpdatedAt())
+                .members(memberResponses)
+                .build();
+    }
 
     @GetMapping("/sidebar")
     public ResponseEntity<List<DirectMessageSidebarItemResponse>> getSidebarItems(
@@ -83,30 +123,33 @@ public class DirectMessageController {
      * Get all DM groups for current user
      */
     @GetMapping("/conversations")
-    public ResponseEntity<List<DirectMessageGroup>> getConversations(
+    public ResponseEntity<List<DMGroupResponse>> getConversations(
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
         List<DirectMessageGroup> dmGroups = directMessageService.getDMGroupsForUser(userId);
-        return ResponseEntity.ok(dmGroups);
+        List<DMGroupResponse> responses = dmGroups.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
     }
 
     /**
      * Create or get 1-1 DM with another user
      */
     @PostMapping("/create-dm/{userId}")
-    public ResponseEntity<DirectMessageGroup> createOrGetDM(
+    public ResponseEntity<DMGroupResponse> createOrGetDM(
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long currentUserId = getUserIdFromUsername(userDetails.getUsername());
         DirectMessageGroup dmGroup = directMessageService.createOrGetOneToOneDM(currentUserId, userId);
-        return ResponseEntity.ok(dmGroup);
+        return ResponseEntity.ok(convertToResponse(dmGroup));
     }
 
     /**
      * Create a group DM
      */
     @PostMapping("/create-group")
-    public ResponseEntity<DirectMessageGroup> createGroupDM(
+    public ResponseEntity<DMGroupResponse> createGroupDM(
             @Valid @RequestBody CreateGroupDMRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
@@ -114,26 +157,26 @@ public class DirectMessageController {
                 userId,
                 request.getMemberIds(),
                 request.getGroupName());
-        return ResponseEntity.ok(dmGroup);
+        return ResponseEntity.ok(convertToResponse(dmGroup));
     }
 
     /**
      * Get DM group by ID
      */
     @GetMapping("/{dmGroupId}")
-    public ResponseEntity<DirectMessageGroup> getDMGroup(
+    public ResponseEntity<DMGroupResponse> getDMGroup(
             @PathVariable Long dmGroupId,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
         DirectMessageGroup dmGroup = directMessageService.getDMGroupById(dmGroupId, userId);
-        return ResponseEntity.ok(dmGroup);
+        return ResponseEntity.ok(convertToResponse(dmGroup));
     }
 
     /**
      * Update group DM (name, icon) - owner only
      */
     @PutMapping("/{dmGroupId}")
-    public ResponseEntity<DirectMessageGroup> updateGroupDM(
+    public ResponseEntity<DMGroupResponse> updateGroupDM(
             @PathVariable Long dmGroupId,
             @Valid @RequestBody UpdateGroupDMRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -143,7 +186,7 @@ public class DirectMessageController {
                 userId,
                 request.getGroupName(),
                 request.getIconUrl());
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(convertToResponse(updated));
     }
 
     /**
