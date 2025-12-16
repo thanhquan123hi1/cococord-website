@@ -1,4 +1,4 @@
-/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout */
+/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout, Peer */
 
 (function () {
     'use strict';
@@ -50,6 +50,23 @@
         userDropdown: document.getElementById('userDropdown'),
         logoutBtnUser: document.getElementById('logoutBtnUser'),
         
+        // Mic/Deafen buttons
+        micBtn: document.getElementById('micBtn'),
+        deafenBtn: document.getElementById('deafenBtn'),
+        
+        // Voice Connected Bar
+        voiceConnectedBar: document.getElementById('voiceConnectedBar'),
+        voiceChannelName: document.getElementById('voiceChannelName'),
+        voiceDisconnectBtn: document.getElementById('voiceDisconnectBtn'),
+        
+        // User Settings Modal
+        userSettingsModal: document.getElementById('userSettingsModal'),
+        closeUserSettingsModal: document.getElementById('closeUserSettingsModal'),
+        settingsNavItems: document.querySelectorAll('.settings-nav-item[data-tab]'),
+        settingsTabs: document.querySelectorAll('.settings-tab'),
+        settingsTitle: document.getElementById('settingsTitle'),
+        settingsLogoutBtn: document.getElementById('settingsLogoutBtn'),
+        
         // Create Server Modal
         createServerModal: document.getElementById('createServerModal'),
         closeCreateServerModal: document.getElementById('closeCreateServerModal'),
@@ -72,6 +89,7 @@
     let presenceSubscription = null;
     let typingSubscription = null;
     let deleteSubscription = null;
+    let voiceSubscription = null;
 
     let servers = [];
     let channels = [];
@@ -93,6 +111,14 @@
     let typingUsers = new Map(); // username -> { timeout, displayName, avatarUrl }
     let myTypingTimeout = null;
     let isCurrentlyTyping = false;
+
+    // Voice Chat State (PeerJS/WebRTC)
+    let peer = null;
+    let localStream = null;
+    let activeVoiceChannelId = null;
+    let voiceConnections = new Map(); // peerId -> { call, stream, userId }
+    let isMuted = false;
+    let isDeafened = false;
 
     // ==================== UTILITIES ====================
     function getQueryParams() {
@@ -289,7 +315,7 @@
             
             for (const c of voiceChannels) {
                 const item = document.createElement('div');
-                item.className = 'channel-item' + (String(c.id) === String(activeChannelId) ? ' active' : '');
+                item.className = 'channel-item voice-channel' + (String(c.id) === String(activeVoiceChannelId) ? ' voice-active' : '');
                 item.setAttribute('role', 'button');
                 item.setAttribute('tabindex', '0');
                 item.dataset.channelId = c.id;
@@ -299,11 +325,10 @@
                     <span class="channel-name">${escapeHtml(c.name || 'channel')}</span>
                 `;
                 
-                // Voice channels typically don't select like text channels
-                // but add click handler anyway
+                // Voice channels - join voice when clicked
                 const channelId = c.id;
                 item.addEventListener('click', function() { 
-                    selectChannel(channelId); 
+                    joinVoiceChannel(channelId); 
                 });
                 
                 channelsContainer.appendChild(item);
@@ -1412,6 +1437,431 @@
         }
     }
 
+    // ==================== USER SETTINGS MODAL ====================
+    function showUserSettingsModal() {
+        if (!el.userSettingsModal) return;
+        
+        // Populate user data
+        populateSettingsData();
+        
+        // Show modal with animation
+        el.userSettingsModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus first input or close button
+        setTimeout(() => {
+            el.closeUserSettingsModal?.focus();
+        }, 100);
+    }
+    
+    function hideUserSettingsModal() {
+        if (!el.userSettingsModal) return;
+        el.userSettingsModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    
+    function populateSettingsData() {
+        if (!currentUser) return;
+        
+        // Account tab
+        const usernameDisplay = document.getElementById('settingsUsername');
+        const emailDisplay = document.getElementById('settingsEmail');
+        const avatarDisplay = document.getElementById('settingsAvatar');
+        const displayNameDisplay = document.getElementById('settingsDisplayName');
+        
+        if (usernameDisplay) usernameDisplay.textContent = currentUser.username || 'user';
+        if (emailDisplay) emailDisplay.textContent = currentUser.email || 'email@example.com';
+        if (displayNameDisplay) displayNameDisplay.textContent = currentUser.displayName || currentUser.username || 'User';
+        
+        if (avatarDisplay) {
+            if (currentUser.avatarUrl) {
+                avatarDisplay.innerHTML = `<img src="${escapeHtml(currentUser.avatarUrl)}" alt="Avatar">`;
+            } else {
+                const initial = (currentUser.displayName || currentUser.username || 'U').charAt(0).toUpperCase();
+                avatarDisplay.innerHTML = `<span class="avatar-initial">${initial}</span>`;
+            }
+        }
+        
+        // Profile tab inputs
+        const displayNameInput = document.getElementById('profileDisplayName');
+        const aboutMeInput = document.getElementById('profileAboutMe');
+        
+        if (displayNameInput) displayNameInput.value = currentUser.displayName || '';
+        if (aboutMeInput) aboutMeInput.value = currentUser.aboutMe || '';
+    }
+    
+    function switchSettingsTab(tabName) {
+        // Update nav
+        el.settingsNavItems?.forEach(item => {
+            item.classList.toggle('active', item.dataset.tab === tabName);
+        });
+        
+        // Update tabs - use data-tab attribute instead of id
+        el.settingsTabs?.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
+        });
+        
+        // Update title
+        if (el.settingsTitle) {
+            const titles = {
+                'account': 'Tài khoản của tôi',
+                'profile': 'Hồ sơ cá nhân',
+                'voice': 'Giọng nói & Video',
+                'notifications': 'Thông báo',
+                'privacy': 'Quyền riêng tư',
+                'appearance': 'Giao diện',
+                'language': 'Ngôn ngữ',
+                'devices': 'Thiết bị',
+                'connections': 'Kết nối',
+                'accessibility': 'Trợ năng',
+                'keybinds': 'Phím tắt'
+            };
+            el.settingsTitle.textContent = titles[tabName] || 'Cài đặt';
+        }
+    }
+    
+    async function saveProfileSettings() {
+        const displayNameInput = document.getElementById('profileDisplayName');
+        const aboutMeInput = document.getElementById('profileAboutMe');
+        
+        const data = {
+            displayName: displayNameInput?.value?.trim() || '',
+            aboutMe: aboutMeInput?.value?.trim() || ''
+        };
+        
+        try {
+            await apiPost('/api/users/me/profile', data);
+            if (currentUser) {
+                currentUser.displayName = data.displayName;
+                currentUser.aboutMe = data.aboutMe;
+            }
+            populateSettingsData();
+            showToast('Đã lưu hồ sơ');
+        } catch (e) {
+            showToast('Không thể lưu hồ sơ');
+        }
+    }
+
+    // ==================== VOICE CHANNEL (PeerJS/WebRTC) ====================
+    function initPeer() {
+        if (peer) return Promise.resolve(peer);
+        
+        return new Promise((resolve, reject) => {
+            // Generate unique peer ID based on user
+            const peerId = `cococord-${currentUser?.id || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            peer = new Peer(peerId, {
+                debug: 0 // Disable debug logs
+            });
+            
+            peer.on('open', (id) => {
+                console.log('PeerJS connected with ID:', id);
+                resolve(peer);
+            });
+            
+            peer.on('call', handleIncomingCall);
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                if (err.type === 'unavailable-id') {
+                    // Try again with different ID
+                    peer = null;
+                    setTimeout(() => initPeer().then(resolve).catch(reject), 1000);
+                } else {
+                    reject(err);
+                }
+            });
+            
+            peer.on('disconnected', () => {
+                console.log('PeerJS disconnected, attempting to reconnect...');
+                peer?.reconnect();
+            });
+        });
+    }
+    
+    async function joinVoiceChannel(channelId) {
+        if (!channelId) return;
+        
+        // Leave current voice channel if any
+        if (activeVoiceChannelId) {
+            await leaveVoiceChannel();
+        }
+        
+        try {
+            // Request microphone permission
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                },
+                video: false
+            });
+            
+            // Initialize PeerJS
+            await initPeer();
+            
+            activeVoiceChannelId = channelId;
+            
+            // Re-render channel list to show active state
+            renderChannelList();
+            
+            // Update UI
+            const channel = channels.find(c => String(c.id) === String(channelId));
+            if (el.voiceChannelName) {
+                el.voiceChannelName.textContent = channel?.name || 'Voice Channel';
+            }
+            if (el.voiceConnectedBar) {
+                el.voiceConnectedBar.classList.add('show');
+            }
+            
+            // Subscribe to voice channel via WebSocket
+            await subscribeToVoiceChannel(channelId);
+            
+            // Notify server that we joined
+            if (stompClient?.connected) {
+                stompClient.send('/app/voice.join', {}, JSON.stringify({
+                    channelId: channelId,
+                    serverId: activeServerId,
+                    peerId: peer.id
+                }));
+            }
+            
+            // Update mic/deafen button states
+            updateVoiceButtonStates();
+            
+        } catch (err) {
+            console.error('Failed to join voice channel:', err);
+            if (err.name === 'NotAllowedError') {
+                showToast('Vui lòng cho phép truy cập microphone');
+            } else {
+                showToast('Không thể kết nối voice channel');
+            }
+            await leaveVoiceChannel();
+        }
+    }
+    
+    async function leaveVoiceChannel() {
+        // Stop local stream
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        
+        // Close all peer connections
+        voiceConnections.forEach(({ call }) => {
+            try { call.close(); } catch (e) { /* ignore */ }
+        });
+        voiceConnections.clear();
+        
+        // Notify server
+        if (stompClient?.connected && activeVoiceChannelId) {
+            stompClient.send('/app/voice.leave', {}, JSON.stringify({
+                channelId: activeVoiceChannelId,
+                peerId: peer?.id
+            }));
+        }
+        
+        // Unsubscribe from voice channel
+        if (voiceSubscription) {
+            try { voiceSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            voiceSubscription = null;
+        }
+        
+        activeVoiceChannelId = null;
+        
+        // Re-render channel list to remove active state
+        renderChannelList();
+        
+        // Update UI
+        if (el.voiceConnectedBar) {
+            el.voiceConnectedBar.classList.remove('show');
+        }
+    }
+    
+    async function subscribeToVoiceChannel(channelId) {
+        await ensureStompConnected();
+        
+        if (voiceSubscription) {
+            try { voiceSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+        }
+        
+        voiceSubscription = stompClient.subscribe(`/topic/voice/${channelId}`, (message) => {
+            try {
+                const payload = JSON.parse(message.body);
+                handleVoiceEvent(payload);
+            } catch (e) { /* ignore */ }
+        });
+    }
+    
+    function handleVoiceEvent(payload) {
+        const { type, peerId, userId, username } = payload;
+        
+        switch (type) {
+            case 'USER_JOINED':
+                // Someone joined, call them
+                if (peerId && peerId !== peer?.id) {
+                    console.log('User joined voice, calling:', username);
+                    callPeer(peerId, userId, username);
+                }
+                break;
+                
+            case 'USER_LEFT':
+                // Someone left, close their connection
+                if (peerId) {
+                    const conn = voiceConnections.get(peerId);
+                    if (conn) {
+                        try { conn.call.close(); } catch (e) { /* ignore */ }
+                        voiceConnections.delete(peerId);
+                    }
+                }
+                break;
+                
+            case 'PARTICIPANTS_UPDATE':
+                // Update participants list UI
+                if (payload.participants) {
+                    updateVoiceParticipants(payload.participants);
+                }
+                break;
+        }
+    }
+    
+    function callPeer(peerId, userId, username) {
+        if (!peer || !localStream) return;
+        
+        const call = peer.call(peerId, localStream);
+        
+        call.on('stream', (remoteStream) => {
+            console.log('Received stream from:', username);
+            playRemoteStream(remoteStream, peerId);
+        });
+        
+        call.on('close', () => {
+            console.log('Call closed with:', username);
+            removeRemoteStream(peerId);
+            voiceConnections.delete(peerId);
+        });
+        
+        voiceConnections.set(peerId, { call, userId, username });
+    }
+    
+    function handleIncomingCall(call) {
+        if (!localStream) {
+            call.close();
+            return;
+        }
+        
+        call.answer(localStream);
+        
+        call.on('stream', (remoteStream) => {
+            console.log('Received incoming stream');
+            playRemoteStream(remoteStream, call.peer);
+        });
+        
+        call.on('close', () => {
+            removeRemoteStream(call.peer);
+            voiceConnections.delete(call.peer);
+        });
+        
+        voiceConnections.set(call.peer, { call, userId: null, username: null });
+    }
+    
+    function playRemoteStream(stream, peerId) {
+        // Create audio element for this stream
+        let audio = document.getElementById(`audio-${peerId}`);
+        if (!audio) {
+            audio = document.createElement('audio');
+            audio.id = `audio-${peerId}`;
+            audio.autoplay = true;
+            audio.style.display = 'none';
+            document.body.appendChild(audio);
+        }
+        audio.srcObject = stream;
+        audio.muted = isDeafened;
+    }
+    
+    function removeRemoteStream(peerId) {
+        const audio = document.getElementById(`audio-${peerId}`);
+        if (audio) {
+            audio.srcObject = null;
+            audio.remove();
+        }
+    }
+    
+    function toggleMute() {
+        isMuted = !isMuted;
+        
+        if (localStream) {
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMuted;
+            });
+        }
+        
+        // Notify server
+        if (stompClient?.connected && activeVoiceChannelId) {
+            stompClient.send('/app/voice.mute', {}, JSON.stringify({
+                channelId: activeVoiceChannelId,
+                isMuted: isMuted
+            }));
+        }
+        
+        updateVoiceButtonStates();
+    }
+    
+    function toggleDeafen() {
+        isDeafened = !isDeafened;
+        
+        // If deafening, also mute
+        if (isDeafened && !isMuted) {
+            isMuted = true;
+            if (localStream) {
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = false;
+                });
+            }
+        }
+        
+        // Mute/unmute all remote streams
+        document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
+            audio.muted = isDeafened;
+        });
+        
+        // Notify server
+        if (stompClient?.connected && activeVoiceChannelId) {
+            stompClient.send('/app/voice.deafen', {}, JSON.stringify({
+                channelId: activeVoiceChannelId,
+                isDeafened: isDeafened,
+                isMuted: isMuted
+            }));
+        }
+        
+        updateVoiceButtonStates();
+    }
+    
+    function updateVoiceButtonStates() {
+        if (el.micBtn) {
+            el.micBtn.classList.toggle('muted', isMuted);
+            el.micBtn.innerHTML = isMuted 
+                ? '<i class="bi bi-mic-mute-fill"></i>' 
+                : '<i class="bi bi-mic-fill"></i>';
+            el.micBtn.title = isMuted ? 'Bật tiếng' : 'Tắt tiếng';
+        }
+        
+        if (el.deafenBtn) {
+            el.deafenBtn.classList.toggle('deafened', isDeafened);
+            el.deafenBtn.innerHTML = isDeafened 
+                ? '<i class="bi bi-volume-mute-fill"></i>' 
+                : '<i class="bi bi-headphones"></i>';
+            el.deafenBtn.title = isDeafened ? 'Bật nghe' : 'Tắt nghe';
+        }
+    }
+    
+    function updateVoiceParticipants(participants) {
+        // Update UI to show who's in voice channel
+        // This could update a participants list in the channel sidebar
+        console.log('Voice participants:', participants);
+    }
+
     // ==================== DROPDOWNS ====================
     function toggleServerDropdown() {
         const isVisible = el.serverDropdown.style.display !== 'none';
@@ -1507,8 +1957,45 @@
         });
         
         // User settings
-        el.settingsBtn?.addEventListener('click', toggleUserSettings);
+        el.settingsBtn?.addEventListener('click', showUserSettingsModal);
         el.logoutBtn?.addEventListener('click', doLogout);
+        
+        // User Settings Modal
+        el.closeUserSettingsModal?.addEventListener('click', hideUserSettingsModal);
+        el.settingsLogoutBtn?.addEventListener('click', doLogout);
+        el.settingsNavItems?.forEach(item => {
+            item.addEventListener('click', () => {
+                const tab = item.dataset.tab;
+                if (tab) switchSettingsTab(tab);
+            });
+        });
+        el.userSettingsModal?.addEventListener('click', (e) => {
+            // Close on overlay click (outside modal content)
+            if (e.target === el.userSettingsModal) hideUserSettingsModal();
+        });
+        document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileSettings);
+        
+        // Escape key to close settings modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && el.userSettingsModal?.classList.contains('show')) {
+                hideUserSettingsModal();
+            }
+        });
+        
+        // Mic/Deafen buttons
+        el.micBtn?.addEventListener('click', () => {
+            if (activeVoiceChannelId) {
+                toggleMute();
+            }
+        });
+        el.deafenBtn?.addEventListener('click', () => {
+            if (activeVoiceChannelId) {
+                toggleDeafen();
+            }
+        });
+        
+        // Voice disconnect button
+        el.voiceDisconnectBtn?.addEventListener('click', leaveVoiceChannel);
         
         // User info dropdown (click on user info shows dropdown with logout)
         el.userInfoBtn?.addEventListener('click', (e) => {

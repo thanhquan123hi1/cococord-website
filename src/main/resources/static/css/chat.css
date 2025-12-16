@@ -380,6 +380,19 @@ body {
     color: var(--text-normal);
 }
 
+#chatApp .channel-item.voice-channel .hash {
+    font-size: 16px;
+}
+
+#chatApp .channel-item.voice-active {
+    background-color: rgba(59, 165, 93, 0.15);
+    color: var(--status-online);
+}
+
+#chatApp .channel-item.voice-active .hash {
+    color: var(--status-online);
+}
+
 #chatApp .channel-item .channel-name {
     flex: 1;
     overflow: hidden;
@@ -511,6 +524,10 @@ body {
 }
 
 #chatApp .user-area .control-btn.muted {
+    color: var(--discord-red);
+}
+
+#chatApp .user-area .control-btn.deafened {
     color: var(--discord-red);
 }
 
@@ -1793,6 +1810,570 @@ body {
     transform: translateX(-50%) translateY(0);
 }
 
+/* ==================== VOICE CONNECTED BAR ==================== */
+.voice-connected-bar {
+    background-color: #1A1A1D;
+    padding: 8px;
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: none;
+}
+
+.voice-connected-bar.show {
+    display: block;
+}
+
+.voice-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.voice-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.voice-icon {
+    color: var(--status-online);
+    font-size: 14px;
+    animation: voicePulse 2s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.voice-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--status-online);
+    text-transform: uppercase;
+}
+
+.voice-channel-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-left: 20px;
+}
+
+.voice-controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.voice-control-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: none;
+    background-color: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.voice-control-btn:hover {
+    background-color: var(--bg-modifier-hover);
+    color: var(--discord-red);
+}
+
+/* ==================== USER SETTINGS MODAL (Full Screen Slide-up) ==================== */
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.settings-modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+.settings-modal {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-modal-overlay.show .settings-modal {
+    transform: translateY(0);
+}
+
+.settings-sidebar {
+    width: 218px;
+    background-color: var(--bg-secondary);
+    padding: 60px 6px 60px 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.settings-nav {
+    width: 192px;
+}
+
+.settings-nav-section {
+    margin-bottom: 8px;
+}
+
+.settings-nav-header {
+    display: block;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background: none;
+    border-radius: 4px;
+    color: var(--interactive-normal);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.1s ease;
+}
+
+.settings-nav-item:hover {
+    background-color: var(--bg-modifier-hover);
+    color: var(--interactive-hover);
+}
+
+.settings-nav-item.active {
+    background-color: var(--bg-modifier-selected);
+    color: var(--interactive-active);
+}
+
+.settings-nav-item.danger {
+    color: var(--discord-red);
+}
+
+.settings-nav-item.danger:hover {
+    background-color: var(--discord-red);
+    color: white;
+}
+
+.settings-nav-item i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.settings-nav-divider {
+    height: 1px;
+    background-color: var(--bg-modifier-hover);
+    margin: 8px 10px;
+}
+
+.settings-content {
+    flex: 1;
+    background-color: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    max-width: 740px;
+    padding: 60px 40px 80px;
+    overflow-y: auto;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.settings-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin: 0;
+}
+
+.settings-close {
+    position: fixed;
+    right: calc(50% - 370px - 72px);
+    top: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.settings-close:hover {
+    border-color: var(--text-normal);
+    color: var(--text-normal);
+}
+
+.settings-close i {
+    font-size: 18px;
+    line-height: 32px;
+}
+
+.settings-close span {
+    position: absolute;
+    top: 44px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.settings-body {
+    flex: 1;
+}
+
+.settings-tab {
+    display: none;
+}
+
+.settings-tab.active {
+    display: block;
+}
+
+.settings-section {
+    margin-bottom: 40px;
+}
+
+.settings-section h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-normal);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 16px;
+}
+
+/* Account Card */
+.account-card {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.account-banner {
+    height: 100px;
+    background: linear-gradient(135deg, #5865F2, #EB459E);
+}
+
+.account-info-row {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 16px;
+}
+
+.account-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--bg-tertiary);
+    border: 6px solid var(--bg-secondary);
+    margin-top: -48px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.account-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.account-avatar .status-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    border: 4px solid var(--bg-secondary);
+}
+
+.account-details {
+    flex: 1;
+}
+
+.account-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.account-tag {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Info Fields */
+.info-field {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.info-field label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    min-width: 160px;
+}
+
+.info-field .info-value {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-normal);
+}
+
+.info-field .info-value.masked {
+    color: var(--text-muted);
+}
+
+.info-field .btn-edit {
+    background: none;
+    border: none;
+    color: var(--text-link);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+.info-field .btn-edit:hover {
+    text-decoration: underline;
+}
+
+/* Danger Zone */
+.danger-zone {
+    padding: 16px;
+    background-color: rgba(237, 66, 69, 0.1);
+    border: 1px solid var(--discord-red);
+    border-radius: 8px;
+}
+
+.danger-zone h3 {
+    color: var(--discord-red);
+}
+
+.danger-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-danger-outline {
+    padding: 10px 16px;
+    border: 1px solid var(--discord-red);
+    background: none;
+    color: var(--discord-red);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-danger-outline:hover {
+    background-color: var(--discord-red);
+    color: white;
+}
+
+.btn-danger {
+    padding: 10px 16px;
+    border: none;
+    background-color: var(--discord-red);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-danger:hover {
+    background-color: #A12D2F;
+}
+
+/* Form Elements */
+.discord-select {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--bg-tertiary);
+    border: none;
+    border-radius: 4px;
+    color: var(--text-normal);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.discord-range {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    appearance: none;
+    cursor: pointer;
+}
+
+.discord-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--discord-primary);
+    cursor: pointer;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.radio-option:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+.radio-option.active,
+.radio-option:has(input:checked) {
+    border-color: var(--discord-primary);
+}
+
+.radio-option input {
+    margin-top: 4px;
+}
+
+.radio-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-normal);
+    display: block;
+}
+
+.radio-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 2px;
+}
+
+/* ==================== VOICE PARTICIPANTS IN CHANNEL ==================== */
+.voice-participants {
+    padding: 4px 8px;
+}
+
+.voice-participant {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.voice-participant:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+.voice-participant-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--text-normal);
+    position: relative;
+}
+
+.voice-participant-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.voice-participant-avatar.speaking {
+    box-shadow: 0 0 0 2px var(--status-online);
+}
+
+.voice-participant-name {
+    font-size: 13px;
+    color: var(--text-normal);
+    flex: 1;
+}
+
+.voice-participant-icons {
+    display: flex;
+    gap: 4px;
+}
+
+.voice-participant-icons i {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.voice-participant-icons i.muted {
+    color: var(--discord-red);
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1200px) {
     #chatApp .members-sidebar {
@@ -1806,6 +2387,10 @@ body {
         top: 0;
         height: 100vh;
         z-index: 100;
+    }
+    
+    .settings-close {
+        right: 20px;
     }
 }
 
@@ -1821,5 +2406,13 @@ body {
         top: 0;
         height: 100vh;
         z-index: 100;
+    }
+    
+    .settings-sidebar {
+        display: none;
+    }
+    
+    .settings-content {
+        padding: 20px;
     }
 }
