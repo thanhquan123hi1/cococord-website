@@ -46,16 +46,9 @@ body {
 /* ==================== APP CONTAINER ==================== */
 #chatApp.app-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     height: 100vh;
     width: 100vw;
-    overflow: hidden;
-}
-
-/* Main area above user panel */
-#chatApp .app-main-area {
-    display: flex;
-    flex: 1;
     overflow: hidden;
 }
 
@@ -214,6 +207,28 @@ body {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    position: relative;
+}
+
+/* Scrollable Channel List Wrapper */
+#chatApp .channel-list-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+#chatApp .channel-list-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatApp .channel-list-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#chatApp .channel-list-wrapper::-webkit-scrollbar-thumb {
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
 }
 
 #chatApp .channel-header {
@@ -372,8 +387,8 @@ body {
     white-space: nowrap;
 }
 
-/* ==================== USER PANEL (Full Width at Bottom) ==================== */
-#chatApp .user-panel-full {
+/* ==================== USER AREA (Fixed at Bottom of Channel Sidebar) ==================== */
+#chatApp .user-area {
     height: 52px;
     background-color: #232428;
     padding: 0 8px;
@@ -381,16 +396,11 @@ body {
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
-    border-top: 1px solid var(--bg-tertiary);
+    position: relative;
+    z-index: 10;
 }
 
-/* Legacy user panel in channel sidebar - hidden */
-#chatApp .user-panel {
-    display: none;
-}
-
-#chatApp .user-panel-full .user-info,
-#chatApp .user-info {
+#chatApp .user-area .user-info {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -399,16 +409,14 @@ body {
     cursor: pointer;
     flex: 1;
     min-width: 0;
-    max-width: 200px;
+    max-width: 160px;
 }
 
-#chatApp .user-panel-full .user-info:hover,
-#chatApp .user-info:hover {
+#chatApp .user-area .user-info:hover {
     background-color: var(--bg-modifier-hover);
 }
 
-#chatApp .user-panel-full .user-avatar,
-#chatApp .user-avatar {
+#chatApp .user-area .user-avatar {
     position: relative;
     width: 32px;
     height: 32px;
@@ -423,16 +431,14 @@ body {
     flex-shrink: 0;
 }
 
-#chatApp .user-panel-full .user-avatar img,
-#chatApp .user-avatar img {
+#chatApp .user-area .user-avatar img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
 }
 
-#chatApp .user-panel-full .status-indicator,
-#chatApp .status-indicator {
+#chatApp .user-area .status-indicator {
     position: absolute;
     bottom: -2px;
     right: -2px;
@@ -443,54 +449,48 @@ body {
     background-color: var(--status-offline);
 }
 
-#chatApp .user-panel-full .status-indicator.online,
-#chatApp .status-indicator.online {
+#chatApp .user-area .status-indicator.online {
     background-color: var(--status-online);
 }
 
-#chatApp .user-panel-full .status-indicator.idle,
-#chatApp .status-indicator.idle {
+#chatApp .user-area .status-indicator.idle {
     background-color: var(--status-idle);
 }
 
-#chatApp .user-panel-full .status-indicator.dnd,
-#chatApp .status-indicator.dnd {
+#chatApp .user-area .status-indicator.dnd {
     background-color: var(--status-dnd);
 }
 
-#chatApp .user-panel-full .user-details,
-#chatApp .user-details {
+#chatApp .user-area .user-details {
     min-width: 0;
     flex: 1;
 }
 
-#chatApp .user-panel-full .user-name,
-#chatApp .user-name {
+#chatApp .user-area .user-name {
     font-size: 14px;
     font-weight: 600;
     color: white;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1.2;
 }
 
-#chatApp .user-panel-full .user-status,
-#chatApp .user-status {
+#chatApp .user-area .user-status {
     font-size: 12px;
     color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1.2;
 }
 
-#chatApp .user-panel-full .user-controls,
-#chatApp .user-controls {
+#chatApp .user-area .user-controls {
     display: flex;
     gap: 4px;
 }
 
-#chatApp .user-panel-full .control-btn,
-#chatApp .control-btn {
+#chatApp .user-area .control-btn {
     width: 32px;
     height: 32px;
     border: none;
@@ -505,15 +505,87 @@ body {
     font-size: 18px;
 }
 
-#chatApp .user-panel-full .control-btn:hover,
-#chatApp .control-btn:hover {
+#chatApp .user-area .control-btn:hover {
     background-color: var(--bg-modifier-hover);
     color: var(--interactive-hover);
 }
 
-#chatApp .user-panel-full .control-btn.muted,
-#chatApp .control-btn.muted {
+#chatApp .user-area .control-btn.muted {
     color: var(--discord-red);
+}
+
+/* User Dropdown (appears above user area) */
+#chatApp .user-area .user-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: #111214;
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+    z-index: 1000;
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 3px;
+    color: var(--interactive-normal);
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.1s;
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item:hover {
+    background-color: var(--discord-primary);
+    color: white;
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item.text-danger:hover {
+    background-color: var(--discord-red);
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item .online {
+    color: var(--status-online);
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item .idle {
+    color: var(--status-idle);
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item .dnd {
+    color: var(--status-dnd);
+}
+
+#chatApp .user-area .user-dropdown .dropdown-item .offline {
+    color: var(--status-offline);
+}
+
+#chatApp .user-area .user-dropdown .dropdown-divider {
+    height: 1px;
+    background-color: var(--bg-modifier-hover);
+    margin: 4px 0;
+}
+
+/* Legacy styles - hidden */
+#chatApp .user-panel-full {
+    display: none;
+}
+
+#chatApp .user-panel {
+    display: none;
 }
 
 /* ==================== INVITE FRIENDS MODAL ==================== */
@@ -1428,6 +1500,297 @@ body {
     height: 1px;
     background-color: var(--bg-modifier-hover);
     margin: 4px 0;
+}
+
+/* ==================== TYPING INDICATOR ==================== */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--bg-tertiary);
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.typing-avatars {
+    display: flex;
+    align-items: center;
+}
+
+.typing-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-left: -8px;
+    border: 2px solid var(--bg-primary);
+}
+
+.typing-avatar:first-child {
+    margin-left: 0;
+}
+
+.typing-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-muted);
+    animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+.typing-text {
+    flex: 1;
+}
+
+.typing-text strong {
+    color: var(--text-normal);
+}
+
+/* ==================== NEW MESSAGES BANNER ==================== */
+.new-messages-banner {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background-color: var(--discord-primary);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.new-messages-banner.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.new-messages-banner:hover {
+    background-color: #4752C4;
+}
+
+/* ==================== HISTORY LOADING SPINNER ==================== */
+.history-spinner {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+}
+
+.history-spinner .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--bg-tertiary);
+    border-top-color: var(--discord-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==================== CONTEXT MENU ==================== */
+.context-menu {
+    position: fixed;
+    background-color: #111214;
+    border-radius: 4px;
+    padding: 6px 8px;
+    min-width: 180px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+    z-index: 1000;
+    display: none;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 2px;
+    color: var(--interactive-normal);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.context-menu-item:hover {
+    background-color: var(--discord-primary);
+    color: white;
+}
+
+.context-menu-item.danger:hover {
+    background-color: var(--discord-red);
+    color: white;
+}
+
+.context-menu-item i {
+    font-size: 16px;
+    width: 18px;
+    text-align: center;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background-color: var(--bg-modifier-hover);
+    margin: 4px 0;
+}
+
+/* ==================== MESSAGE EDIT ==================== */
+.edit-message-input {
+    width: 100%;
+    padding: 8px 10px;
+    background-color: var(--bg-tertiary);
+    border: none;
+    border-radius: 4px;
+    color: var(--text-normal);
+    font-size: 14px;
+    outline: none;
+}
+
+.edit-message-input:focus {
+    box-shadow: 0 0 0 2px var(--discord-primary);
+}
+
+.edit-message-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.message-edited {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
+}
+
+/* Message deletion animation */
+.message-row.message-deleted {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.3s ease;
+}
+
+/* ==================== REPLY PREVIEW ==================== */
+.reply-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px 8px 0 0;
+    border-bottom: 2px solid var(--discord-primary);
+    font-size: 13px;
+}
+
+.reply-preview-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    overflow: hidden;
+}
+
+.reply-preview-content i {
+    color: var(--discord-primary);
+}
+
+.reply-preview-content span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reply-preview-content strong {
+    color: var(--text-normal);
+}
+
+.reply-cancel {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reply-cancel:hover {
+    color: var(--text-normal);
+}
+
+/* ==================== TOAST NOTIFICATION ==================== */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: #18191C;
+    color: var(--text-normal);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1001;
+}
+
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
 /* ==================== RESPONSIVE ==================== */

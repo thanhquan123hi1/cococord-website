@@ -3,57 +3,85 @@
 <html lang="vi">
 <head>
     <title>Trò chuyện - CoCoCord</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat.css">
 </head>
 <body>
 <div class="app-container" id="chatApp">
-    <!-- Main App Area (above user panel) -->
-    <div class="app-main-area">
-        <!-- Server Sidebar -->
-        <aside class="server-sidebar" aria-label="Servers">
-            <!-- Home Button (go to Friends/DM) -->
-            <a class="server-item home-btn" href="${pageContext.request.contextPath}/friends" title="Tin nhắn trực tiếp">
-                <i class="bi bi-discord"></i>
-            </a>
-            <div class="server-divider"></div>
-            
-            <!-- Scrollable Server List -->
-            <div class="server-list-wrapper">
-                <div class="server-list" id="serverList"></div>
-            </div>
-            
-            <!-- Fixed Server Actions at Bottom -->
-            <div class="server-actions-fixed">
-                <div class="server-divider"></div>
-                <div class="server-item add-server-btn" role="button" tabindex="0" title="Tạo Server" id="addServerBtn">
-                    <i class="bi bi-plus-lg"></i>
-                </div>
-                <div class="server-item discover-btn" role="button" tabindex="0" title="Khám phá Server">
-                    <i class="bi bi-compass"></i>
-                </div>
-            </div>
-        </aside>
+    <!-- Channel Sidebar (Contains User Area at Bottom) -->
+    <aside class="channel-sidebar" aria-label="Channels">
+        <div class="channel-header" id="serverHeader">
+            <h5 id="serverName">Chọn một server</h5>
+            <i class="bi bi-chevron-down" id="serverMenuToggle"></i>
+        </div>
+        
+        <!-- Server Dropdown Menu -->
+        <div class="server-dropdown" id="serverDropdown" style="display:none;">
+            <div class="dropdown-item" id="invitePeopleBtn"><i class="bi bi-person-plus"></i> Mời mọi người</div>
+            <div class="dropdown-item" id="serverSettingsBtn"><i class="bi bi-gear"></i> Cài đặt Server</div>
+            <div class="dropdown-item" id="createChannelBtn"><i class="bi bi-hash"></i> Tạo Kênh</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item text-danger" id="leaveServerBtn"><i class="bi bi-box-arrow-left"></i> Rời Server</div>
+        </div>
 
-        <!-- Channel Sidebar -->
-        <aside class="channel-sidebar" aria-label="Channels">
-            <div class="channel-header" id="serverHeader">
-                <h5 id="serverName">Chọn một server</h5>
-                <i class="bi bi-chevron-down" id="serverMenuToggle"></i>
-            </div>
-            
-            <!-- Server Dropdown Menu -->
-            <div class="server-dropdown" id="serverDropdown" style="display:none;">
-                <div class="dropdown-item" id="invitePeopleBtn"><i class="bi bi-person-plus"></i> Mời mọi người</div>
-                <div class="dropdown-item" id="serverSettingsBtn"><i class="bi bi-gear"></i> Cài đặt Server</div>
-                <div class="dropdown-item" id="createChannelBtn"><i class="bi bi-hash"></i> Tạo Kênh</div>
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-item text-danger" id="leaveServerBtn"><i class="bi bi-box-arrow-left"></i> Rời Server</div>
-            </div>
-
+        <!-- Scrollable Channel List -->
+        <div class="channel-list-wrapper">
             <div class="channel-list" id="channelList">
                 <!-- Channel categories and items will be rendered here -->
             </div>
-        </aside>
+        </div>
+        
+        <!-- User Area (Fixed at Bottom of Channel Sidebar) -->
+        <div class="user-area" id="userPanel">
+            <div class="user-info" id="userInfoBtn" role="button" tabindex="0">
+                <div class="user-avatar" id="ucpAvatar">
+                    <span class="status-indicator online" id="ucpStatusIndicator"></span>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="ucpName">User</div>
+                    <div class="user-status" id="ucpStatus">Trực tuyến</div>
+                </div>
+            </div>
+            <div class="user-controls" aria-label="Controls">
+                <button class="control-btn" id="micBtn" title="Tắt/Bật Mic">
+                    <i class="bi bi-mic"></i>
+                </button>
+                <button class="control-btn" id="deafenBtn" title="Tắt/Bật Tai nghe">
+                    <i class="bi bi-headphones"></i>
+                </button>
+                <button class="control-btn" id="settingsBtn" title="Cài đặt người dùng">
+                    <i class="bi bi-gear"></i>
+                </button>
+            </div>
+            
+            <!-- User Dropdown Menu -->
+            <div class="user-dropdown" id="userDropdown" style="display:none;">
+                <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
+                    <i class="bi bi-person"></i> Hồ sơ của tôi
+                </a>
+                <a href="${pageContext.request.contextPath}/settings" class="dropdown-item">
+                    <i class="bi bi-gear"></i> Cài đặt
+                </a>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item status-item">
+                    <i class="bi bi-circle-fill online"></i> Trực tuyến
+                </div>
+                <div class="dropdown-item status-item">
+                    <i class="bi bi-moon-fill idle"></i> Vắng mặt
+                </div>
+                <div class="dropdown-item status-item">
+                    <i class="bi bi-dash-circle-fill dnd"></i> Không làm phiền
+                </div>
+                <div class="dropdown-item status-item">
+                    <i class="bi bi-circle offline"></i> Ẩn
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item text-danger" id="logoutBtnUser">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </div>
+            </div>
+        </div>
+    </aside>
 
     <!-- Main Content -->
     <main class="main-content" aria-label="Chat">
@@ -122,44 +150,19 @@
         </form>
     </main>
 
-        <!-- Members Sidebar -->
-        <aside class="members-sidebar" id="membersSidebar" aria-label="Members">
-            <div class="members-section">
-                <div class="members-category" id="onlineMembersSection">
-                    <span class="category-title">TRỰC TUYẾN — <span id="onlineCount">0</span></span>
-                    <div class="members-list" id="onlineMembersList"></div>
-                </div>
-                <div class="members-category" id="offlineMembersSection">
-                    <span class="category-title">NGOẠI TUYẾN — <span id="offlineCount">0</span></span>
-                    <div class="members-list" id="offlineMembersList"></div>
-                </div>
+    <!-- Members Sidebar -->
+    <aside class="members-sidebar" id="membersSidebar" aria-label="Members">
+        <div class="members-section">
+            <div class="members-category" id="onlineMembersSection">
+                <span class="category-title">TRỰC TUYẾN — <span id="onlineCount">0</span></span>
+                <div class="members-list" id="onlineMembersList"></div>
             </div>
-        </aside>
-    </div>
-    
-    <!-- Full Width User Panel at Bottom -->
-    <div class="user-panel-full" id="userPanel">
-        <div class="user-info">
-            <div class="user-avatar" id="ucpAvatar">
-                <span class="status-indicator online" id="ucpStatusIndicator"></span>
-            </div>
-            <div class="user-details">
-                <div class="user-name" id="ucpName">User</div>
-                <div class="user-status" id="ucpStatus">Trực tuyến</div>
+            <div class="members-category" id="offlineMembersSection">
+                <span class="category-title">NGOẠI TUYẾN — <span id="offlineCount">0</span></span>
+                <div class="members-list" id="offlineMembersList"></div>
             </div>
         </div>
-        <div class="user-controls" aria-label="Controls">
-            <button class="control-btn" id="micBtn" title="Tắt/Bật Mic">
-                <i class="bi bi-mic"></i>
-            </button>
-            <button class="control-btn" id="deafenBtn" title="Tắt/Bật Tai nghe">
-                <i class="bi bi-headphones"></i>
-            </button>
-            <button class="control-btn" id="settingsBtn" title="Cài đặt người dùng">
-                <i class="bi bi-gear"></i>
-            </button>
-        </div>
-    </div>
+    </aside>
 </div>
 
 <!-- Create Server Modal -->

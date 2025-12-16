@@ -3,28 +3,11 @@
 <html lang="vi">
 <head>
     <title>Bạn bè - CoCoCord</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css">
 </head>
 <body>
 <div class="discord-app" id="friendsApp">
-    <!-- Server Bar (far left) -->
-    <aside class="server-bar" aria-label="Servers">
-        <a class="server-btn home active" href="${pageContext.request.contextPath}/friends" title="Tin nhắn trực tiếp">
-            <i class="bi bi-discord"></i>
-        </a>
-        <div class="server-divider"></div>
-        <div class="server-list" id="serverList"></div>
-        <div class="server-footer">
-            <div class="server-divider"></div>
-            <button class="server-btn add" type="button" title="Thêm máy chủ" id="addServerBtn">
-                <i class="bi bi-plus-lg"></i>
-            </button>
-            <button class="server-btn discover" type="button" title="Khám phá máy chủ công khai">
-                <i class="bi bi-compass"></i>
-            </button>
-        </div>
-    </aside>
-
     <!-- DM Sidebar -->
     <aside class="dm-sidebar">
         <div class="sidebar-search">

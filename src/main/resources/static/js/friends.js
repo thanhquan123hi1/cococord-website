@@ -359,7 +359,8 @@
         if (!container) return;
 
         const q = state.friendsSearch.trim().toLowerCase();
-        const requests = state.requests.slice();
+        // Filter only PENDING requests - exclude ACCEPTED, DECLINED, CANCELLED
+        const requests = state.requests.filter(r => String(r.status || '').toUpperCase() === 'PENDING');
 
         const reqFiltered = q
             ? requests.filter((r) => {

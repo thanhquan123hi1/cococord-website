@@ -46,6 +46,9 @@
         settingsBtn: document.getElementById('settingsBtn'),
         userSettingsDropdown: document.getElementById('userSettingsDropdown'),
         logoutBtn: document.getElementById('logoutBtn'),
+        userInfoBtn: document.getElementById('userInfoBtn'),
+        userDropdown: document.getElementById('userDropdown'),
+        logoutBtnUser: document.getElementById('logoutBtnUser'),
         
         // Create Server Modal
         createServerModal: document.getElementById('createServerModal'),
@@ -67,6 +70,8 @@
     let stompClient = null;
     let channelSubscription = null;
     let presenceSubscription = null;
+    let typingSubscription = null;
+    let deleteSubscription = null;
 
     let servers = [];
     let channels = [];
@@ -77,6 +82,17 @@
     let activeChannelId = null;
     let selectedChannelType = 'TEXT';
     let currentUser = null;
+
+    // Pagination state for infinite scroll
+    let currentPage = 0;
+    let isLoadingHistory = false;
+    let hasMoreMessages = true;
+    let oldestMessageId = null;
+
+    // Typing indicator state
+    let typingUsers = new Map(); // username -> { timeout, displayName, avatarUrl }
+    let myTypingTimeout = null;
+    let isCurrentlyTyping = false;
 
     // ==================== UTILITIES ====================
     function getQueryParams() {
@@ -329,14 +345,21 @@
         el.messageList.innerHTML = '';
         el.chatEmpty.style.display = 'block';
         el.chatComposer.style.display = 'none';
+        // Reset pagination state
+        currentPage = 0;
+        hasMoreMessages = true;
+        oldestMessageId = null;
+        hideNewMessagesBanner();
     }
 
-    function appendMessage(msg) {
+    function appendMessage(msg, prepend = false) {
         el.chatEmpty.style.display = 'none';
 
         const row = document.createElement('div');
         row.className = 'message-row';
         row.dataset.messageId = msg.id;
+        row.dataset.userId = msg.userId || msg.senderId || '';
+        row.dataset.username = msg.username || '';
 
         const displayName = msg.displayName || msg.username || 'User';
         const initial = displayName.trim().charAt(0).toUpperCase();
@@ -349,16 +372,156 @@
                 <div class="message-header">
                     <span class="message-author" title="${escapeHtml(msg.username || 'user')}#${discriminatorFromId(msg.userId || msg.senderId)}">${escapeHtml(displayName)}</span>
                     <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
+                    ${msg.editedAt ? '<span class="message-edited">(đã chỉnh sửa)</span>' : ''}
                 </div>
                 <div class="message-content">${escapeHtml(msg.content || '')}</div>
             </div>
         `;
 
-        el.messageList.appendChild(row);
+        if (prepend) {
+            el.messageList.insertBefore(row, el.messageList.firstChild);
+        } else {
+            el.messageList.appendChild(row);
+        }
+        
+        return row;
+    }
+
+    // Check if user is near bottom of message list
+    function isNearBottom() {
+        const threshold = 100; // pixels from bottom
+        return el.messageList.scrollHeight - el.messageList.scrollTop - el.messageList.clientHeight < threshold;
+    }
+
+    // Smart scroll - only auto-scroll if user is near bottom
+    function smartScroll() {
+        if (isNearBottom()) {
+            scrollToBottom();
+            hideNewMessagesBanner();
+        }
+    }
+
+    // Show "New Messages" banner
+    function showNewMessagesBanner() {
+        let banner = document.getElementById('newMessagesBanner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'newMessagesBanner';
+            banner.className = 'new-messages-banner';
+            banner.innerHTML = `
+                <span>Có tin nhắn mới</span>
+                <i class="bi bi-chevron-down"></i>
+            `;
+            banner.addEventListener('click', () => {
+                scrollToBottom();
+                hideNewMessagesBanner();
+            });
+            el.messageList.parentElement.appendChild(banner);
+        }
+        banner.classList.add('show');
+    }
+
+    function hideNewMessagesBanner() {
+        const banner = document.getElementById('newMessagesBanner');
+        if (banner) banner.classList.remove('show');
     }
 
     function scrollToBottom() {
         el.messageList.scrollTop = el.messageList.scrollHeight;
+    }
+
+    // ==================== TYPING INDICATOR ====================
+    function renderTypingIndicator() {
+        let indicator = document.getElementById('typingIndicator');
+        
+        if (typingUsers.size === 0) {
+            if (indicator) indicator.remove();
+            return;
+        }
+        
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'typingIndicator';
+            indicator.className = 'typing-indicator';
+            // Insert before chat composer
+            el.chatComposer.parentElement.insertBefore(indicator, el.chatComposer);
+        }
+        
+        const users = Array.from(typingUsers.values());
+        const avatarsHtml = users.slice(0, 3).map(u => `
+            <div class="typing-avatar">
+                ${u.avatarUrl ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">` : escapeHtml((u.displayName || 'U').charAt(0).toUpperCase())}
+            </div>
+        `).join('');
+        
+        let text = '';
+        if (users.length === 1) {
+            text = `<strong>${escapeHtml(users[0].displayName)}</strong> đang nhập...`;
+        } else if (users.length === 2) {
+            text = `<strong>${escapeHtml(users[0].displayName)}</strong> và <strong>${escapeHtml(users[1].displayName)}</strong> đang nhập...`;
+        } else if (users.length > 2) {
+            text = `<strong>${escapeHtml(users[0].displayName)}</strong> và ${users.length - 1} người khác đang nhập...`;
+        }
+        
+        indicator.innerHTML = `
+            <div class="typing-avatars">${avatarsHtml}</div>
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="typing-text">${text}</div>
+        `;
+    }
+
+    function addTypingUser(username, displayName, avatarUrl) {
+        // Don't show own typing
+        if (currentUser && username === currentUser.username) return;
+        
+        // Clear existing timeout
+        const existing = typingUsers.get(username);
+        if (existing?.timeout) clearTimeout(existing.timeout);
+        
+        // Set new timeout (auto-hide after 3 seconds)
+        const timeout = setTimeout(() => {
+            typingUsers.delete(username);
+            renderTypingIndicator();
+        }, 3000);
+        
+        typingUsers.set(username, { displayName, avatarUrl, timeout });
+        renderTypingIndicator();
+    }
+
+    function removeTypingUser(username) {
+        const existing = typingUsers.get(username);
+        if (existing?.timeout) clearTimeout(existing.timeout);
+        typingUsers.delete(username);
+        renderTypingIndicator();
+    }
+
+    function clearAllTyping() {
+        typingUsers.forEach(u => {
+            if (u.timeout) clearTimeout(u.timeout);
+        });
+        typingUsers.clear();
+        renderTypingIndicator();
+    }
+
+    // Send typing notification
+    function sendTypingNotification() {
+        if (!stompClient?.connected || !activeChannelId) return;
+        
+        if (!isCurrentlyTyping) {
+            isCurrentlyTyping = true;
+            stompClient.send('/app/chat.typing', {}, JSON.stringify({
+                channelId: activeChannelId,
+                isTyping: true
+            }));
+        }
+        
+        // Reset typing timeout
+        if (myTypingTimeout) clearTimeout(myTypingTimeout);
+        myTypingTimeout = setTimeout(() => {
+            isCurrentlyTyping = false;
+        }, 3000);
     }
 
     // ==================== USER PANEL ====================
@@ -405,20 +568,101 @@
         }
     }
 
-    async function loadHistory(channelId) {
-        const page = await apiGet(`/api/messages/channel/${channelId}?page=0&size=50`);
-        const items = Array.isArray(page.content) ? page.content.slice() : [];
-        items.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    async function loadHistory(channelId, append = false) {
+        if (isLoadingHistory) return;
+        
+        isLoadingHistory = true;
+        
+        try {
+            const page = await apiGet(`/api/messages/channel/${channelId}?page=${currentPage}&size=50`);
+            const items = Array.isArray(page.content) ? page.content.slice() : [];
+            
+            // Check if there are more pages
+            hasMoreMessages = !page.last && items.length > 0;
+            
+            // Sort by date ascending
+            items.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
-        el.messageList.innerHTML = '';
-        if (!items.length) {
-            el.chatEmpty.style.display = 'block';
-        } else {
-            el.chatEmpty.style.display = 'none';
-            for (const m of items) appendMessage(m);
+            if (!append) {
+                // Initial load
+                el.messageList.innerHTML = '';
+                if (!items.length) {
+                    el.chatEmpty.style.display = 'block';
+                } else {
+                    el.chatEmpty.style.display = 'none';
+                    for (const m of items) appendMessage(m);
+                }
+                el.chatComposer.style.display = '';
+                scrollToBottom();
+                
+                // Track oldest message for pagination
+                if (items.length > 0) {
+                    oldestMessageId = items[0].id;
+                }
+            } else {
+                // Prepending older messages (infinite scroll)
+                if (items.length > 0) {
+                    // Save scroll position
+                    const scrollHeightBefore = el.messageList.scrollHeight;
+                    const scrollTopBefore = el.messageList.scrollTop;
+                    
+                    // Prepend messages in reverse order (oldest first)
+                    for (let i = items.length - 1; i >= 0; i--) {
+                        appendMessage(items[i], true);
+                    }
+                    
+                    // Restore scroll position (keep user at same visual position)
+                    const scrollHeightAfter = el.messageList.scrollHeight;
+                    el.messageList.scrollTop = scrollTopBefore + (scrollHeightAfter - scrollHeightBefore);
+                    
+                    oldestMessageId = items[0].id;
+                }
+            }
+            
+            currentPage++;
+        } catch (e) {
+            console.error('Failed to load history:', e);
+        } finally {
+            isLoadingHistory = false;
+            hideLoadingSpinner();
         }
-        el.chatComposer.style.display = '';
-        scrollToBottom();
+    }
+
+    // Load more messages when scrolling to top
+    async function loadMoreHistory() {
+        if (!activeChannelId || isLoadingHistory || !hasMoreMessages) return;
+        
+        showLoadingSpinner();
+        await loadHistory(activeChannelId, true);
+    }
+
+    function showLoadingSpinner() {
+        let spinner = document.getElementById('historySpinner');
+        if (!spinner) {
+            spinner = document.createElement('div');
+            spinner.id = 'historySpinner';
+            spinner.className = 'history-spinner';
+            spinner.innerHTML = '<div class="spinner"></div>';
+            el.messageList.insertBefore(spinner, el.messageList.firstChild);
+        }
+    }
+
+    function hideLoadingSpinner() {
+        const spinner = document.getElementById('historySpinner');
+        if (spinner) spinner.remove();
+    }
+
+    // Handle scroll event for infinite scroll
+    function handleMessageScroll() {
+        // Check if scrolled to top
+        if (el.messageList.scrollTop === 0 && hasMoreMessages && !isLoadingHistory) {
+            loadMoreHistory();
+        }
+        
+        // Hide new messages banner if at bottom
+        if (isNearBottom()) {
+            hideNewMessagesBanner();
+        }
     }
 
     // ==================== WEBSOCKET ====================
@@ -465,17 +709,86 @@
     async function subscribeToChannel(channelId) {
         await ensureStompConnected();
 
+        // Unsubscribe from previous channel
         if (channelSubscription) {
             try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
             channelSubscription = null;
         }
+        if (typingSubscription) {
+            try { typingSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            typingSubscription = null;
+        }
+        if (deleteSubscription) {
+            try { deleteSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            deleteSubscription = null;
+        }
 
+        // Clear typing users from previous channel
+        clearAllTyping();
+
+        // Subscribe to new messages
         channelSubscription = stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
             try {
                 const payload = JSON.parse(message.body);
                 if (String(payload.channelId) !== String(activeChannelId)) return;
-                appendMessage(payload);
-                scrollToBottom();
+                
+                // Check if this is an edit (message already exists)
+                const existingRow = document.querySelector(`[data-message-id="${payload.id}"]`);
+                if (existingRow) {
+                    // Update existing message (edit)
+                    const contentEl = existingRow.querySelector('.message-content');
+                    const headerEl = existingRow.querySelector('.message-header');
+                    if (contentEl) contentEl.textContent = payload.content || '';
+                    if (headerEl && payload.editedAt && !headerEl.querySelector('.message-edited')) {
+                        const editedSpan = document.createElement('span');
+                        editedSpan.className = 'message-edited';
+                        editedSpan.textContent = '(đã chỉnh sửa)';
+                        headerEl.appendChild(editedSpan);
+                    }
+                } else {
+                    // New message
+                    appendMessage(payload);
+                    
+                    // Remove typing indicator for this user
+                    if (payload.username) removeTypingUser(payload.username);
+                    
+                    // Smart scroll - show banner if not at bottom
+                    if (isNearBottom()) {
+                        scrollToBottom();
+                    } else {
+                        showNewMessagesBanner();
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        });
+
+        // Subscribe to typing indicators
+        typingSubscription = stompClient.subscribe(`/topic/channel/${channelId}/typing`, (message) => {
+            try {
+                const payload = JSON.parse(message.body);
+                if (payload.isTyping) {
+                    // Find member info
+                    const member = members.find(m => m.username === payload.username);
+                    addTypingUser(
+                        payload.username,
+                        member?.displayName || payload.username,
+                        member?.avatarUrl || null
+                    );
+                } else {
+                    removeTypingUser(payload.username);
+                }
+            } catch (e) { /* ignore */ }
+        });
+
+        // Subscribe to message deletions
+        deleteSubscription = stompClient.subscribe(`/topic/channel/${channelId}/delete`, (message) => {
+            try {
+                const messageId = message.body.replace(/"/g, '');
+                const row = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (row) {
+                    row.classList.add('message-deleted');
+                    setTimeout(() => row.remove(), 300);
+                }
             } catch (e) { /* ignore */ }
         });
     }
@@ -509,6 +822,12 @@
         activeChannelId = channelId;
         setQueryParams({ serverId: activeServerId, channelId });
 
+        // Reset pagination state for new channel
+        currentPage = 0;
+        hasMoreMessages = true;
+        oldestMessageId = null;
+        clearAllTyping();
+
         const channel = channels.find(c => String(c.id) === String(channelId));
         const channelName = channel ? (channel.name || 'channel') : 'channel';
         
@@ -526,6 +845,302 @@
         renderChannelList();
         await subscribeToChannel(channelId);
         await loadHistory(channelId);
+    }
+
+    // ==================== CUSTOM CONTEXT MENU ====================
+    let activeContextMenu = null;
+    let contextTargetMessage = null;
+    let contextTargetServer = null;
+
+    function createContextMenu() {
+        // Remove existing menu if any
+        hideContextMenu();
+        
+        const menu = document.createElement('div');
+        menu.id = 'customContextMenu';
+        menu.className = 'context-menu';
+        document.body.appendChild(menu);
+        activeContextMenu = menu;
+        return menu;
+    }
+
+    function showContextMenu(x, y, items) {
+        const menu = createContextMenu();
+        
+        menu.innerHTML = items.map(item => {
+            if (item.divider) {
+                return '<div class="context-menu-divider"></div>';
+            }
+            const dangerClass = item.danger ? ' danger' : '';
+            return `<div class="context-menu-item${dangerClass}" data-action="${item.action}">${item.icon ? `<i class="${item.icon}"></i>` : ''}${escapeHtml(item.label)}</div>`;
+        }).join('');
+        
+        // Position menu
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        menu.style.display = 'block';
+        
+        // Adjust if menu goes off screen
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = `${window.innerWidth - rect.width - 10}px`;
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = `${window.innerHeight - rect.height - 10}px`;
+        }
+        
+        // Add click handlers
+        menu.querySelectorAll('.context-menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                handleContextMenuAction(action);
+                hideContextMenu();
+            });
+        });
+    }
+
+    function hideContextMenu() {
+        if (activeContextMenu) {
+            activeContextMenu.remove();
+            activeContextMenu = null;
+        }
+        contextTargetMessage = null;
+        contextTargetServer = null;
+    }
+
+    function handleContextMenuAction(action) {
+        switch (action) {
+            case 'reply':
+                handleReplyMessage();
+                break;
+            case 'copy':
+                handleCopyMessage();
+                break;
+            case 'edit':
+                handleEditMessage();
+                break;
+            case 'delete':
+                handleDeleteMessage();
+                break;
+            case 'invite-friends':
+                handleInviteFriendsFromMenu();
+                break;
+            case 'leave-server':
+                handleLeaveServerFromMenu();
+                break;
+            case 'server-settings':
+                handleServerSettingsFromMenu();
+                break;
+        }
+    }
+
+    // Message context menu handlers
+    function handleReplyMessage() {
+        if (!contextTargetMessage) return;
+        const content = contextTargetMessage.querySelector('.message-content')?.textContent || '';
+        const author = contextTargetMessage.querySelector('.message-author')?.textContent || '';
+        
+        // Focus input and add reply reference
+        el.chatInput.focus();
+        el.chatInput.placeholder = `Đang trả lời ${author}...`;
+        el.chatInput.dataset.replyTo = contextTargetMessage.dataset.messageId;
+        
+        // Show reply preview (optional UI)
+        showReplyPreview(author, content);
+    }
+
+    function showReplyPreview(author, content) {
+        let preview = document.getElementById('replyPreview');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.id = 'replyPreview';
+            preview.className = 'reply-preview';
+            el.chatComposer.insertBefore(preview, el.chatComposer.firstChild);
+        }
+        
+        preview.innerHTML = `
+            <div class="reply-preview-content">
+                <i class="bi bi-reply-fill"></i>
+                <span>Đang trả lời <strong>${escapeHtml(author)}</strong>: ${escapeHtml(content.slice(0, 50))}${content.length > 50 ? '...' : ''}</span>
+            </div>
+            <button class="reply-cancel" type="button"><i class="bi bi-x"></i></button>
+        `;
+        
+        preview.querySelector('.reply-cancel').addEventListener('click', cancelReply);
+    }
+
+    function cancelReply() {
+        const preview = document.getElementById('replyPreview');
+        if (preview) preview.remove();
+        if (el.chatInput) {
+            const channel = channels.find(c => String(c.id) === String(activeChannelId));
+            el.chatInput.placeholder = `Nhắn #${channel?.name || 'channel'}`;
+            delete el.chatInput.dataset.replyTo;
+        }
+    }
+
+    function handleCopyMessage() {
+        if (!contextTargetMessage) return;
+        const content = contextTargetMessage.querySelector('.message-content')?.textContent || '';
+        navigator.clipboard.writeText(content).then(() => {
+            showToast('Đã sao chép tin nhắn');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    }
+
+    function handleEditMessage() {
+        if (!contextTargetMessage) return;
+        const messageId = contextTargetMessage.dataset.messageId;
+        const contentEl = contextTargetMessage.querySelector('.message-content');
+        const currentContent = contentEl?.textContent || '';
+        
+        // Replace content with input
+        const originalHtml = contentEl.innerHTML;
+        contentEl.innerHTML = `
+            <input type="text" class="edit-message-input" value="${escapeHtml(currentContent)}">
+            <div class="edit-message-hint">Escape để hủy • Enter để lưu</div>
+        `;
+        
+        const input = contentEl.querySelector('.edit-message-input');
+        input.focus();
+        input.select();
+        
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Escape') {
+                contentEl.innerHTML = originalHtml;
+            } else if (e.key === 'Enter') {
+                const newContent = input.value.trim();
+                if (newContent && newContent !== currentContent) {
+                    try {
+                        // Send edit via WebSocket
+                        if (stompClient?.connected) {
+                            stompClient.send('/app/chat.editMessage', {}, JSON.stringify({
+                                messageId: messageId,
+                                content: newContent
+                            }));
+                        }
+                        contentEl.textContent = newContent;
+                    } catch (err) {
+                        console.error('Failed to edit:', err);
+                        contentEl.innerHTML = originalHtml;
+                    }
+                } else {
+                    contentEl.innerHTML = originalHtml;
+                }
+            }
+        });
+        
+        input.addEventListener('blur', () => {
+            // Restore on blur after delay
+            setTimeout(() => {
+                if (contentEl.querySelector('.edit-message-input')) {
+                    contentEl.innerHTML = originalHtml;
+                }
+            }, 200);
+        });
+    }
+
+    async function handleDeleteMessage() {
+        if (!contextTargetMessage) return;
+        const messageId = contextTargetMessage.dataset.messageId;
+        
+        if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return;
+        
+        try {
+            if (stompClient?.connected) {
+                stompClient.send('/app/chat.deleteMessage', {}, JSON.stringify(messageId));
+            }
+        } catch (err) {
+            console.error('Failed to delete:', err);
+            alert('Không thể xóa tin nhắn');
+        }
+    }
+
+    // Server context menu handlers
+    function handleInviteFriendsFromMenu() {
+        if (!contextTargetServer) return;
+        const serverId = contextTargetServer.dataset.serverId;
+        if (serverId && String(serverId) !== String(activeServerId)) {
+            selectServer(Number(serverId)).then(() => showInviteFriendsModal());
+        } else {
+            showInviteFriendsModal();
+        }
+    }
+
+    function handleLeaveServerFromMenu() {
+        if (!contextTargetServer) return;
+        const serverId = contextTargetServer.dataset.serverId;
+        if (serverId) {
+            // Temporarily set active server to leave
+            const prevServerId = activeServerId;
+            activeServerId = Number(serverId);
+            leaveCurrentServer().finally(() => {
+                if (activeServerId === Number(serverId)) {
+                    activeServerId = prevServerId;
+                }
+            });
+        }
+    }
+
+    function handleServerSettingsFromMenu() {
+        showServerSettingsModal();
+    }
+
+    // Simple toast notification
+    function showToast(message) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.className = 'toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // Context menu for messages
+    function showMessageContextMenu(e, messageRow) {
+        e.preventDefault();
+        contextTargetMessage = messageRow;
+        
+        const messageUserId = messageRow.dataset.userId;
+        const isOwnMessage = currentUser && String(messageUserId) === String(currentUser.id);
+        // TODO: Check if user is admin for delete permission
+        const canDelete = isOwnMessage; // || isAdmin
+        
+        const items = [
+            { action: 'reply', icon: 'bi bi-reply-fill', label: 'Trả lời' },
+            { action: 'copy', icon: 'bi bi-clipboard', label: 'Sao chép văn bản' }
+        ];
+        
+        if (isOwnMessage) {
+            items.push({ action: 'edit', icon: 'bi bi-pencil', label: 'Chỉnh sửa' });
+        }
+        
+        if (canDelete) {
+            items.push({ divider: true });
+            items.push({ action: 'delete', icon: 'bi bi-trash', label: 'Xóa tin nhắn', danger: true });
+        }
+        
+        showContextMenu(e.clientX, e.clientY, items);
+    }
+
+    // Context menu for server icons
+    function showServerContextMenu(e, serverItem) {
+        e.preventDefault();
+        contextTargetServer = serverItem;
+        
+        const items = [
+            { action: 'invite-friends', icon: 'bi bi-person-plus', label: 'Mời bạn bè' },
+            { action: 'server-settings', icon: 'bi bi-gear', label: 'Cài đặt Server' },
+            { divider: true },
+            { action: 'leave-server', icon: 'bi bi-box-arrow-left', label: 'Rời Server', danger: true }
+        ];
+        
+        showContextMenu(e.clientX, e.clientY, items);
     }
 
     // ==================== MODALS ====================
@@ -551,6 +1166,40 @@
 
     function hideCreateChannelModal() {
         el.createChannelModal.style.display = 'none';
+    }
+
+    // ==================== SERVER SETTINGS & LEAVE ====================
+    function showServerSettingsModal() {
+        // TODO: Implement server settings modal
+        alert('Chức năng Cài đặt Server đang được phát triển');
+    }
+
+    async function leaveCurrentServer() {
+        if (!activeServerId) return;
+        
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        const serverName = server?.name || 'Server';
+        
+        if (!confirm(`Bạn có chắc muốn rời khỏi "${serverName}"?`)) return;
+        
+        try {
+            await apiPost(`/api/servers/${activeServerId}/leave`, {});
+            await loadServers();
+            renderServerList();
+            
+            // Select another server if available
+            if (servers.length > 0) {
+                await selectServer(servers[0].id);
+            } else {
+                activeServerId = null;
+                activeChannelId = null;
+                el.serverName.textContent = 'Chọn một server';
+                el.channelList.innerHTML = '';
+                clearMessages();
+            }
+        } catch (e) {
+            alert('Không thể rời server: ' + (e.message || 'Lỗi'));
+        }
     }
 
     async function createServer() {
@@ -773,10 +1422,25 @@
         const isVisible = el.userSettingsDropdown.style.display !== 'none';
         el.userSettingsDropdown.style.display = isVisible ? 'none' : 'block';
     }
+    
+    function toggleUserDropdown() {
+        if (!el.userDropdown) return;
+        const isVisible = el.userDropdown.style.display !== 'none';
+        el.userDropdown.style.display = isVisible ? 'none' : 'block';
+    }
 
     function toggleMembersSidebar() {
         el.membersSidebar.classList.toggle('show');
         el.membersToggleBtn.classList.toggle('active');
+    }
+    
+    function doLogout() {
+        if (typeof logout === 'function') {
+            logout();
+        } else {
+            localStorage.clear();
+            window.location.href = '/login';
+        }
     }
 
     // ==================== EVENT WIRING ====================
@@ -793,6 +1457,16 @@
         el.invitePeopleBtn?.addEventListener('click', () => {
             toggleServerDropdown();
             showInviteFriendsModal();
+        });
+        
+        el.serverSettingsBtn?.addEventListener('click', () => {
+            toggleServerDropdown();
+            showServerSettingsModal();
+        });
+        
+        el.leaveServerBtn?.addEventListener('click', () => {
+            toggleServerDropdown();
+            leaveCurrentServer();
         });
         
         // Invite Friends Modal
@@ -834,9 +1508,14 @@
         
         // User settings
         el.settingsBtn?.addEventListener('click', toggleUserSettings);
-        el.logoutBtn?.addEventListener('click', () => {
-            if (typeof logout === 'function') logout();
+        el.logoutBtn?.addEventListener('click', doLogout);
+        
+        // User info dropdown (click on user info shows dropdown with logout)
+        el.userInfoBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleUserDropdown();
         });
+        el.logoutBtnUser?.addEventListener('click', doLogout);
         
         // Members toggle
         el.membersToggleBtn?.addEventListener('click', toggleMembersSidebar);
@@ -849,6 +1528,9 @@
 
             if (!stompClient || !stompClient.connected) return;
 
+            // Cancel reply if active
+            cancelReply();
+
             stompClient.send(
                 '/app/chat.sendMessage',
                 {},
@@ -858,13 +1540,69 @@
             el.chatInput.value = '';
         });
         
+        // Typing indicator - send when user types
+        el.chatInput?.addEventListener('input', () => {
+            sendTypingNotification();
+        });
+        
+        // Message list scroll handler for infinite scroll & new message banner
+        el.messageList?.addEventListener('scroll', handleMessageScroll);
+        
+        // Context menu - prevent default on message list
+        el.messageList?.addEventListener('contextmenu', (e) => {
+            const messageRow = e.target.closest('.message-row');
+            if (messageRow) {
+                showMessageContextMenu(e, messageRow);
+            } else {
+                // Don't show custom menu if not on a message
+                hideContextMenu();
+            }
+        });
+        
+        // Context menu - for global server sidebar (in decorator)
+        const globalServerList = document.getElementById('globalServerList');
+        globalServerList?.addEventListener('contextmenu', (e) => {
+            const serverItem = e.target.closest('.server-item');
+            if (serverItem && serverItem.dataset.serverId) {
+                showServerContextMenu(e, serverItem);
+            }
+        });
+        
+        // Also handle local server list if exists
+        el.serverList?.addEventListener('contextmenu', (e) => {
+            const serverItem = e.target.closest('.server-item');
+            if (serverItem && serverItem.dataset.serverId) {
+                showServerContextMenu(e, serverItem);
+            }
+        });
+        
+        // Hide context menu on click anywhere
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu')) {
+                hideContextMenu();
+            }
+        });
+        
+        // Hide context menu on scroll
+        document.addEventListener('scroll', hideContextMenu, true);
+        
+        // Hide context menu on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideContextMenu();
+            }
+        });
+        
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
             if (!el.serverHeader?.contains(e.target) && !el.serverDropdown?.contains(e.target)) {
-                el.serverDropdown.style.display = 'none';
+                if (el.serverDropdown) el.serverDropdown.style.display = 'none';
             }
             if (!el.settingsBtn?.contains(e.target) && !el.userSettingsDropdown?.contains(e.target)) {
-                el.userSettingsDropdown.style.display = 'none';
+                if (el.userSettingsDropdown) el.userSettingsDropdown.style.display = 'none';
+            }
+            if (!el.userInfoBtn?.contains(e.target) && !el.userDropdown?.contains(e.target)) {
+                if (el.userDropdown) el.userDropdown.style.display = 'none';
             }
         });
         
