@@ -1,11 +1,18 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.entity.mongodb.DirectMessage;
 import vn.cococord.entity.mysql.DirectMessageGroup;
 import vn.cococord.entity.mysql.DirectMessageMember;
@@ -18,12 +25,6 @@ import vn.cococord.repository.IDirectMessageRepository;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IDirectMessageService;
 import vn.cococord.service.INotificationService;
-
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -342,9 +343,10 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         message = savedMessage;
 
         // Send notifications to other members (except sender)
-        @SuppressWarnings("null")
-        DirectMessageGroup dmGroup = dmGroupRepository.findById(dmGroupId)
-                .orElseThrow(() -> new ResourceNotFoundException("DM Group not found"));
+        // Verify DM group exists
+        if (!dmGroupRepository.existsById(dmGroupId)) {
+            throw new ResourceNotFoundException("DM Group not found");
+        }
 
         List<Long> memberIds = dmMemberRepository.findByDmGroupId(dmGroupId).stream()
                 .map(m -> m.getUser().getId())

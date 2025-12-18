@@ -49,6 +49,7 @@ body.app-layout {
 }
 
 /* ==================== SERVER SIDEBAR (Global - in Decorator) ==================== */
+.server-bar,
 .server-sidebar {
     width: 72px;
     background-color: #1E1F22;
@@ -615,4 +616,48 @@ body.app-layout {
     .channel-sidebar.show {
         left: 60px;
     }
+}
+
+/* ==================== APP LAYOUT FIX ==================== */
+
+/* 1. Reset Body để không bị cuộn trang thừa */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Quan trọng: Ẩn thanh cuộn của trình duyệt */
+    background-color: #313338; /* Màu nền Discord */
+}
+
+/* 2. Biến khung bao ngoài thành Flex container (Ngang) */
+.app-layout-wrapper {
+    display: flex;          /* Xếp Sidebar và Content nằm ngang */
+    width: 100vw;           /* Full chiều rộng màn hình */
+    height: 100vh;          /* Full chiều cao màn hình */
+    background-color: #313338;
+}
+
+/* 3. Cố định chiều rộng cột Server (Sidebar trái cùng) */
+/* Lưu ý: Nếu bạn đã sửa class trong app.jsp thành 'server-bar' thì friends.css sẽ lo phần này. 
+   Nếu chưa, hãy dùng đoạn dưới: */
+.server-bar, .server-sidebar {
+    width: 72px;
+    height: 100%;
+    flex-shrink: 0;         /* Không cho phép bị co lại */
+    background-color: #1E1F22;
+    overflow-y: auto;       /* Cuộn nếu danh sách server dài */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+}
+
+/* 4. Vùng nội dung chính (Chứa friends.jsp) */
+.page-content-area {
+    flex: 1;                /* Chiếm toàn bộ không gian còn lại */
+    height: 100%;
+    overflow: hidden;       /* Để nội dung con tự quản lý cuộn */
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }

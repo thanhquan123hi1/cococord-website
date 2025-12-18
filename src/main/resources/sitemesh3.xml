@@ -1,34 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <sitemesh>
+    <!-- Decorator definitions -->
     <decorator name="public" page="/WEB-INF/decorators/public.jsp" />
     <decorator name="app" page="/WEB-INF/decorators/app.jsp" />
 
+    <!-- Public pages (no sidebar, public layout) -->
     <mapping path="/" decorator="public" />
     <mapping path="/login" decorator="public" />
     <mapping path="/register" decorator="public" />
     <mapping path="/forgot-password" decorator="public" />
     <mapping path="/reset-password" decorator="public" />
+    <mapping path="/invite/**" decorator="public" />
+    
+    <!-- App pages (with server sidebar) -->
     <mapping path="/dashboard" decorator="app" />
     <mapping path="/friends" decorator="app" />
+    <mapping path="/friends/**" decorator="app" />
     <mapping path="/messages" decorator="app" />
+    <mapping path="/messages/**" decorator="app" />
     <mapping path="/chat" decorator="app" />
-    <mapping path="/chat/*" decorator="app" />
+    <mapping path="/chat/**" decorator="app" />
     <mapping path="/profile" decorator="app" />
+    <mapping path="/profile/**" decorator="app" />
+    <mapping path="/settings" decorator="app" />
+    <mapping path="/settings/**" decorator="app" />
     <mapping path="/sessions" decorator="app" />
     <mapping path="/change-password" decorator="app" />
 
+    <!-- Exclude static resources and API endpoints -->
     <excludes>
-        <pattern>/api/*</pattern>
-        <pattern>/graphql/*</pattern>
-        <pattern>/ws/*</pattern>
-        <pattern>/css/*</pattern>
-        <pattern>/js/*</pattern>
-        <pattern>/images/*</pattern>
-        <pattern>/webjars/*</pattern>
-        <pattern>/static/*</pattern>
+        <pattern>/api/**</pattern>
+        <pattern>/graphql/**</pattern>
+        <pattern>/ws/**</pattern>
+        <pattern>/css/**</pattern>
+        <pattern>/js/**</pattern>
+        <pattern>/images/**</pattern>
+        <pattern>/webjars/**</pattern>
+        <pattern>/static/**</pattern>
         <pattern>/favicon.ico</pattern>
-        <pattern>/h2-console/*</pattern>
-        <pattern>/WEB-INF/*</pattern>
+        <pattern>/h2-console/**</pattern>
+        <pattern>/WEB-INF/**</pattern>
+        <pattern>/error</pattern>
     </excludes>
 </sitemesh>

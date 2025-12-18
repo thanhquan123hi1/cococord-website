@@ -80,7 +80,15 @@
         channelNameInput: document.getElementById('channelNameInput'),
         cancelCreateChannel: document.getElementById('cancelCreateChannel'),
         confirmCreateChannel: document.getElementById('confirmCreateChannel'),
-        channelTypeOptions: document.querySelectorAll('.channel-type-option')
+        channelTypeOptions: document.querySelectorAll('.channel-type-option'),
+        
+        // Create Category Modal
+        createCategoryModal: document.getElementById('createCategoryModal'),
+        closeCreateCategoryModal: document.getElementById('closeCreateCategoryModal'),
+        categoryNameInput: document.getElementById('categoryNameInput'),
+        cancelCreateCategory: document.getElementById('cancelCreateCategory'),
+        confirmCreateCategory: document.getElementById('confirmCreateCategory'),
+        createCategoryBtn: document.getElementById('createCategoryBtn')
     };
 
     // ==================== STATE ====================
@@ -90,9 +98,12 @@
     let typingSubscription = null;
     let deleteSubscription = null;
     let voiceSubscription = null;
+    let serverChannelsSubscription = null;
+    let serverCategoriesSubscription = null;
 
     let servers = [];
     let channels = [];
+    let categories = [];
     let members = [];
     let presenceMap = new Map(); // username -> status
 
@@ -196,45 +207,73 @@
     // ==================== RENDER FUNCTIONS ====================
     function renderServerList() {
         el.serverList.innerHTML = '';
+        const tooltip = document.getElementById('serverTooltip');
 
         if (!servers.length) {
             const div = document.createElement('div');
             div.className = 'server-item';
-            div.title = 'Chưa có server';
-            div.innerHTML = '<i class="bi bi-question-lg"></i>';
+            div.innerHTML = '<div class="server-item-inner"><i class="bi bi-question-lg"></i></div>';
             el.serverList.appendChild(div);
             return;
         }
 
         for (const s of servers) {
-            const btn = document.createElement('div');
-            btn.className = 'server-item' + (String(s.id) === String(activeServerId) ? ' active' : '');
-            btn.setAttribute('role', 'button');
-            btn.setAttribute('tabindex', '0');
-            btn.title = s.name || 'Server';
-            btn.dataset.serverId = s.id;
+            const item = document.createElement('div');
+            item.className = 'server-item' + (String(s.id) === String(activeServerId) ? ' active' : '');
+            item.dataset.serverId = s.id;
+            item.dataset.serverName = s.name || 'Server';
+
+            const pill = document.createElement('div');
+            pill.className = 'server-pill';
+            item.appendChild(pill);
+
+            const inner = document.createElement('div');
+            inner.className = 'server-item-inner';
+            inner.setAttribute('role', 'button');
+            inner.setAttribute('tabindex', '0');
 
             if (s.iconUrl) {
                 const img = document.createElement('img');
                 img.alt = s.name || 'Server';
                 img.src = s.iconUrl;
-                btn.appendChild(img);
+                inner.appendChild(img);
             } else {
                 const span = document.createElement('span');
                 span.className = 'server-initial';
                 span.textContent = (s.name || 'S').trim().charAt(0).toUpperCase();
-                btn.appendChild(span);
+                inner.appendChild(span);
             }
 
-            btn.addEventListener('click', () => selectServer(s.id));
-            btn.addEventListener('keydown', (e) => {
+            item.appendChild(inner);
+
+            // Event listeners
+            inner.addEventListener('click', () => selectServer(s.id));
+            inner.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     selectServer(s.id);
                 }
             });
 
-            el.serverList.appendChild(btn);
+            // Tooltip handling
+            if (tooltip) {
+                let tooltipTimeout;
+                item.addEventListener('mouseenter', () => {
+                    tooltipTimeout = setTimeout(() => {
+                        const rect = item.getBoundingClientRect();
+                        tooltip.textContent = s.name || 'Server';
+                        tooltip.style.top = `${rect.top + rect.height / 2}px`;
+                        tooltip.style.left = `${rect.right + 8}px`;
+                        tooltip.classList.add('visible');
+                    }, 200);
+                });
+                item.addEventListener('mouseleave', () => {
+                    clearTimeout(tooltipTimeout);
+                    tooltip.classList.remove('visible');
+                });
+            }
+
+            el.serverList.appendChild(item);
         }
     }
 
@@ -249,92 +288,129 @@
             return;
         }
 
-        // Group by category (if exists) or default
-        const textChannels = channels.filter(c => c.type !== 'VOICE');
-        const voiceChannels = channels.filter(c => c.type === 'VOICE');
+        // Group channels by categoryId
+        const uncategorizedChannels = channels.filter(c => !c.categoryId);
+        const channelsByCategory = new Map();
+        
+        for (const cat of categories) {
+            channelsByCategory.set(cat.id, channels.filter(c => c.categoryId === cat.id));
+        }
 
-        if (textChannels.length > 0) {
-            const category = document.createElement('div');
-            category.className = 'channel-category';
+        // Helper function to render a channel item
+        const renderChannelItem = (c) => {
+            const isVoice = c.type === 'VOICE';
+            const item = document.createElement('div');
+            item.className = 'channel-item' + 
+                (isVoice ? ' voice-channel' : '') +
+                (String(c.id) === String(activeChannelId) ? ' active' : '') +
+                (isVoice && String(c.id) === String(activeVoiceChannelId) ? ' voice-active' : '');
+            item.setAttribute('role', 'button');
+            item.setAttribute('tabindex', '0');
+            item.dataset.channelId = c.id;
+            item.dataset.channelType = c.type || 'TEXT';
+
+            const icon = isVoice 
+                ? '<i class="bi bi-volume-up"></i>' 
+                : '<span class="hash">#</span>';
             
-            const header = document.createElement('div');
-            header.className = 'category-header';
-            header.innerHTML = `
-                <i class="bi bi-chevron-down"></i>
-                <span>KÊNH VĂN BẢN</span>
+            item.innerHTML = `
+                ${icon}
+                <span class="channel-name">${escapeHtml(c.name || 'channel')}</span>
+                ${c.isDefault ? '<i class="bi bi-star-fill channel-default-icon" title="Kênh mặc định"></i>' : ''}
             `;
-            category.appendChild(header);
-            
-            const channelsContainer = document.createElement('div');
-            channelsContainer.className = 'channels-container';
-            
-            for (const c of textChannels) {
-                const item = document.createElement('div');
-                item.className = 'channel-item' + (String(c.id) === String(activeChannelId) ? ' active' : '');
-                item.setAttribute('role', 'button');
-                item.setAttribute('tabindex', '0');
-                item.dataset.channelId = c.id;
 
-                item.innerHTML = `
-                    <span class="hash">#</span>
-                    <span class="channel-name">${escapeHtml(c.name || 'channel')}</span>
-                `;
-
-                // Use closure to capture correct channel id
-                const channelId = c.id;
-                item.addEventListener('click', function() { 
-                    selectChannel(channelId); 
-                });
-                item.addEventListener('keydown', function(e) {
+            const channelId = c.id;
+            if (isVoice) {
+                item.addEventListener('click', () => joinVoiceChannel(channelId));
+            } else {
+                item.addEventListener('click', () => selectChannel(channelId));
+                item.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         selectChannel(channelId);
                     }
                 });
-
-                channelsContainer.appendChild(item);
             }
-            category.appendChild(channelsContainer);
-            el.channelList.appendChild(category);
-        }
 
-        if (voiceChannels.length > 0) {
+            return item;
+        };
+
+        // Helper function to create a category container
+        const createCategory = (name, channelList, categoryId = null, collapsed = false) => {
+            if (!channelList.length) return null;
+
             const category = document.createElement('div');
             category.className = 'channel-category';
-            
+            if (categoryId) category.dataset.categoryId = categoryId;
+
             const header = document.createElement('div');
-            header.className = 'category-header';
+            header.className = 'category-header' + (collapsed ? ' collapsed' : '');
             header.innerHTML = `
-                <i class="bi bi-chevron-down"></i>
-                <span>KÊNH THOẠI</span>
+                <i class="bi bi-chevron-down category-toggle"></i>
+                <span class="category-name">${escapeHtml(name)}</span>
+                <button class="category-add-channel" title="Tạo kênh">
+                    <i class="bi bi-plus"></i>
+                </button>
             `;
-            category.appendChild(header);
-            
-            const channelsContainer = document.createElement('div');
-            channelsContainer.className = 'channels-container';
-            
-            for (const c of voiceChannels) {
-                const item = document.createElement('div');
-                item.className = 'channel-item voice-channel' + (String(c.id) === String(activeVoiceChannelId) ? ' voice-active' : '');
-                item.setAttribute('role', 'button');
-                item.setAttribute('tabindex', '0');
-                item.dataset.channelId = c.id;
-                
-                item.innerHTML = `
-                    <span class="hash"><i class="bi bi-volume-up"></i></span>
-                    <span class="channel-name">${escapeHtml(c.name || 'channel')}</span>
-                `;
-                
-                // Voice channels - join voice when clicked
-                const channelId = c.id;
-                item.addEventListener('click', function() { 
-                    joinVoiceChannel(channelId); 
+
+            // Toggle collapse
+            header.addEventListener('click', (e) => {
+                if (e.target.closest('.category-add-channel')) return;
+                header.classList.toggle('collapsed');
+                channelsContainer.classList.toggle('collapsed');
+            });
+
+            // Add channel button
+            const addBtn = header.querySelector('.category-add-channel');
+            if (addBtn) {
+                addBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Open create channel modal with this category pre-selected
+                    openCreateChannelModal(categoryId);
                 });
-                
-                channelsContainer.appendChild(item);
             }
+
+            category.appendChild(header);
+
+            const channelsContainer = document.createElement('div');
+            channelsContainer.className = 'channels-container' + (collapsed ? ' collapsed' : '');
+
+            for (const c of channelList) {
+                channelsContainer.appendChild(renderChannelItem(c));
+            }
+
             category.appendChild(channelsContainer);
-            el.channelList.appendChild(category);
+            return category;
+        };
+
+        // Render uncategorized channels first (if any)
+        if (uncategorizedChannels.length > 0) {
+            const textChannels = uncategorizedChannels.filter(c => c.type !== 'VOICE');
+            const voiceChannels = uncategorizedChannels.filter(c => c.type === 'VOICE');
+
+            const textCategory = createCategory('KÊNH VĂN BẢN', textChannels);
+            if (textCategory) el.channelList.appendChild(textCategory);
+
+            const voiceCategory = createCategory('KÊNH THOẠI', voiceChannels);
+            if (voiceCategory) el.channelList.appendChild(voiceCategory);
+        }
+
+        // Render channels by category
+        for (const cat of categories) {
+            const catChannels = channelsByCategory.get(cat.id) || [];
+            const categoryEl = createCategory(cat.name, catChannels, cat.id);
+            if (categoryEl) el.channelList.appendChild(categoryEl);
+        }
+    }
+
+    // Helper to open create channel modal with optional category pre-selected
+    function openCreateChannelModal(categoryId = null) {
+        if (el.createChannelModal) {
+            el.createChannelModal.style.display = 'flex';
+            el.channelNameInput.value = '';
+            el.channelNameInput.focus();
+            // Store category ID for when channel is created
+            el.createChannelModal.dataset.categoryId = categoryId || '';
         }
     }
 
@@ -581,8 +657,17 @@
     }
 
     async function loadChannels(serverId) {
-        channels = await apiGet(`/api/channels/servers/${serverId}/channels`);
+        // Load channels and categories in parallel
+        const [channelData, categoryData] = await Promise.all([
+            apiGet(`/api/servers/${serverId}/channels`),
+            apiGet(`/api/servers/${serverId}/categories`).catch(() => [])
+        ]);
+        
+        channels = channelData;
         channels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+        
+        categories = categoryData;
+        categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     }
 
     async function loadMembers(serverId) {
@@ -819,6 +904,46 @@
     }
 
     // ==================== SERVER/CHANNEL SELECTION ====================
+    async function subscribeToServerUpdates(serverId) {
+        await ensureStompConnected();
+
+        // Unsubscribe from previous server subscriptions
+        if (serverChannelsSubscription) {
+            try { serverChannelsSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            serverChannelsSubscription = null;
+        }
+        if (serverCategoriesSubscription) {
+            try { serverCategoriesSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            serverCategoriesSubscription = null;
+        }
+
+        // Subscribe to channel updates for this server
+        serverChannelsSubscription = stompClient.subscribe(`/topic/server/${serverId}/channels`, async (message) => {
+            try {
+                const payload = JSON.parse(message.body);
+                console.log('Channel update:', payload);
+                // Reload channels and re-render
+                await loadChannels(serverId);
+                renderChannelList();
+            } catch (e) {
+                console.error('Error handling channel update:', e);
+            }
+        });
+
+        // Subscribe to category updates for this server
+        serverCategoriesSubscription = stompClient.subscribe(`/topic/server/${serverId}/categories`, async (message) => {
+            try {
+                const payload = JSON.parse(message.body);
+                console.log('Category update:', payload);
+                // Reload channels (includes categories) and re-render
+                await loadChannels(serverId);
+                renderChannelList();
+            } catch (e) {
+                console.error('Error handling category update:', e);
+            }
+        });
+    }
+
     async function selectServer(serverId) {
         activeServerId = serverId;
         setQueryParams({ serverId, channelId: null });
@@ -831,7 +956,8 @@
 
         await Promise.all([
             loadChannels(serverId),
-            loadMembers(serverId)
+            loadMembers(serverId),
+            subscribeToServerUpdates(serverId)
         ]);
         
         renderChannelList();
@@ -1191,6 +1317,45 @@
 
     function hideCreateChannelModal() {
         el.createChannelModal.style.display = 'none';
+        // Clear category ID when closing
+        if (el.createChannelModal) {
+            el.createChannelModal.dataset.categoryId = '';
+        }
+    }
+
+    // ==================== CREATE CATEGORY MODAL ====================
+    function showCreateCategoryModal() {
+        if (el.createCategoryModal) {
+            el.createCategoryModal.style.display = 'flex';
+            if (el.categoryNameInput) {
+                el.categoryNameInput.value = '';
+                el.categoryNameInput.focus();
+            }
+        }
+        // Hide server dropdown if open
+        if (el.serverDropdown) el.serverDropdown.classList.remove('show');
+    }
+
+    function hideCreateCategoryModal() {
+        if (el.createCategoryModal) {
+            el.createCategoryModal.style.display = 'none';
+        }
+    }
+
+    async function createCategory() {
+        const name = el.categoryNameInput?.value.trim();
+        if (!name || !activeServerId) return;
+
+        try {
+            await apiPost(`/api/servers/${activeServerId}/categories`, {
+                name: name.toUpperCase()
+            });
+            hideCreateCategoryModal();
+            await loadChannels(activeServerId);
+            renderChannelList();
+        } catch (e) {
+            alert('Không thể tạo danh mục: ' + (e.message || 'Lỗi'));
+        }
     }
 
     // ==================== SERVER SETTINGS & LEAVE ====================
@@ -1248,11 +1413,19 @@
         const name = el.channelNameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
         if (!name || !activeServerId) return;
 
+        // Get category ID if set from modal
+        const categoryId = el.createChannelModal?.dataset.categoryId || null;
+
         try {
-            await apiPost(`/api/channels/servers/${activeServerId}/channels`, {
+            const payload = {
                 name,
                 type: selectedChannelType
-            });
+            };
+            if (categoryId) {
+                payload.categoryId = parseInt(categoryId, 10);
+            }
+
+            await apiPost(`/api/servers/${activeServerId}/channels`, payload);
             hideCreateChannelModal();
             await loadChannels(activeServerId);
             renderChannelList();
@@ -1948,6 +2121,15 @@
             if (e.key === 'Enter') createChannel();
         });
         
+        // Create category modal
+        el.createCategoryBtn?.addEventListener('click', showCreateCategoryModal);
+        el.closeCreateCategoryModal?.addEventListener('click', hideCreateCategoryModal);
+        el.cancelCreateCategory?.addEventListener('click', hideCreateCategoryModal);
+        el.confirmCreateCategory?.addEventListener('click', createCategory);
+        el.categoryNameInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createCategory();
+        });
+        
         // Channel type selection
         el.channelTypeOptions.forEach(opt => {
             opt.addEventListener('click', () => {
@@ -2099,6 +2281,9 @@
         });
         el.createChannelModal?.addEventListener('click', (e) => {
             if (e.target === el.createChannelModal) hideCreateChannelModal();
+        });
+        el.createCategoryModal?.addEventListener('click', (e) => {
+            if (e.target === el.createCategoryModal) hideCreateCategoryModal();
         });
 
         // Announce offline on page unload

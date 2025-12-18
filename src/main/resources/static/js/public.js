@@ -88,8 +88,9 @@ function validatePassword(password) {
             })
             .then(response => {
                 if (!response.ok) {
-                    // Token is invalid, clear storage
+                    // Token is invalid, clear storage and cookie
                     localStorage.clear();
+                    document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                 }
             })
             .catch(error => {
@@ -119,6 +120,9 @@ async function refreshAccessToken() {
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('accessToken', data.accessToken);
+            // Cập nhật cookie cho server-side rendering
+            const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+            document.cookie = `accessToken=${encodeURIComponent(data.accessToken)}; expires=${expires}; path=/; SameSite=Lax`;
             if (data.refreshToken) {
                 localStorage.setItem('refreshToken', data.refreshToken);
             }
@@ -126,12 +130,14 @@ async function refreshAccessToken() {
         } else {
             // Refresh failed, clear storage and redirect to login
             localStorage.clear();
+            document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             window.location.href = '/login';
             return null;
         }
     } catch (error) {
         console.error('Token refresh error:', error);
         localStorage.clear();
+        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login';
         return null;
     }

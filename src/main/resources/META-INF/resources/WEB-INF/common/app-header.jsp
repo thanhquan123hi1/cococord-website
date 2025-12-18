@@ -21,5 +21,12 @@
     
     <!-- Custom CSS for App -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
+    
+    <!-- User Profile & Presence System CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/user-panel.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/profile-modal.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
 </head>
 <body class="app-layout">
+    <!-- User Panel Component (Bottom-left corner) -->
+    <div id="userPanel" class="user-panel"></div>

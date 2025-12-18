@@ -1,13 +1,14 @@
 package vn.cococord.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import vn.cococord.entity.mysql.ServerMember;
 
-import java.util.List;
-import java.util.Optional;
+import vn.cococord.entity.mysql.ServerMember;
 
 @Repository
 public interface IServerMemberRepository extends JpaRepository<ServerMember, Long> {
@@ -17,6 +18,9 @@ public interface IServerMemberRepository extends JpaRepository<ServerMember, Lon
 
     @Query("SELECT sm FROM ServerMember sm WHERE sm.server.id = :serverId")
     List<ServerMember> findByServerId(@Param("serverId") Long serverId);
+
+    @Query("SELECT sm FROM ServerMember sm WHERE sm.user.id = :userId")
+    List<ServerMember> findByUserId(@Param("userId") Long userId);
 
     boolean existsByServerIdAndUserId(Long serverId, Long userId);
 

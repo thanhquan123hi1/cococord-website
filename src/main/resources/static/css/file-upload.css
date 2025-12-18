@@ -1,0 +1,378 @@
+/**
+ * File Upload Component Styles
+ * Discord Clone - Rich Message System
+ */
+
+/* ==================== UPLOAD BUTTON ==================== */
+
+.file-upload-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #b9bbbe;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.file-upload-btn:hover {
+    background-color: #4f545c;
+    color: #fff;
+}
+
+.file-upload-input {
+    display: none !important;
+}
+
+/* ==================== DRAG AND DROP ZONE ==================== */
+
+.drop-zone {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.drop-zone.drag-over {
+    background-color: rgba(88, 101, 242, 0.1);
+    border: 2px dashed #5865f2;
+}
+
+.drop-zone.drag-over::before {
+    content: 'Drop files here to upload';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(88, 101, 242, 0.9);
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* ==================== FILE PREVIEW ==================== */
+
+.file-previews-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px;
+    background-color: #2f3136;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.file-preview {
+    position: relative;
+    background-color: #36393f;
+    border: 1px solid #202225;
+    border-radius: 8px;
+    padding: 12px;
+    width: 200px;
+    transition: all 0.15s ease;
+}
+
+.file-preview:hover {
+    background-color: #3a3d44;
+}
+
+/* Image Preview */
+
+.preview-image-container {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s ease;
+}
+
+.file-preview:hover .preview-remove {
+    opacity: 1;
+}
+
+.preview-remove:hover {
+    background-color: #ed4245;
+}
+
+/* File Preview (Non-image) */
+
+.preview-file-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.preview-file-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.preview-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.preview-filename {
+    font-size: 14px;
+    font-weight: 600;
+    color: #dcddde;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.preview-filesize {
+    font-size: 12px;
+    color: #72767d;
+}
+
+/* Progress Bar */
+
+.preview-progress {
+    margin-top: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background-color: #202225;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #5865f2, #7289da);
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+
+/* ==================== FILE UPLOAD MODAL ==================== */
+
+.upload-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.upload-modal-content {
+    background-color: #36393f;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.upload-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.upload-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.upload-modal-close {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #b9bbbe;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.upload-modal-close:hover {
+    color: #fff;
+}
+
+.upload-modal-body {
+    margin-bottom: 16px;
+}
+
+.upload-drop-zone {
+    border: 2px dashed #4f545c;
+    border-radius: 8px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.drag-over {
+    border-color: #5865f2;
+    background-color: rgba(88, 101, 242, 0.1);
+}
+
+.upload-drop-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.upload-drop-text {
+    color: #b9bbbe;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.upload-drop-subtext {
+    color: #72767d;
+    font-size: 14px;
+}
+
+.upload-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.upload-modal-footer button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-upload-cancel {
+    background: transparent;
+    color: #b9bbbe;
+}
+
+.btn-upload-cancel:hover {
+    text-decoration: underline;
+}
+
+.btn-upload-send {
+    background-color: #5865f2;
+    color: #fff;
+}
+
+.btn-upload-send:hover {
+    background-color: #4752c4;
+}
+
+.btn-upload-send:disabled {
+    background-color: #4f545c;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* ==================== UPLOAD STATUS ==================== */
+
+.upload-status {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: #2f3136;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.upload-status-icon {
+    margin-right: 12px;
+    font-size: 24px;
+}
+
+.upload-status-text {
+    flex: 1;
+    color: #dcddde;
+}
+
+.upload-status-progress {
+    font-size: 14px;
+    color: #72767d;
+    margin-left: 12px;
+}
+
+.upload-status.success .upload-status-icon {
+    color: #43b581;
+}
+
+.upload-status.error .upload-status-icon {
+    color: #ed4245;
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes uploadPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.uploading {
+    animation: uploadPulse 1.5s ease-in-out infinite;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .file-preview {
+        width: 100%;
+    }
+
+    .upload-modal-content {
+        width: 95%;
+        padding: 16px;
+    }
+
+    .upload-drop-zone {
+        padding: 32px 16px;
+    }
+
+    .file-previews-container {
+        flex-direction: column;
+    }
+}

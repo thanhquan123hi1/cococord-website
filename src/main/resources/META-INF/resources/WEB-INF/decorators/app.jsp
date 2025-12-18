@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="org.sitemesh.content.Content" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%
     Content sitemeshContent = (Content) request.getAttribute(Content.class.getName());
 %>
@@ -41,16 +42,34 @@
     <!-- Global App Layout Wrapper -->
     <div class="app-layout-wrapper">
         <!-- Server Sidebar - Persistent across all pages -->
-        <aside class="server-sidebar" id="mainServerSidebar" aria-label="Servers">
+        <aside class="server-bar" id="mainServerSidebar" aria-label="Servers">
             <!-- Home Button (go to Friends/DM) -->
-            <a class="server-item home-btn" href="${pageContext.request.contextPath}/friends" title="Tin nhắn trực tiếp" id="homeBtn">
+            <a class="server-item home-btn<c:if test="${empty param.serverId}"> active</c:if>" 
+               href="${pageContext.request.contextPath}/friends" 
+               title="Tin nhắn trực tiếp" id="homeBtn">
                 <i class="bi bi-discord"></i>
             </a>
             <div class="server-divider"></div>
             
-            <!-- Scrollable Server List -->
+            <!-- Scrollable Server List - Rendered from GlobalDataControllerAdvice -->
             <div class="server-list-wrapper">
-                <div class="server-list" id="globalServerList"></div>
+                <div class="server-list" id="globalServerList">
+                    <c:forEach var="server" items="${servers}">
+                        <a class="server-item<c:if test="${server.id == param.serverId}"> active</c:if>" 
+                           href="${pageContext.request.contextPath}/chat?serverId=${server.id}" 
+                           title="${server.name}"
+                           data-server-id="${server.id}">
+                            <c:choose>
+                                <c:when test="${not empty server.iconUrl}">
+                                    <img src="${server.iconUrl}" alt="${server.name}" />
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="server-initial">${server.name.substring(0,1).toUpperCase()}</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </a>
+                    </c:forEach>
+                </div>
             </div>
             
             <!-- Fixed Server Actions at Bottom -->

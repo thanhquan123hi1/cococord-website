@@ -29,6 +29,7 @@
     .catch(error => {
         console.error('Auth verification error:', error);
         localStorage.clear();
+        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login';
     });
 })();
@@ -48,15 +49,18 @@ function logout() {
         })
         .then(() => {
             localStorage.clear();
+            document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             window.location.href = '/login';
         })
         .catch(error => {
             console.error('Logout error:', error);
             localStorage.clear();
+            document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             window.location.href = '/login';
         });
     } else {
         localStorage.clear();
+        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login';
     }
 }
@@ -67,6 +71,7 @@ async function refreshAccessToken() {
     
     if (!refreshToken) {
         localStorage.clear();
+        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login';
         return null;
     }
@@ -83,18 +88,23 @@ async function refreshAccessToken() {
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('accessToken', data.accessToken);
+            // Cập nhật cookie cho server-side rendering
+            const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+            document.cookie = `accessToken=${encodeURIComponent(data.accessToken)}; expires=${expires}; path=/; SameSite=Lax`;
             if (data.refreshToken) {
                 localStorage.setItem('refreshToken', data.refreshToken);
             }
             return data.accessToken;
         } else {
             localStorage.clear();
+            document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
             window.location.href = '/login';
             return null;
         }
     } catch (error) {
         console.error('Token refresh error:', error);
         localStorage.clear();
+        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login';
         return null;
     }

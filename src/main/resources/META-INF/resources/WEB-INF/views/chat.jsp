@@ -4,10 +4,44 @@
 <head>
     <title>Trò chuyện - CoCoCord</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/server-sidebar.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat.css">
 </head>
 <body>
 <div class="app-container" id="chatApp">
+    <!-- Server Sidebar (72px) -->
+    <aside class="server-sidebar" id="serverSidebar">
+        <div class="server-list-wrapper">
+            <div class="server-list" id="serverList">
+                <!-- Home Button (Discord logo) -->
+                <a class="server-item home-btn" href="${pageContext.request.contextPath}/friends" title="Tin nhắn trực tiếp" data-tooltip="Tin nhắn trực tiếp">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
+                        <path d="M23.022 5.802c-1.594-.732-3.3-1.269-5.088-1.578a.107.107 0 0 0-.114.054c-.22.39-.463.9-.634 1.3a19.473 19.473 0 0 0-5.812 0 13.38 13.38 0 0 0-.643-1.3.11.11 0 0 0-.113-.054 21.023 21.023 0 0 0-5.09 1.578.1.1 0 0 0-.046.04C2.016 10.867.977 15.788 1.48 20.644a.12.12 0 0 0 .044.082 21.204 21.204 0 0 0 6.38 3.227.112.112 0 0 0 .121-.04 15.19 15.19 0 0 0 1.31-2.132.109.109 0 0 0-.06-.152 13.966 13.966 0 0 1-1.994-.95.11.11 0 0 1-.011-.183c.134-.1.268-.205.396-.31a.107.107 0 0 1 .112-.016c4.183 1.91 8.712 1.91 12.847 0a.107.107 0 0 1 .113.014c.128.106.262.21.397.312a.11.11 0 0 1-.01.183c-.637.373-1.3.686-1.996.949a.11.11 0 0 0-.058.153c.384.746.831 1.456 1.31 2.13a.11.11 0 0 0 .121.042 21.152 21.152 0 0 0 6.39-3.227.111.111 0 0 0 .045-.08c.6-5.698-.996-10.578-4.208-14.804a.087.087 0 0 0-.045-.041zM9.68 17.642c-1.293 0-2.358-1.186-2.358-2.643s1.045-2.644 2.358-2.644c1.323 0 2.378 1.197 2.358 2.644 0 1.457-1.045 2.643-2.358 2.643zm8.714 0c-1.293 0-2.358-1.186-2.358-2.643s1.045-2.644 2.358-2.644c1.323 0 2.378 1.197 2.358 2.644 0 1.457-1.035 2.643-2.358 2.643z"/>
+                    </svg>
+                </a>
+                
+                <div class="server-divider"></div>
+                
+                <!-- Server list will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Fixed Actions at Bottom -->
+        <div class="server-actions-fixed">
+            <div class="server-divider"></div>
+            <button class="server-item add-server-btn" id="addServerBtn" title="Thêm Server" data-tooltip="Thêm Server">
+                <i class="bi bi-plus"></i>
+            </button>
+            <button class="server-item discover-btn" id="discoverBtn" title="Khám phá Server" data-tooltip="Khám phá Server công khai">
+                <i class="bi bi-compass"></i>
+            </button>
+        </div>
+    </aside>
+    
+    <!-- Server Tooltip -->
+    <div class="server-tooltip" id="serverTooltip"></div>
+
     <!-- Channel Sidebar (Contains User Area at Bottom) -->
     <aside class="channel-sidebar" aria-label="Channels">
         <div class="channel-header" id="serverHeader">
@@ -20,6 +54,7 @@
             <div class="dropdown-item" id="invitePeopleBtn"><i class="bi bi-person-plus"></i> Mời mọi người</div>
             <div class="dropdown-item" id="serverSettingsBtn"><i class="bi bi-gear"></i> Cài đặt Server</div>
             <div class="dropdown-item" id="createChannelBtn"><i class="bi bi-hash"></i> Tạo Kênh</div>
+            <div class="dropdown-item" id="createCategoryBtn"><i class="bi bi-folder-plus"></i> Tạo Danh mục</div>
             <div class="dropdown-divider"></div>
             <div class="dropdown-item text-danger" id="leaveServerBtn"><i class="bi bi-box-arrow-left"></i> Rời Server</div>
         </div>
@@ -237,6 +272,26 @@
         <div class="modal-footer">
             <button class="btn-secondary" id="cancelCreateChannel">Hủy</button>
             <button class="btn-primary" id="confirmCreateChannel">Tạo Kênh</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Category Modal -->
+<div class="modal-overlay" id="createCategoryModal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Tạo Danh mục</h3>
+            <button class="modal-close" id="closeCreateCategoryModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="categoryNameInput">TÊN DANH MỤC</label>
+                <input type="text" id="categoryNameInput" class="discord-input" placeholder="Danh mục mới" />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" id="cancelCreateCategory">Hủy</button>
+            <button class="btn-primary" id="confirmCreateCategory">Tạo Danh mục</button>
         </div>
     </div>
 </div>
@@ -507,6 +562,7 @@
 <!-- PeerJS for WebRTC Voice Chat -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
+<script defer src="${pageContext.request.contextPath}/js/server-sidebar.js"></script>
 <script defer src="${pageContext.request.contextPath}/js/chat.js"></script>
 </body>
 </html>

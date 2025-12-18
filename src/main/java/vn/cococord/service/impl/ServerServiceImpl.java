@@ -1,21 +1,41 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import vn.cococord.dto.request.*;
-import vn.cococord.dto.response.*;
-import vn.cococord.entity.mysql.*;
-import vn.cococord.exception.BadRequestException;
-import vn.cococord.exception.ResourceNotFoundException;
-import vn.cococord.exception.UnauthorizedException;
-import vn.cococord.repository.*;
-import vn.cococord.service.IServerService;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import vn.cococord.dto.request.BanMemberRequest;
+import vn.cococord.dto.request.CreateInviteLinkRequest;
+import vn.cococord.dto.request.CreateRoleRequest;
+import vn.cococord.dto.request.CreateServerRequest;
+import vn.cococord.dto.request.KickMemberRequest;
+import vn.cococord.dto.request.UpdateServerRequest;
+import vn.cococord.dto.response.ChannelResponse;
+import vn.cococord.dto.response.InviteLinkResponse;
+import vn.cococord.dto.response.RoleResponse;
+import vn.cococord.dto.response.ServerMemberResponse;
+import vn.cococord.dto.response.ServerResponse;
+import vn.cococord.entity.mysql.Channel;
+import vn.cococord.entity.mysql.InviteLink;
+import vn.cococord.entity.mysql.Role;
+import vn.cococord.entity.mysql.Server;
+import vn.cococord.entity.mysql.ServerMember;
+import vn.cococord.entity.mysql.User;
+import vn.cococord.exception.BadRequestException;
+import vn.cococord.exception.ResourceNotFoundException;
+import vn.cococord.exception.UnauthorizedException;
+import vn.cococord.repository.IChannelRepository;
+import vn.cococord.repository.IInviteLinkRepository;
+import vn.cococord.repository.IRoleRepository;
+import vn.cococord.repository.IServerMemberRepository;
+import vn.cococord.repository.IServerRepository;
+import vn.cococord.repository.IUserRepository;
+import vn.cococord.service.IServerService;
 
 @Service
 @RequiredArgsConstructor
@@ -75,6 +95,7 @@ public class ServerServiceImpl implements IServerService {
                 .topic("General discussion")
                 .position(0)
                 .isPrivate(false)
+                .isDefault(true)
                 .build();
         channelRepository.save(generalChannel);
 
