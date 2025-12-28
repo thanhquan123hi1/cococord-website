@@ -1,19 +1,20 @@
 package vn.cococord.controller.user;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
+
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.EditMessageRequest;
 import vn.cococord.dto.request.SendMessageRequest;
 import vn.cococord.dto.response.ChatMessageResponse;
 import vn.cococord.entity.mongodb.DirectMessage;
-import vn.cococord.service.IMessageService;
 import vn.cococord.service.IDirectMessageService;
-
-import java.security.Principal;
+import vn.cococord.service.IMessageService;
 
 /**
  * WebSocket Controller for realtime chat messaging
@@ -160,7 +161,9 @@ public class WebSocketMessageController {
     public void sendDirectMessage(@Payload DirectMessagePayload payload, Principal principal) {
         try {
             String username = principal.getName();
-            log.info("Received DM from user: {} to DM group: {}", username, payload.getDmGroupId());
+            log.info("[DM-WS] Received DM via WebSocket from user: {} (senderId={}) to dmGroupId={}", 
+                    username, payload.getSenderId(), payload.getDmGroupId());
+            log.info("[DM-WS] Message content: {}", payload.getContent());
 
             // Save direct message
             DirectMessage message = directMessageService.sendDirectMessageWithAttachments(
@@ -169,14 +172,15 @@ public class WebSocketMessageController {
                     payload.getContent(),
                     payload.getAttachmentUrls());
 
-            // Broadcast to all members of this DM group
-            messagingTemplate.convertAndSend(
-                    "/topic/dm/" + payload.getDmGroupId(),
-                    message);
+            log.info("[DM-WS] Message saved with id={}", message.getId());
 
-            log.info("Direct message broadcast to DM group: {}", payload.getDmGroupId());
+            // Broadcast to all members of this DM group
+            String destination = "/topic/dm/" + payload.getDmGroupId();
+            messagingTemplate.convertAndSend(destination, message);
+
+            log.info("[DM-WS] Message broadcast to {}", destination);
         } catch (Exception e) {
-            log.error("Error sending direct message: {}", e.getMessage(), e);
+            log.error("[DM-WS] Error sending direct message: {}", e.getMessage(), e);
 
             messagingTemplate.convertAndSendToUser(
                     principal.getName(),
