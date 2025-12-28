@@ -168,20 +168,29 @@
             const ip = session.ipAddress || 'Unknown IP';
             const lastActive = session.lastActiveAt ? new Date(session.lastActiveAt).toLocaleString('vi-VN') : 'Unknown';
             
-            return `
-                <div class="session-card ${isCurrent ? 'current' : ''}">
-                    <div class="session-info">
-                        <div class="session-device">
-                            <i class="bi bi-${getDeviceIcon(device)}"></i> ${device}
-                            ${isCurrent ? '<span class="session-badge">Phiên hiện tại</span>' : ''}
-                        </div>
-                        <div class="session-meta">
-                            ${ip} • Hoạt động lần cuối: ${lastActive}
-                        </div>
-                    </div>
-                    ${!isCurrent ? `<button class="btn-revoke" onclick="revokeSession('${session.id}')">Thu hồi</button>` : ''}
-                </div>
-            `;
+            // Build HTML parts separately to avoid nested template literal issues
+            let html = '<div class="session-card' + (isCurrent ? ' current' : '') + '">';
+            html += '<div class="session-info">';
+            html += '<div class="session-device">';
+            html += '<i class="bi bi-' + getDeviceIcon(device) + '"></i> ' + device;
+            
+            if (isCurrent) {
+                html += '<span class="session-badge">Phiên hiện tại</span>';
+            }
+            
+            html += '</div>';
+            html += '<div class="session-meta">';
+            html += ip + ' • Hoạt động lần cuối: ' + lastActive;
+            html += '</div>';
+            html += '</div>';
+            
+            if (!isCurrent) {
+                html += '<button class="btn-revoke" onclick="revokeSession(\'' + session.id + '\')">Thu hồi</button>';
+            }
+            
+            html += '</div>';
+            
+            return html;
         }).join('');
     }
 

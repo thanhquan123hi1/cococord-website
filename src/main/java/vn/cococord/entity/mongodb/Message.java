@@ -1,19 +1,29 @@
 package vn.cococord.entity.mongodb;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.TextScore;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Document(collection = "messages")
-@CompoundIndex(def = "{'channelId': 1, 'createdAt': -1}")
+@CompoundIndexes({
+    @CompoundIndex(def = "{'channelId': 1, 'createdAt': -1}"),
+    @CompoundIndex(def = "{'serverId': 1, 'createdAt': -1}")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,7 +48,11 @@ public class Message {
 
     private String avatarUrl;
 
+    @TextIndexed(weight = 2) // Text index for full-text search with higher weight
     private String content;
+
+    @TextScore
+    private Float score; // Score from text search, not persisted
 
     @Builder.Default
     private MessageType type = MessageType.TEXT;

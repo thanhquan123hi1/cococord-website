@@ -283,18 +283,18 @@ const UserSettingsModal = (function() {
                             <p class="settings-hint">Người khác có thể gửi lời mời kết bạn cho bạn.</p>
                         </div>
                         <label class="settings-toggle">
-                            <input type="checkbox" id="allowFriendRequests" ${currentUser.allowFriendRequests ? 'checked' : ''}>
+                            <input type="checkbox" id="allowFriendRequests" ${currentUser.allowFriendRequests !== false ? 'checked' : ''}>
                             <span class="settings-toggle-slider"></span>
                         </label>
                     </div>
 
                     <div class="settings-toggle-group">
                         <div class="settings-toggle-info">
-                            <label class="settings-label">Cho phép tin nhắn trực tiếp</label>
-                            <p class="settings-hint">Người khác có thể nhắn tin trực tiếp với bạn.</p>
+                            <label class="settings-label">Cho phép tin nhắn trực tiếp từ người lạ</label>
+                            <p class="settings-hint">Cho phép người không phải bạn bè nhắn tin trực tiếp với bạn. Nếu tắt, chỉ có bạn bè mới có thể nhắn tin cho bạn.</p>
                         </div>
                         <label class="settings-toggle">
-                            <input type="checkbox" id="allowDirectMessages" ${currentUser.allowDirectMessages ? 'checked' : ''}>
+                            <input type="checkbox" id="allowDirectMessages" ${currentUser.allowDirectMessages !== false ? 'checked' : ''}>
                             <span class="settings-toggle-slider"></span>
                         </label>
                     </div>
@@ -307,11 +307,169 @@ const UserSettingsModal = (function() {
 
                 <div class="settings-divider"></div>
                 
-                <h2 class="settings-subtitle">Tài khoản bị chặn</h2>
-                <p class="settings-text">Bạn có thể xem và quản lý người dùng bị chặn.</p>
-                <button class="settings-btn secondary" onclick="UserSettingsModal.manageBlockedUsers()">Quản lý người dùng bị chặn</button>
+                <h2 class="settings-subtitle">Người dùng bị chặn</h2>
+                <p class="settings-text">Những người dùng bị chặn sẽ không thể gửi tin nhắn, lời mời kết bạn hoặc tương tác với bạn.</p>
+                
+                <div id="blockedUsersContainer" class="settings-blocked-users-container">
+                    <div class="settings-loading">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                        <span>Đang tải...</span>
+                    </div>
+                </div>
             </div>
         `;
+    }
+
+    /**
+     * Load blocked users list
+     */
+    async function loadBlockedUsers() {
+        const container = document.getElementById('blockedUsersContainer');
+        if (!container) return;
+
+        try {
+            const response = await fetch('/api/friends/blocked', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load blocked users');
+            }
+
+            const blockedUsers = await response.json();
+            renderBlockedUsersList(blockedUsers);
+        } catch (error) {
+            console.error('Error loading blocked users:', error);
+            container.innerHTML = `
+                <div class="settings-error">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <span>Không thể tải danh sách người dùng bị chặn</span>
+                    <button class="settings-btn secondary" onclick="UserSettingsModal.loadBlockedUsers()">Thử lại</button>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Render blocked users list
+     */
+    function renderBlockedUsersList(blockedUsers) {
+        const container = document.getElementById('blockedUsersContainer');
+        if (!container) return;
+
+        if (!blockedUsers || blockedUsers.length === 0) {
+            container.innerHTML = `
+                <div class="settings-empty-state">
+                    <i class="bi bi-person-x"></i>
+                    <p>Bạn chưa chặn người dùng nào</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="settings-blocked-list">
+                ${blockedUsers.map(user => `
+                    <div class="settings-blocked-user" data-user-id="${user.id}">
+                        <div class="settings-blocked-user-info">
+                            <img src="${user.avatarUrl || '/images/default-avatar.png'}" alt="${user.username}" class="settings-blocked-avatar">
+                            <div class="settings-blocked-details">
+                                <span class="settings-blocked-name">${user.displayName || user.username}</span>
+                                <span class="settings-blocked-tag">${user.username}#${user.discriminator || '0000'}</span>
+                            </div>
+                        </div>
+                        <button class="settings-btn danger" onclick="UserSettingsModal.unblockUser(${user.id}, '${user.username}')" title="Bỏ chặn">
+                            <i class="bi bi-person-check"></i>
+                            <span>Bỏ chặn</span>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+            <p class="settings-hint" style="margin-top: 16px;">
+                <i class="bi bi-info-circle"></i>
+                Tổng cộng ${blockedUsers.length} người dùng bị chặn
+            </p>
+        `;
+    }
+
+    /**
+     * Unblock a user
+     */
+    async function unblockUser(userId, username) {
+        if (!confirm(`Bạn có chắc muốn bỏ chặn ${username}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/friends/blocked/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to unblock user');
+            }
+
+            // Remove user from the list with animation
+            const userElement = document.querySelector(`.settings-blocked-user[data-user-id="${userId}"]`);
+            if (userElement) {
+                userElement.classList.add('removing');
+                setTimeout(() => {
+                    userElement.remove();
+                    // Check if list is now empty
+                    const list = document.querySelector('.settings-blocked-list');
+                    if (list && list.children.length === 0) {
+                        loadBlockedUsers(); // Re-render empty state
+                    } else {
+                        // Update count
+                        const hint = document.querySelector('#blockedUsersContainer .settings-hint');
+                        if (hint) {
+                            const count = list ? list.children.length : 0;
+                            hint.innerHTML = `<i class="bi bi-info-circle"></i> Tổng cộng ${count} người dùng bị chặn`;
+                        }
+                    }
+                }, 300);
+            }
+
+            // Show success notification
+            showNotification(`Đã bỏ chặn ${username}`, 'success');
+        } catch (error) {
+            console.error('Error unblocking user:', error);
+            showNotification('Không thể bỏ chặn người dùng', 'error');
+        }
+    }
+
+    /**
+     * Show notification toast
+     */
+    function showNotification(message, type = 'info') {
+        // Use existing notification system if available
+        if (window.Notification && window.Notification.show) {
+            window.Notification.show(message, type);
+            return;
+        }
+
+        // Simple fallback notification
+        const toast = document.createElement('div');
+        toast.className = `settings-toast ${type}`;
+        toast.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+
+        // Trigger animation
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     /**
@@ -391,6 +549,11 @@ const UserSettingsModal = (function() {
                     hint.textContent = `${this.value.length}/190 ký tự`;
                 }
             });
+        }
+
+        // Load blocked users if on privacy tab
+        if (activeTab === 'privacy') {
+            loadBlockedUsers();
         }
     }
 
@@ -624,13 +787,6 @@ const UserSettingsModal = (function() {
     }
 
     /**
-     * Manage blocked users
-     */
-    function manageBlockedUsers() {
-        alert('Tính năng này sẽ được triển khai sớm');
-    }
-
-    /**
      * Logout
      */
     function logout() {
@@ -658,6 +814,7 @@ const UserSettingsModal = (function() {
         show,
         hide,
         switchTab,
+        render,
         saveAccount,
         saveProfile,
         savePrivacy,
@@ -665,7 +822,8 @@ const UserSettingsModal = (function() {
         uploadAvatar,
         uploadBanner,
         changePassword,
-        manageBlockedUsers,
+        loadBlockedUsers,
+        unblockUser,
         logout
     };
 })();

@@ -135,6 +135,45 @@
     text-decoration: underline;
 }
 
+/* ==================== MENTIONS ==================== */
+
+/* Base mention styling - Discord-like blue highlight */
+.mention {
+    background-color: rgba(88, 101, 242, 0.3);
+    color: #dee0fc;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mention:hover {
+    background-color: #5865f2;
+    color: #ffffff;
+}
+
+/* Highlighted mention when current user is mentioned */
+.mention-highlight {
+    background-color: rgba(250, 166, 26, 0.3);
+    color: #faa61a;
+}
+
+.mention-highlight:hover {
+    background-color: #faa61a;
+    color: #000000;
+}
+
+/* Message row highlight when current user is mentioned */
+.message-mentioned {
+    background-color: rgba(250, 166, 26, 0.1);
+    border-left: 2px solid #faa61a;
+}
+
+.message-mentioned:hover {
+    background-color: rgba(250, 166, 26, 0.15);
+}
+
 /* ==================== ATTACHMENTS ==================== */
 
 .message-attachments {

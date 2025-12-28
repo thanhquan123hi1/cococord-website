@@ -44,7 +44,7 @@
         }
     }
 
-    function parseMarkdown(text) {
+    function parseMarkdown(text, mentionedUserIds) {
         if (!text) return '';
         
         let html = escapeHtml(text);
@@ -70,6 +70,17 @@
 
         // Underline (__text__)
         html = html.replace(/___(.+?)___/g, '<u>$1</u>');
+
+        // Mentions <@userId> - highlight with Discord-like styling
+        html = html.replace(/&lt;@(\d+)&gt;/g, (match, userId) => {
+            const isMentioned = mentionedUserIds && mentionedUserIds.includes(parseInt(userId));
+            const mentionClass = isMentioned ? 'mention mention-highlight' : 'mention';
+            // Get username from cache if available
+            const username = window.userCache && window.userCache[userId] 
+                ? `@${window.userCache[userId].displayName || window.userCache[userId].username}` 
+                : `@user${userId}`;
+            return `<span class="${mentionClass}" data-user-id="${userId}">${username}</span>`;
+        });
 
         // Links [text](url)
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, 
@@ -97,6 +108,13 @@
             div.classList.add('own-message');
         }
 
+        // Check if current user is mentioned in this message
+        const isMentioned = currentUser && message.mentionedUserIds && 
+            message.mentionedUserIds.includes(currentUser.id);
+        if (isMentioned) {
+            div.classList.add('message-mentioned');
+        }
+
         const timestamp = formatRelativeTime(message.createdAt);
         const editedLabel = message.isEdited ? '<span class="edited-label">(edited)</span>' : '';
 
@@ -116,7 +134,7 @@
                     ${editedLabel}
                 </div>
                 <div class="message-content">
-                    ${parseMarkdown(message.content)}
+                    ${parseMarkdown(message.content, message.mentionedUserIds)}
                 </div>
                 ${renderAttachments(message.attachments)}
                 ${renderReactions(message.reactions, currentUser)}

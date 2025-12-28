@@ -121,7 +121,14 @@
                     window.location.href = '${pageContext.request.contextPath}/friends';
                 }, 1000);
             } else {
-                showAlert(data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.', 'danger');
+                // Handle validation errors (returns { success: false, message: "Validation failed", errors: {...} })
+                let errorMessage = data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+                if (data.errors) {
+                    // Build error message from field errors
+                    const errorList = Object.values(data.errors).join('<br>');
+                    errorMessage = errorList || errorMessage;
+                }
+                showAlert(errorMessage, 'danger');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }

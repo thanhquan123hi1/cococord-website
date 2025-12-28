@@ -14,13 +14,16 @@ import vn.cococord.dto.response.ChannelResponse;
 import vn.cococord.entity.mysql.Category;
 import vn.cococord.entity.mysql.Channel;
 import vn.cococord.entity.mysql.Server;
+import vn.cococord.entity.mysql.User;
 import vn.cococord.exception.BadRequestException;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.exception.UnauthorizedException;
 import vn.cococord.repository.ICategoryRepository;
 import vn.cococord.repository.IChannelRepository;
 import vn.cococord.repository.IServerRepository;
+import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IChannelService;
+import vn.cococord.service.IPermissionService;
 import vn.cococord.service.IServerService;
 
 @Service
@@ -33,7 +36,9 @@ public class ChannelServiceImpl implements IChannelService {
     private final IChannelRepository channelRepository;
     private final ICategoryRepository categoryRepository;
     private final IServerRepository serverRepository;
+    private final IUserRepository userRepository;
     private final IServerService serverService;
+    private final IPermissionService permissionService;
 
     private static final int MAX_CHANNELS_PER_CATEGORY = 50;
 
@@ -42,9 +47,11 @@ public class ChannelServiceImpl implements IChannelService {
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found with id: " + serverId));
 
-        // Only server owner can create channels (can add admin/moderator check later)
-        if (!serverService.isServerOwner(serverId, username)) {
-            throw new UnauthorizedException("Only server owner can create channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), serverId)) {
+            throw new UnauthorizedException("You don't have permission to create channels");
         }
 
         // Validate channel name (lowercase, no spaces, use hyphens)
@@ -141,9 +148,11 @@ public class ChannelServiceImpl implements IChannelService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
-        // Only server owner can update channels
-        if (!serverService.isServerOwner(channel.getServer().getId(), username)) {
-            throw new UnauthorizedException("Only server owner can update channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
+            throw new UnauthorizedException("You don't have permission to update channels");
         }
 
         // Update fields
@@ -179,9 +188,11 @@ public class ChannelServiceImpl implements IChannelService {
             throw new BadRequestException("Cannot delete the default channel. Create another channel first.");
         }
 
-        // Only server owner can delete channels
-        if (!serverService.isServerOwner(channel.getServer().getId(), username)) {
-            throw new UnauthorizedException("Only server owner can delete channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
+            throw new UnauthorizedException("You don't have permission to delete channels");
         }
 
         channelRepository.delete(channel);
@@ -193,9 +204,11 @@ public class ChannelServiceImpl implements IChannelService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
-        // Only server owner can reorder channels
-        if (!serverService.isServerOwner(channel.getServer().getId(), username)) {
-            throw new UnauthorizedException("Only server owner can reorder channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
+            throw new UnauthorizedException("You don't have permission to reorder channels");
         }
 
         channel.setPosition(position);
@@ -223,6 +236,11 @@ public class ChannelServiceImpl implements IChannelService {
         // For private channels, check permissions (simplified - always allow for now)
         // TODO: Implement proper permission checking with ChannelPermission entity
         return true;
+    }
+
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
     private ChannelResponse convertToResponse(Channel channel) {

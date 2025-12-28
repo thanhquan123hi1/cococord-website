@@ -331,7 +331,7 @@
     function subscribeToChannel(channelId) {
         if (!stompClient) return;
 
-        stompClient.subscribe(`/topic/channel.${channelId}`, (message) => {
+        stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
             const event = JSON.parse(message.body);
             handleWebSocketEvent(event);
         });

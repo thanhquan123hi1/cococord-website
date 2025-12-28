@@ -62,6 +62,12 @@ class NotificationManager {
                     const count = parseInt(message.body);
                     this.updateUnreadCount(count);
                 });
+
+                // Mention events - for instant badge/sound when mentioned
+                this.stompClient.subscribe(`/topic/user.${userId}.mention`, (message) => {
+                    const mentionEvent = JSON.parse(message.body);
+                    this.handleMentionEvent(mentionEvent);
+                });
             }
         }, (error) => {
             console.error('Notification WebSocket error:', error);
@@ -120,6 +126,75 @@ class NotificationManager {
         
         // Play notification sound (optional)
         this.playNotificationSound();
+    }
+
+    /**
+     * Handle mention events for instant badge/sound notification
+     * @param {Object} mentionEvent - The mention event from WebSocket
+     */
+    handleMentionEvent(mentionEvent) {
+        console.log('Mention event received:', mentionEvent);
+        
+        // Show browser notification for mention
+        this.showMentionBrowserNotification(mentionEvent);
+        
+        // Play mention sound (usually more prominent than regular notification)
+        this.playMentionSound();
+        
+        // Update mention badge if exists
+        this.updateMentionBadge(mentionEvent);
+        
+        // Emit custom event for other components to react
+        window.dispatchEvent(new CustomEvent('mention-received', { detail: mentionEvent }));
+    }
+
+    /**
+     * Show browser notification specifically for mentions
+     */
+    showMentionBrowserNotification(mentionEvent) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const displayName = mentionEvent.mentionerDisplayName || mentionEvent.mentionerUsername;
+            const channelName = mentionEvent.channelName || 'a channel';
+            
+            new Notification('You were mentioned!', {
+                body: `${displayName} mentioned you in #${channelName}`,
+                icon: mentionEvent.mentionerAvatarUrl || '/static/images/logo.png',
+                tag: `mention-${mentionEvent.messageId}`,
+                requireInteraction: true // Keep notification until user interacts
+            });
+        }
+    }
+
+    /**
+     * Play mention sound - slightly louder/different from regular notifications
+     */
+    playMentionSound() {
+        const audio = new Audio('/static/sounds/mention.mp3');
+        audio.volume = 0.5; // Louder than regular notification
+        audio.play().catch(() => {
+            // Fallback to regular notification sound if mention.mp3 doesn't exist
+            const fallback = new Audio('/static/sounds/notification.mp3');
+            fallback.volume = 0.5;
+            fallback.play().catch(() => {});
+        });
+    }
+
+    /**
+     * Update mention badge (e.g., show red dot on channel)
+     */
+    updateMentionBadge(mentionEvent) {
+        // Find channel in sidebar and add mention indicator
+        const channelElement = document.querySelector(`[data-channel-id="${mentionEvent.channelId}"]`);
+        if (channelElement) {
+            let badge = channelElement.querySelector('.mention-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'mention-badge';
+                badge.textContent = '@';
+                channelElement.appendChild(badge);
+            }
+            badge.style.display = 'flex';
+        }
     }
 
     showBrowserNotification(notification) {

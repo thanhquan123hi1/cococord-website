@@ -35,6 +35,7 @@ import vn.cococord.repository.IRoleRepository;
 import vn.cococord.repository.IServerMemberRepository;
 import vn.cococord.repository.IServerRepository;
 import vn.cococord.repository.IUserRepository;
+import vn.cococord.service.IPermissionService;
 import vn.cococord.service.IServerService;
 
 @Service
@@ -50,6 +51,7 @@ public class ServerServiceImpl implements IServerService {
     private final IRoleRepository roleRepository;
     private final IInviteLinkRepository inviteLinkRepository;
     private final IChannelRepository channelRepository;
+    private final IPermissionService permissionService;
 
     @Override
     public ServerResponse createServer(CreateServerRequest request, String username) {
@@ -248,9 +250,11 @@ public class ServerServiceImpl implements IServerService {
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found with id: " + serverId));
 
-        // Only owner can kick members
-        if (!isServerOwner(serverId, username)) {
-            throw new UnauthorizedException("Only server owner can kick members");
+        User kicker = getUserByUsername(username);
+        
+        // Check if user has KICK_MEMBERS permission (or is owner/admin)
+        if (!permissionService.canKickMembers(kicker.getId(), serverId)) {
+            throw new UnauthorizedException("You don't have permission to kick members");
         }
 
         User targetUser = userRepository.findById(request.getUserId())
@@ -259,6 +263,12 @@ public class ServerServiceImpl implements IServerService {
         // Cannot kick owner
         if (server.getOwner().getId().equals(targetUser.getId())) {
             throw new BadRequestException("Cannot kick server owner");
+        }
+        
+        // Cannot kick administrators unless you're the owner
+        if (permissionService.isAdministrator(targetUser.getId(), serverId) && 
+            !permissionService.isServerOwner(kicker.getId(), serverId)) {
+            throw new BadRequestException("Only the server owner can kick administrators");
         }
 
         ServerMember member = serverMemberRepository.findByServerIdAndUserId(serverId, request.getUserId())
