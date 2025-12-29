@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,6 +46,7 @@ public class DirectMessageController {
 
     private final IUserRepository userRepository;
     private final IDirectMessageMemberRepository dmMemberRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     private Long getUserIdFromUsername(String username) {
         User user = userRepository.findByUsername(username)
@@ -242,11 +244,26 @@ public class DirectMessageController {
             @Valid @RequestBody SendDirectMessageRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
+        log.info("[DM-REST] 📨 User {} sending message to dmGroupId={}", userId, dmGroupId);
+        log.info("[DM-REST] Message content: {}", request.getContent());
+        
         DirectMessage message = directMessageService.sendDirectMessageWithAttachments(
                 dmGroupId,
                 userId,
                 request.getContent(),
                 request.getAttachmentUrls());
+        
+        log.info("[DM-REST] ✅ Message saved with id={}", message.getId());
+        
+        // Broadcast to WebSocket topic for real-time delivery to ALL participants
+        String destination = "/topic/dm/" + dmGroupId;
+        try {
+            messagingTemplate.convertAndSend(destination, message);
+            log.info("[DM-REST] 📡 Successfully broadcast message to {} for real-time delivery", destination);
+        } catch (Exception e) {
+            log.error("[DM-REST] ❌ Failed to broadcast message to {}: {}", destination, e.getMessage(), e);
+        }
+        
         return ResponseEntity.ok(message);
     }
 
@@ -275,10 +292,24 @@ public class DirectMessageController {
             @RequestBody Map<String, String> payload,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
+        log.info("[DM] User {} editing message id={}", userId, messageId);
+        
         DirectMessage updated = directMessageService.editDirectMessage(
                 messageId,
                 userId,
                 payload.get("content"));
+        
+        // Broadcast edited message to WebSocket topic for real-time update
+        if (updated.getDmGroupId() != null) {
+            String destination = "/topic/dm/" + updated.getDmGroupId();
+            try {
+                messagingTemplate.convertAndSend(destination, updated);
+                log.info("[DM] Successfully broadcast edited message to {}", destination);
+            } catch (Exception e) {
+                log.error("[DM] Failed to broadcast edited message to {}: {}", destination, e.getMessage(), e);
+            }
+        }
+        
         return ResponseEntity.ok(updated);
     }
 

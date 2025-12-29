@@ -26,26 +26,52 @@ body.app-layout {
     background-color: var(--light-bg);
     color: var(--text-primary);
     overflow: hidden;
+    height: 100vh;
+    margin: 0;
 }
 
-/* App Container */
-.app-container {
+/* ==================== GLOBAL APP LAYOUT WRAPPER ==================== */
+.app-layout-wrapper {
     display: flex;
+    flex-direction: row;
     height: 100vh;
     width: 100vw;
     overflow: hidden;
 }
 
-/* Server Sidebar */
+/* Page Content Area (right of server sidebar) */
+.page-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* ==================== SERVER SIDEBAR (Global - in Decorator) ==================== */
+.server-bar,
 .server-sidebar {
     width: 72px;
-    background-color: var(--darkest-bg);
+    background-color: #1E1F22;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px 0;
-    overflow-y: auto;
+    padding-top: 12px;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.server-list-wrapper {
+    flex: 1;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
+
+.server-list-wrapper::-webkit-scrollbar {
+    width: 0;
+    display: none;
 }
 
 .server-list {
@@ -54,33 +80,125 @@ body.app-layout {
     flex-direction: column;
     align-items: center;
     gap: 8px;
+    padding: 0 0 8px 0;
+}
+
+.server-actions-fixed {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 12px 0;
+    flex-shrink: 0;
 }
 
 .server-item {
+    position: relative;
     width: 48px;
     height: 48px;
-    background-color: var(--dark-bg);
+    background-color: #313338;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text-secondary);
+    transition: all 0.15s ease-out;
+    color: #57F287;
+    font-size: 20px;
+    text-decoration: none;
 }
 
 .server-item:hover,
 .server-item.active {
-    background-color: var(--primary-color);
+    background-color: #5865F2;
     border-radius: 16px;
     color: white;
+}
+
+.server-item.home-btn {
+    background-color: #313338;
+    color: #DBDEE1;
+}
+
+.server-item.home-btn:hover,
+.server-item.home-btn.active {
+    background-color: #5865F2;
+    color: white;
+}
+
+.server-item.add-server-btn {
+    color: #57F287;
+}
+
+.server-item.add-server-btn:hover {
+    background-color: #57F287;
+    color: white;
+}
+
+.server-item.discover-btn {
+    color: #57F287;
+}
+
+.server-item.discover-btn:hover {
+    background-color: #57F287;
+    color: white;
+}
+
+.server-item img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+}
+
+.server-item .server-initial {
+    font-weight: 600;
+    font-size: 18px;
+    color: #DBDEE1;
+}
+
+.server-item:hover .server-initial,
+.server-item.active .server-initial {
+    color: white;
+}
+
+/* Server pill indicator */
+.server-item::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    width: 8px;
+    height: 0;
+    background-color: white;
+    border-radius: 0 4px 4px 0;
+    transition: height 0.15s ease-out;
+}
+
+.server-item:hover::before {
+    height: 20px;
+}
+
+.server-item.active::before {
+    height: 40px;
 }
 
 .server-divider {
     width: 32px;
     height: 2px;
-    background-color: var(--dark-bg);
+    background-color: #35363C;
     margin: 4px 0;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* App Container (used by individual pages) */
+.app-container {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* Channel Sidebar */
@@ -330,6 +448,148 @@ body.app-layout {
     background-color: var(--text-muted);
 }
 
+/* ==================== GLOBAL MODALS ==================== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-overlay .modal-content {
+    background-color: #313338;
+    border-radius: 8px;
+    width: 440px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-overlay .modal-header {
+    padding: 16px 16px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-overlay .modal-header h3 {
+    color: #F2F3F5;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modal-overlay .modal-close {
+    background: none;
+    border: none;
+    color: #B5BAC1;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+
+.modal-overlay .modal-close:hover {
+    color: white;
+}
+
+.modal-overlay .modal-body {
+    padding: 16px;
+}
+
+.modal-overlay .modal-desc {
+    color: #B5BAC1;
+    font-size: 14px;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.modal-overlay .form-group {
+    margin-bottom: 16px;
+}
+
+.modal-overlay .form-group label {
+    display: block;
+    color: #B5BAC1;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.modal-overlay .discord-input {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: #1E1F22;
+    border: none;
+    border-radius: 4px;
+    color: #DBDEE1;
+    font-size: 16px;
+    outline: none;
+}
+
+.modal-overlay .discord-input:focus {
+    box-shadow: 0 0 0 2px #5865F2;
+}
+
+.modal-overlay .discord-input::placeholder {
+    color: #72767D;
+}
+
+.modal-overlay .modal-footer {
+    padding: 16px;
+    background-color: #2B2D31;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-overlay .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: #DBDEE1;
+}
+
+.modal-overlay .btn-secondary:hover {
+    text-decoration: underline;
+}
+
+.modal-overlay .btn-primary {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background-color: #5865F2;
+    color: white;
+}
+
+.modal-overlay .btn-primary:hover {
+    background-color: #4752C4;
+}
+
+.modal-overlay .btn-primary:disabled {
+    background-color: #5865F2;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .members-sidebar {
@@ -356,4 +616,48 @@ body.app-layout {
     .channel-sidebar.show {
         left: 60px;
     }
+}
+
+/* ==================== APP LAYOUT FIX ==================== */
+
+/* 1. Reset Body để không bị cuộn trang thừa */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Quan trọng: Ẩn thanh cuộn của trình duyệt */
+    background-color: #313338; /* Màu nền Discord */
+}
+
+/* 2. Biến khung bao ngoài thành Flex container (Ngang) */
+.app-layout-wrapper {
+    display: flex;          /* Xếp Sidebar và Content nằm ngang */
+    width: 100vw;           /* Full chiều rộng màn hình */
+    height: 100vh;          /* Full chiều cao màn hình */
+    background-color: #313338;
+}
+
+/* 3. Cố định chiều rộng cột Server (Sidebar trái cùng) */
+/* Lưu ý: Nếu bạn đã sửa class trong app.jsp thành 'server-bar' thì friends.css sẽ lo phần này. 
+   Nếu chưa, hãy dùng đoạn dưới: */
+.server-bar, .server-sidebar {
+    width: 72px;
+    height: 100%;
+    flex-shrink: 0;         /* Không cho phép bị co lại */
+    background-color: #1E1F22;
+    overflow-y: auto;       /* Cuộn nếu danh sách server dài */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+}
+
+/* 4. Vùng nội dung chính (Chứa friends.jsp) */
+.page-content-area {
+    flex: 1;                /* Chiếm toàn bộ không gian còn lại */
+    height: 100%;
+    overflow: hidden;       /* Để nội dung con tự quản lý cuộn */
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }

@@ -1,18 +1,19 @@
 package vn.cococord.exception;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import vn.cococord.dto.response.MessageResponse;
 
-import java.util.HashMap;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import vn.cococord.dto.response.MessageResponse;
 
 @RestControllerAdvice(annotations = RestController.class)
 @Slf4j
@@ -32,7 +33,7 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
-        response.put("message", "Validation failed");
+        response.put("message", "Dữ liệu không hợp lệ");
         response.put("errors", errors);
 
         return ResponseEntity.badRequest().body(response);
@@ -68,7 +69,7 @@ public class GlobalExceptionHandler {
         log.error("Bad credentials: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(MessageResponse.error("Invalid username or password"));
+                .body(MessageResponse.error("Tên đăng nhập hoặc mật khẩu không chính xác"));
     }
 
     /**

@@ -9,5 +9,20 @@
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js"></script>
     <script src="${pageContext.request.contextPath}/js/app.js"></script>
+    
+    <!-- User Profile & Presence System JS -->
+    <script src="${pageContext.request.contextPath}/js/status-picker.js"></script>
+    <script src="${pageContext.request.contextPath}/js/user-panel.js"></script>
+    <script src="${pageContext.request.contextPath}/js/user-profile-modal.js"></script>
+    <script src="${pageContext.request.contextPath}/js/user-settings-modal.js"></script>
+    
+    <script>
+        // Initialize User Profile & Presence System
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.UserPanel) {
+                UserPanel.init();
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,13 +1,27 @@
 package vn.cococord.entity.mysql;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")
@@ -45,8 +59,33 @@ public class User {
     @Builder.Default
     private UserStatus status = UserStatus.OFFLINE;
 
-    @Column(length = 100)
+    @Column(length = 128)
     private String customStatus;
+
+    @Column(length = 10)
+    private String customStatusEmoji;
+
+    private LocalDateTime customStatusExpiresAt;
+
+    @Column(length = 500)
+    private String bannerUrl;
+
+    @Column(length = 20)
+    private String pronouns;
+
+    @Column(length = 20)
+    private String theme; // LIGHT, DARK
+
+    @Column(length = 20)
+    private String messageDisplay; // COMPACT, COZY
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean allowFriendRequests = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean allowDirectMessages = true;
 
     @Column(nullable = false)
     @Builder.Default

@@ -444,11 +444,39 @@
 
         channelSubscription = stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
             try {
-                const payload = JSON.parse(message.body);
+                const data = JSON.parse(message.body);
+                
+                // Handle WebSocketEvent wrapper format from REST API
+                // or direct message format from WebSocket controller
+                let payload, eventType;
+                if (data.type && data.payload) {
+                    // WebSocketEvent wrapper format: { type: "message.created", payload: {...} }
+                    eventType = data.type;
+                    payload = data.payload;
+                } else {
+                    // Direct message format from WebSocket controller
+                    eventType = 'message.created';
+                    payload = data;
+                }
+                
                 if (String(payload.channelId) !== String(activeChannelId)) return;
+                
+                // Handle different event types
+                if (eventType === 'message.deleted') {
+                    const row = document.querySelector(`[data-message-id="${payload}"]`);
+                    if (row) {
+                        row.classList.add('message-deleted');
+                        setTimeout(() => row.remove(), 300);
+                    }
+                    return;
+                }
+                
+                // Check for duplicates by ID
+                if (document.querySelector(`[data-message-id="${payload.id}"]`)) return;
+                
                 appendMessage(payload);
                 scrollToBottom();
-            } catch (e) { /* ignore */ }
+            } catch (e) { console.error('Error handling message:', e); }
         });
     }
 

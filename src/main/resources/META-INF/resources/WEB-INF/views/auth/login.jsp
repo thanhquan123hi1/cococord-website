@@ -107,18 +107,28 @@
             const data = await response.json();
             
             if (response.ok && data.accessToken) {
-                // Lưu JWT tokens
+                // Lưu JWT tokens vào localStorage
                 localStorage.setItem('accessToken', data.accessToken);
                 localStorage.setItem('refreshToken', data.refreshToken);
                 localStorage.setItem('user', JSON.stringify(data.user || {}));
                 
+                // Lưu accessToken vào Cookie (cho server-side rendering với JSP)
+                const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+                document.cookie = "accessToken=" + encodeURIComponent(data.accessToken) + "; expires=" + expires + "; path=/; SameSite=Lax";
                 showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
                 
                 setTimeout(() => {
                     window.location.href = '${pageContext.request.contextPath}/friends';
                 }, 1000);
             } else {
-                showAlert(data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.', 'danger');
+                // Handle validation errors (returns { success: false, message: "Validation failed", errors: {...} })
+                let errorMessage = data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+                if (data.errors) {
+                    // Build error message from field errors
+                    const errorList = Object.values(data.errors).join('<br>');
+                    errorMessage = errorList || errorMessage;
+                }
+                showAlert(errorMessage, 'danger');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }

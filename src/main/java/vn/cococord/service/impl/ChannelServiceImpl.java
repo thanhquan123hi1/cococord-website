@@ -1,23 +1,30 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.CreateChannelRequest;
 import vn.cococord.dto.request.UpdateChannelRequest;
 import vn.cococord.dto.response.ChannelResponse;
+import vn.cococord.entity.mysql.Category;
 import vn.cococord.entity.mysql.Channel;
 import vn.cococord.entity.mysql.Server;
+import vn.cococord.entity.mysql.User;
+import vn.cococord.exception.BadRequestException;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.exception.UnauthorizedException;
+import vn.cococord.repository.ICategoryRepository;
 import vn.cococord.repository.IChannelRepository;
 import vn.cococord.repository.IServerRepository;
+import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IChannelService;
+import vn.cococord.service.IPermissionService;
 import vn.cococord.service.IServerService;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,17 +34,39 @@ import java.util.stream.Collectors;
 public class ChannelServiceImpl implements IChannelService {
 
     private final IChannelRepository channelRepository;
+    private final ICategoryRepository categoryRepository;
     private final IServerRepository serverRepository;
+    private final IUserRepository userRepository;
     private final IServerService serverService;
+    private final IPermissionService permissionService;
+
+    private static final int MAX_CHANNELS_PER_CATEGORY = 50;
 
     @Override
     public ChannelResponse createChannel(Long serverId, CreateChannelRequest request, String username) {
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found with id: " + serverId));
 
-        // Only server owner can create channels (can add admin/moderator check later)
-        if (!serverService.isServerOwner(serverId, username)) {
-            throw new UnauthorizedException("Only server owner can create channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), serverId)) {
+            throw new UnauthorizedException("You don't have permission to create channels");
+        }
+
+        // Validate channel name (lowercase, no spaces, use hyphens)
+        String channelName = normalizeChannelName(request.getName());
+
+        // Check category limit if categoryId is provided
+        Category category = null;
+        if (request.getCategoryId() != null) {
+            category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+            
+            Long channelCount = categoryRepository.countChannelsByCategoryId(request.getCategoryId());
+            if (channelCount >= MAX_CHANNELS_PER_CATEGORY) {
+                throw new BadRequestException("Category has reached maximum channel limit (" + MAX_CHANNELS_PER_CATEGORY + ")");
+            }
         }
 
         // Get next position
@@ -54,12 +83,14 @@ public class ChannelServiceImpl implements IChannelService {
 
         Channel channel = Channel.builder()
                 .server(server)
-                .name(request.getName())
+                .category(category)
+                .name(channelName)
                 .type(channelType)
                 .topic(request.getTopic())
-                .position(nextPosition)
+                .position(request.getPosition() != null ? request.getPosition() : nextPosition)
                 .isPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false)
                 .isNsfw(request.getIsNsfw() != null ? request.getIsNsfw() : false)
+                .isDefault(false)
                 .slowMode(request.getSlowMode() != null ? request.getSlowMode() : 0)
                 .build();
 
@@ -67,6 +98,19 @@ public class ChannelServiceImpl implements IChannelService {
         log.info("Channel created: {} in server: {} by user: {}", channel.getName(), server.getName(), username);
 
         return convertToResponse(channel);
+    }
+
+    private String normalizeChannelName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new BadRequestException("Channel name is required");
+        }
+        // Convert to lowercase, replace spaces with hyphens, remove special characters
+        return name.toLowerCase()
+                .trim()
+                .replaceAll("\\s+", "-")
+                .replaceAll("[^a-z0-9-]", "")
+                .replaceAll("-+", "-")
+                .replaceAll("^-|-$", "");
     }
 
     @Override
@@ -104,14 +148,16 @@ public class ChannelServiceImpl implements IChannelService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
-        // Only server owner can update channels
-        if (!serverService.isServerOwner(channel.getServer().getId(), username)) {
-            throw new UnauthorizedException("Only server owner can update channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
+            throw new UnauthorizedException("You don't have permission to update channels");
         }
 
         // Update fields
         if (request.getName() != null) {
-            channel.setName(request.getName());
+            channel.setName(normalizeChannelName(request.getName()));
         }
         if (request.getTopic() != null) {
             channel.setTopic(request.getTopic());
@@ -137,9 +183,16 @@ public class ChannelServiceImpl implements IChannelService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
-        // Only server owner can delete channels
-        if (!serverService.isServerOwner(channel.getServer().getId(), username)) {
-            throw new UnauthorizedException("Only server owner can delete channels");
+        // Cannot delete default channel
+        if (channel.getIsDefault()) {
+            throw new BadRequestException("Cannot delete the default channel. Create another channel first.");
+        }
+
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
+            throw new UnauthorizedException("You don't have permission to delete channels");
         }
 
         channelRepository.delete(channel);
@@ -151,9 +204,11 @@ public class ChannelServiceImpl implements IChannelService {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
-        // Only server owner can reorder channels
-        if (!serverService.isServerOwner(channel.getServer().getId(), username)) {
-            throw new UnauthorizedException("Only server owner can reorder channels");
+        User user = getUserByUsername(username);
+        
+        // Check if user has MANAGE_CHANNELS permission
+        if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
+            throw new UnauthorizedException("You don't have permission to reorder channels");
         }
 
         channel.setPosition(position);
@@ -183,17 +238,24 @@ public class ChannelServiceImpl implements IChannelService {
         return true;
     }
 
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+    }
+
     private ChannelResponse convertToResponse(Channel channel) {
         return ChannelResponse.builder()
                 .id(channel.getId())
                 .serverId(channel.getServer().getId())
                 .categoryId(channel.getCategory() != null ? channel.getCategory().getId() : null)
+                .categoryName(channel.getCategory() != null ? channel.getCategory().getName() : null)
                 .name(channel.getName())
                 .type(channel.getType().name())
                 .topic(channel.getTopic())
                 .position(channel.getPosition())
                 .isPrivate(channel.getIsPrivate())
                 .isNsfw(channel.getIsNsfw())
+                .isDefault(channel.getIsDefault())
                 .slowMode(channel.getSlowMode())
                 .createdAt(channel.getCreatedAt())
                 .updatedAt(channel.getUpdatedAt())

@@ -429,19 +429,33 @@
 
     // ==================== ACTIONS ====================
     async function sendMessage(text) {
-        if (!state.dmGroupId) return;
+        if (!state.dmGroupId) {
+            console.warn('[DM] Cannot send message: no dmGroupId');
+            return;
+        }
+        if (!state.currentUser || !state.currentUser.id) {
+            console.error('[DM] Cannot send message: currentUser not loaded');
+            return;
+        }
+        
         const content = (text || '').trim();
         if (!content) return;
 
-        const msg = await apiJson(`/api/direct-messages/${encodeURIComponent(state.dmGroupId)}/messages`, {
-            method: 'POST',
-            body: JSON.stringify({ content, attachmentUrls: [] })
-        });
+        console.log('[DM] Sending message via REST API to dmGroupId:', state.dmGroupId);
 
-        if (msg) {
-            state.messages.push(msg);
-            renderMessages();
-            scrollToBottom();
+        try {
+            // Send via REST API - backend will save AND broadcast via WebSocket
+            // We don't append the message here - let WebSocket subscription handle it
+            // This ensures both sender and recipient get the message via WebSocket
+            await apiJson(`/api/direct-messages/${encodeURIComponent(state.dmGroupId)}/messages`, {
+                method: 'POST',
+                body: JSON.stringify({ content, attachmentUrls: [] })
+            });
+            
+            console.log('[DM] Message sent successfully, waiting for WebSocket broadcast');
+        } catch (e) {
+            console.error('[DM] Failed to send message:', e);
+            alert('Gửi tin nhắn thất bại: ' + (e.message || 'Unknown error'));
         }
     }
 
@@ -455,44 +469,110 @@
     // ==================== WEBSOCKET ====================
     function connectPresenceAndDm() {
         const token = localStorage.getItem('accessToken');
-        if (!token || !window.SockJS || !window.Stomp) return;
+        if (!token) {
+            console.warn('[WS] ⚠️ No access token found, skipping WebSocket connection');
+            return;
+        }
+        if (!window.SockJS) {
+            console.error('[WS] ❌ SockJS not loaded!');
+            return;
+        }
+        if (!window.Stomp) {
+            console.error('[WS] ❌ Stomp not loaded!');
+            return;
+        }
 
+        console.log('[WS] 🔄 Initializing WebSocket connection...');
         const socket = new window.SockJS('/ws');
         const stomp = window.Stomp.over(socket);
-        stomp.debug = null;
+        
+        // Enable debug logging for STOMP (comment out in production)
+        stomp.debug = function(str) {
+            // console.log('[STOMP Debug]', str);
+        };
 
         stomp.connect(
             { Authorization: 'Bearer ' + token },
-            () => {
+            function onConnectSuccess(frame) {
+                console.log('[WS] ✅ Connected successfully to WebSocket!');
+                console.log('[WS] Frame:', frame);
                 state.stomp = stomp;
 
+                // Subscribe to user-specific error queue
+                console.log('[WS] 📮 Subscribing to /user/queue/errors');
+                stomp.subscribe('/user/queue/errors', (msg) => {
+                    console.error('[WS] ❌ Received error from server:', msg.body);
+                    alert('Lỗi: ' + msg.body);
+                });
+
+                // Subscribe to presence updates
+                console.log('[WS] 👥 Subscribing to /topic/presence');
                 stomp.subscribe('/topic/presence', (msg) => {
                     try {
                         const presence = JSON.parse(msg.body);
+                        console.log('[WS] Received presence update:', presence);
                         if (presence?.username) {
                             state.presenceByUsername.set(presence.username, presence);
                             renderDmList();
                             renderHeader();
                         }
-                    } catch (_) { /* ignore */ }
+                    } catch (e) {
+                        console.error('[WS] Error parsing presence:', e);
+                    }
                 });
 
+                // Subscribe to DM channel if we have a dmGroupId
                 if (state.dmGroupId) {
-                    stomp.subscribe(`/topic/dm/${state.dmGroupId}`, (msg) => {
+                    const dmTopic = `/topic/dm/${state.dmGroupId}`;
+                    console.log('[WS] Subscribing to DM channel:', dmTopic);
+                    
+                    stomp.subscribe(dmTopic, function onDmMessage(msg) {
+                        console.log('[WS] ✅ Received DM message via WebSocket!');
+                        console.log('[WS] Message body:', msg.body);
+                        
                         try {
                             const m = JSON.parse(msg.body);
-                            if (!m) return;
-                            // Append live message
-                            state.messages.push(m);
+                            console.log('[WS] Parsed message:', m);
+                            
+                            if (!m || !m.id) {
+                                console.warn('[WS] ❌ Invalid message format:', m);
+                                return;
+                            }
+                            
+                            // Check if message already exists (prevent duplicates)
+                            const existingIndex = state.messages.findIndex(existing => existing.id === m.id);
+                            
+                            if (existingIndex !== -1) {
+                                // Message exists - update it (for edits)
+                                console.log('[WS] 🔄 Updating existing message at index', existingIndex);
+                                state.messages[existingIndex] = m;
+                            } else {
+                                // New message - append it
+                                console.log('[WS] ➕ Adding new message, total will be:', state.messages.length + 1);
+                                state.messages.push(m);
+                            }
+                            
+                            // Always re-render and scroll
                             renderMessages();
                             scrollToBottom();
-                        } catch (_) { /* ignore */ }
+                            console.log('[WS] ✅ Message displayed successfully!');
+                        } catch (e) {
+                            console.error('[WS] ❌ Error processing DM message:', e);
+                        }
                     });
+                    
+                    console.log('[WS] ✅ Successfully subscribed to', dmTopic);
+                } else {
+                    console.warn('[WS] ⚠️ No dmGroupId set, skipping DM subscription');
                 }
 
+                // Send presence update
                 try {
                     stomp.send('/app/presence.update', {}, JSON.stringify({ status: 'ONLINE' }));
-                } catch (_) { /* ignore */ }
+                    console.log('[WS] 📡 Sent ONLINE presence update');
+                } catch (e) {
+                    console.error('[WS] ❌ Failed to send presence update:', e);
+                }
 
                 window.addEventListener('beforeunload', () => {
                     try {
@@ -500,7 +580,16 @@
                     } catch (_) { /* ignore */ }
                 });
             },
-            () => { /* ignore */ }
+            function onConnectError(error) {
+                console.error('[WS] ❌ WebSocket connection failed:', error);
+                console.error('[WS] ⚠️ Real-time messaging will not work! Please refresh the page.');
+                
+                // Try to reconnect after 5 seconds
+                setTimeout(() => {
+                    console.log('[WS] 🔄 Attempting to reconnect...');
+                    connectPresenceAndDm();
+                }, 5000);
+            }
         );
     }
 
@@ -520,8 +609,10 @@
             const value = input?.value || '';
             try {
                 await sendMessage(value);
+                // Clear input immediately after successful send
                 if (input) input.value = '';
             } catch (err) {
+                console.error('[DM] Error in sendMessage:', err);
                 alert(err?.message || 'Gửi tin nhắn thất bại');
             }
         });

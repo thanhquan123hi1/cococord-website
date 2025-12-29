@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LoginRequest {
 
-    @NotBlank(message = "Username or email is required")
+    @NotBlank(message = "Vui lòng nhập tên đăng nhập hoặc email")
     private String usernameOrEmail;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "Vui lòng nhập mật khẩu")
+    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
     private String password;
 
     private String deviceInfo; // Optional: Browser/Device information

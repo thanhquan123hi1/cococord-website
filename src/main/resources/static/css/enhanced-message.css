@@ -1,0 +1,590 @@
+/**
+ * Enhanced Message Component Styles
+ * Discord Clone - Rich Message System
+ */
+
+/* ==================== MESSAGE LAYOUT ==================== */
+
+.message-item {
+    display: flex;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    position: relative;
+    transition: background-color 0.15s ease;
+}
+
+.message-item:hover {
+    background-color: rgba(4, 4, 5, 0.07);
+}
+
+.message-item:hover .message-actions {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.message-avatar {
+    flex-shrink: 0;
+    margin-right: 16px;
+}
+
+.message-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.message-content-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ==================== MESSAGE HEADER ==================== */
+
+.message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.message-author {
+    font-weight: 600;
+    font-size: 16px;
+    color: #dcddde;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.message-author:hover {
+    text-decoration: underline;
+}
+
+.message-author.has-role-color {
+    /* Color is set inline via style attribute */
+}
+
+.message-timestamp {
+    font-size: 12px;
+    color: #72767d;
+    margin-right: 8px;
+}
+
+.edited-label {
+    font-size: 10px;
+    color: #72767d;
+    font-style: italic;
+}
+
+/* ==================== MESSAGE CONTENT ==================== */
+
+.message-content {
+    color: #dcddde;
+    font-size: 16px;
+    line-height: 1.375;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.message-content strong {
+    font-weight: 700;
+}
+
+.message-content em {
+    font-style: italic;
+}
+
+.message-content del {
+    text-decoration: line-through;
+}
+
+.message-content u {
+    text-decoration: underline;
+}
+
+.message-content code.inline-code {
+    background-color: #2f3136;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.message-content pre {
+    background-color: #2f3136;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+    overflow-x: auto;
+}
+
+.message-content pre code {
+    font-size: 14px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    line-height: 1.5;
+    color: #b9bbbe;
+}
+
+.message-content a {
+    color: #00b0f4;
+    text-decoration: none;
+}
+
+.message-content a:hover {
+    text-decoration: underline;
+}
+
+/* ==================== MENTIONS ==================== */
+
+/* Base mention styling - Discord-like blue highlight */
+.mention {
+    background-color: rgba(88, 101, 242, 0.3);
+    color: #dee0fc;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mention:hover {
+    background-color: #5865f2;
+    color: #ffffff;
+}
+
+/* Highlighted mention when current user is mentioned */
+.mention-highlight {
+    background-color: rgba(250, 166, 26, 0.3);
+    color: #faa61a;
+}
+
+.mention-highlight:hover {
+    background-color: #faa61a;
+    color: #000000;
+}
+
+/* Message row highlight when current user is mentioned */
+.message-mentioned {
+    background-color: rgba(250, 166, 26, 0.1);
+    border-left: 2px solid #faa61a;
+}
+
+.message-mentioned:hover {
+    background-color: rgba(250, 166, 26, 0.15);
+}
+
+/* ==================== ATTACHMENTS ==================== */
+
+.message-attachments {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.message-attachment {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.image-attachment {
+    max-width: 400px;
+    cursor: pointer;
+    position: relative;
+}
+
+.attachment-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+    transition: transform 0.2s ease;
+}
+
+.attachment-image:hover {
+    transform: scale(1.02);
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: #fff;
+    padding: 8px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.image-attachment:hover .image-overlay {
+    opacity: 1;
+}
+
+.video-attachment video {
+    max-width: 400px;
+    border-radius: 4px;
+}
+
+.file-attachment {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: #2f3136;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    min-width: 300px;
+    text-decoration: none;
+    color: #dcddde;
+    transition: background-color 0.15s ease;
+}
+
+.file-attachment:hover {
+    background-color: #36383f;
+}
+
+.file-icon {
+    font-size: 32px;
+    margin-right: 12px;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #dcddde;
+}
+
+.file-size {
+    font-size: 12px;
+    color: #72767d;
+}
+
+.download-icon {
+    margin-left: 12px;
+    color: #72767d;
+}
+
+/* ==================== REACTIONS ==================== */
+
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.reaction-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: rgba(79, 84, 92, 0.3);
+    border: 1px solid rgba(79, 84, 92, 0.5);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 14px;
+}
+
+.reaction-item:hover {
+    background-color: rgba(79, 84, 92, 0.5);
+    border-color: rgba(79, 84, 92, 0.8);
+}
+
+.reaction-item.reacted {
+    background-color: rgba(88, 101, 242, 0.3);
+    border-color: rgba(88, 101, 242, 0.6);
+}
+
+.reaction-item.reacted:hover {
+    background-color: rgba(88, 101, 242, 0.4);
+    border-color: rgba(88, 101, 242, 0.8);
+}
+
+.reaction-emoji {
+    margin-right: 4px;
+    font-size: 16px;
+    animation: reactionAdd 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes reactionAdd {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.reaction-count {
+    color: #b9bbbe;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* ==================== MESSAGE ACTIONS ==================== */
+
+.message-actions {
+    position: absolute;
+    top: -16px;
+    right: 16px;
+    display: flex;
+    gap: 4px;
+    background-color: #36393f;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    padding: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #b9bbbe;
+    transition: all 0.15s ease;
+}
+
+.action-btn:hover {
+    background-color: #4f545c;
+    color: #fff;
+}
+
+/* ==================== CONTEXT MENU ==================== */
+
+.context-menu {
+    background-color: #18191c;
+    border-radius: 4px;
+    padding: 6px;
+    min-width: 180px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    color: #b9bbbe;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.context-menu-item:hover {
+    background-color: #5865f2;
+    color: #fff;
+}
+
+.context-menu-item.danger:hover {
+    background-color: #ed4245;
+    color: #fff;
+}
+
+.context-menu-item svg {
+    flex-shrink: 0;
+}
+
+/* ==================== EMOJI PICKER ==================== */
+
+.emoji-picker-simple {
+    background-color: #36393f;
+    border: 1px solid #202225;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    gap: 4px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+}
+
+.emoji-option {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.emoji-option:hover {
+    background-color: #4f545c;
+    transform: scale(1.1);
+}
+
+/* ==================== LIGHTBOX ==================== */
+
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    z-index: 1;
+}
+
+.lightbox-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.lightbox-close:hover {
+    transform: scale(1.1);
+}
+
+/* ==================== EDIT MESSAGE ==================== */
+
+.edit-message-container {
+    margin-top: 8px;
+}
+
+.edit-message-input {
+    width: 100%;
+    padding: 12px;
+    background-color: #40444b;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    color: #dcddde;
+    font-size: 16px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.edit-message-input:focus {
+    outline: none;
+    border-color: #5865f2;
+}
+
+.edit-message-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.edit-message-actions small {
+    color: #72767d;
+    font-size: 12px;
+}
+
+.edit-message-actions button {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-cancel {
+    background: transparent;
+    color: #b9bbbe;
+    margin-right: 8px;
+}
+
+.btn-cancel:hover {
+    text-decoration: underline;
+}
+
+.btn-save {
+    background-color: #5865f2;
+    color: #fff;
+}
+
+.btn-save:hover {
+    background-color: #4752c4;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .message-item {
+        padding: 8px 12px;
+    }
+
+    .message-avatar img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .message-content {
+        font-size: 14px;
+    }
+
+    .message-actions {
+        top: auto;
+        bottom: 8px;
+        right: 12px;
+    }
+
+    .image-attachment,
+    .video-attachment video {
+        max-width: 100%;
+    }
+
+    .file-attachment {
+        min-width: 200px;
+    }
+}

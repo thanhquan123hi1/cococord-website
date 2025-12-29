@@ -12,6 +12,20 @@
     --gradient-end: #7289DA;
 }
 
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+}
+
+.app-layout-wrapper {
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

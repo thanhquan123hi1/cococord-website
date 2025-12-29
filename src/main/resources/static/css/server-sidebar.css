@@ -1,0 +1,395 @@
+/* ==================== SERVER SIDEBAR (72px) ==================== */
+/* Discord-like Server List - Leftmost sidebar */
+
+:root {
+    /* Spacing - 8px grid */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    
+    /* Server sidebar dimensions */
+    --server-sidebar-width: 72px;
+    --server-icon-size: 48px;
+    --server-icon-hover-radius: 16px;
+    
+    /* Colors */
+    --bg-server-sidebar: #1E1F22;
+    --server-icon-bg: #313338;
+    --server-icon-active-bg: #5865F2;
+    --server-pill-bg: #FFFFFF;
+    --server-divider-bg: #35363C;
+    
+    /* Animation */
+    --transition-fast: 150ms ease-out;
+    --transition-normal: 200ms ease;
+}
+
+/* ===== SERVER SIDEBAR CONTAINER ===== */
+.server-sidebar {
+    width: var(--server-sidebar-width);
+    min-width: var(--server-sidebar-width);
+    height: 100vh;
+    background-color: var(--bg-server-sidebar);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-3) 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 100;
+}
+
+/* ===== SERVER LIST WRAPPER (Scrollable) ===== */
+.server-list-wrapper {
+    flex: 1;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.server-list-wrapper::-webkit-scrollbar {
+    width: 0;
+    display: none;
+}
+
+.server-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+}
+
+/* ===== SERVER ITEM (Icon) ===== */
+.server-item {
+    position: relative;
+    width: var(--server-icon-size);
+    height: var(--server-icon-size);
+    background-color: var(--server-icon-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-radius var(--transition-normal), 
+                background-color var(--transition-normal),
+                transform var(--transition-fast);
+    color: var(--text-normal);
+    font-size: 20px;
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.server-item:hover {
+    background-color: var(--server-icon-active-bg);
+    border-radius: var(--server-icon-hover-radius);
+    transform: scale(1.05);
+}
+
+.server-item.active {
+    background-color: var(--server-icon-active-bg);
+    border-radius: var(--server-icon-hover-radius);
+}
+
+/* Server Icon Image */
+.server-item img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+}
+
+/* Server Initial (fallback when no icon) */
+.server-item .server-initial {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--text-normal);
+    text-transform: uppercase;
+}
+
+.server-item:hover .server-initial,
+.server-item.active .server-initial {
+    color: white;
+}
+
+/* ===== SERVER PILL INDICATOR (Left edge) ===== */
+.server-item::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background-color: var(--server-pill-bg);
+    border-radius: 0 4px 4px 0;
+    transition: height var(--transition-normal);
+}
+
+.server-item:hover::before {
+    height: 20px;
+}
+
+.server-item.active::before {
+    height: 40px;
+}
+
+.server-item.has-notification::before {
+    height: 8px;
+}
+
+/* ===== HOME BUTTON ===== */
+.server-item.home-btn {
+    background-color: var(--server-icon-bg);
+    color: #5865F2;
+}
+
+.server-item.home-btn:hover {
+    background-color: #5865F2;
+    color: white;
+}
+
+.server-item.home-btn.active {
+    background-color: #5865F2;
+    color: white;
+}
+
+.server-item.home-btn svg {
+    width: 28px;
+    height: 28px;
+}
+
+/* ===== DIVIDER ===== */
+.server-divider {
+    width: 32px;
+    height: 2px;
+    background-color: var(--server-divider-bg);
+    margin: var(--space-1) 0;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* ===== SERVER ACTIONS (Fixed at Bottom) ===== */
+.server-actions-fixed {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    flex-shrink: 0;
+}
+
+/* Add Server Button */
+.server-item.add-server-btn {
+    background-color: var(--server-icon-bg);
+    color: #23A55A;
+}
+
+.server-item.add-server-btn:hover {
+    background-color: #23A55A;
+    color: white;
+}
+
+.server-item.add-server-btn i {
+    font-size: 24px;
+}
+
+/* Discover Button */
+.server-item.discover-btn {
+    background-color: var(--server-icon-bg);
+    color: #23A55A;
+}
+
+.server-item.discover-btn:hover {
+    background-color: #23A55A;
+    color: white;
+}
+
+/* ===== SERVER TOOLTIP ===== */
+.server-tooltip {
+    position: fixed;
+    left: calc(var(--server-sidebar-width) + var(--space-2));
+    background-color: #111214;
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--space-1);
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    z-index: 1000;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+}
+
+.server-tooltip.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Tooltip Arrow */
+.server-tooltip::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #111214;
+    border-left: 0;
+}
+
+/* ===== NOTIFICATION BADGE ===== */
+.server-item .notification-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    background-color: #ED4245;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--bg-server-sidebar);
+}
+
+/* ===== UNREAD INDICATOR ===== */
+.server-item .unread-indicator {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 8px;
+    background-color: white;
+    border-radius: 0 4px 4px 0;
+}
+
+/* ===== DRAG AND DROP ===== */
+.server-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.server-item.drag-over {
+    border: 2px dashed var(--server-icon-active-bg);
+}
+
+/* ===== SERVER FOLDER ===== */
+.server-folder {
+    position: relative;
+    width: var(--server-icon-size);
+    height: var(--server-icon-size);
+    border-radius: var(--server-icon-hover-radius);
+    background-color: var(--server-icon-bg);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 2px;
+    padding: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition-normal);
+}
+
+.server-folder:hover {
+    background-color: #393C43;
+}
+
+.server-folder .folder-item {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--server-icon-bg);
+}
+
+.server-folder .folder-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===== CONTEXT MENU ===== */
+.server-context-menu {
+    position: fixed;
+    background-color: #111214;
+    border-radius: var(--space-1);
+    min-width: 188px;
+    padding: 6px 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+    z-index: 1001;
+    display: none;
+}
+
+.server-context-menu.visible {
+    display: block;
+}
+
+.server-context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 8px;
+    border-radius: 2px;
+    color: #B5BAC1;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.server-context-menu-item:hover {
+    background-color: #5865F2;
+    color: white;
+}
+
+.server-context-menu-item.danger {
+    color: #F23F43;
+}
+
+.server-context-menu-item.danger:hover {
+    background-color: #F23F43;
+    color: white;
+}
+
+.server-context-menu-divider {
+    height: 1px;
+    background-color: #35363C;
+    margin: 4px 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .server-sidebar {
+        width: 56px;
+        min-width: 56px;
+    }
+    
+    .server-item {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .server-item .server-initial {
+        font-size: 14px;
+    }
+    
+    .server-divider {
+        width: 24px;
+    }
+}

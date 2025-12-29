@@ -1,5 +1,24 @@
 // Authentication utilities
 
+// Cookie utilities for server-side rendering support
+function setCookie(name, value, days = 7) {
+    const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+        return decodeURIComponent(parts.pop().split(';').shift());
+    }
+    return null;
+}
+
+function clearCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
 // Check if user is logged in
 function isLoggedIn() {
     const token = localStorage.getItem('accessToken');
@@ -74,6 +93,8 @@ async function refreshAccessToken() {
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('accessToken', data.accessToken);
+            // Cập nhật cookie cho server-side rendering
+            setCookie('accessToken', data.accessToken, 7);
             return true;
         }
     } catch (error) {
@@ -109,6 +130,9 @@ async function logout() {
     localStorage.removeItem('email');
     localStorage.removeItem('displayName');
     localStorage.removeItem('avatarUrl');
+    
+    // Clear cookie (for server-side rendering)
+    clearCookie('accessToken');
 
     // Redirect to login
     window.location.href = '/login';
