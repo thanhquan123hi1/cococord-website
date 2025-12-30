@@ -17,6 +17,7 @@ public class UserProfileResponse {
     private String username;
     private String email;
     private String displayName;
+    private String discriminator;
     private String avatarUrl;
     private String bannerUrl;
     private String bio;
@@ -35,7 +36,7 @@ public class UserProfileResponse {
     private Boolean allowDirectMessages;
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
-    
+
     // Additional fields for profile modal
     private String note; // Private note about this user (only visible to viewer)
     private List<ServerResponse> mutualServers;

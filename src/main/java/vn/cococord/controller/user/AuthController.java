@@ -158,8 +158,14 @@ public class AuthController {
         response.put("username", user.getUsername());
         response.put("email", user.getEmail());
         response.put("displayName", user.getDisplayName());
+        response.put("discriminator", String.format("%04d", user.getId() % 10000));
         response.put("avatarUrl", user.getAvatarUrl());
+        response.put("bannerUrl", user.getBannerUrl());
+        response.put("bio", user.getBio());
+        response.put("pronouns", user.getPronouns());
         response.put("status", user.getStatus());
+        response.put("customStatus", user.getCustomStatus());
+        response.put("customStatusEmoji", user.getCustomStatusEmoji());
         response.put("createdAt", user.getCreatedAt());
         response.put("lastLogin", user.getLastLogin());
 

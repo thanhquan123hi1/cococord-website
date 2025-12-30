@@ -3,6 +3,78 @@
  * Hỗ trợ cho Landing Page, Login, Register, Forgot Password, Reset Password
  */
 
+// ============================================================
+// Tab-scoped auth storage bridge (public pages)
+// Ensures accessToken/refreshToken are not shared across tabs.
+// ============================================================
+(function installTabScopedStorageBridge() {
+    const TAB_SCOPED_KEYS = new Set([
+        'accessToken',
+        'refreshToken',
+        'token',
+        'user',
+        'userId',
+        'username',
+        'email',
+        'displayName',
+        'avatarUrl',
+        'activeDmGroupId'
+    ]);
+
+    const legacyKeyMap = { token: 'accessToken' };
+
+    const ls = window.localStorage;
+    const ss = window.sessionStorage;
+    const original = {
+        getItem: ls.getItem.bind(ls),
+        setItem: ls.setItem.bind(ls),
+        removeItem: ls.removeItem.bind(ls),
+        clear: ls.clear.bind(ls)
+    };
+
+    // Migrate legacy tokens/user data to sessionStorage (per-tab) and remove from localStorage.
+    for (const key of TAB_SCOPED_KEYS) {
+        const targetKey = legacyKeyMap[key] || key;
+        if (ss.getItem(targetKey) == null) {
+            const legacyValue = original.getItem(key);
+            if (legacyValue != null) {
+                ss.setItem(targetKey, legacyValue);
+                original.removeItem(key);
+            }
+        }
+    }
+
+    ls.getItem = (key) => {
+        if (TAB_SCOPED_KEYS.has(key)) {
+            return ss.getItem(legacyKeyMap[key] || key);
+        }
+        return original.getItem(key);
+    };
+
+    ls.setItem = (key, value) => {
+        if (TAB_SCOPED_KEYS.has(key)) {
+            ss.setItem(legacyKeyMap[key] || key, String(value));
+            return;
+        }
+        original.setItem(key, value);
+    };
+
+    ls.removeItem = (key) => {
+        if (TAB_SCOPED_KEYS.has(key)) {
+            ss.removeItem(legacyKeyMap[key] || key);
+            return;
+        }
+        original.removeItem(key);
+    };
+
+    // Avoid clearing shared localStorage across tabs.
+    ls.clear = () => {
+        for (const key of TAB_SCOPED_KEYS) {
+            ss.removeItem(legacyKeyMap[key] || key);
+        }
+    };
+})();
+
 // Utility function to show alerts
 function showAlert(message, type = 'info') {
     const alertContainer = document.getElementById('alert-container');
@@ -74,7 +146,7 @@ function validatePassword(password) {
     const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
     
     if (publicPaths.includes(currentPath)) {
-        const accessToken = localStorage.getItem('accessToken');
+        const accessToken = sessionStorage.getItem('accessToken');
         
         // If token exists on public pages, verify it and clear storage if invalid.
         // Do NOT auto-redirect away from login/register (allows switching accounts).
@@ -88,9 +160,10 @@ function validatePassword(password) {
             })
             .then(response => {
                 if (!response.ok) {
-                    // Token is invalid, clear storage and cookie
-                    localStorage.clear();
-                    document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    // Token is invalid, clear per-tab storage
+                    sessionStorage.removeItem('accessToken');
+                    sessionStorage.removeItem('refreshToken');
+                    sessionStorage.removeItem('user');
                 }
             })
             .catch(error => {
@@ -102,7 +175,7 @@ function validatePassword(password) {
 
 // Handle token expiry and auto-refresh
 async function refreshAccessToken() {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
     
     if (!refreshToken) {
         return null;
@@ -119,25 +192,24 @@ async function refreshAccessToken() {
         
         if (response.ok) {
             const data = await response.json();
-            localStorage.setItem('accessToken', data.accessToken);
-            // Cập nhật cookie cho server-side rendering
-            const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
-            document.cookie = `accessToken=${encodeURIComponent(data.accessToken)}; expires=${expires}; path=/; SameSite=Lax`;
+            sessionStorage.setItem('accessToken', data.accessToken);
             if (data.refreshToken) {
-                localStorage.setItem('refreshToken', data.refreshToken);
+                sessionStorage.setItem('refreshToken', data.refreshToken);
             }
             return data.accessToken;
         } else {
-            // Refresh failed, clear storage and redirect to login
-            localStorage.clear();
-            document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            // Refresh failed, clear per-tab storage and redirect to login
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('refreshToken');
+            sessionStorage.removeItem('user');
             window.location.href = '/login';
             return null;
         }
     } catch (error) {
         console.error('Token refresh error:', error);
-        localStorage.clear();
-        document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('user');
         window.location.href = '/login';
         return null;
     }
@@ -145,7 +217,7 @@ async function refreshAccessToken() {
 
 // API request helper with auto token refresh
 async function apiRequest(url, options = {}) {
-    let accessToken = localStorage.getItem('accessToken');
+    let accessToken = sessionStorage.getItem('accessToken');
     
     if (accessToken) {
         options.headers = {

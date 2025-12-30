@@ -40,9 +40,20 @@ import vn.cococord.service.IUserService;
 @RequiredArgsConstructor
 @Slf4j
 public class ProfileController {
-    
+
     private final IUserService userService;
     private final IPresenceService presenceService;
+
+    /**
+     * GET /api/users/search?query=...
+     * Search users by username/email (excludes current user)
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<UserProfileResponse>> searchUsers(
+            @RequestParam(name = "query") String query,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(userService.searchUsers(query, userDetails.getUsername()));
+    }
 
     /**
      * GET /api/users/me/profile
@@ -115,11 +126,11 @@ public class ProfileController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) {
         String avatarUrl = userService.uploadAvatar(file, userDetails.getUsername());
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("avatarUrl", avatarUrl);
         response.put("message", "Avatar uploaded successfully");
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -132,11 +143,11 @@ public class ProfileController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal UserDetails userDetails) {
         String bannerUrl = userService.uploadBanner(file, userDetails.getUsername());
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("bannerUrl", bannerUrl);
         response.put("message", "Banner uploaded successfully");
-        
+
         return ResponseEntity.ok(response);
     }
 

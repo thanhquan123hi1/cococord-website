@@ -128,6 +128,7 @@ public class UserServiceImpl implements IUserService {
                                 .id(user.getId())
                                 .username(user.getUsername())
                                 .displayName(user.getDisplayName())
+                                .discriminator(String.format("%04d", user.getId() % 10000))
                                 .email(user.getEmail())
                                 .avatarUrl(user.getAvatarUrl())
                                 .bannerUrl(user.getBannerUrl())
@@ -153,7 +154,7 @@ public class UserServiceImpl implements IUserService {
                         User viewer = userRepository.findByUsername(viewerUsername).orElse(null);
                         if (viewer != null) {
                                 userNoteRepository.findByOwnerAndTargetUser(viewer, user)
-                                        .ifPresent(note -> builder.note(note.getNote()));
+                                                .ifPresent(note -> builder.note(note.getNote()));
                         }
                 }
 

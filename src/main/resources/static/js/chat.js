@@ -190,6 +190,10 @@
         return String(n % 10000).padStart(4, '0');
     }
 
+    function getDiscriminator(user) {
+        return user?.discriminator || discriminatorFromId(user?.id);
+    }
+
     function escapeHtml(text) {
         return String(text)
             .replaceAll('&', '&amp;')
@@ -197,6 +201,28 @@
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
+    }
+
+    /**
+     * Mask email for privacy display
+     * Example: thanhquan957@gmail.com -> t***n957@gmail.com
+     */
+    function maskEmail(email) {
+        if (!email || typeof email !== 'string') return '***@***';
+        const atIndex = email.indexOf('@');
+        if (atIndex < 1) return '***@***';
+        
+        const localPart = email.substring(0, atIndex);
+        const domain = email.substring(atIndex);
+        
+        if (localPart.length <= 2) {
+            return localPart.charAt(0) + '***' + domain;
+        }
+        
+        // Show first char, last chars (up to 4), mask the middle
+        const firstChar = localPart.charAt(0);
+        const lastChars = localPart.length > 4 ? localPart.substring(localPart.length - 4) : localPart.substring(1);
+        return firstChar + '***' + lastChars + domain;
     }
 
     function isOnline(username) {
@@ -630,7 +656,7 @@
         try {
             currentUser = await apiGet('/api/auth/me');
             const displayName = currentUser.displayName || currentUser.username || 'User';
-            const discriminator = discriminatorFromId(currentUser.id);
+            const discriminator = getDiscriminator(currentUser);
             const fullUsername = `${currentUser.username || 'user'}#${discriminator}`;
             
             el.ucpName.textContent = displayName;
@@ -1436,27 +1462,59 @@
     }
 
     async function createChannel() {
-        const name = el.channelNameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
-        if (!name || !activeServerId) return;
+        const name = el.channelNameInput?.value.trim().toLowerCase().replace(/\s+/g, '-');
+        if (!name) {
+            alert('Vui lòng nhập tên kênh');
+            el.channelNameInput?.focus();
+            return;
+        }
+        if (!activeServerId) {
+            alert('Vui lòng chọn một máy chủ trước');
+            return;
+        }
 
         // Get category ID if set from modal
         const categoryId = el.createChannelModal?.dataset.categoryId || null;
 
+        // Show loading state on button
+        const confirmBtn = el.confirmCreateChannel;
+        const originalText = confirmBtn?.textContent || 'Tạo Kênh';
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Đang tạo...';
+        }
+
         try {
             const payload = {
                 name,
-                type: selectedChannelType
+                type: selectedChannelType || 'TEXT'
             };
             if (categoryId) {
                 payload.categoryId = parseInt(categoryId, 10);
             }
 
-            await apiPost(`/api/servers/${activeServerId}/channels`, payload);
+            console.log('Creating channel with payload:', payload, 'for server:', activeServerId);
+            
+            const newChannel = await apiPost(`/api/servers/${activeServerId}/channels`, payload);
+            console.log('Channel created successfully:', newChannel);
+            
             hideCreateChannelModal();
             await loadChannels(activeServerId);
             renderChannelList();
+            
+            // Select the new channel if created successfully
+            if (newChannel?.id) {
+                await selectChannel(newChannel.id);
+            }
         } catch (e) {
-            alert('Không thể tạo kênh: ' + (e.message || 'Lỗi'));
+            console.error('Failed to create channel:', e);
+            alert('Không thể tạo kênh: ' + (e.message || 'Lỗi không xác định. Vui lòng thử lại.'));
+        } finally {
+            // Reset button state
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText;
+            }
         }
     }
 
@@ -1662,13 +1720,13 @@
     function populateSettingsData() {
         if (!currentUser) return;
         
-        // Account tab
+        // Account tab - header section
         const usernameDisplay = document.getElementById('settingsUsername');
         const emailDisplay = document.getElementById('settingsEmail');
         const avatarDisplay = document.getElementById('settingsAvatar');
         const displayNameDisplay = document.getElementById('settingsDisplayName');
         
-        if (usernameDisplay) usernameDisplay.textContent = currentUser.username || 'user';
+        if (usernameDisplay) usernameDisplay.textContent = '@' + (currentUser.username || 'user');
         if (emailDisplay) emailDisplay.textContent = currentUser.email || 'email@example.com';
         if (displayNameDisplay) displayNameDisplay.textContent = currentUser.displayName || currentUser.username || 'User';
         
@@ -1681,12 +1739,21 @@
             }
         }
         
+        // Account tab - info fields
+        const displayNameField = document.getElementById('settingsDisplayNameField');
+        const usernameField = document.getElementById('settingsUsernameField');
+        const emailField = document.getElementById('settingsEmailField');
+        
+        if (displayNameField) displayNameField.textContent = currentUser.displayName || currentUser.username || 'User';
+        if (usernameField) usernameField.textContent = '@' + (currentUser.username || 'user');
+        if (emailField) emailField.textContent = maskEmail(currentUser.email);
+        
         // Profile tab inputs
         const displayNameInput = document.getElementById('profileDisplayName');
         const aboutMeInput = document.getElementById('profileAboutMe');
         
         if (displayNameInput) displayNameInput.value = currentUser.displayName || '';
-        if (aboutMeInput) aboutMeInput.value = currentUser.aboutMe || '';
+        if (aboutMeInput) aboutMeInput.value = currentUser.aboutMe || currentUser.bio || '';
     }
     
     function switchSettingsTab(tabName) {

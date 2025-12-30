@@ -18,6 +18,28 @@ const UserSettingsModal = (function() {
     };
 
     /**
+     * Mask email for privacy display
+     * Example: thanhquan957@gmail.com -> t***n957@gmail.com
+     */
+    function maskEmail(email) {
+        if (!email || typeof email !== 'string') return '***@***';
+        const atIndex = email.indexOf('@');
+        if (atIndex < 1) return '***@***';
+        
+        const localPart = email.substring(0, atIndex);
+        const domain = email.substring(atIndex);
+        
+        if (localPart.length <= 2) {
+            return localPart.charAt(0) + '***' + domain;
+        }
+        
+        // Show first char, last chars (up to 4), mask the middle
+        const firstChar = localPart.charAt(0);
+        const lastChars = localPart.length > 4 ? localPart.substring(localPart.length - 4) : localPart.substring(1);
+        return firstChar + '***' + lastChars + domain;
+    }
+
+    /**
      * Initialize the settings modal
      */
     function init() {

@@ -75,7 +75,7 @@
 
     function fullUsername(user) {
         const username = user?.username || 'unknown';
-        const discriminator = discriminatorFromId(user?.id);
+        const discriminator = user?.discriminator || discriminatorFromId(user?.id);
         return `${username}#${discriminator}`;
     }
 

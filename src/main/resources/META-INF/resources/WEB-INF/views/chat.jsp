@@ -562,6 +562,7 @@
 <!-- PeerJS for WebRTC Voice Chat -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
+<script defer src="${pageContext.request.contextPath}/js/auth.js"></script>
 <script defer src="${pageContext.request.contextPath}/js/server-sidebar.js"></script>
 <script defer src="${pageContext.request.contextPath}/js/chat.js"></script>
 </body>
