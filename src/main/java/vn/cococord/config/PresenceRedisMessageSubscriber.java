@@ -32,6 +32,7 @@ import vn.cococord.service.IFriendService;
 @ConditionalOnProperty(name = "spring.data.redis.enabled", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("null")
 public class PresenceRedisMessageSubscriber implements MessageListener {
 
     private final SimpMessagingTemplate messagingTemplate;

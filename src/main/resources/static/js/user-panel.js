@@ -10,15 +10,33 @@
     const UserPanel = {
         currentUser: null,
         statusPickerVisible: false,
+        initialized: false,
 
         /**
          * Initialize user panel
          */
         init: async function() {
-            await this.loadCurrentUser();
-            this.render();
-            this.attachEventListeners();
-            this.startPresenceHeartbeat();
+            // Prevent double initialization
+            if (this.initialized) return;
+            
+            // Check if user panel container exists
+            const container = document.getElementById('userPanel');
+            if (!container) {
+                console.log('UserPanel: #userPanel container not found, skipping initialization');
+                return;
+            }
+
+            try {
+                await this.loadCurrentUser();
+                if (this.currentUser) {
+                    this.render();
+                    this.attachEventListeners();
+                    this.startPresenceHeartbeat();
+                    this.initialized = true;
+                }
+            } catch (error) {
+                console.error('UserPanel: Failed to initialize', error);
+            }
         },
 
         /**
@@ -26,18 +44,27 @@
          */
         loadCurrentUser: async function() {
             try {
+                const token = localStorage.getItem('accessToken');
+                if (!token) {
+                    console.log('UserPanel: No access token found');
+                    return null;
+                }
+
                 const response = await fetch('/api/users/me/profile', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 
                 if (response.ok) {
                     this.currentUser = await response.json();
                     return this.currentUser;
+                } else if (response.status === 401) {
+                    console.log('UserPanel: Token expired or invalid');
+                    return null;
                 }
             } catch (error) {
-                console.error('Failed to load user profile:', error);
+                console.error('UserPanel: Failed to load user profile:', error);
             }
             return null;
         },
@@ -51,8 +78,8 @@
             const container = document.getElementById('userPanel');
             if (!container) return;
 
-            const displayName = this.currentUser.displayName || this.currentUser.username;
-            const discriminator = String(this.currentUser.id % 10000).padStart(4, '0');
+            const displayName = this.currentUser.displayName || this.currentUser.username || 'User';
+            const discriminator = String((this.currentUser.id || 0) % 10000).padStart(4, '0');
             const status = this.currentUser.status || 'OFFLINE';
             const customStatus = this.getCustomStatusText();
 
@@ -76,22 +103,25 @@
                         </button>
                         <button class="user-action-btn" id="settingsBtn" title="User Settings">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                                <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                             </svg>
                         </button>
                     </div>
                 </div>
             `;
+            
+            // Re-attach event listeners after render
+            this.attachEventListeners();
         },
 
         /**
          * Render avatar
          */
         renderAvatar: function() {
-            const displayName = this.currentUser.displayName || this.currentUser.username;
+            const displayName = this.currentUser.displayName || this.currentUser.username || 'U';
             
             if (this.currentUser.avatarUrl) {
-                return `<img src="${this.currentUser.avatarUrl}" alt="${this.escapeHtml(displayName)}" class="user-avatar">`;
+                return `<img src="${this.escapeHtml(this.currentUser.avatarUrl)}" alt="${this.escapeHtml(displayName)}" class="user-avatar">`;
             } else {
                 const initial = displayName.charAt(0).toUpperCase();
                 return `<div class="user-avatar-placeholder">${initial}</div>`;
@@ -102,7 +132,7 @@
          * Get custom status text with emoji
          */
         getCustomStatusText: function() {
-            if (!this.currentUser.customStatus) return '';
+            if (!this.currentUser || !this.currentUser.customStatus) return '';
             
             const emoji = this.currentUser.customStatusEmoji || '';
             const text = this.currentUser.customStatus;
@@ -133,34 +163,55 @@
             const userAvatar = document.getElementById('userAvatar');
 
             if (statusPickerBtn) {
-                statusPickerBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.toggleStatusPicker();
-                });
+                // Remove existing listeners to prevent duplicates
+                statusPickerBtn.replaceWith(statusPickerBtn.cloneNode(true));
+                const newStatusPickerBtn = document.getElementById('statusPickerBtn');
+                if (newStatusPickerBtn) {
+                    newStatusPickerBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleStatusPicker();
+                    });
+                }
             }
 
             if (settingsBtn) {
-                settingsBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    window.UserSettingsModal && window.UserSettingsModal.show();
-                });
+                // Remove existing listeners to prevent duplicates
+                settingsBtn.replaceWith(settingsBtn.cloneNode(true));
+                const newSettingsBtn = document.getElementById('settingsBtn');
+                if (newSettingsBtn) {
+                    newSettingsBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.showSettingsModal();
+                    });
+                }
             }
 
-            // Click on user info area to show UCP popup
-            const userInfoArea = container.querySelector('.user-panel-content');
-            if (userInfoArea) {
-                userInfoArea.addEventListener('click', (e) => {
-                    // Don't trigger if clicking on action buttons
-                    if (e.target.closest('.user-actions')) return;
-                    e.stopPropagation();
-                    this.toggleUCPPopup();
-                });
+            if (userAvatar) {
+                // Remove existing listeners to prevent duplicates
+                userAvatar.replaceWith(userAvatar.cloneNode(true));
+                const newUserAvatar = document.getElementById('userAvatar');
+                if (newUserAvatar) {
+                    newUserAvatar.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this.currentUser && this.currentUser.id) {
+                            if (window.UserProfileModal && typeof window.UserProfileModal.show === 'function') {
+                                window.UserProfileModal.show(this.currentUser.id);
+                            } else if (window.UserProfileModal && typeof window.UserProfileModal.open === 'function') {
+                                window.UserProfileModal.open(this.currentUser.id);
+                            }
+                        }
+                    });
+                }
             }
 
             // Close status picker when clicking outside
-            document.addEventListener('click', () => {
+            document.addEventListener('click', (e) => {
                 if (this.statusPickerVisible) {
-                    this.hideStatusPicker();
+                    const picker = document.getElementById('statusPickerDropdown');
+                    if (picker && !picker.contains(e.target)) {
+                        this.hideStatusPicker();
+                    }
                 }
             });
         },
@@ -180,205 +231,32 @@
          * Show status picker
          */
         showStatusPicker: function() {
-            if (this.statusPickerVisible) return;
-            
-            this.statusPickerVisible = true;
-            window.StatusPicker && window.StatusPicker.show(this.currentUser, (updatedStatus) => {
-                this.currentUser.status = updatedStatus.status;
-                this.currentUser.customStatus = updatedStatus.customStatus;
-                this.currentUser.customStatusEmoji = updatedStatus.customStatusEmoji;
-                this.render();
-            });
+            if (window.StatusPicker && typeof window.StatusPicker.show === 'function') {
+                window.StatusPicker.show(this.currentUser, (updatedUser) => {
+                    this.currentUser = updatedUser;
+                    this.render();
+                });
+                this.statusPickerVisible = true;
+            }
         },
 
         /**
          * Hide status picker
          */
         hideStatusPicker: function() {
+            if (window.StatusPicker && typeof window.StatusPicker.hide === 'function') {
+                window.StatusPicker.hide();
+            }
             this.statusPickerVisible = false;
-            window.StatusPicker && window.StatusPicker.hide();
         },
 
         /**
-         * Update user info
+         * Update user data
          */
         update: function(userData) {
-            this.currentUser = { ...this.currentUser, ...userData };
-            this.render();
-        },
-
-        /**
-         * UCP Popup state
-         */
-        ucpPopupVisible: false,
-
-        /**
-         * Toggle UCP Popup
-         */
-        toggleUCPPopup: function() {
-            if (this.ucpPopupVisible) {
-                this.hideUCPPopup();
-            } else {
-                this.showUCPPopup();
-            }
-        },
-
-        /**
-         * Show UCP Popup
-         */
-        showUCPPopup: function() {
-            if (this.ucpPopupVisible) return;
-            this.ucpPopupVisible = true;
-
-            // Hide status picker if visible
-            if (this.statusPickerVisible) {
-                this.hideStatusPicker();
-            }
-
-            // Remove existing popup
-            const existing = document.querySelector('.ucp-popup');
-            if (existing) existing.remove();
-
-            const popup = document.createElement('div');
-            popup.className = 'ucp-popup';
-            
-            const displayName = this.currentUser.displayName || this.currentUser.username;
-            const status = this.currentUser.status || 'OFFLINE';
-            const customStatus = this.currentUser.customStatus || '';
-            const customEmoji = this.currentUser.customStatusEmoji || '';
-            const bannerUrl = this.currentUser.bannerUrl || '';
-            const bannerColor = this.currentUser.bannerColor || '#f04747';
-            const bio = this.currentUser.bio || '';
-
-            popup.innerHTML = `
-                <div class="ucp-popup-banner" style="${bannerUrl ? `background-image: url('${bannerUrl}')` : `background-color: ${bannerColor}`}">
-                    <div class="ucp-popup-avatar-container">
-                        ${this.renderPopupAvatar()}
-                        <span class="ucp-popup-status-ring status-${status.toLowerCase()}"></span>
-                        ${this.currentUser.avatarDecorationUrl ? `<img class="ucp-popup-avatar-decoration" src="${this.currentUser.avatarDecorationUrl}" alt="">` : ''}
-                    </div>
-                    ${customStatus ? `
-                        <div class="ucp-popup-custom-bubble">
-                            <span class="ucp-bubble-icon">➕</span>
-                            <span class="ucp-bubble-text">${this.escapeHtml(customStatus)}</span>
-                        </div>
-                    ` : ''}
-                </div>
-                
-                <div class="ucp-popup-body">
-                    <div class="ucp-popup-identity">
-                        <span class="ucp-popup-displayname">${this.escapeHtml(displayName)}</span>
-                        ${this.currentUser.nitro ? `<img class="ucp-popup-badge" src="/images/nitro-badge.svg" alt="Nitro" title="Nitro">` : ''}
-                    </div>
-                    <div class="ucp-popup-username">${this.escapeHtml(this.currentUser.username)}</div>
-                    
-                    <div class="ucp-popup-menu">
-                        <button class="ucp-menu-item" data-action="edit-profile">
-                            <svg class="ucp-menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                            </svg>
-                            <span class="ucp-menu-text">Sửa Hồ Sơ</span>
-                        </button>
-                        
-                        <button class="ucp-menu-item ucp-menu-expandable" data-action="set-status">
-                            <span class="ucp-status-indicator status-${status.toLowerCase()}"></span>
-                            <span class="ucp-menu-text">${this.getStatusLabel(status)}</span>
-                            <svg class="ucp-menu-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                            </svg>
-                        </button>
-                        
-                        <div class="ucp-menu-separator"></div>
-                        
-                        <button class="ucp-menu-item" data-action="switch-account">
-                            <svg class="ucp-menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/>
-                            </svg>
-                            <span class="ucp-menu-text">Đổi Tài Khoản</span>
-                            <svg class="ucp-menu-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(popup);
-
-            // Position popup above user panel
-            const panel = document.getElementById('userPanel');
-            if (panel) {
-                const rect = panel.getBoundingClientRect();
-                popup.style.left = `${rect.left}px`;
-                popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
-            }
-
-            // Attach popup events
-            popup.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = e.target.closest('[data-action]')?.dataset.action;
-                if (action) {
-                    this.handleUCPAction(action);
-                }
-            });
-
-            // Close on outside click
-            setTimeout(() => {
-                document.addEventListener('click', this.handleOutsideClick);
-            }, 10);
-        },
-
-        handleOutsideClick: function(e) {
-            const popup = document.querySelector('.ucp-popup');
-            if (popup && !popup.contains(e.target) && !e.target.closest('.user-panel-content')) {
-                UserPanel.hideUCPPopup();
-            }
-        },
-
-        /**
-         * Hide UCP Popup
-         */
-        hideUCPPopup: function() {
-            this.ucpPopupVisible = false;
-            const popup = document.querySelector('.ucp-popup');
-            if (popup) popup.remove();
-            document.removeEventListener('click', this.handleOutsideClick);
-        },
-
-        /**
-         * Handle UCP menu actions
-         */
-        handleUCPAction: function(action) {
-            this.hideUCPPopup();
-            
-            switch (action) {
-                case 'edit-profile':
-                    window.UserSettingsModal && window.UserSettingsModal.show('profile');
-                    break;
-                case 'set-status':
-                    this.showStatusPicker();
-                    break;
-                case 'switch-account':
-                    // Show account switcher or logout
-                    if (confirm('Bạn có muốn đăng xuất để đổi tài khoản?')) {
-                        localStorage.removeItem('accessToken');
-                        window.location.href = '/login';
-                    }
-                    break;
-            }
-        },
-
-        /**
-         * Render popup avatar
-         */
-        renderPopupAvatar: function() {
-            const displayName = this.currentUser.displayName || this.currentUser.username;
-            
-            if (this.currentUser.avatarUrl) {
-                return `<img src="${this.currentUser.avatarUrl}" alt="${this.escapeHtml(displayName)}" class="ucp-popup-avatar">`;
-            } else {
-                const initial = displayName.charAt(0).toUpperCase();
-                return `<div class="ucp-popup-avatar-placeholder">${initial}</div>`;
+            if (userData) {
+                this.currentUser = { ...this.currentUser, ...userData };
+                this.render();
             }
         },
 
@@ -386,24 +264,336 @@
          * Start presence heartbeat (every 5 minutes)
          */
         startPresenceHeartbeat: function() {
-            setInterval(async () => {
-                try {
-                    await fetch('/api/users/me/activity', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                        }
-                    });
-                } catch (error) {
-                    console.error('Failed to send presence heartbeat:', error);
-                }
+            // Send initial heartbeat
+            this.sendHeartbeat();
+            
+            // Set up interval
+            setInterval(() => {
+                this.sendHeartbeat();
             }, 5 * 60 * 1000); // 5 minutes
+        },
+
+        /**
+         * Send heartbeat to server
+         */
+        sendHeartbeat: async function() {
+            try {
+                const token = localStorage.getItem('accessToken');
+                if (!token) return;
+
+                await fetch('/api/users/me/activity', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } catch (error) {
+                console.error('UserPanel: Failed to send presence heartbeat:', error);
+            }
+        },
+
+        /**
+         * Show settings modal
+         */
+        showSettingsModal: function() {
+            // Remove existing modal if any
+            this.hideSettingsModal();
+
+            const modal = document.createElement('div');
+            modal.id = 'userSettingsModal';
+            modal.className = 'settings-modal-overlay';
+            modal.innerHTML = `
+                <div class="settings-modal">
+                    <div class="settings-modal-header">
+                        <h2>Cài đặt người dùng</h2>
+                        <button class="settings-close-btn" id="closeSettingsBtn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="settings-modal-body">
+                        <div class="settings-sidebar">
+                            <div class="settings-nav-group">
+                                <div class="settings-nav-title">CÀI ĐẶT NGƯỜI DÙNG</div>
+                                <button class="settings-nav-item active" data-section="account">Tài khoản</button>
+                                <button class="settings-nav-item" data-section="profile">Hồ sơ</button>
+                                <button class="settings-nav-item" data-section="privacy">Quyền riêng tư</button>
+                            </div>
+                            <div class="settings-nav-group">
+                                <div class="settings-nav-title">CÀI ĐẶT ỨNG DỤNG</div>
+                                <button class="settings-nav-item" data-section="appearance">Giao diện</button>
+                                <button class="settings-nav-item" data-section="notifications">Thông báo</button>
+                                <button class="settings-nav-item" data-section="keybinds">Phím tắt</button>
+                                <button class="settings-nav-item" data-section="language">Ngôn ngữ</button>
+                            </div>
+                            <div class="settings-nav-divider"></div>
+                            <button class="settings-nav-item logout-btn" data-section="logout">Đăng xuất</button>
+                        </div>
+                        <div class="settings-content" id="settingsContent">
+                            ${this.renderSettingsSection('account')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Attach event listeners
+            const closeBtn = document.getElementById('closeSettingsBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => this.hideSettingsModal());
+            }
+
+            // Close on overlay click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideSettingsModal();
+                }
+            });
+
+            // Close on Escape key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    this.hideSettingsModal();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            // Navigation items
+            const navItems = modal.querySelectorAll('.settings-nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const section = item.dataset.section;
+                    if (section === 'logout') {
+                        this.handleLogout();
+                        return;
+                    }
+                    navItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const content = document.getElementById('settingsContent');
+                    if (content) {
+                        content.innerHTML = this.renderSettingsSection(section);
+                    }
+                });
+            });
+        },
+
+        /**
+         * Hide settings modal
+         */
+        hideSettingsModal: function() {
+            const modal = document.getElementById('userSettingsModal');
+            if (modal) {
+                modal.remove();
+            }
+        },
+
+        /**
+         * Render settings section content
+         */
+        renderSettingsSection: function(section) {
+            const user = this.currentUser || {};
+            const displayName = user.displayName || user.username || 'User';
+            const email = user.email || 'email@example.com';
+
+            switch (section) {
+                case 'account':
+                    return `
+                        <div class="settings-section">
+                            <h3>Tài khoản của tôi</h3>
+                            <div class="settings-card">
+                                <div class="settings-card-row">
+                                    <div class="settings-card-info">
+                                        <div class="settings-card-label">TÊN NGƯỜI DÙNG</div>
+                                        <div class="settings-card-value">${this.escapeHtml(displayName)}</div>
+                                    </div>
+                                    <button class="settings-edit-btn">Chỉnh sửa</button>
+                                </div>
+                                <div class="settings-card-row">
+                                    <div class="settings-card-info">
+                                        <div class="settings-card-label">EMAIL</div>
+                                        <div class="settings-card-value">${this.escapeHtml(email)}</div>
+                                    </div>
+                                    <button class="settings-edit-btn">Chỉnh sửa</button>
+                                </div>
+                                <div class="settings-card-row">
+                                    <div class="settings-card-info">
+                                        <div class="settings-card-label">MẬT KHẨU</div>
+                                        <div class="settings-card-value">••••••••</div>
+                                    </div>
+                                    <button class="settings-edit-btn">Đổi mật khẩu</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'profile':
+                    return `
+                        <div class="settings-section">
+                            <h3>Hồ sơ của tôi</h3>
+                            <div class="settings-card">
+                                <div class="settings-card-row">
+                                    <div class="settings-card-info">
+                                        <div class="settings-card-label">AVATAR</div>
+                                        <div class="settings-card-avatar">
+                                            ${user.avatarUrl 
+                                                ? `<img src="${this.escapeHtml(user.avatarUrl)}" alt="Avatar">` 
+                                                : `<div class="avatar-placeholder">${displayName.charAt(0).toUpperCase()}</div>`
+                                            }
+                                        </div>
+                                    </div>
+                                    <button class="settings-edit-btn">Đổi avatar</button>
+                                </div>
+                                <div class="settings-card-row">
+                                    <div class="settings-card-info">
+                                        <div class="settings-card-label">GIỚI THIỆU</div>
+                                        <div class="settings-card-value">${user.bio ? this.escapeHtml(user.bio) : 'Chưa có giới thiệu'}</div>
+                                    </div>
+                                    <button class="settings-edit-btn">Chỉnh sửa</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'privacy':
+                    return `
+                        <div class="settings-section">
+                            <h3>Quyền riêng tư & An toàn</h3>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Tin nhắn trực tiếp</div>
+                                    <div class="settings-option-desc">Cho phép tin nhắn trực tiếp từ thành viên server</div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Lời mời kết bạn</div>
+                                    <div class="settings-option-desc">Cho phép người khác gửi lời mời kết bạn</div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                case 'appearance':
+                    return `
+                        <div class="settings-section">
+                            <h3>Giao diện</h3>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Chủ đề</div>
+                                    <div class="settings-option-desc">Chọn giao diện sáng hoặc tối</div>
+                                </div>
+                                <select class="settings-select">
+                                    <option value="dark" selected>Tối</option>
+                                    <option value="light">Sáng</option>
+                                </select>
+                            </div>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Cỡ chữ tin nhắn</div>
+                                    <div class="settings-option-desc">Điều chỉnh cỡ chữ trong tin nhắn</div>
+                                </div>
+                                <select class="settings-select">
+                                    <option value="12">12px</option>
+                                    <option value="14" selected>14px</option>
+                                    <option value="16">16px</option>
+                                    <option value="18">18px</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                case 'notifications':
+                    return `
+                        <div class="settings-section">
+                            <h3>Thông báo</h3>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Bật thông báo máy tính</div>
+                                    <div class="settings-option-desc">Nhận thông báo trên màn hình</div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Âm thanh thông báo</div>
+                                    <div class="settings-option-desc">Phát âm thanh khi có tin nhắn mới</div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                case 'keybinds':
+                    return `
+                        <div class="settings-section">
+                            <h3>Phím tắt</h3>
+                            <div class="settings-keybind">
+                                <span class="keybind-action">Tìm kiếm</span>
+                                <span class="keybind-key">Ctrl + K</span>
+                            </div>
+                            <div class="settings-keybind">
+                                <span class="keybind-action">Gửi tin nhắn</span>
+                                <span class="keybind-key">Enter</span>
+                            </div>
+                            <div class="settings-keybind">
+                                <span class="keybind-action">Xuống dòng</span>
+                                <span class="keybind-key">Shift + Enter</span>
+                            </div>
+                            <div class="settings-keybind">
+                                <span class="keybind-action">Đóng cửa sổ</span>
+                                <span class="keybind-key">Escape</span>
+                            </div>
+                        </div>
+                    `;
+                case 'language':
+                    return `
+                        <div class="settings-section">
+                            <h3>Ngôn ngữ</h3>
+                            <div class="settings-option">
+                                <div class="settings-option-info">
+                                    <div class="settings-option-title">Ngôn ngữ hiển thị</div>
+                                    <div class="settings-option-desc">Chọn ngôn ngữ cho ứng dụng</div>
+                                </div>
+                                <select class="settings-select">
+                                    <option value="vi" selected>Tiếng Việt</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                default:
+                    return '<div class="settings-section"><p>Đang phát triển...</p></div>';
+            }
+        },
+
+        /**
+         * Handle logout
+         */
+        handleLogout: function() {
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login';
+            }
         },
 
         /**
          * Escape HTML
          */
         escapeHtml: function(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -417,6 +607,7 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => UserPanel.init());
     } else {
-        UserPanel.init();
+        // DOM already ready, but delay slightly to ensure other scripts are loaded
+        setTimeout(() => UserPanel.init(), 100);
     }
 })();

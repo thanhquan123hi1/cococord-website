@@ -139,7 +139,7 @@ async function logout() {
 }
 
 // Show alert
-function showAlert(type, message) {
+function showAlert(message, type) {
     const alertContainer = document.getElementById('alert-container');
     
     const alert = document.createElement('div');

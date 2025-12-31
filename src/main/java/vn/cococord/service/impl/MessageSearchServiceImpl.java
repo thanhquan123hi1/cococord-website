@@ -37,6 +37,7 @@ import vn.cococord.service.IMessageSearchService;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("null")
 public class MessageSearchServiceImpl implements IMessageSearchService {
 
     private final MongoTemplate mongoTemplate;

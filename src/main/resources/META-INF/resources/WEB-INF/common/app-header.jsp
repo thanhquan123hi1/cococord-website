@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/user-panel.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/profile-modal.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
+    
 </head>
 <body class="app-layout">
     <!-- (User Control Panel is provided by decorators/app.jsp) -->

@@ -99,7 +99,7 @@
         </div>
 
         <nav class="sidebar-menu" aria-label="Menu">
-            <a class="sidebar-item" href="${pageContext.request.contextPath}/friends"><i class="bi bi-people-fill"></i> Bạn bè</a>
+            <a class="sidebar-item" href="${pageContext.request.contextPath}/app><i class="bi bi-people-fill"></i> Bạn bè</a>
             <a class="sidebar-item active" href="${pageContext.request.contextPath}/profile"><i class="bi bi-person-circle"></i> Hồ sơ</a>
             <a class="sidebar-item" href="${pageContext.request.contextPath}/sessions"><i class="bi bi-shield-check"></i> Phiên đăng nhập</a>
             <a class="sidebar-item" href="${pageContext.request.contextPath}/change-password"><i class="bi bi-key"></i> Đổi mật khẩu</a>

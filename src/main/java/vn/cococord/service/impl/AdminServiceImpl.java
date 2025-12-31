@@ -1,11 +1,15 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.response.ServerResponse;
 import vn.cococord.dto.response.UserProfileResponse;
 import vn.cococord.entity.mysql.Server;
@@ -18,13 +22,11 @@ import vn.cococord.repository.IServerRepository;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IAdminService;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@SuppressWarnings("null")
 public class AdminServiceImpl implements IAdminService {
 
     private final IUserRepository userRepository;

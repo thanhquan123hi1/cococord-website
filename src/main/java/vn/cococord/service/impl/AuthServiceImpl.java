@@ -1,8 +1,8 @@
 package vn.cococord.service.impl;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -10,7 +10,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.cococord.dto.request.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import vn.cococord.dto.request.ChangePasswordRequest;
+import vn.cococord.dto.request.ForgotPasswordRequest;
+import vn.cococord.dto.request.LoginRequest;
+import vn.cococord.dto.request.RefreshTokenRequest;
+import vn.cococord.dto.request.RegisterRequest;
+import vn.cococord.dto.request.ResetPasswordRequest;
 import vn.cococord.dto.response.AuthResponse;
 import vn.cococord.dto.response.MessageResponse;
 import vn.cococord.entity.mysql.User;
@@ -23,9 +32,6 @@ import vn.cococord.repository.IUserSessionRepository;
 import vn.cococord.security.JwtTokenProvider;
 import vn.cococord.service.IAuthService;
 import vn.cococord.service.IEmailService;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +48,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * 1.1 Login - Xác thực và tạo JWT tokens
      */
+    @Override
     @Transactional
     public AuthResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         // Authenticate user
@@ -85,6 +92,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * 1.2 Register - Đăng ký tài khoản mới
      */
+    @Override
     @Transactional
     @SuppressWarnings("null")
     public MessageResponse register(RegisterRequest request) {
@@ -123,6 +131,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * 1.3 Refresh Token - Gia hạn access token
      */
+    @Override
     @Transactional
     public AuthResponse refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
@@ -173,6 +182,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * 1.4 Change Password - Đổi mật khẩu (yêu cầu xác thực)
      */
+    @Override
     @Transactional
     public MessageResponse changePassword(ChangePasswordRequest request, String username) {
         // Validate new password matches confirm
@@ -216,6 +226,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * 1.5 Forgot Password - Gửi email reset password
      */
+    @Override
     @Transactional
     public MessageResponse forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
@@ -243,6 +254,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * 1.5 Reset Password - Reset mật khẩu bằng token
      */
+    @Override
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
         // Validate passwords match
@@ -284,6 +296,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * Logout - Revoke refresh token
      */
+    @Override
     @Transactional
     public MessageResponse logout(String refreshToken) {
         UserSession session = userSessionRepository.findByRefreshToken(refreshToken)
@@ -300,6 +313,7 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * Logout from all devices
      */
+    @Override
     @Transactional
     public MessageResponse logoutAll(String username) {
         User user = userRepository.findByUsername(username)

@@ -279,13 +279,17 @@ function bindGlobalUserPanelEvents() {
     // Settings button - open user settings modal if available
     if (settingsBtn) {
         settingsBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            // Try to use UserSettingsModal if available
-            if (window.UserSettingsModal && window.UserSettingsModal.show) {
-                window.UserSettingsModal.show();
+            e.stopPropagation(); // Ngăn event bubble
+            // Try to use UserSettingsModal if available (from chat.js or user-settings-modal.js)
+            if (window.UserSettingsModal && window.UserSettingsModal.open) {
+                // Close dropdown before opening modal
+                if (userDropdown) {
+                    userDropdown.style.display = 'none';
+                }
+                window.UserSettingsModal.open();
             } else {
-                console.warn('UserSettingsModal not available');
+                // Fallback: navigate to profile page
+                window.location.href = '/profile';
             }
         });
     }
@@ -434,7 +438,7 @@ async function loadGlobalServers() {
         }
         
         // Highlight home button on friends page
-        if (window.location.pathname.includes('/friends')) {
+        if (window.location.pathname.includes('/app')) {
             const homeBtn = document.querySelector('.server-sidebar .home-btn');
             if (homeBtn) homeBtn.classList.add('active');
         }
@@ -757,8 +761,8 @@ function initAppLinkInterception() {
         const appPrefixes = [
             (ctx || '') + '/app',
             (ctx || '') + '/chat',
-            (ctx || '') + '/friends',
             (ctx || '') + '/messages',
+            (ctx || '') + '/profile',
             (ctx || '') + '/sessions',
             (ctx || '') + '/change-password'
         ];
@@ -890,6 +894,7 @@ window.addEventListener('popstate', () => {
         (ctx || '') + '/chat',
         (ctx || '') + '/friends',
         (ctx || '') + '/messages',
+        (ctx || '') + '/profile',
         (ctx || '') + '/sessions',
         (ctx || '') + '/change-password'
     ];

@@ -23,6 +23,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  */
 @Configuration
 @ConditionalOnProperty(name = "spring.data.redis.enabled", havingValue = "true", matchIfMissing = false)
+@SuppressWarnings("null")
 public class RedisConfig {
 
     /**

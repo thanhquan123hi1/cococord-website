@@ -1,18 +1,6 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.coobird.thumbnailator.Thumbnails;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import vn.cococord.dto.response.FileUploadResponse;
-import vn.cococord.exception.BadRequestException;
-import vn.cococord.service.IFileStorageService;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,9 +11,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import javax.imageio.ImageIO;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
+import vn.cococord.dto.response.FileUploadResponse;
+import vn.cococord.exception.BadRequestException;
+import vn.cococord.service.IFileStorageService;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("null")
 public class FileStorageServiceImpl implements IFileStorageService {
 
     @Value("${app.upload.dir:uploads}")

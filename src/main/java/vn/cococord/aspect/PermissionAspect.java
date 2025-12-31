@@ -1,13 +1,11 @@
 package vn.cococord.aspect;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.JoinPoint;
+import java.lang.reflect.Method;
+import java.util.Optional;
+
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
@@ -16,6 +14,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.annotation.RequiresOwnerOrPermission;
 import vn.cococord.annotation.RequiresPermission;
 import vn.cococord.annotation.RequiresServerMembership;
@@ -24,11 +26,6 @@ import vn.cococord.exception.ForbiddenException;
 import vn.cococord.exception.UnauthorizedException;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IPermissionService;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.Optional;
 
 /**
  * AOP Aspect for permission checking before executing controller methods.
@@ -42,6 +39,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Order(1) // Execute before other aspects
+@SuppressWarnings("null")
 public class PermissionAspect {
     
     private final IPermissionService permissionService;
@@ -142,13 +140,13 @@ public class PermissionAspect {
         Object principal = authentication.getPrincipal();
         String username;
         
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else if (principal instanceof String) {
-            if ("anonymousUser".equals(principal)) {
+        if (principal instanceof UserDetails userDetails) {
+            username = userDetails.getUsername();
+        } else if (principal instanceof String principalStr) {
+            if ("anonymousUser".equals(principalStr)) {
                 throw new UnauthorizedException("User not authenticated");
             }
-            username = (String) principal;
+            username = principalStr;
         } else {
             throw new UnauthorizedException("Unable to determine user identity");
         }
@@ -167,7 +165,6 @@ public class PermissionAspect {
      */
     private Long extractServerId(ProceedingJoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Method method = signature.getMethod();
         Object[] args = joinPoint.getArgs();
         String[] parameterNames = signature.getParameterNames();
         
@@ -190,7 +187,7 @@ public class PermissionAspect {
                 if ("servers".equals(parts[i]) && i + 1 < parts.length) {
                     try {
                         return Long.parseLong(parts[i + 1]);
-                    } catch (NumberFormatException e) {
+                    } catch (NumberFormatException ignored) {
                         // Not a number, continue searching
                     }
                 }
@@ -201,7 +198,7 @@ public class PermissionAspect {
             if (serverIdParam != null) {
                 try {
                     return Long.parseLong(serverIdParam);
-                } catch (NumberFormatException e) {
+                } catch (NumberFormatException ignored) {
                     log.warn("Invalid serverId parameter: {}", serverIdParam);
                 }
             }
@@ -216,9 +213,9 @@ public class PermissionAspect {
                     if (result != null) {
                         return convertToLong(result);
                     }
-                } catch (NoSuchMethodException e) {
+                } catch (NoSuchMethodException ignored) {
                     // Continue to next argument
-                } catch (Exception e) {
+                } catch (ReflectiveOperationException e) {
                     log.warn("Error extracting serverId from argument: {}", e.getMessage());
                 }
             }
@@ -255,9 +252,9 @@ public class PermissionAspect {
                     if (result != null) {
                         return convertToLong(result);
                     }
-                } catch (NoSuchMethodException e) {
+                } catch (NoSuchMethodException ignored) {
                     // Continue to next argument
-                } catch (Exception e) {
+                } catch (ReflectiveOperationException e) {
                     log.warn("Error extracting {} from argument: {}", ownerIdParam, e.getMessage());
                 }
             }
@@ -270,14 +267,14 @@ public class PermissionAspect {
      * Convert object to Long
      */
     private Long convertToLong(Object value) {
-        if (value instanceof Long) {
-            return (Long) value;
-        } else if (value instanceof Integer) {
-            return ((Integer) value).longValue();
-        } else if (value instanceof String) {
+        if (value instanceof Long longValue) {
+            return longValue;
+        } else if (value instanceof Integer intValue) {
+            return intValue.longValue();
+        } else if (value instanceof String strValue) {
             try {
-                return Long.parseLong((String) value);
-            } catch (NumberFormatException e) {
+                return Long.parseLong(strValue);
+            } catch (NumberFormatException ignored) {
                 return null;
             }
         }

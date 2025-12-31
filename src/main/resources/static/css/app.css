@@ -641,6 +641,11 @@ html, body {
     padding: 0;
     overflow: hidden; /* Quan trọng: Ẩn thanh cuộn của trình duyệt */
     background-color: #313338; /* Màu nền Discord */
+    overscroll-behavior: none; /* Ngăn bounce scroll */
+}
+
+html {
+    scroll-behavior: auto; /* Tắt smooth scroll để tránh animation */
 }
 
 /* 2. Biến khung bao ngoài thành Flex container (Ngang) */
@@ -649,6 +654,11 @@ html, body {
     width: 100vw;           /* Full chiều rộng màn hình */
     height: 100vh;          /* Full chiều cao màn hình */
     background-color: #313338;
+    position: fixed;        /* Fix layout để tránh scroll jump */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 /* 3. Cố định chiều rộng cột Server (Sidebar trái cùng) */

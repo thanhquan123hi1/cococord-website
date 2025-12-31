@@ -1,27 +1,36 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.domain.PageRequest;
-import vn.cococord.dto.request.SetUserNoteRequest;
-import vn.cococord.dto.request.UpdateUserSettingsRequest;
-import vn.cococord.dto.response.ServerResponse;
-import vn.cococord.dto.response.UserSessionResponse;
-import vn.cococord.dto.response.UserProfileResponse;
-import vn.cococord.entity.mysql.*;
-import vn.cococord.exception.BadRequestException;
-import vn.cococord.exception.ResourceNotFoundException;
-import vn.cococord.repository.*;
-import vn.cococord.service.IFileStorageService;
-import vn.cococord.service.IUserService;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import lombok.RequiredArgsConstructor;
+import vn.cococord.dto.request.SetUserNoteRequest;
+import vn.cococord.dto.request.UpdateUserSettingsRequest;
+import vn.cococord.dto.response.ServerResponse;
+import vn.cococord.dto.response.UserProfileResponse;
+import vn.cococord.dto.response.UserSessionResponse;
+import vn.cococord.entity.mysql.Server;
+import vn.cococord.entity.mysql.ServerMember;
+import vn.cococord.entity.mysql.User;
+import vn.cococord.entity.mysql.UserNote;
+import vn.cococord.entity.mysql.UserSession;
+import vn.cococord.exception.BadRequestException;
+import vn.cococord.exception.ResourceNotFoundException;
+import vn.cococord.repository.IServerMemberRepository;
+import vn.cococord.repository.IUserNoteRepository;
+import vn.cococord.repository.IUserRepository;
+import vn.cococord.repository.IUserSessionRepository;
+import vn.cococord.service.IFileStorageService;
+import vn.cococord.service.IUserService;
+
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class UserServiceImpl implements IUserService {
 
         private final IUserRepository userRepository;
@@ -33,6 +42,7 @@ public class UserServiceImpl implements IUserService {
         /**
          * 1.6 Get all active sessions for current user
          */
+        @Override
         @Transactional(readOnly = true)
         public List<UserSessionResponse> getUserSessions(String username, String currentRefreshToken) {
                 User user = userRepository.findByUsername(username)
@@ -56,8 +66,8 @@ public class UserServiceImpl implements IUserService {
         /**
          * Revoke a specific session
          */
+        @Override
         @Transactional
-        @SuppressWarnings("null")
         public void revokeSession(String username, Long sessionId) {
                 User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -77,6 +87,7 @@ public class UserServiceImpl implements IUserService {
         /**
          * Get user by username
          */
+        @Override
         @Transactional(readOnly = true)
         public User getUserByUsername(String username) {
                 return userRepository.findByUsername(username)
@@ -86,8 +97,8 @@ public class UserServiceImpl implements IUserService {
         /**
          * Get user by id
          */
+        @Override
         @Transactional(readOnly = true)
-        @SuppressWarnings("null")
         public User getUserById(Long userId) {
                 return userRepository.findById(userId)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

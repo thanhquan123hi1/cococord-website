@@ -1,6 +1,16 @@
 package vn.cococord.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -8,6 +18,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.UpdateStatusRequest;
 import vn.cococord.dto.websocket.WebSocketEvent;
 import vn.cococord.entity.mysql.Server;
@@ -19,12 +31,6 @@ import vn.cococord.repository.IServerMemberRepository;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IFriendService;
 import vn.cococord.service.IPresenceService;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Presence Service with automatic Redis/In-Memory fallback.
@@ -41,6 +47,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @Transactional
+@SuppressWarnings("null")
 public class PresenceServiceImpl implements IPresenceService {
 
     private final IUserRepository userRepository;
