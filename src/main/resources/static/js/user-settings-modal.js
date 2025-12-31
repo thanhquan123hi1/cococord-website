@@ -812,7 +812,9 @@ const UserSettingsModal = (function() {
     return {
         init,
         show,
+        open: show, // alias for show
         hide,
+        close: hide, // alias for hide
         switchTab,
         render,
         saveAccount,
