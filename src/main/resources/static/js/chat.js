@@ -5,9 +5,8 @@
 
     // ==================== DOM ELEMENTS ====================
     const el = {
-        // Server sidebar
-        serverList: document.getElementById('serverList'),
-        addServerBtn: document.getElementById('addServerBtn'),
+        // Server sidebar - Sử dụng global sidebar từ app.jsp decorator
+        globalServerList: document.getElementById('globalServerList'),
         
         // Channel sidebar
         serverName: document.getElementById('serverName'),
@@ -190,10 +189,6 @@
         return String(n % 10000).padStart(4, '0');
     }
 
-    function getDiscriminator(user) {
-        return user?.discriminator || discriminatorFromId(user?.id);
-    }
-
     function escapeHtml(text) {
         return String(text)
             .replaceAll('&', '&amp;')
@@ -203,104 +198,52 @@
             .replaceAll("'", '&#039;');
     }
 
-    /**
-     * Mask email for privacy display
-     * Example: thanhquan957@gmail.com -> t***n957@gmail.com
-     */
-    function maskEmail(email) {
-        if (!email || typeof email !== 'string') return '***@***';
-        const atIndex = email.indexOf('@');
-        if (atIndex < 1) return '***@***';
-        
-        const localPart = email.substring(0, atIndex);
-        const domain = email.substring(atIndex);
-        
-        if (localPart.length <= 2) {
-            return localPart.charAt(0) + '***' + domain;
-        }
-        
-        // Show first char, last chars (up to 4), mask the middle
-        const firstChar = localPart.charAt(0);
-        const lastChars = localPart.length > 4 ? localPart.substring(localPart.length - 4) : localPart.substring(1);
-        return firstChar + '***' + lastChars + domain;
-    }
-
     function isOnline(username) {
         const status = presenceMap.get(username);
         return status && String(status).toUpperCase() === 'ONLINE';
     }
 
     // ==================== RENDER FUNCTIONS ====================
-    function renderServerList() {
-        el.serverList.innerHTML = '';
-        const tooltip = document.getElementById('serverTooltip');
-
-        if (!servers.length) {
-            const div = document.createElement('div');
-            div.className = 'server-item';
-            div.innerHTML = '<div class="server-item-inner"><i class="bi bi-question-lg"></i></div>';
-            el.serverList.appendChild(div);
-            return;
+    
+    // Cập nhật active state trên global server sidebar (từ app.jsp decorator)
+    function updateGlobalServerListActive() {
+        if (!el.globalServerList) return;
+        
+        // Remove active class from all server items
+        el.globalServerList.querySelectorAll('.server-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Add active class to current server
+        if (activeServerId) {
+            const activeItem = el.globalServerList.querySelector(`[data-server-id="${activeServerId}"]`);
+            if (activeItem) activeItem.classList.add('active');
         }
-
-        for (const s of servers) {
-            const item = document.createElement('div');
-            item.className = 'server-item' + (String(s.id) === String(activeServerId) ? ' active' : '');
-            item.dataset.serverId = s.id;
-            item.dataset.serverName = s.name || 'Server';
-
-            const pill = document.createElement('div');
-            pill.className = 'server-pill';
-            item.appendChild(pill);
-
-            const inner = document.createElement('div');
-            inner.className = 'server-item-inner';
-            inner.setAttribute('role', 'button');
-            inner.setAttribute('tabindex', '0');
-
-            if (s.iconUrl) {
-                const img = document.createElement('img');
-                img.alt = s.name || 'Server';
-                img.src = s.iconUrl;
-                inner.appendChild(img);
+        
+        // Update home button state
+        const homeBtn = document.getElementById('homeBtn');
+        if (homeBtn) {
+            if (!activeServerId) {
+                homeBtn.classList.add('active');
             } else {
-                const span = document.createElement('span');
-                span.className = 'server-initial';
-                span.textContent = (s.name || 'S').trim().charAt(0).toUpperCase();
-                inner.appendChild(span);
+                homeBtn.classList.remove('active');
             }
-
-            item.appendChild(inner);
-
-            // Event listeners
-            inner.addEventListener('click', () => selectServer(s.id));
-            inner.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    selectServer(s.id);
+        }
+    }
+    
+    // Gắn SPA-like navigation events vào global server sidebar
+    function setupGlobalServerSidebarSPA() {
+        if (!el.globalServerList) return;
+        
+        el.globalServerList.querySelectorAll('.server-item[data-server-id]').forEach(item => {
+            item.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const serverId = item.dataset.serverId;
+                if (serverId && String(serverId) !== String(activeServerId)) {
+                    await selectServer(Number(serverId));
                 }
             });
-
-            // Tooltip handling
-            if (tooltip) {
-                let tooltipTimeout;
-                item.addEventListener('mouseenter', () => {
-                    tooltipTimeout = setTimeout(() => {
-                        const rect = item.getBoundingClientRect();
-                        tooltip.textContent = s.name || 'Server';
-                        tooltip.style.top = `${rect.top + rect.height / 2}px`;
-                        tooltip.style.left = `${rect.right + 8}px`;
-                        tooltip.classList.add('visible');
-                    }, 200);
-                });
-                item.addEventListener('mouseleave', () => {
-                    clearTimeout(tooltipTimeout);
-                    tooltip.classList.remove('visible');
-                });
-            }
-
-            el.serverList.appendChild(item);
-        }
+        });
     }
 
     function renderChannelList() {
@@ -469,8 +412,10 @@
     }
 
     function clearMessages() {
+        const emptyState = el.chatEmpty;
         el.messageList.innerHTML = '';
-        el.chatEmpty.style.display = 'block';
+        if (emptyState) el.messageList.appendChild(emptyState);
+        if (emptyState) emptyState.style.display = 'block';
         el.chatComposer.style.display = 'none';
         // Reset pagination state
         currentPage = 0;
@@ -655,23 +600,15 @@
     async function loadMe() {
         try {
             currentUser = await apiGet('/api/auth/me');
-            const displayName = currentUser.displayName || currentUser.username || 'User';
-            const discriminator = getDiscriminator(currentUser);
-            const fullUsername = `${currentUser.username || 'user'}#${discriminator}`;
             
-            el.ucpName.textContent = displayName;
-            el.ucpName.title = fullUsername;
-            el.ucpStatus.textContent = currentUser.customStatus || 'Trực tuyến';
-            el.ucpStatusIndicator.className = 'status-indicator online';
-            
-            if (currentUser.avatarUrl) {
-                el.ucpAvatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="${displayName}"><span class="status-indicator online" id="ucpStatusIndicator"></span>`;
-            } else {
-                el.ucpAvatar.innerHTML = `${displayName.trim().charAt(0).toUpperCase()}<span class="status-indicator online" id="ucpStatusIndicator"></span>`;
-            }
-
             // Add self to presence map
             presenceMap.set(currentUser.username, 'ONLINE');
+            
+            // UCP is now managed by app.js (global), no need to render here
+            // Just notify app.js if it needs to update
+            if (window.CoCoCordApp && window.CoCoCordApp.updateGlobalUserPanel) {
+                window.CoCoCordApp.updateGlobalUserPanel(currentUser);
+            }
         } catch (e) {
             console.error('Failed to load user info', e);
         }
@@ -721,13 +658,15 @@
 
             if (!append) {
                 // Initial load
+                const emptyState = el.chatEmpty;
                 el.messageList.innerHTML = '';
-                if (!items.length) {
-                    el.chatEmpty.style.display = 'block';
-                } else {
-                    el.chatEmpty.style.display = 'none';
+                if (items.length) {
                     for (const m of items) appendMessage(m);
+                    if (emptyState) emptyState.style.display = 'none';
+                } else {
+                    if (emptyState) emptyState.style.display = 'block';
                 }
+                if (emptyState) el.messageList.appendChild(emptyState);
                 el.chatComposer.style.display = '';
                 scrollToBottom();
                 
@@ -998,12 +937,16 @@
 
     async function selectServer(serverId) {
         activeServerId = serverId;
-        setQueryParams({ serverId, channelId: null });
+        
+        // Cập nhật URL (SPA-style, không reload)
+        const newUrl = `/chat?serverId=${serverId}`;
+        history.pushState({ serverId }, '', newUrl);
 
         const server = servers.find(s => String(s.id) === String(serverId));
         el.serverName.textContent = server ? (server.name || 'Server') : 'Server';
 
-        renderServerList();
+        // Cập nhật active state trên global sidebar
+        updateGlobalServerListActive();
         clearMessages();
 
         await Promise.all([
@@ -1462,59 +1405,27 @@
     }
 
     async function createChannel() {
-        const name = el.channelNameInput?.value.trim().toLowerCase().replace(/\s+/g, '-');
-        if (!name) {
-            alert('Vui lòng nhập tên kênh');
-            el.channelNameInput?.focus();
-            return;
-        }
-        if (!activeServerId) {
-            alert('Vui lòng chọn một máy chủ trước');
-            return;
-        }
+        const name = el.channelNameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+        if (!name || !activeServerId) return;
 
         // Get category ID if set from modal
         const categoryId = el.createChannelModal?.dataset.categoryId || null;
 
-        // Show loading state on button
-        const confirmBtn = el.confirmCreateChannel;
-        const originalText = confirmBtn?.textContent || 'Tạo Kênh';
-        if (confirmBtn) {
-            confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Đang tạo...';
-        }
-
         try {
             const payload = {
                 name,
-                type: selectedChannelType || 'TEXT'
+                type: selectedChannelType
             };
             if (categoryId) {
                 payload.categoryId = parseInt(categoryId, 10);
             }
 
-            console.log('Creating channel with payload:', payload, 'for server:', activeServerId);
-            
-            const newChannel = await apiPost(`/api/servers/${activeServerId}/channels`, payload);
-            console.log('Channel created successfully:', newChannel);
-            
+            await apiPost(`/api/servers/${activeServerId}/channels`, payload);
             hideCreateChannelModal();
             await loadChannels(activeServerId);
             renderChannelList();
-            
-            // Select the new channel if created successfully
-            if (newChannel?.id) {
-                await selectChannel(newChannel.id);
-            }
         } catch (e) {
-            console.error('Failed to create channel:', e);
-            alert('Không thể tạo kênh: ' + (e.message || 'Lỗi không xác định. Vui lòng thử lại.'));
-        } finally {
-            // Reset button state
-            if (confirmBtn) {
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = originalText;
-            }
+            alert('Không thể tạo kênh: ' + (e.message || 'Lỗi'));
         }
     }
 
@@ -1720,13 +1631,13 @@
     function populateSettingsData() {
         if (!currentUser) return;
         
-        // Account tab - header section
+        // Account tab
         const usernameDisplay = document.getElementById('settingsUsername');
         const emailDisplay = document.getElementById('settingsEmail');
         const avatarDisplay = document.getElementById('settingsAvatar');
         const displayNameDisplay = document.getElementById('settingsDisplayName');
         
-        if (usernameDisplay) usernameDisplay.textContent = '@' + (currentUser.username || 'user');
+        if (usernameDisplay) usernameDisplay.textContent = currentUser.username || 'user';
         if (emailDisplay) emailDisplay.textContent = currentUser.email || 'email@example.com';
         if (displayNameDisplay) displayNameDisplay.textContent = currentUser.displayName || currentUser.username || 'User';
         
@@ -1739,21 +1650,12 @@
             }
         }
         
-        // Account tab - info fields
-        const displayNameField = document.getElementById('settingsDisplayNameField');
-        const usernameField = document.getElementById('settingsUsernameField');
-        const emailField = document.getElementById('settingsEmailField');
-        
-        if (displayNameField) displayNameField.textContent = currentUser.displayName || currentUser.username || 'User';
-        if (usernameField) usernameField.textContent = '@' + (currentUser.username || 'user');
-        if (emailField) emailField.textContent = maskEmail(currentUser.email);
-        
         // Profile tab inputs
         const displayNameInput = document.getElementById('profileDisplayName');
         const aboutMeInput = document.getElementById('profileAboutMe');
         
         if (displayNameInput) displayNameInput.value = currentUser.displayName || '';
-        if (aboutMeInput) aboutMeInput.value = currentUser.aboutMe || currentUser.bio || '';
+        if (aboutMeInput) aboutMeInput.value = currentUser.aboutMe || '';
     }
     
     function switchSettingsTab(tabName) {
@@ -2231,11 +2133,11 @@
             });
         });
         
-        // User settings
-        el.settingsBtn?.addEventListener('click', showUserSettingsModal);
-        el.logoutBtn?.addEventListener('click', doLogout);
+        // User settings - now handled by app.js global UCP
+        // el.settingsBtn?.addEventListener('click', showUserSettingsModal);
+        // el.logoutBtn?.addEventListener('click', doLogout);
         
-        // User Settings Modal
+        // User Settings Modal (still needed if modal is in chat page)
         el.closeUserSettingsModal?.addEventListener('click', hideUserSettingsModal);
         el.settingsLogoutBtn?.addEventListener('click', doLogout);
         el.settingsNavItems?.forEach(item => {
@@ -2257,27 +2159,15 @@
             }
         });
         
-        // Mic/Deafen buttons
-        el.micBtn?.addEventListener('click', () => {
-            if (activeVoiceChannelId) {
-                toggleMute();
-            }
-        });
-        el.deafenBtn?.addEventListener('click', () => {
-            if (activeVoiceChannelId) {
-                toggleDeafen();
-            }
-        });
+        // Mic/Deafen buttons - app.js handles visual toggle, but voice logic stays here
+        // These are now bound by app.js which calls our exported toggleMute/toggleDeafen
         
         // Voice disconnect button
         el.voiceDisconnectBtn?.addEventListener('click', leaveVoiceChannel);
         
-        // User info dropdown (click on user info shows dropdown with logout)
-        el.userInfoBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleUserDropdown();
-        });
-        el.logoutBtnUser?.addEventListener('click', doLogout);
+        // User info dropdown - now handled by app.js global UCP
+        // el.userInfoBtn?.addEventListener('click', ...);
+        // el.logoutBtnUser?.addEventListener('click', doLogout);
         
         // Members toggle
         el.membersToggleBtn?.addEventListener('click', toggleMembersSidebar);
@@ -2399,7 +2289,10 @@
 
         // Pick server
         activeServerId = qp.serverId || (servers.length ? servers[0].id : null);
-        renderServerList();
+        
+        // Cập nhật global sidebar (active state + SPA events)
+        updateGlobalServerListActive();
+        setupGlobalServerSidebarSPA();
 
         if (!activeServerId) {
             clearMessages();
@@ -2431,10 +2324,27 @@
 
         await subscribeToChannel(activeChannelId);
         await loadHistory(activeChannelId);
+        
+        // Handle browser back/forward navigation (SPA)
+        window.addEventListener('popstate', async (event) => {
+            if (event.state && event.state.serverId) {
+                await selectServer(event.state.serverId);
+            }
+        });
     }
 
     init().catch((e) => {
         console.error('Chat init failed:', e);
         clearMessages();
     });
+    
+    // Export API cho SPA navigation từ app.js
+    window.CoCoCordChat = {
+        selectServer: selectServer,
+        selectChannel: selectChannel,
+        updateGlobalServerListActive: updateGlobalServerListActive,
+        toggleMute: toggleMute,
+        toggleDeafen: toggleDeafen,
+        updateVoiceButtonStates: updateVoiceButtonStates
+    };
 })();

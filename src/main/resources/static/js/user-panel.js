@@ -52,7 +52,7 @@
             if (!container) return;
 
             const displayName = this.currentUser.displayName || this.currentUser.username;
-            const discriminator = this.currentUser.discriminator || String(this.currentUser.id % 10000).padStart(4, '0');
+            const discriminator = String(this.currentUser.id % 10000).padStart(4, '0');
             const status = this.currentUser.status || 'OFFLINE';
             const customStatus = this.getCustomStatusText();
 

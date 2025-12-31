@@ -40,7 +40,12 @@ public class ViewController {
 
     @GetMapping("/dashboard")
     public String dashboard() {
-        return "redirect:/friends";
+        return "redirect:/app";
+    }
+
+    @GetMapping("/app")
+    public String app() {
+        return "app/index";
     }
 
     @GetMapping("/chat")

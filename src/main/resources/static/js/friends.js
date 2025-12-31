@@ -75,7 +75,7 @@
 
     function fullUsername(user) {
         const username = user?.username || 'unknown';
-        const discriminator = user?.discriminator || discriminatorFromId(user?.id);
+        const discriminator = discriminatorFromId(user?.id);
         return `${username}#${discriminator}`;
     }
 
@@ -139,7 +139,12 @@
         try {
             localStorage.setItem('user', JSON.stringify(state.currentUser || {}));
         } catch (_) { /* ignore */ }
-        renderUserPanel();
+
+        // If the global app shell provides the User Control Panel, do not render/bind it here.
+        const hasGlobalUcp = !!document.getElementById('userInfoBtn') || !!document.getElementById('ucpStatusIndicator');
+        if (!hasGlobalUcp) {
+            renderUserPanel();
+        }
     }
 
     async function loadServers() {
@@ -209,15 +214,18 @@
             a.href = href;
             a.title = name;
 
-            if (s.iconUrl) {
-                a.innerHTML = `<img src="${escapeHtml(s.iconUrl)}" alt="${escapeHtml(name)}" />`;
-            } else {
-                const initial = name.trim().charAt(0).toUpperCase() || 'S';
-                a.innerHTML = `<span>${escapeHtml(initial)}</span>`;
+            // Only wire the legacy settings dropdown when it exists on this page.
+            if (els.settingsDropdown()) {
+                els.settingsBtn()?.addEventListener('click', toggleSettingsDropdown);
+                els.logoutBtn()?.addEventListener('click', () => {
+                    if (typeof window.logout === 'function') {
+                        window.logout();
+                    } else {
+                        localStorage.clear();
+                        window.location.href = '/login';
+                    }
+                });
             }
-
-            container.appendChild(a);
-        }
     }
 
     function renderDmList() {
@@ -1215,9 +1223,24 @@
         render();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    let lastRootEl = null;
+
+    function maybeInit() {
+        const root = document.getElementById('friendsApp');
+        if (!root) return;
+        if (root === lastRootEl) return;
+        lastRootEl = root;
+
         init().catch((e) => {
             console.error('Friends init failed', e);
         });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', maybeInit);
+    } else {
+        maybeInit();
+    }
+
+    document.addEventListener('cococord:page:loaded', maybeInit);
 })();

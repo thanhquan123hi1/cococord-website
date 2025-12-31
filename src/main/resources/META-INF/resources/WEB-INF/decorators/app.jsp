@@ -31,6 +31,10 @@
     
     <!-- Custom CSS for App -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
+    <!-- Channel panel CSS (used for global User Control Panel styling) -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css">
+    <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css">
     
     <%
         if (sitemeshContent != null) {
@@ -45,7 +49,7 @@
         <aside class="server-bar" id="mainServerSidebar" aria-label="Servers">
             <!-- Home Button (go to Friends/DM) -->
             <a class="server-item home-btn<c:if test="${empty param.serverId}"> active</c:if>" 
-               href="${pageContext.request.contextPath}/friends" 
+               href="${pageContext.request.contextPath}/app" 
                title="Tin nhắn trực tiếp" id="homeBtn">
                 <i class="bi bi-discord"></i>
             </a>
@@ -91,6 +95,59 @@
                     sitemeshContent.getExtractedProperties().getChild("body").writeValueTo(out);
                 }
             %>
+        </div>
+
+        <!-- Global User Control Panel (persistent across pages) -->
+        <div class="global-user-control-panel" aria-label="User Control Panel">
+            <div class="user-area" id="userPanel">
+                <div class="user-info" id="userInfoBtn" role="button" tabindex="0">
+                    <div class="user-avatar" id="ucpAvatar">
+                        <span class="status-indicator online" id="ucpStatusIndicator"></span>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" id="ucpName">User</div>
+                        <div class="user-status" id="ucpStatus">Trực tuyến</div>
+                    </div>
+                </div>
+                <div class="user-controls" aria-label="Controls">
+                    <button class="control-btn" id="micBtn" title="Tắt/Bật Mic">
+                        <i class="bi bi-mic"></i>
+                    </button>
+                    <button class="control-btn" id="deafenBtn" title="Tắt/Bật Tai nghe">
+                        <i class="bi bi-headphones"></i>
+                    </button>
+                    <button class="control-btn" id="settingsBtn" title="Cài đặt người dùng">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                </div>
+
+                <!-- User Dropdown Menu -->
+                <div class="user-dropdown" id="userDropdown" style="display:none;">
+                    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
+                        <i class="bi bi-person"></i> Hồ sơ của tôi
+                    </a>
+                    <a href="${pageContext.request.contextPath}/settings" class="dropdown-item">
+                        <i class="bi bi-gear"></i> Cài đặt
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item status-item" data-status="ONLINE">
+                        <i class="bi bi-circle-fill online"></i> Trực tuyến
+                    </div>
+                    <div class="dropdown-item status-item" data-status="IDLE">
+                        <i class="bi bi-moon-fill idle"></i> Vắng mặt
+                    </div>
+                    <div class="dropdown-item status-item" data-status="DO_NOT_DISTURB">
+                        <i class="bi bi-dash-circle-fill dnd"></i> Không làm phiền
+                    </div>
+                    <div class="dropdown-item status-item" data-status="INVISIBLE">
+                        <i class="bi bi-circle offline"></i> Ẩn
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item text-danger" id="logoutBtnUser">
+                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -147,6 +204,8 @@
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js"></script>
     <script src="${pageContext.request.contextPath}/js/app.js"></script>
+    <!-- /app home logic (safe: guarded by #cococordHome presence) -->
+    <script src="${pageContext.request.contextPath}/js/app-home.js"></script>
 
     <%
         if (sitemeshContent != null) {

@@ -48,6 +48,20 @@ body.app-layout {
     min-width: 0;
 }
 
+/* ==================== GLOBAL USER CONTROL PANEL ==================== */
+/* Fixed bottom-left panel, aligned to the right of the server sidebar */
+.global-user-control-panel {
+    position: fixed;
+    left: 72px;
+    bottom: 0;
+    width: var(--channel-panel-width, 232px);
+    z-index: 2000;
+}
+
+.global-user-control-panel .user-area {
+    width: 100%;
+}
+
 /* ==================== SERVER SIDEBAR (Global - in Decorator) ==================== */
 .server-bar,
 .server-sidebar {

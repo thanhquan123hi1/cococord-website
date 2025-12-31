@@ -1,87 +1,5 @@
 // Authentication utilities
 
-// ============================================================
-// Tab-scoped auth storage
-//
-// Problem: localStorage is shared across tabs, so logging in on
-// a new tab overwrites tokens for all other tabs.
-//
-// Fix: store auth/session-specific keys in sessionStorage.
-// For backward compatibility, we also bridge localStorage access
-// for those keys to sessionStorage (per-tab).
-// ============================================================
-
-(function installTabScopedStorageBridge() {
-    const TAB_SCOPED_KEYS = new Set([
-        'accessToken',
-        'refreshToken',
-        'token', // legacy key used by some pages
-        'userId',
-        'username',
-        'email',
-        'displayName',
-        'avatarUrl',
-        'user',
-        'activeDmGroupId'
-    ]);
-
-    const legacyKeyMap = {
-        token: 'accessToken'
-    };
-
-    const ls = window.localStorage;
-    const ss = window.sessionStorage;
-    const original = {
-        getItem: ls.getItem.bind(ls),
-        setItem: ls.setItem.bind(ls),
-        removeItem: ls.removeItem.bind(ls),
-        clear: ls.clear.bind(ls)
-    };
-
-    // One-time migration: move legacy localStorage values into sessionStorage.
-    for (const key of TAB_SCOPED_KEYS) {
-        const targetKey = legacyKeyMap[key] || key;
-        if (ss.getItem(targetKey) == null) {
-            const legacyValue = original.getItem(key);
-            if (legacyValue != null) {
-                ss.setItem(targetKey, legacyValue);
-                original.removeItem(key);
-            }
-        }
-    }
-
-    // Bridge localStorage access for tab-scoped keys to sessionStorage.
-    ls.getItem = (key) => {
-        if (TAB_SCOPED_KEYS.has(key)) {
-            return ss.getItem(legacyKeyMap[key] || key);
-        }
-        return original.getItem(key);
-    };
-
-    ls.setItem = (key, value) => {
-        if (TAB_SCOPED_KEYS.has(key)) {
-            ss.setItem(legacyKeyMap[key] || key, String(value));
-            return;
-        }
-        original.setItem(key, value);
-    };
-
-    ls.removeItem = (key) => {
-        if (TAB_SCOPED_KEYS.has(key)) {
-            ss.removeItem(legacyKeyMap[key] || key);
-            return;
-        }
-        original.removeItem(key);
-    };
-
-    // Avoid cross-tab collateral damage from code calling localStorage.clear().
-    ls.clear = () => {
-        for (const key of TAB_SCOPED_KEYS) {
-            ss.removeItem(legacyKeyMap[key] || key);
-        }
-    };
-})();
-
 // Cookie utilities for server-side rendering support
 function setCookie(name, value, days = 7) {
     const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
@@ -103,19 +21,19 @@ function clearCookie(name) {
 
 // Check if user is logged in
 function isLoggedIn() {
-    const token = sessionStorage.getItem('accessToken');
-    const refreshToken = sessionStorage.getItem('refreshToken');
+    const token = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
     return token && refreshToken;
 }
 
 // Get access token
 function getAccessToken() {
-    return sessionStorage.getItem('accessToken');
+    return localStorage.getItem('accessToken');
 }
 
 // Get refresh token
 function getRefreshToken() {
-    return sessionStorage.getItem('refreshToken');
+    return localStorage.getItem('refreshToken');
 }
 
 // Fetch with authentication
@@ -174,7 +92,9 @@ async function refreshAccessToken() {
 
         if (response.ok) {
             const data = await response.json();
-            sessionStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('accessToken', data.accessToken);
+            // Cập nhật cookie cho server-side rendering
+            setCookie('accessToken', data.accessToken, 7);
             return true;
         }
     } catch (error) {
@@ -202,29 +122,16 @@ async function logout() {
         }
     }
 
-    // Clear per-tab auth/session storage
-    sessionStorage.removeItem('accessToken');
-    sessionStorage.removeItem('refreshToken');
-    sessionStorage.removeItem('userId');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('email');
-    sessionStorage.removeItem('displayName');
-    sessionStorage.removeItem('avatarUrl');
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('activeDmGroupId');
-
-    // Clear legacy keys if any remain
-    try {
-        window.localStorage.removeItem('accessToken');
-        window.localStorage.removeItem('refreshToken');
-        window.localStorage.removeItem('token');
-        window.localStorage.removeItem('user');
-        window.localStorage.removeItem('activeDmGroupId');
-    } catch (e) {
-        // ignore
-    }
+    // Clear local storage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('email');
+    localStorage.removeItem('displayName');
+    localStorage.removeItem('avatarUrl');
     
-    // Clear legacy cookie (no longer used for auth)
+    // Clear cookie (for server-side rendering)
     clearCookie('accessToken');
 
     // Redirect to login
@@ -266,7 +173,7 @@ function updateNavigation() {
 
     // Set user display name
     if (isAuthenticated) {
-        const displayName = sessionStorage.getItem('displayName') || sessionStorage.getItem('username');
+        const displayName = localStorage.getItem('displayName') || localStorage.getItem('username');
         const userDisplayName = document.getElementById('user-display-name');
         if (userDisplayName) {
             userDisplayName.textContent = displayName;

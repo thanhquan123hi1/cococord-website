@@ -1,28 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="vi">
 <head>
     <title>Tin nhắn trực tiếp - CoCoCord</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/messages.css">
 </head>
-<body>
+
 <div class="discord-app" id="dmApp">
-    <!-- Server Bar (far left) -->
-    <aside class="server-bar" aria-label="Servers">
-        <a class="server-btn home active" href="${pageContext.request.contextPath}/friends" title="Home">
-            <i class="bi bi-discord"></i>
-        </a>
-        <div class="server-divider"></div>
-        <div class="server-list" id="serverList">
-            <!-- Dynamic server icons -->
-        </div>
-        <div class="server-footer">
-            <div class="server-divider"></div>
-            <button class="server-btn add" type="button" title="Thêm máy chủ" id="addServerBtn"><i class="bi bi-plus-lg"></i></button>
-            <button class="server-btn discover" type="button" title="Khám phá máy chủ"><i class="bi bi-compass"></i></button>
-        </div>
-    </aside>
 
     <!-- DM Sidebar -->
     <aside class="dm-sidebar">
@@ -37,29 +19,6 @@
         <div class="section-header">TIN NHẮN TRỰC TIẾP <button class="section-add" type="button" title="Tạo DM"><i class="bi bi-plus"></i></button></div>
         <div class="dm-list" id="dmList" role="list"></div>
 
-        <!-- User Control Panel - Discord Desktop Style -->
-        <div class="user-panel" id="userPanel">
-            <div class="user-info" id="userInfo">
-                <div class="user-avatar" id="ucpAvatar">
-                    <span class="status-dot online" id="ucpStatusDot"></span>
-                </div>
-                <div class="user-meta">
-                    <div class="user-name" id="ucpName">User</div>
-                    <div class="user-status" id="ucpStatus">Trực tuyến</div>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button class="action-btn" type="button" title="Tắt tiếng" id="muteBtn" data-muted="false">
-                    <i class="bi bi-mic-fill"></i>
-                </button>
-                <button class="action-btn" type="button" title="Tắt âm thanh" id="deafenBtn" data-deafened="false">
-                    <i class="bi bi-headphones"></i>
-                </button>
-                <button class="action-btn" type="button" title="Cài đặt người dùng" id="settingsBtn">
-                    <i class="bi bi-gear-fill"></i>
-                </button>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Content -->
@@ -379,5 +338,3 @@
 </div>
 
 <script defer src="${pageContext.request.contextPath}/js/messages.js"></script>
-</body>
-</html>

@@ -69,6 +69,7 @@ public class SecurityConfig {
 
                         // View pages (allow access, auth handled by JavaScript)
                         .requestMatchers("/login", "/register", "/forgot-password", "/reset-password").permitAll()
+                        .requestMatchers("/app", "/app/**").permitAll()
                         .requestMatchers("/profile", "/sessions", "/change-password", "/chat", "/friends", "/messages")
                         .permitAll()
                         .requestMatchers("/admin", "/admin/**").permitAll()

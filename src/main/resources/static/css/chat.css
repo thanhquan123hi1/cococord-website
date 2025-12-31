@@ -43,7 +43,18 @@ body {
     overflow: hidden;
 }
 
-/* ==================== APP CONTAINER ==================== */
+/* ==================== CHAT PAGE CONTAINER ==================== */
+/* Khi được wrap bởi app.jsp decorator, chat page nằm trong .page-content-area */
+.chat-page-container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--bg-primary);
+}
+
+/* Legacy support: #chatApp.app-container (for backwards compatibility) */
 #chatApp.app-container {
     display: flex;
     flex-direction: row;

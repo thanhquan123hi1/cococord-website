@@ -44,10 +44,21 @@ public class SiteMeshConfig {
 
                 // AUTHENTICATED pages
                 builder
+                        .addDecoratorPath("/app", "app.jsp")
+                        .addDecoratorPath("/app/**", "app.jsp")
+                        .addDecoratorPath("/chat", "app.jsp")
                         .addDecoratorPath("/chat/**", "app.jsp")
+                        .addDecoratorPath("/friends", "app.jsp")
                         .addDecoratorPath("/friends/**", "app.jsp")
+                        .addDecoratorPath("/messages", "app.jsp")
                         .addDecoratorPath("/messages/**", "app.jsp")
+                        .addDecoratorPath("/profile", "app.jsp")
                         .addDecoratorPath("/profile/**", "app.jsp")
+                        .addDecoratorPath("/dashboard", "app.jsp")
+                        .addDecoratorPath("/settings", "app.jsp")
+                        .addDecoratorPath("/settings/**", "app.jsp")
+                        .addDecoratorPath("/sessions", "app.jsp")
+                        .addDecoratorPath("/change-password", "app.jsp")
                         .addDecoratorPath("/admin/**", "app.jsp");
             }
         };

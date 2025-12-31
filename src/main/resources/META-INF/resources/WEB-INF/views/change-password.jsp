@@ -1,6 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="vi">
 <head>
     <title>Đổi mật khẩu - CoCoCord</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css">
@@ -84,20 +82,7 @@
         }
     </style>
 </head>
-<body>
 <div class="discord-shell">
-    <!-- Server Bar (far left) -->
-    <aside class="server-bar" aria-label="Servers">
-        <a class="server-btn home" href="${pageContext.request.contextPath}/friends" title="Home">
-            <i class="bi bi-discord"></i>
-        </a>
-        <div class="server-divider"></div>
-        <div class="server-list" id="serverList"></div>
-        <div class="server-footer">
-            <button class="server-btn add" type="button" title="Add Server"><i class="bi bi-plus-lg"></i></button>
-        </div>
-    </aside>
-
     <!-- Left Sidebar -->
     <aside class="discord-sidebar">
         <div class="sidebar-search">
@@ -110,20 +95,6 @@
             <a class="sidebar-item" href="${pageContext.request.contextPath}/sessions"><i class="bi bi-shield-check"></i> Phiên đăng nhập</a>
             <a class="sidebar-item active" href="${pageContext.request.contextPath}/change-password"><i class="bi bi-key"></i> Đổi mật khẩu</a>
         </nav>
-
-        <!-- User Control Panel (bottom) -->
-        <div class="user-panel" id="userPanel">
-            <div class="user-left">
-                <div class="avatar" id="ucpAvatar"><span class="status-dot online"></span></div>
-                <div class="user-meta">
-                    <div class="user-name" id="ucpName">User</div>
-                    <div class="user-status" id="ucpStatus">Online</div>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button class="icon-btn ucp-btn" type="button" title="Settings"><i class="bi bi-gear"></i></button>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Column -->
@@ -160,8 +131,6 @@
         </div>
     </main>
 </div>
-
-<script src="${pageContext.request.contextPath}/js/auth.js"></script>
 <script>
     function showAlert(message, type) {
         const container = document.getElementById('alertContainer');
@@ -206,5 +175,3 @@
         }
     });
 </script>
-</body>
-</html>

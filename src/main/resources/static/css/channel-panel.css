@@ -27,6 +27,7 @@
     flex-direction: column;
     flex-shrink: 0;
     position: relative;
+    padding-bottom: var(--user-area-height);
 }
 
 /* ===== SERVER HEADER ===== */
@@ -572,7 +573,9 @@
 .user-area .status-indicator.online { background-color: #23A55A; }
 .user-area .status-indicator.idle { background-color: #F0B232; }
 .user-area .status-indicator.dnd { background-color: #F23F43; }
+.user-area .status-indicator.do-not-disturb { background-color: #F23F43; }
 .user-area .status-indicator.offline { background-color: #80848E; }
+.user-area .status-indicator.invisible { background-color: #80848E; }
 
 .user-area .user-details {
     flex: 1;

@@ -28,5 +28,4 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
 </head>
 <body class="app-layout">
-    <!-- User Panel Component (Bottom-left corner) -->
-    <div id="userPanel" class="user-panel"></div>
+    <!-- (User Control Panel is provided by decorators/app.jsp) -->

@@ -137,10 +137,6 @@
         return String(n % 10000).padStart(4, '0');
     }
 
-    function getDiscriminator(user) {
-        return user?.discriminator || discriminatorFromId(user?.id);
-    }
-
     function escapeHtml(text) {
         return String(text)
             .replaceAll('&', '&amp;')
@@ -148,28 +144,6 @@
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
-    }
-
-    /**
-     * Mask email for privacy display
-     * Example: thanhquan957@gmail.com -> t***n957@gmail.com
-     */
-    function maskEmail(email) {
-        if (!email || typeof email !== 'string') return '***@***';
-        const atIndex = email.indexOf('@');
-        if (atIndex < 1) return '***@***';
-        
-        const localPart = email.substring(0, atIndex);
-        const domain = email.substring(atIndex);
-        
-        if (localPart.length <= 2) {
-            return localPart.charAt(0) + '***' + domain;
-        }
-        
-        // Show first char, last chars (up to 4), mask the middle
-        const firstChar = localPart.charAt(0);
-        const lastChars = localPart.length > 4 ? localPart.substring(localPart.length - 4) : localPart.substring(1);
-        return firstChar + '***' + lastChars + domain;
     }
 
     function isOnline(username) {
@@ -324,8 +298,10 @@
     }
 
     function clearMessages() {
+        const emptyState = el.chatEmpty;
         el.messageList.innerHTML = '';
-        el.chatEmpty.style.display = 'block';
+        if (emptyState) el.messageList.appendChild(emptyState);
+        if (emptyState) emptyState.style.display = 'block';
         el.chatComposer.style.display = 'none';
     }
 
@@ -364,7 +340,7 @@
         try {
             currentUser = await apiGet('/api/auth/me');
             const displayName = currentUser.displayName || currentUser.username || 'User';
-            const discriminator = getDiscriminator(currentUser);
+            const discriminator = discriminatorFromId(currentUser.id);
             const fullUsername = `${currentUser.username || 'user'}#${discriminator}`;
             
             el.ucpName.textContent = displayName;
@@ -408,13 +384,15 @@
         const items = Array.isArray(page.content) ? page.content.slice() : [];
         items.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
+        const emptyState = el.chatEmpty;
         el.messageList.innerHTML = '';
-        if (!items.length) {
-            el.chatEmpty.style.display = 'block';
-        } else {
-            el.chatEmpty.style.display = 'none';
+        if (items.length) {
             for (const m of items) appendMessage(m);
+            if (emptyState) emptyState.style.display = 'none';
+        } else {
+            if (emptyState) emptyState.style.display = 'block';
         }
+        if (emptyState) el.messageList.appendChild(emptyState);
         el.chatComposer.style.display = '';
         scrollToBottom();
     }

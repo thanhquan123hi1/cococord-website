@@ -1,6 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="vi">
 <head>
     <title>Hồ sơ - CoCoCord</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css">
@@ -93,20 +91,7 @@
         }
     </style>
 </head>
-<body>
 <div class="discord-shell" id="profileShell">
-    <!-- Server Bar (far left) -->
-    <aside class="server-bar" aria-label="Servers">
-        <a class="server-btn home" href="${pageContext.request.contextPath}/friends" title="Home">
-            <i class="bi bi-discord"></i>
-        </a>
-        <div class="server-divider"></div>
-        <div class="server-list" id="serverList"></div>
-        <div class="server-footer">
-            <button class="server-btn add" type="button" title="Add Server"><i class="bi bi-plus-lg"></i></button>
-        </div>
-    </aside>
-
     <!-- Left Sidebar -->
     <aside class="discord-sidebar">
         <div class="sidebar-search">
@@ -119,22 +104,6 @@
             <a class="sidebar-item" href="${pageContext.request.contextPath}/sessions"><i class="bi bi-shield-check"></i> Phiên đăng nhập</a>
             <a class="sidebar-item" href="${pageContext.request.contextPath}/change-password"><i class="bi bi-key"></i> Đổi mật khẩu</a>
         </nav>
-
-        <!-- User Control Panel (bottom) -->
-        <div class="user-panel" id="userPanel">
-            <div class="user-left">
-                <div class="avatar" id="ucpAvatar"><span class="status-dot online" id="ucpStatusDot"></span></div>
-                <div class="user-meta">
-                    <div class="user-name" id="ucpName">User</div>
-                    <div class="user-status" id="ucpStatus">Online</div>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button class="icon-btn ucp-btn" type="button" title="Mic"><i class="bi bi-mic"></i></button>
-                <button class="icon-btn ucp-btn" type="button" title="Headphones"><i class="bi bi-headphones"></i></button>
-                <button class="icon-btn ucp-btn" type="button" title="Settings"><i class="bi bi-gear"></i></button>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Column -->
@@ -172,8 +141,6 @@
         </div>
     </main>
 </div>
-
-<script src="${pageContext.request.contextPath}/js/auth.js"></script>
 <script>
     let currentUser = null;
 
@@ -209,27 +176,9 @@
         document.getElementById('inputDisplayName').value = currentUser.displayName || '';
         document.getElementById('inputBio').value = currentUser.bio || '';
         document.getElementById('inputCustomStatus').value = currentUser.customStatus || '';
-        
-        updateUserPanel();
-    }
 
-    function updateUserPanel() {
-        if (!currentUser) return;
-        
-        const displayName = currentUser.displayName || currentUser.username;
-        const ucpAvatar = document.getElementById('ucpAvatar');
-        const ucpName = document.getElementById('ucpName');
-        const ucpStatus = document.getElementById('ucpStatus');
-        
-        if (ucpName) ucpName.textContent = displayName;
-        if (ucpStatus) ucpStatus.textContent = currentUser.customStatus || 'Online';
-        if (ucpAvatar) {
-            if (currentUser.avatarUrl) {
-                ucpAvatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="${displayName}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;"><span class="status-dot online"></span>`;
-            } else {
-                ucpAvatar.innerHTML = `${displayName.charAt(0).toUpperCase()}<span class="status-dot online"></span>`;
-            }
-        }
+        // Let the global app shell own the User Control Panel
+        window.CoCoCordApp?.updateGlobalUserPanel?.(currentUser);
     }
 
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
@@ -262,5 +211,3 @@
 
     loadProfile();
 </script>
-</body>
-</html>
