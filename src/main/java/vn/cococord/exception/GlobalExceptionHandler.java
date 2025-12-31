@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
         log.error("Bad credentials: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(MessageResponse.error("Tên đăng nhập hoặc mật khẩu không chính xác"));
+                .body(MessageResponse.error("Tên đăng nhập hoặc mật khẩu không đúng"));
     }
 
     /**
@@ -91,6 +91,6 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponse.error("An unexpected error occurred. Please try again later."));
+                .body(MessageResponse.error("Có lỗi xảy ra. Vui lòng thử lại sau."));
     }
 }

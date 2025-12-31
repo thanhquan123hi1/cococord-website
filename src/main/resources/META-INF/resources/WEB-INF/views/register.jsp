@@ -52,6 +52,72 @@
         bottom: -50px;
         right: -50px;
     }
+
+    /* Auth alerts: use static CSS (Tailwind CDN won't generate dynamic classes created in JS) */
+    .cococord-alert-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: calc(100vw - 2rem);
+    }
+
+    .cococord-alert {
+        width: 100%;
+        max-width: 420px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 0.75rem;
+        padding: 0.75rem 0.875rem;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(6px);
+        background: rgba(15, 23, 42, 0.95);
+        color: #f8fafc;
+    }
+
+    .cococord-alert__row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .cococord-alert__content {
+        color: inherit;
+        font-size: 0.95rem;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .cococord-alert__close {
+        flex: 0 0 auto;
+        appearance: none;
+        background: transparent;
+        border: 1px solid currentColor;
+        border-radius: 0.5rem;
+        width: 2.25rem;
+        height: 2.25rem;
+        line-height: 2.1rem;
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+        cursor: pointer;
+        opacity: 0.95;
+    }
+
+    .cococord-alert__close:hover {
+        opacity: 1;
+    }
+
+    .cococord-alert--success {
+        border-left: 4px solid rgba(34, 197, 94, 0.95);
+    }
+
+    .cococord-alert--danger {
+        border-left: 4px solid rgba(239, 68, 68, 0.95);
+    }
 </style>
 
 <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative">
@@ -156,7 +222,7 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Mật khẩu phải có ít nhất 8 ký tự</p>
+                    <p class="text-xs text-gray-500 mt-1">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt</p>
                 </div>
 
                 <!-- Confirm Password Field -->
@@ -353,19 +419,26 @@
         if (!alertContainer) {
             alertContainer = document.createElement('div');
             alertContainer.id = 'alert-container';
-            alertContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
             document.body.appendChild(alertContainer);
         }
+
+        // Ensure correct styling even if an existing #alert-container is present
+        alertContainer.classList.add('cococord-alert-container');
         
-        const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
+        const variantClass = type === 'success' ? 'cococord-alert--success' : 'cococord-alert--danger';
         const alert = document.createElement('div');
-        alert.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm animate-fade-in-up`;
+        alert.className = `cococord-alert ${variantClass} animate-fade-in-up`;
+        alert.setAttribute('role', 'alert');
         alert.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span>${message}</span>
-                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-lg font-bold cursor-pointer">&times;</button>
+            <div class="cococord-alert__row">
+                <div class="cococord-alert__content">${message}</div>
+                <button type="button" class="cococord-alert__close" aria-label="Đóng">&times;</button>
             </div>
         `;
+
+        alert.querySelector('.cococord-alert__close')?.addEventListener('click', () => {
+            alert.remove();
+        });
         alertContainer.appendChild(alert);
         
         // Auto remove after 5 seconds

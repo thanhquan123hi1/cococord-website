@@ -90,12 +90,12 @@ public class AuthServiceImpl implements IAuthService {
     public MessageResponse register(RegisterRequest request) {
         // Check if username exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BadRequestException("Username is already taken");
+            throw new BadRequestException("Tên đăng nhập đã tồn tại");
         }
 
         // Check if email exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email is already registered");
+            throw new BadRequestException("Email đã được đăng ký");
         }
 
         // Create new user
@@ -117,7 +117,7 @@ public class AuthServiceImpl implements IAuthService {
             log.error("Failed to send welcome email to {}", user.getEmail(), e);
         }
 
-        return MessageResponse.success("Registration successful! You can now login.");
+        return MessageResponse.success("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
     }
 
     /**
