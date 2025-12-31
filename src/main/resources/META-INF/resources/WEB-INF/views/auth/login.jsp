@@ -207,6 +207,42 @@
       }
     });
 
+  function setButtonLoading(btn, isLoading, loadingText, originalHtml) {
+    if (!btn) return;
+    if (isLoading) {
+      btn.disabled = true;
+      btn.innerHTML =
+        '<span class="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>' +
+        loadingText;
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+
+  async function fetchJsonWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      const text = await response.text();
+
+      let json = null;
+      if (text) {
+        try {
+          json = JSON.parse(text);
+        } catch {
+          json = null;
+        }
+      }
+
+      return { response, json };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   // Handle login form submission
   document
     .getElementById("login-form")
@@ -215,9 +251,7 @@
 
       const btn = document.getElementById("login-btn");
       const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML =
-        '<span class="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>Đang đăng nhập...';
+      setButtonLoading(btn, true, "Đang đăng nhập...", originalText);
 
       const formData = {
         usernameOrEmail: document
@@ -226,8 +260,10 @@
         password: document.getElementById("password").value,
       };
 
+      const rememberMe = !!document.getElementById("rememberMe")?.checked;
+
       try {
-        const response = await fetch(
+        const { response, json: data } = await fetchJsonWithTimeout(
           "${pageContext.request.contextPath}/api/auth/login",
           {
             method: "POST",
@@ -235,10 +271,9 @@
               "Content-Type": "application/json",
             },
             body: JSON.stringify(formData),
-          }
+          },
+          15000
         );
-
-        const data = await response.json();
 
         if (response.ok && data.accessToken) {
           // Lưu JWT tokens vào localStorage
@@ -247,15 +282,18 @@
           localStorage.setItem("user", JSON.stringify(data.user || {}));
 
           // Lưu accessToken vào Cookie (cho server-side rendering với JSP)
-          const expires = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
-          ).toUTCString();
-          document.cookie =
+          const cookieBase =
             "accessToken=" +
             encodeURIComponent(data.accessToken) +
-            "; expires=" +
-            expires +
             "; path=/; SameSite=Lax";
+          if (rememberMe) {
+            const expires = new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000
+            ).toUTCString();
+            document.cookie = cookieBase + "; expires=" + expires;
+          } else {
+            document.cookie = cookieBase;
+          }
           showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
 
           setTimeout(() => {
@@ -264,22 +302,24 @@
         } else {
           // Handle validation errors (returns { success: false, message: "Validation failed", errors: {...} })
           let errorMessage =
-            data.message ||
+            data?.message ||
             "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
-          if (data.errors) {
+          if (data?.errors) {
             // Build error message from field errors
             const errorList = Object.values(data.errors).join("<br>");
             errorMessage = errorList || errorMessage;
           }
           showAlert(errorMessage, "danger");
-          btn.disabled = false;
-          btn.innerHTML = originalText;
+          setButtonLoading(btn, false, "", originalText);
         }
       } catch (error) {
         console.error("Login error:", error);
-        showAlert("Có lỗi xảy ra. Vui lòng thử lại sau.", "danger");
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        if (error?.name === "AbortError") {
+          showAlert("Yêu cầu đăng nhập quá lâu. Vui lòng thử lại.", "danger");
+        } else {
+          showAlert("Có lỗi xảy ra. Vui lòng thử lại sau.", "danger");
+        }
+        setButtonLoading(btn, false, "", originalText);
       }
     });
 
@@ -309,118 +349,5 @@
 
     // Auto remove after 5 seconds
     setTimeout(() => alert.remove(), 5000);
-  }
-</script>
-
-<script>
-  // Toggle password visibility
-  document
-    .getElementById("togglePassword")
-    .addEventListener("click", function () {
-      const passwordInput = document.getElementById("password");
-      const icon = this.querySelector("i");
-
-      if (passwordInput.type === "password") {
-        passwordInput.type = "text";
-        icon.classList.remove("bi-eye");
-        icon.classList.add("bi-eye-slash");
-      } else {
-        passwordInput.type = "password";
-        icon.classList.remove("bi-eye-slash");
-        icon.classList.add("bi-eye");
-      }
-    });
-
-  // Handle login form submission
-  document
-    .getElementById("login-form")
-    .addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const btn = document.getElementById("login-btn");
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML =
-        '<span class="spinner-border spinner-border-sm me-2"></span>Đang đăng nhập...';
-
-      const formData = {
-        usernameOrEmail: document
-          .getElementById("usernameOrEmail")
-          .value.trim(),
-        password: document.getElementById("password").value,
-      };
-
-      try {
-        const response = await fetch(
-          "${pageContext.request.contextPath}/api/auth/login",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData),
-          }
-        );
-
-        const data = await response.json();
-
-        if (response.ok && data.accessToken) {
-          // Lưu JWT tokens vào localStorage
-          localStorage.setItem("accessToken", data.accessToken);
-          localStorage.setItem("refreshToken", data.refreshToken);
-          localStorage.setItem("user", JSON.stringify(data.user || {}));
-
-          // Lưu accessToken vào Cookie (cho server-side rendering với JSP)
-          const expires = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
-          ).toUTCString();
-          document.cookie =
-            "accessToken=" +
-            encodeURIComponent(data.accessToken) +
-            "; expires=" +
-            expires +
-            "; path=/; SameSite=Lax";
-          showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
-
-          setTimeout(() => {
-            window.location.href = "${pageContext.request.contextPath}/app";
-          }, 1000);
-        } else {
-          // Handle validation errors (returns { success: false, message: "Validation failed", errors: {...} })
-          let errorMessage =
-            data.message ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
-          if (data.errors) {
-            // Build error message from field errors
-            const errorList = Object.values(data.errors).join("<br>");
-            errorMessage = errorList || errorMessage;
-          }
-          showAlert(errorMessage, "danger");
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        showAlert("Có lỗi xảy ra. Vui lòng thử lại sau.", "danger");
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    });
-
-  function showAlert(message, type) {
-    const alertContainer = document.getElementById("alert-container");
-    if (!alertContainer) return;
-
-    const alert = document.createElement("div");
-    alert.className = `alert alert-${type} alert-dismissible fade show`;
-    alert.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-    alertContainer.appendChild(alert);
-
-    setTimeout(() => {
-      alert.remove();
-    }, 5000);
   }
 </script>

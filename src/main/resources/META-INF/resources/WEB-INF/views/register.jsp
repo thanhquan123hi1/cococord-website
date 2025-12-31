@@ -253,6 +253,38 @@
         }
     });
 
+    function setButtonLoading(btn, isLoading, loadingText, originalHtml) {
+        if (!btn) return;
+        if (isLoading) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>' + loadingText;
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+
+    async function fetchJsonWithTimeout(url, options, timeoutMs) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            const text = await response.text();
+            let json = null;
+            if (text) {
+                try {
+                    json = JSON.parse(text);
+                } catch {
+                    json = null;
+                }
+            }
+            return { response, json };
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
     // Handle register form submission
     document.getElementById('register-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -267,8 +299,7 @@
         
         const btn = document.getElementById('register-btn');
         const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>Đang đăng ký...';
+        setButtonLoading(btn, true, 'Đang đăng ký...', originalText);
         
         const formData = {
             username: document.getElementById('username').value.trim(),
@@ -278,15 +309,17 @@
         };
         
         try {
-            const response = await fetch('${pageContext.request.contextPath}/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+            const { response, json: data } = await fetchJsonWithTimeout(
+                '${pageContext.request.contextPath}/api/auth/register',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
                 },
-                body: JSON.stringify(formData)
-            });
-            
-            const data = await response.json();
+                15000
+            );
             
             if (response.ok) {
                 showAlert('Đăng ký thành công! Đang chuyển đến trang đăng nhập...', 'success');
@@ -295,15 +328,22 @@
                     window.location.href = '${pageContext.request.contextPath}/login';
                 }, 1500);
             } else {
-                showAlert(data.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.', 'danger');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                let errorMessage = data?.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
+                if (data?.errors) {
+                    const errorList = Object.values(data.errors).join('<br>');
+                    errorMessage = errorList || errorMessage;
+                }
+                showAlert(errorMessage, 'danger');
+                setButtonLoading(btn, false, '', originalText);
             }
         } catch (error) {
             console.error('Register error:', error);
-            showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            if (error?.name === 'AbortError') {
+                showAlert('Yêu cầu đăng ký quá lâu. Vui lòng thử lại.', 'danger');
+            } else {
+                showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+            }
+            setButtonLoading(btn, false, '', originalText);
         }
     });
 
@@ -332,204 +372,3 @@
         setTimeout(() => alert.remove(), 5000);
     }
 </script>
-
-    <script>
-            // Toggle password visibility
-            document.getElementById('togglePassword').addEventListener('click', function() {
-                const passwordInput = document.getElementById('password');
-                const icon = this.querySelector('i');
-                
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
-                } else {
-                    passwordInput.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
-                }
-            });
-
-            document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
-                const passwordInput = document.getElementById('confirmPassword');
-                const icon = this.querySelector('i');
-                
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
-                } else {
-                    passwordInput.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
-                }
-            });
-
-            // Handle register form submission
-            document.getElementById('register-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                
-                if (password !== confirmPassword) {
-                    showAlert('Mật khẩu xác nhận không khớp!', 'danger');
-                    return;
-                }
-                
-                const btn = document.getElementById('register-btn');
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đăng ký...';
-                
-                const formData = {
-                    username: document.getElementById('username').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    displayName: document.getElementById('displayName').value.trim(),
-                    password: password
-                };
-                
-                try {
-                    const response = await fetch('${pageContext.request.contextPath}/api/auth/register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        showAlert('Đăng ký thành công! Đang chuyển đến trang đăng nhập...', 'success');
-                        
-                        setTimeout(() => {
-                            window.location.href = '${pageContext.request.contextPath}/login';
-                        }, 1500);
-                    } else {
-                        showAlert(data.message || 'Đăng ký thất bại. Vui lòng thử lại.', 'danger');
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                    }
-                } catch (error) {
-                    console.error('Register error:', error);
-                    showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            });
-
-            function showAlert(message, type) {
-                const alertContainer = document.getElementById('alert-container');
-                if (!alertContainer) return;
-                
-                const alert = document.createElement('div');
-                alert.className = `alert alert-${type} alert-dismissible fade show`;
-                alert.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                alertContainer.appendChild(alert);
-                
-                setTimeout(() => {
-                    alert.remove();
-                }, 5000);
-            }
-    </script>
-                                    
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="${pageContext.request.contextPath}/js/auth.js"></script>
-    
-    <script>
-            // Toggle password visibility
-            function togglePasswordVisibility(fieldId) {
-                const field = document.getElementById(fieldId);
-                const icon = document.getElementById(fieldId + '-icon');
-                
-                if (field.type === 'password') {
-                    field.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
-                } else {
-                    field.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
-                }
-            }
-
-            // Handle register form submission
-            document.getElementById('register-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-
-                // Validate password match
-                if (password !== confirmPassword) {
-                    showAlert('danger', 'Mật khẩu xác nhận không khớp!');
-                    return;
-                }
-
-                // Validate password strength - must contain uppercase, lowercase, number, and special character
-                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-                if (!passwordRegex.test(password)) {
-                    showAlert('danger', 'Mật khẩu phải chứa ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)!');
-                    return;
-                }
-
-                const btn = document.getElementById('register-btn');
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đăng ký...';
-
-                const formData = {
-                    username: document.getElementById('username').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    displayName: document.getElementById('displayName').value.trim(),
-                    password: password
-                };
-
-                try {
-                    const response = await fetch('/api/auth/register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        showAlert('success', 'Đăng ký thành công! Đang chuyển đến trang đăng nhập...');
-                        
-                        // Clear form
-                        document.getElementById('register-form').reset();
-                        
-                        setTimeout(() => {
-                            window.location.href = '/login';
-                        }, 1500);
-                    } else {
-                        showAlert('danger', data.message || 'Đăng ký thất bại! Vui lòng kiểm tra lại thông tin.');
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                    }
-                } catch (error) {
-                    console.error('Register error:', error);
-                    showAlert('danger', 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại!');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            });
-    </script>
-</body>
-</html>
