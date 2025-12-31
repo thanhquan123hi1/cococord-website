@@ -386,6 +386,10 @@
     color: var(--text-primary);
 }
 
+.icon-btn i {
+    pointer-events: none;
+}
+
 .toolbar {
     padding: 12px;
     border-bottom: 1px solid var(--border-color);
@@ -557,4 +561,360 @@
 
 .dropdown-item.logout {
     color: #ED4245;
+}
+
+/* Friend Context Menu */
+.friend-context-menu {
+    position: fixed;
+    width: 180px;
+    background: var(--dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    overflow: hidden;
+    z-index: 2000;
+    padding: 6px;
+}
+
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 4px;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.context-item i {
+    font-size: 16px;
+    width: 18px;
+    text-align: center;
+}
+
+.context-item:hover {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.context-item.danger {
+    color: #ED4245;
+}
+
+.context-item.danger:hover {
+    background: #ED4245;
+    color: #fff;
+}
+
+.context-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+/* ==================== DM CHAT AREA ==================== */
+.dm-chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--light-bg);
+}
+
+.dm-chat-header {
+    height: 48px;
+    background: var(--light-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.dm-chat-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dm-chat-header .header-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.dm-chat-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dm-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.dm-start {
+    text-align: left;
+    padding: 24px 16px 16px;
+    margin-bottom: 8px;
+}
+
+.dm-start-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.dm-start-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.dm-start-name {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.dm-start-info {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+}
+
+.dm-messages-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px 16px;
+    flex: 1;
+}
+
+.dm-message-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 2px 8px;
+    margin: 0 -8px;
+    border-radius: 4px;
+    position: relative;
+}
+
+.dm-message-row:first-child,
+.dm-message-row.new-group {
+    margin-top: 17px;
+}
+
+.dm-message-row:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.dm-message-row:hover .dm-message-actions {
+    opacity: 1;
+}
+
+.dm-message-row.deleted {
+    opacity: 0.6;
+}
+
+.dm-message-row.deleted .dm-message-body {
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+.dm-message-row.deleted .dm-message-body i {
+    margin-right: 4px;
+}
+
+.dm-message-actions {
+    position: absolute;
+    right: 8px;
+    top: -8px;
+    background: var(--darker-bg);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.msg-action-btn {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.msg-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ed4245;
+}
+
+.dm-message-row .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.dm-message-row .avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.dm-message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.dm-message-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    line-height: 1.375;
+}
+
+.dm-sender-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.dm-sender-name:hover {
+    text-decoration: underline;
+}
+
+.dm-message-time {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.dm-message-body {
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1.375;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-top: 2px;
+}
+
+/* DM Composer */
+.dm-composer {
+    padding: 0 16px 24px;
+    flex-shrink: 0;
+}
+
+.dm-composer .composer-inner {
+    display: flex;
+    align-items: center;
+    background: var(--darker-bg);
+    border-radius: 8px;
+    padding: 0 16px;
+    min-height: 44px;
+}
+
+.dm-composer .composer-btn {
+    width: 36px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: color 0.15s;
+}
+
+.dm-composer .composer-btn:hover {
+    color: var(--text-primary);
+}
+
+.dm-composer .composer-input {
+    flex: 1;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 16px;
+    outline: none;
+    padding: 0 8px;
+}
+
+.dm-composer .composer-input::placeholder {
+    color: var(--text-muted);
+}
+
+.dm-composer .composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Empty state */
+.dm-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px;
+}
+
+.dm-empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Active DM styling */
+.dm-row.active {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text-primary);
 }

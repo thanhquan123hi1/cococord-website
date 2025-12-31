@@ -14,8 +14,11 @@ import vn.cococord.dto.response.FriendRequestResponse;
 import vn.cococord.dto.response.MessageResponse;
 import vn.cococord.dto.response.UserProfileResponse;
 import vn.cococord.service.IFriendService;
+import vn.cococord.service.IPresenceService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * REST Controller for Friend & Direct Message Management
@@ -27,17 +30,41 @@ import java.util.List;
 public class FriendController {
 
     private final IFriendService friendService;
+    private final IPresenceService presenceService;
 
     // ===== FRIEND MANAGEMENT =====
 
     /**
      * GET /api/friends
-     * Get all friends for current user
+     * Get all friends for current user (with real-time presence)
      */
     @GetMapping
     public ResponseEntity<List<UserProfileResponse>> getFriends(
             @AuthenticationPrincipal UserDetails userDetails) {
         List<UserProfileResponse> friends = friendService.getFriends(userDetails.getUsername());
+
+        // Enrich with real-time presence status
+        if (!friends.isEmpty()) {
+            List<Long> friendIds = friends.stream()
+                    .map(UserProfileResponse::getId)
+                    .collect(Collectors.toList());
+            Map<Long, String> presenceMap = presenceService.getUsersPresence(friendIds);
+
+            friends = friends.stream()
+                    .map(f -> UserProfileResponse.builder()
+                            .id(f.getId())
+                            .username(f.getUsername())
+                            .displayName(f.getDisplayName())
+                            .email(f.getEmail())
+                            .avatarUrl(f.getAvatarUrl())
+                            .bio(f.getBio())
+                            .status(presenceMap.getOrDefault(f.getId(), "OFFLINE"))
+                            .customStatus(f.getCustomStatus())
+                            .createdAt(f.getCreatedAt())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
         return ResponseEntity.ok(friends);
     }
 

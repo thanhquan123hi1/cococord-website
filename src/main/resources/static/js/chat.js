@@ -61,8 +61,8 @@
         // User Settings Modal
         userSettingsModal: document.getElementById('userSettingsModal'),
         closeUserSettingsModal: document.getElementById('closeUserSettingsModal'),
-        settingsNavItems: document.querySelectorAll('.settings-nav-item[data-tab]'),
-        settingsTabs: document.querySelectorAll('.settings-tab'),
+        settingsNavItems: document.querySelectorAll('#userSettingsModal .settings-nav-item[data-tab]'),
+        settingsTabs: document.querySelectorAll('#userSettingsModal .settings-tab'),
         settingsTitle: document.getElementById('settingsTitle'),
         settingsLogoutBtn: document.getElementById('settingsLogoutBtn'),
         
@@ -201,6 +201,40 @@
     function isOnline(username) {
         const status = presenceMap.get(username);
         return status && String(status).toUpperCase() === 'ONLINE';
+    }
+
+    function normalizeName(name) {
+        return String(name || '').trim().toLowerCase();
+    }
+
+    function isNewServerOnboardingContext(channel) {
+        if (!activeServerId || !channel) return false;
+        // Heuristic: brand-new server has only default text+voice channels and no custom categories
+        if (Array.isArray(categories) && categories.length > 0) return false;
+        if (!Array.isArray(channels) || channels.length > 2) return false;
+
+        const hasDefaultText = channels.some(c => (c.type !== 'VOICE') && normalizeName(c.name) === 'chung');
+        const hasDefaultVoice = channels.some(c => (c.type === 'VOICE') && normalizeName(c.name) === 'chung');
+        if (!hasDefaultText || !hasDefaultVoice) return false;
+
+        // Show onboarding when viewing the default text channel
+        return (channel.type !== 'VOICE') && normalizeName(channel.name) === 'chung';
+    }
+
+    function renderChatEmptyState(channel) {
+        const onboarding = document.getElementById('serverOnboardingState');
+        const channelEmpty = document.getElementById('channelEmptyState');
+
+        const showOnboarding = isNewServerOnboardingContext(channel);
+        if (onboarding) onboarding.style.display = showOnboarding ? '' : 'none';
+        if (channelEmpty) channelEmpty.style.display = showOnboarding ? 'none' : '';
+
+        if (showOnboarding) {
+            const server = servers.find(s => String(s.id) === String(activeServerId));
+            const serverName = server?.name || 'Máy chủ của bạn';
+            const serverNameEl = document.getElementById('welcomeServerName');
+            if (serverNameEl) serverNameEl.textContent = serverName;
+        }
     }
 
     // ==================== RENDER FUNCTIONS ====================
@@ -621,16 +655,23 @@
 
     async function loadChannels(serverId) {
         // Load channels and categories in parallel
-        const [channelData, categoryData] = await Promise.all([
-            apiGet(`/api/servers/${serverId}/channels`),
-            apiGet(`/api/servers/${serverId}/categories`).catch(() => [])
-        ]);
-        
-        channels = channelData;
-        channels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-        
-        categories = categoryData;
-        categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+        try {
+            const [channelData, categoryData] = await Promise.all([
+                apiGet(`/api/servers/${serverId}/channels`),
+                apiGet(`/api/servers/${serverId}/categories`).catch(() => [])
+            ]);
+            
+            channels = channelData || [];
+            channels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            
+            categories = categoryData || [];
+            categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+        } catch (e) {
+            console.error('Failed to load channels:', e);
+            channels = [];
+            categories = [];
+            throw e; // Re-throw to trigger retry in selectServer
+        }
     }
 
     async function loadMembers(serverId) {
@@ -664,6 +705,8 @@
                     for (const m of items) appendMessage(m);
                     if (emptyState) emptyState.style.display = 'none';
                 } else {
+                    const channel = channels.find(c => String(c.id) === String(channelId));
+                    renderChatEmptyState(channel);
                     if (emptyState) emptyState.style.display = 'block';
                 }
                 if (emptyState) el.messageList.appendChild(emptyState);
@@ -949,11 +992,31 @@
         updateGlobalServerListActive();
         clearMessages();
 
-        await Promise.all([
-            loadChannels(serverId),
-            loadMembers(serverId),
-            subscribeToServerUpdates(serverId)
-        ]);
+        // Load data with error handling and retry
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+            try {
+                await Promise.all([
+                    loadChannels(serverId),
+                    loadMembers(serverId),
+                    subscribeToServerUpdates(serverId)
+                ]);
+                break; // Success, exit retry loop
+            } catch (e) {
+                console.error(`Failed to load server data (attempt ${retryCount + 1}):`, e);
+                retryCount++;
+                if (retryCount > maxRetries) {
+                    console.error('Max retries reached, server data may be incomplete');
+                    // Set empty arrays to prevent undefined errors
+                    if (!channels || !channels.length) channels = [];
+                    if (!members || !members.length) members = [];
+                }
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
         
         renderChannelList();
         renderMembersList();
@@ -961,6 +1024,11 @@
         const nextChannelId = channels.length ? channels[0].id : null;
         if (nextChannelId != null) {
             await selectChannel(nextChannelId);
+        } else {
+            // No channels - show empty state
+            el.channelName.textContent = 'Chọn kênh';
+            el.chatComposer.style.display = 'none';
+            el.chatEmpty.style.display = 'block';
         }
     }
 
@@ -2096,6 +2164,16 @@
         document.getElementById('inviteFriendsModal')?.addEventListener('click', (e) => {
             if (e.target.id === 'inviteFriendsModal') hideInviteFriendsModal();
         });
+
+        // Server onboarding actions (empty state for new servers)
+        document.getElementById('onboardingInviteBtn')?.addEventListener('click', () => showInviteFriendsModal());
+        document.getElementById('onboardingPersonalizeBtn')?.addEventListener('click', () => showServerSettingsModal());
+        document.getElementById('onboardingFirstMessageBtn')?.addEventListener('click', () => el.chatInput?.focus());
+        document.getElementById('onboardingAddAppBtn')?.addEventListener('click', () => alert('Tính năng đang phát triển'));
+        document.getElementById('onboardingGettingStartedLink')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Hướng dẫn Bắt Đầu đang được cập nhật');
+        });
         
         // Add server button
         el.addServerBtn?.addEventListener('click', showCreateServerModal);
@@ -2150,7 +2228,7 @@
             // Close on overlay click (outside modal content)
             if (e.target === el.userSettingsModal) hideUserSettingsModal();
         });
-        document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfileSettings);
+        el.userSettingsModal?.querySelector('#saveProfileBtn')?.addEventListener('click', saveProfileSettings);
         
         // Escape key to close settings modal
         document.addEventListener('keydown', (e) => {
@@ -2287,8 +2365,9 @@
         const qp = getQueryParams();
         await loadServers();
 
-        // Pick server
-        activeServerId = qp.serverId || (servers.length ? servers[0].id : null);
+        // Pick server - validate that requested server exists, fallback to first server
+        let requestedServer = qp.serverId ? servers.find(s => String(s.id) === String(qp.serverId)) : null;
+        activeServerId = requestedServer ? requestedServer.id : (servers.length ? servers[0].id : null);
         
         // Cập nhật global sidebar (active state + SPA events)
         updateGlobalServerListActive();
@@ -2307,7 +2386,9 @@
             loadMembers(activeServerId)
         ]);
         
-        activeChannelId = qp.channelId || (channels.length ? channels[0].id : null);
+        // Pick channel - validate that requested channel exists, fallback to first channel
+        let requestedChannel = qp.channelId ? channels.find(c => String(c.id) === String(qp.channelId)) : null;
+        activeChannelId = requestedChannel ? requestedChannel.id : (channels.length ? channels[0].id : null);
         renderChannelList();
         renderMembersList();
 
@@ -2321,9 +2402,23 @@
         el.channelName.textContent = channelName;
         el.welcomeChannelName.textContent = '#' + channelName;
         el.chatInput.placeholder = `Nhắn #${channelName}`;
+        el.chatComposer.style.display = '';
 
-        await subscribeToChannel(activeChannelId);
+        // Subscribe to channel updates and load history (don't block on WebSocket errors)
+        try {
+            await subscribeToChannel(activeChannelId);
+        } catch (e) {
+            console.warn('Failed to subscribe to channel:', e);
+        }
+        
         await loadHistory(activeChannelId);
+        
+        // Subscribe to server updates after channel setup
+        try {
+            await subscribeToServerUpdates(activeServerId);
+        } catch (e) {
+            console.warn('Failed to subscribe to server updates:', e);
+        }
         
         // Handle browser back/forward navigation (SPA)
         window.addEventListener('popstate', async (event) => {
@@ -2333,9 +2428,118 @@
         });
     }
 
-    init().catch((e) => {
+    // Track initialization state to prevent double-init
+    let _chatInitialized = false;
+    
+    function cleanupSubscriptions() {
+        // Unsubscribe all active subscriptions to prevent duplicate messages
+        if (channelSubscription) {
+            try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            channelSubscription = null;
+        }
+        if (presenceSubscription) {
+            try { presenceSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            presenceSubscription = null;
+        }
+        if (typingSubscription) {
+            try { typingSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            typingSubscription = null;
+        }
+        if (deleteSubscription) {
+            try { deleteSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            deleteSubscription = null;
+        }
+        if (voiceSubscription) {
+            try { voiceSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            voiceSubscription = null;
+        }
+        if (serverChannelsSubscription) {
+            try { serverChannelsSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            serverChannelsSubscription = null;
+        }
+        if (serverCategoriesSubscription) {
+            try { serverCategoriesSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            serverCategoriesSubscription = null;
+        }
+    }
+    
+    async function initIfNeeded() {
+        // Only init if we're on the chat page
+        if (!document.getElementById('chatApp')) return;
+        
+        // Check if already initialized for current DOM
+        if (_chatInitialized && el.channelList && document.contains(el.channelList)) return;
+        
+        // Cleanup old subscriptions to prevent duplicate messages
+        cleanupSubscriptions();
+        
+        // Reinitialize element references in case DOM was replaced by SPA navigation
+        reinitElements();
+        _chatInitialized = true;
+        
+        await init();
+    }
+    
+    function reinitElements() {
+        // Re-query all DOM elements after SPA navigation
+        el.globalServerList = document.getElementById('globalServerList');
+        el.serverName = document.getElementById('serverName');
+        el.serverHeader = document.getElementById('serverHeader');
+        el.serverDropdown = document.getElementById('serverDropdown');
+        el.channelList = document.getElementById('channelList');
+        el.invitePeopleBtn = document.getElementById('invitePeopleBtn');
+        el.serverSettingsBtn = document.getElementById('serverSettingsBtn');
+        el.createChannelBtn = document.getElementById('createChannelBtn');
+        el.leaveServerBtn = document.getElementById('leaveServerBtn');
+        el.channelName = document.getElementById('channelName');
+        el.channelTopic = document.getElementById('channelTopic');
+        el.welcomeChannelName = document.getElementById('welcomeChannelName');
+        el.messageList = document.getElementById('messageList');
+        el.chatEmpty = document.getElementById('chatEmpty');
+        el.chatComposer = document.getElementById('chatComposer');
+        el.chatInput = document.getElementById('chatInput');
+        el.membersSidebar = document.getElementById('membersSidebar');
+        el.membersToggleBtn = document.getElementById('membersToggleBtn');
+        el.onlineMembersList = document.getElementById('onlineMembersList');
+        el.offlineMembersList = document.getElementById('offlineMembersList');
+        el.onlineCount = document.getElementById('onlineCount');
+        el.offlineCount = document.getElementById('offlineCount');
+        el.voiceConnectedBar = document.getElementById('voiceConnectedBar');
+        el.voiceChannelName = document.getElementById('voiceChannelName');
+        el.voiceDisconnectBtn = document.getElementById('voiceDisconnectBtn');
+        el.createServerModal = document.getElementById('createServerModal');
+        el.closeCreateServerModal = document.getElementById('closeCreateServerModal');
+        el.serverNameInput = document.getElementById('serverNameInput');
+        el.cancelCreateServer = document.getElementById('cancelCreateServer');
+        el.confirmCreateServer = document.getElementById('confirmCreateServer');
+        el.createChannelModal = document.getElementById('createChannelModal');
+        el.closeCreateChannelModal = document.getElementById('closeCreateChannelModal');
+        el.channelNameInput = document.getElementById('channelNameInput');
+        el.cancelCreateChannel = document.getElementById('cancelCreateChannel');
+        el.confirmCreateChannel = document.getElementById('confirmCreateChannel');
+        el.channelTypeOptions = document.querySelectorAll('.channel-type-option');
+        el.createCategoryModal = document.getElementById('createCategoryModal');
+        el.closeCreateCategoryModal = document.getElementById('closeCreateCategoryModal');
+        el.categoryNameInput = document.getElementById('categoryNameInput');
+        el.cancelCreateCategory = document.getElementById('cancelCreateCategory');
+        el.confirmCreateCategory = document.getElementById('confirmCreateCategory');
+        el.createCategoryBtn = document.getElementById('createCategoryBtn');
+    }
+
+    // Initial run
+    initIfNeeded().catch((e) => {
         console.error('Chat init failed:', e);
-        clearMessages();
+    });
+    
+    // Listen for SPA navigation events to re-init when navigating to /chat
+    document.addEventListener('cococord:page:loaded', (e) => {
+        const url = e.detail?.url || '';
+        if (url.includes('/chat')) {
+            _chatInitialized = false; // Force re-init
+            initIfNeeded().catch((e) => {
+                console.error('Chat re-init failed:', e);
+            });
+        }
     });
     
     // Export API cho SPA navigation từ app.js
@@ -2345,6 +2549,7 @@
         updateGlobalServerListActive: updateGlobalServerListActive,
         toggleMute: toggleMute,
         toggleDeafen: toggleDeafen,
-        updateVoiceButtonStates: updateVoiceButtonStates
+        updateVoiceButtonStates: updateVoiceButtonStates,
+        init: initIfNeeded
     };
 })();

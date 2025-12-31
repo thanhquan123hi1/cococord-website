@@ -53,19 +53,9 @@ public class ViewController {
         return "chat";
     }
 
-    @GetMapping("/friends")
-    public String friends() {
-        return "friends";
-    }
-
     @GetMapping("/messages")
     public String messages() {
         return "messages";
-    }
-
-    @GetMapping("/profile")
-    public String profile() {
-        return "profile"; // User profile
     }
 
     @GetMapping("/sessions")

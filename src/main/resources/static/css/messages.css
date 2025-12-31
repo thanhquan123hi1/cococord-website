@@ -46,8 +46,8 @@ html, body {
 /* Discord App Layout */
 .discord-app {
     display: grid;
-    grid-template-columns: 72px 240px 1fr;
-    height: 100vh;
+    grid-template-columns: 240px 1fr;
+    height: 100%;
     overflow: hidden;
 }
 

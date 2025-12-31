@@ -27,7 +27,6 @@ Nguồn: `ViewController`, `AdminController`.
 - `GET /chat` → `chat.jsp`
 - `GET /friends` → `friends.jsp`
 - `GET /messages` → `messages.jsp`
-- `GET /profile` → `profile.jsp`
 - `GET /sessions` → `sessions.jsp`
 - `GET /change-password` → `change-password.jsp`
 

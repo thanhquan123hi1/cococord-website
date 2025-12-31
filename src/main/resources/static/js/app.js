@@ -278,13 +278,14 @@ function bindGlobalUserPanelEvents() {
     
     // Settings button - open user settings modal if available
     if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            // Try to use UserSettingsModal if available (from chat.js or user-settings-modal.js)
-            if (window.UserSettingsModal && window.UserSettingsModal.open) {
-                window.UserSettingsModal.open();
+        settingsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Try to use UserSettingsModal if available
+            if (window.UserSettingsModal && window.UserSettingsModal.show) {
+                window.UserSettingsModal.show();
             } else {
-                // Fallback: navigate to settings page
-                window.location.href = '/settings';
+                console.warn('UserSettingsModal not available');
             }
         });
     }
@@ -758,7 +759,6 @@ function initAppLinkInterception() {
             (ctx || '') + '/chat',
             (ctx || '') + '/friends',
             (ctx || '') + '/messages',
-            (ctx || '') + '/profile',
             (ctx || '') + '/sessions',
             (ctx || '') + '/change-password'
         ];
@@ -890,7 +890,6 @@ window.addEventListener('popstate', () => {
         (ctx || '') + '/chat',
         (ctx || '') + '/friends',
         (ctx || '') + '/messages',
-        (ctx || '') + '/profile',
         (ctx || '') + '/sessions',
         (ctx || '') + '/change-password'
     ];

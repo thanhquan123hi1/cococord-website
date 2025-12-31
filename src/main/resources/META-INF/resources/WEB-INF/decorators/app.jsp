@@ -123,9 +123,6 @@
 
                 <!-- User Dropdown Menu -->
                 <div class="user-dropdown" id="userDropdown" style="display:none;">
-                    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
-                        <i class="bi bi-person"></i> Hồ sơ của tôi
-                    </a>
                     <a href="${pageContext.request.contextPath}/settings" class="dropdown-item">
                         <i class="bi bi-gear"></i> Cài đặt
                     </a>

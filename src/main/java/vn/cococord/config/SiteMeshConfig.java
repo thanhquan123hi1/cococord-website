@@ -52,8 +52,6 @@ public class SiteMeshConfig {
                         .addDecoratorPath("/friends/**", "app.jsp")
                         .addDecoratorPath("/messages", "app.jsp")
                         .addDecoratorPath("/messages/**", "app.jsp")
-                        .addDecoratorPath("/profile", "app.jsp")
-                        .addDecoratorPath("/profile/**", "app.jsp")
                         .addDecoratorPath("/dashboard", "app.jsp")
                         .addDecoratorPath("/settings", "app.jsp")
                         .addDecoratorPath("/settings/**", "app.jsp")

@@ -43,7 +43,7 @@ const UserProfileModal = (function() {
             // Fetch user profile data
             const response = await fetch(`/api/users/${userId}/profile`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 }
             });
 
@@ -57,7 +57,7 @@ const UserProfileModal = (function() {
             if (!currentUser) {
                 const meResponse = await fetch('/api/users/me/profile', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                     }
                 });
                 if (meResponse.ok) {
@@ -199,7 +199,7 @@ const UserProfileModal = (function() {
         try {
             const response = await fetch(`/api/users/${viewingUser.id}/mutual-servers`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 }
             });
 
@@ -245,7 +245,7 @@ const UserProfileModal = (function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({ note: note || null })
             });
@@ -278,7 +278,7 @@ const UserProfileModal = (function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({ receiverId: userId })
             });
@@ -307,7 +307,7 @@ const UserProfileModal = (function() {
             const response = await fetch(`/api/friends/${userId}/block`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 }
             });
 

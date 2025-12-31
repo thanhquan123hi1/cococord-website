@@ -371,3 +371,187 @@
         transform: translateX(-50%);
     }
 }
+
+/* UCP Popup Styles */
+.ucp-popup {
+    position: fixed;
+    width: 340px;
+    background: var(--background-floating, #232428);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    animation: slideUpFadeIn 0.15s ease-out;
+    overflow: hidden;
+}
+
+.ucp-popup-banner {
+    position: relative;
+    height: 60px;
+    background-size: cover;
+    background-position: center;
+}
+
+.ucp-popup-avatar-wrapper {
+    position: absolute;
+    bottom: -36px;
+    left: 16px;
+    width: 80px;
+    height: 80px;
+}
+
+.ucp-popup-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 6px solid var(--background-floating, #232428);
+    object-fit: cover;
+}
+
+.ucp-popup-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 6px solid var(--background-floating, #232428);
+    background: var(--brand-experiment, #5865f2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 32px;
+}
+
+.ucp-popup-status {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 4px solid var(--background-floating, #232428);
+}
+
+.ucp-popup-status.status-online { background: #23a559; }
+.ucp-popup-status.status-idle { background: #f0b232; }
+.ucp-popup-status.status-do_not_disturb { background: #f23f43; }
+.ucp-popup-status.status-offline, .ucp-popup-status.status-invisible { background: #80848e; }
+
+.ucp-popup-decoration {
+    position: absolute;
+    bottom: -40px;
+    left: 12px;
+    width: 88px;
+    height: 88px;
+    pointer-events: none;
+}
+
+.ucp-popup-badge-area {
+    min-height: 44px;
+    padding: 44px 16px 0 110px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+.ucp-popup-custom-status {
+    background: var(--background-secondary, #2b2d31);
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-normal, #dbdee1);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ucp-popup-body {
+    padding: 12px;
+}
+
+.ucp-popup-name-section {
+    background: var(--background-secondary, #2b2d31);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.ucp-popup-display-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--header-primary, #f2f3f5);
+    margin-bottom: 2px;
+}
+
+.ucp-popup-username {
+    font-size: 14px;
+    color: var(--text-muted, #949ba4);
+}
+
+.ucp-popup-divider {
+    height: 1px;
+    background: var(--background-modifier-accent, #3f4147);
+    margin: 8px 0;
+}
+
+.ucp-popup-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ucp-popup-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--interactive-normal, #b5bac1);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    width: 100%;
+    text-align: left;
+}
+
+.ucp-popup-menu-item:hover {
+    background: var(--background-modifier-hover, #3c3f45);
+    color: var(--interactive-hover, #dbdee1);
+}
+
+.ucp-popup-menu-item svg {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.ucp-menu-status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ucp-menu-status-dot.status-online { background: #23a559; }
+.ucp-menu-status-dot.status-idle { background: #f0b232; }
+.ucp-menu-status-dot.status-do_not_disturb { background: #f23f43; }
+.ucp-menu-status-dot.status-offline, .ucp-menu-status-dot.status-invisible { background: #80848e; }
+
+.ucp-menu-chevron {
+    margin-left: auto;
+    opacity: 0.6;
+}
+
+/* Make user panel clickable */
+.user-panel-content {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 4px;
+    margin: -4px;
+    transition: background 0.1s ease;
+}
+
+.user-panel-content:hover {
+    background: var(--background-modifier-hover, rgba(79, 84, 92, 0.4));
+}

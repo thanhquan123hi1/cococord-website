@@ -100,10 +100,6 @@
 
 <!-- User Settings Dropdown -->
 <div class="settings-dropdown" id="settingsDropdown" style="display:none;">
-    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
-        <i class="bi bi-person"></i>
-        <span>Hồ sơ</span>
-    </a>
     <a href="${pageContext.request.contextPath}/sessions" class="dropdown-item">
         <i class="bi bi-shield-lock"></i>
         <span>Phiên đăng nhập</span>

@@ -184,12 +184,14 @@ public class FriendServiceImpl implements IFriendService {
         User user = getUserByUsername(username);
         List<FriendRequestResponse> result = new ArrayList<>();
 
-        result.addAll(friendRequestRepository.findByReceiverIdOrderByCreatedAtDesc(user.getId())
+        // Only return PENDING requests - received ones
+        result.addAll(friendRequestRepository.findByReceiverIdAndStatus(user.getId(), FriendRequestStatus.PENDING)
                 .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList()));
 
-        result.addAll(friendRequestRepository.findBySenderIdOrderByCreatedAtDesc(user.getId())
+        // Only return PENDING requests - sent ones
+        result.addAll(friendRequestRepository.findBySenderIdAndStatus(user.getId(), FriendRequestStatus.PENDING)
                 .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList()));

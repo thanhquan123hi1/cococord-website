@@ -140,14 +140,20 @@
             }
 
             if (settingsBtn) {
-                settingsBtn.addEventListener('click', () => {
-                    window.UserSettingsModal && window.UserSettingsModal.open();
+                settingsBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.UserSettingsModal && window.UserSettingsModal.show();
                 });
             }
 
-            if (userAvatar) {
-                userAvatar.addEventListener('click', () => {
-                    window.UserProfileModal && window.UserProfileModal.open(this.currentUser.id);
+            // Click on user info area to show UCP popup
+            const userInfoArea = container.querySelector('.user-panel-content');
+            if (userInfoArea) {
+                userInfoArea.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on action buttons
+                    if (e.target.closest('.user-actions')) return;
+                    e.stopPropagation();
+                    this.toggleUCPPopup();
                 });
             }
 
@@ -199,6 +205,172 @@
         update: function(userData) {
             this.currentUser = { ...this.currentUser, ...userData };
             this.render();
+        },
+
+        /**
+         * UCP Popup state
+         */
+        ucpPopupVisible: false,
+
+        /**
+         * Toggle UCP Popup
+         */
+        toggleUCPPopup: function() {
+            if (this.ucpPopupVisible) {
+                this.hideUCPPopup();
+            } else {
+                this.showUCPPopup();
+            }
+        },
+
+        /**
+         * Show UCP Popup
+         */
+        showUCPPopup: function() {
+            if (this.ucpPopupVisible) return;
+            this.ucpPopupVisible = true;
+
+            // Hide status picker if visible
+            if (this.statusPickerVisible) {
+                this.hideStatusPicker();
+            }
+
+            // Remove existing popup
+            const existing = document.querySelector('.ucp-popup');
+            if (existing) existing.remove();
+
+            const popup = document.createElement('div');
+            popup.className = 'ucp-popup';
+            
+            const displayName = this.currentUser.displayName || this.currentUser.username;
+            const status = this.currentUser.status || 'OFFLINE';
+            const customStatus = this.getCustomStatusText();
+            const bannerUrl = this.currentUser.bannerUrl || '';
+            const bannerColor = this.currentUser.bannerColor || '#5865f2';
+
+            popup.innerHTML = `
+                <div class="ucp-popup-banner" style="${bannerUrl ? `background-image: url('${bannerUrl}')` : `background-color: ${bannerColor}`}">
+                    <div class="ucp-popup-avatar-wrapper">
+                        ${this.renderPopupAvatar()}
+                        <span class="ucp-popup-status status-${status.toLowerCase()}"></span>
+                    </div>
+                    ${this.currentUser.avatarDecorationUrl ? `<img class="ucp-popup-decoration" src="${this.currentUser.avatarDecorationUrl}" alt="">` : ''}
+                </div>
+                <div class="ucp-popup-badge-area">
+                    ${customStatus ? `<div class="ucp-popup-custom-status">${customStatus}</div>` : ''}
+                </div>
+                <div class="ucp-popup-body">
+                    <div class="ucp-popup-name-section">
+                        <div class="ucp-popup-display-name">${this.escapeHtml(displayName)}</div>
+                        <div class="ucp-popup-username">${this.escapeHtml(this.currentUser.username)}</div>
+                    </div>
+                    
+                    <div class="ucp-popup-divider"></div>
+                    
+                    <div class="ucp-popup-menu">
+                        <button class="ucp-popup-menu-item" data-action="edit-profile">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Sửa Hồ Sơ
+                        </button>
+                        <button class="ucp-popup-menu-item" data-action="set-status">
+                            <span class="ucp-menu-status-dot status-${status.toLowerCase()}"></span>
+                            ${this.getStatusLabel(status)}
+                            <svg class="ucp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                            </svg>
+                        </button>
+                        <button class="ucp-popup-menu-item" data-action="switch-account">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                            </svg>
+                            Đổi Tài Khoản
+                            <svg class="ucp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+
+            // Position popup above user panel
+            const panel = document.getElementById('userPanel');
+            if (panel) {
+                const rect = panel.getBoundingClientRect();
+                popup.style.left = `${rect.left}px`;
+                popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+            }
+
+            // Attach popup events
+            popup.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = e.target.closest('[data-action]')?.dataset.action;
+                if (action) {
+                    this.handleUCPAction(action);
+                }
+            });
+
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', this.handleOutsideClick);
+            }, 10);
+        },
+
+        handleOutsideClick: function(e) {
+            const popup = document.querySelector('.ucp-popup');
+            if (popup && !popup.contains(e.target) && !e.target.closest('.user-panel-content')) {
+                UserPanel.hideUCPPopup();
+            }
+        },
+
+        /**
+         * Hide UCP Popup
+         */
+        hideUCPPopup: function() {
+            this.ucpPopupVisible = false;
+            const popup = document.querySelector('.ucp-popup');
+            if (popup) popup.remove();
+            document.removeEventListener('click', this.handleOutsideClick);
+        },
+
+        /**
+         * Handle UCP menu actions
+         */
+        handleUCPAction: function(action) {
+            this.hideUCPPopup();
+            
+            switch (action) {
+                case 'edit-profile':
+                    window.UserSettingsModal && window.UserSettingsModal.show('profile');
+                    break;
+                case 'set-status':
+                    this.showStatusPicker();
+                    break;
+                case 'switch-account':
+                    // Show account switcher or logout
+                    if (confirm('Bạn có muốn đăng xuất để đổi tài khoản?')) {
+                        localStorage.removeItem('accessToken');
+                        window.location.href = '/login';
+                    }
+                    break;
+            }
+        },
+
+        /**
+         * Render popup avatar
+         */
+        renderPopupAvatar: function() {
+            const displayName = this.currentUser.displayName || this.currentUser.username;
+            
+            if (this.currentUser.avatarUrl) {
+                return `<img src="${this.currentUser.avatarUrl}" alt="${this.escapeHtml(displayName)}" class="ucp-popup-avatar">`;
+            } else {
+                const initial = displayName.charAt(0).toUpperCase();
+                return `<div class="ucp-popup-avatar-placeholder">${initial}</div>`;
+            }
         },
 
         /**

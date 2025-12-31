@@ -53,7 +53,7 @@ const UserSettingsModal = (function() {
             // Load current user data
             const response = await fetch('/api/users/me/profile', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 }
             });
 
@@ -330,7 +330,7 @@ const UserSettingsModal = (function() {
         try {
             const response = await fetch('/api/friends/blocked', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 }
             });
 
@@ -406,7 +406,7 @@ const UserSettingsModal = (function() {
             const response = await fetch(`/api/friends/blocked/${userId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 }
             });
 
@@ -571,7 +571,7 @@ const UserSettingsModal = (function() {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({ username, email })
             });
@@ -611,7 +611,7 @@ const UserSettingsModal = (function() {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({ displayName, pronouns, bio })
             });
@@ -650,7 +650,7 @@ const UserSettingsModal = (function() {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({ allowFriendRequests, allowDirectMessages })
             });
@@ -683,7 +683,7 @@ const UserSettingsModal = (function() {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify({ theme, messageDisplay })
             });
@@ -716,7 +716,7 @@ const UserSettingsModal = (function() {
             const response = await fetch('/api/users/me/avatar', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: formData
             });
@@ -757,7 +757,7 @@ const UserSettingsModal = (function() {
             const response = await fetch('/api/users/me/banner', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: formData
             });
