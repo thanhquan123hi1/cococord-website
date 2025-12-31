@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
-<!-- Tailwind CSS CDN and custom animations -->
+<!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
@@ -8,20 +8,20 @@
     * {
         font-family: 'Outfit', sans-serif;
     }
-    
+
     @keyframes fade-in-up {
         from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
         }
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
-    
+
     .animate-fade-in-up {
-        animation: fade-in-up 0.6s ease-out;
+        animation: fade-in-up 0.4s ease-out;
     }
     
     .gradient-bg {
@@ -52,7 +52,161 @@
         bottom: -50px;
         right: -50px;
     }
+
+    /* ========== Alert Toast Styles - Góc phải trên cùng ========== */
+    .cococord-alert-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 420px;
+        width: calc(100vw - 2rem);
+        pointer-events: none;
+    }
+
+    .cococord-alert {
+        pointer-events: auto;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        background: rgba(30, 33, 36, 0.98);
+        color: #f8fafc;
+        animation: slideIn 0.3s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .cococord-alert.removing {
+        animation: slideOut 0.3s ease-in forwards;
+    }
+
+    @keyframes slideOut {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+    }
+
+    .cococord-alert__row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.875rem;
+    }
+
+    .cococord-alert__icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        margin-top: 2px;
+    }
+
+    .cococord-alert__icon svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .cococord-alert__content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cococord-alert__title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+    }
+
+    .cococord-alert__message {
+        font-size: 0.875rem;
+        line-height: 1.4;
+        color: rgba(248, 250, 252, 0.85);
+        word-break: break-word;
+    }
+
+    .cococord-alert__close {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        cursor: pointer;
+        color: rgba(248, 250, 252, 0.7);
+        transition: all 0.2s;
+    }
+
+    .cococord-alert__close:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+
+    .cococord-alert__close svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .cococord-alert__progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        animation: progress 5s linear forwards;
+    }
+
+    @keyframes progress {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+
+    /* Alert Types */
+    .cococord-alert--success {
+        border-left: 4px solid #22c55e;
+    }
+    .cococord-alert--success .cococord-alert__icon { color: #22c55e; }
+    .cococord-alert--success .cococord-alert__progress { background: #22c55e; }
+
+    .cococord-alert--danger {
+        border-left: 4px solid #ef4444;
+    }
+    .cococord-alert--danger .cococord-alert__icon { color: #ef4444; }
+    .cococord-alert--danger .cococord-alert__progress { background: #ef4444; }
+
+    .cococord-alert--warning {
+        border-left: 4px solid #f59e0b;
+    }
+    .cococord-alert--warning .cococord-alert__icon { color: #f59e0b; }
+    .cococord-alert--warning .cococord-alert__progress { background: #f59e0b; }
+
+    .cococord-alert--info {
+        border-left: 4px solid #3b82f6;
+    }
+    .cococord-alert--info .cococord-alert__icon { color: #3b82f6; }
+    .cococord-alert--info .cococord-alert__progress { background: #3b82f6; }
 </style>
+
+<!-- Alert Container - Góc phải trên cùng -->
+<div id="alert-container" class="cococord-alert-container"></div>
 
 <div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative">
     <!-- Background blobs -->
@@ -156,7 +310,7 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Mật khẩu phải có ít nhất 8 ký tự</p>
+                    <p class="text-xs text-gray-500 mt-1">Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt</p>
                 </div>
 
                 <!-- Confirm Password Field -->
@@ -328,12 +482,32 @@
                     window.location.href = '${pageContext.request.contextPath}/login';
                 }, 1500);
             } else {
-                let errorMessage = data?.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
-                if (data?.errors) {
-                    const errorList = Object.values(data.errors).join('<br>');
-                    errorMessage = errorList || errorMessage;
+                // Debug: Log response data
+                console.log("Register error response:", { status: response.status, data });
+                
+                // Xác định loại thông báo dựa trên HTTP status và nội dung lỗi
+                let alertType = 'danger';
+                
+                // Đảm bảo errorMessage luôn là string hợp lệ (không phải boolean/null/undefined)
+                let errorMessage = (typeof data?.message === 'string' && data.message.trim()) 
+                    ? data.message 
+                    : 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
+                
+                // HTTP 400 = Validation errors hoặc vi phạm ràng buộc uniqueness
+                if (response.status === 400) {
+                    if (data?.errors && typeof data.errors === 'object') {
+                        const errorValues = Object.values(data.errors).filter(v => typeof v === 'string');
+                        if (errorValues.length > 0) {
+                            errorMessage = errorValues.join('<br>');
+                        }
+                    }
+                    // Kiểm tra ràng buộc: username/email đã tồn tại
+                    if (errorMessage.includes('tồn tại') || errorMessage.includes('exists') || errorMessage.includes('đã được đăng ký')) {
+                        alertType = 'warning';
+                    }
                 }
-                showAlert(errorMessage, 'danger');
+                
+                showAlert(errorMessage, alertType);
                 setButtonLoading(btn, false, '', originalText);
             }
         } catch (error) {
@@ -348,27 +522,73 @@
     });
 
     function showAlert(message, type) {
-        // Create alert container if not exists
-        let alertContainer = document.getElementById('alert-container');
-        if (!alertContainer) {
-            alertContainer = document.createElement('div');
-            alertContainer.id = 'alert-container';
-            alertContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
-            document.body.appendChild(alertContainer);
+        // Debug: Log showAlert params
+        console.log("showAlert called with:", { message, type });
+        
+        // Validate parameters - convert non-string to fallback
+        if (typeof message !== 'string' || !message.trim()) {
+            console.warn("Invalid message param:", message);
+            message = "Có lỗi xảy ra";
+        }
+        if (typeof type !== 'string' || !['success', 'danger', 'warning', 'info'].includes(type)) {
+            console.warn("Invalid type param:", type);
+            type = 'danger';
         }
         
-        const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
-        const alert = document.createElement('div');
-        alert.className = `${bgColor} border px-4 py-3 rounded-lg shadow-lg max-w-sm animate-fade-in-up`;
-        alert.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span>${message}</span>
-                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-lg font-bold cursor-pointer">&times;</button>
+        // Icon SVGs for different alert types
+        const icons = {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+            danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+        };
+
+        const titles = {
+            success: 'Thành công',
+            danger: 'Lỗi',
+            warning: 'Cảnh báo',
+            info: 'Thông báo'
+        };
+
+        // Sử dụng container có sẵn trong HTML
+        const alertContainer = document.getElementById('alert-container');
+        if (!alertContainer) {
+            console.error('Alert container not found!');
+            return;
+        }
+        
+        const variantClass = `cococord-alert--${type}`;
+        const alertEl = document.createElement('div');
+        alertEl.className = `cococord-alert ${variantClass}`;
+        alertEl.setAttribute('role', 'alert');
+        alertEl.innerHTML = `
+            <div class="cococord-alert__row">
+                <div class="cococord-alert__icon">${icons[type] || icons.info}</div>
+                <div class="cococord-alert__content">
+                    <div class="cococord-alert__title">${titles[type] || 'Thông báo'}</div>
+                    <div class="cococord-alert__message">${message}</div>
+                </div>
+                <button type="button" class="cococord-alert__close" aria-label="Đóng">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
+            <div class="cococord-alert__progress"></div>
         `;
-        alertContainer.appendChild(alert);
+
+        const closeBtn = alertEl.querySelector('.cococord-alert__close');
+        closeBtn.addEventListener('click', () => removeAlert(alertEl));
+        
+        alertContainer.appendChild(alertEl);
         
         // Auto remove after 5 seconds
-        setTimeout(() => alert.remove(), 5000);
+        setTimeout(() => removeAlert(alertEl), 5000);
+    }
+
+    function removeAlert(alert) {
+        if (!alert || !alert.parentNode) return;
+        alert.classList.add('removing');
+        setTimeout(() => alert.remove(), 300);
     }
 </script>

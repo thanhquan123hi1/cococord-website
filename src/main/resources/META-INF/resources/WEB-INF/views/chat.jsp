@@ -5,8 +5,8 @@
 --%>
 <head>
     <title>Trò chuyện - CoCoCord</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css" data-cococord-page-style="1">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat.css" data-cococord-page-style="1">
 </head>
 
 <div class="chat-page-container" id="chatApp">

@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <head>
     <title>Bạn bè - CoCoCord</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css" data-cococord-page-style="1">
 </head>
 
 <div class="discord-app" id="friendsApp">

@@ -607,24 +607,53 @@ async function syncHeadStylesFromDoc(doc) {
     const head = doc?.head;
     if (!head) return;
 
-    const existingStyles = new Set(
-        Array.from(document.head.querySelectorAll('link[rel="stylesheet"][href]')).map(l => {
-            try { return new URL(l.getAttribute('href'), window.location.origin).toString(); } catch { return l.getAttribute('href'); }
-        })
+    const normalizeHref = (href) => {
+        if (!href) return '';
+        try { return new URL(href, window.location.origin).toString(); } catch { return href; }
+    };
+
+    // Styles required by the target page (as returned by the server)
+    const targetStyles = new Set(
+        Array.from(head.querySelectorAll('link[rel="stylesheet"][href]'))
+            .map(l => normalizeHref(l.getAttribute('href')))
+            .filter(Boolean)
     );
 
+    // Styles currently present in the document
+    const existingStyles = new Set(
+        Array.from(document.head.querySelectorAll('link[rel="stylesheet"][href]'))
+            .map(l => normalizeHref(l.getAttribute('href')))
+            .filter(Boolean)
+    );
+
+    // Add missing styles from target page. Mark injected ones so we can clean them up later.
     head.querySelectorAll('link[rel="stylesheet"][href]').forEach(link => {
         const href = link.getAttribute('href');
         if (!href) return;
-        let absHref = href;
-        try { absHref = new URL(href, window.location.origin).toString(); } catch { /* ignore */ }
+        const absHref = normalizeHref(href);
+        if (!absHref || existingStyles.has(absHref)) return;
 
-        if (existingStyles.has(absHref)) return;
         const el = document.createElement('link');
+        // Copy attributes (e.g., integrity/crossorigin/media, or custom markers)
+        for (const { name, value } of Array.from(link.attributes)) {
+            try { el.setAttribute(name, value); } catch { /* ignore */ }
+        }
         el.rel = 'stylesheet';
         el.href = href;
+        el.setAttribute('data-cococord-spa', '1');
         document.head.appendChild(el);
         existingStyles.add(absHref);
+    });
+
+    // Remove page-specific styles from previous views that are no longer needed.
+    // We only remove styles that are explicitly marked as page-scoped or SPA-injected.
+    const removable = document.head.querySelectorAll('link[rel="stylesheet"][href][data-cococord-spa], link[rel="stylesheet"][href][data-cococord-page-style]');
+    removable.forEach(link => {
+        const absHref = normalizeHref(link.getAttribute('href'));
+        if (!absHref) return;
+        if (!targetStyles.has(absHref)) {
+            link.remove();
+        }
     });
 }
 

@@ -6,6 +6,9 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -69,7 +72,51 @@ public class GlobalExceptionHandler {
         log.error("Bad credentials: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(MessageResponse.error("Tên đăng nhập hoặc mật khẩu không chính xác"));
+                .body(MessageResponse.error("Tên đăng nhập hoặc mật khẩu không đúng"));
+    }
+
+    /**
+     * Handle disabled account (isActive = false)
+     */
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<MessageResponse> handleDisabledException(DisabledException ex) {
+        log.error("Account disabled: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(MessageResponse.error("Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ hỗ trợ."));
+    }
+
+    /**
+     * Handle locked account (isBanned = true)
+     */
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<MessageResponse> handleLockedException(LockedException ex) {
+        log.error("Account locked: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(MessageResponse.error("Tài khoản đã bị cấm. Vui lòng liên hệ hỗ trợ."));
+    }
+
+    /**
+     * Handle user not found
+     */
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<MessageResponse> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+        log.error("User not found: {}", ex.getMessage());
+        String message = ex.getMessage();
+        if (message != null && message.contains("deactivated")) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(MessageResponse.error("Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ hỗ trợ."));
+        }
+        if (message != null && message.contains("banned")) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(MessageResponse.error("Tài khoản đã bị cấm. Vui lòng liên hệ hỗ trợ."));
+        }
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(MessageResponse.error("Tên đăng nhập hoặc mật khẩu không đúng"));
     }
 
     /**
@@ -91,6 +138,6 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponse.error("An unexpected error occurred. Please try again later."));
+                .body(MessageResponse.error("Có lỗi xảy ra. Vui lòng thử lại sau."));
     }
 }

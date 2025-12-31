@@ -15,22 +15,22 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RegisterRequest {
 
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores")
+    @NotBlank(message = "Vui lòng nhập tên đăng nhập")
+    @Size(min = 3, max = 50, message = "Tên đăng nhập phải từ 3 đến 50 ký tự")
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Tên đăng nhập không hợp lệ (chỉ gồm chữ, số và dấu gạch dưới _)")
     private String username;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be valid")
-    @Size(max = 150, message = "Email must not exceed 150 characters")
+    @NotBlank(message = "Vui lòng nhập email")
+    @Email(message = "Email không hợp lệ")
+    @Size(max = 150, message = "Email không được vượt quá 150 ký tự")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")
+    @NotBlank(message = "Vui lòng nhập mật khẩu")
+    @Size(min = 8, max = 100, message = "Mật khẩu phải từ 8 đến 100 ký tự")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "Mật khẩu không hợp lệ (cần có chữ hoa, chữ thường, số và ký tự đặc biệt)")
     private String password;
 
-    @NotBlank(message = "Display name is required")
-    @Size(min = 1, max = 50, message = "Display name must be between 1 and 50 characters")
+    @NotBlank(message = "Vui lòng nhập tên hiển thị")
+    @Size(min = 1, max = 50, message = "Tên hiển thị phải từ 1 đến 50 ký tự")
     private String displayName;
 }

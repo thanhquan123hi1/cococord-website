@@ -89,7 +89,7 @@ class NotificationManager {
         try {
             const response = await fetch('/api/notifications/count', {
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
                 }
             });
             const data = await response.json();
@@ -103,7 +103,7 @@ class NotificationManager {
         try {
             const response = await fetch(`/api/notifications?page=${page}&size=${size}`, {
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
                 }
             });
             const data = await response.json();
@@ -312,7 +312,7 @@ class NotificationManager {
             await fetch(`/api/notifications/${id}/read`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
                 }
             });
             
@@ -334,7 +334,7 @@ class NotificationManager {
             await fetch('/api/notifications/read-all', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
                 }
             });
             
