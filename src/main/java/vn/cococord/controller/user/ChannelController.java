@@ -29,6 +29,7 @@ import vn.cococord.service.IChannelService;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("null")
 public class ChannelController {
 
     private final IChannelService channelService;

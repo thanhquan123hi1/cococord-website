@@ -13,7 +13,7 @@
         </div>
 
         <nav class="nav-menu" aria-label="Menu">
-            <a class="nav-item" href="${pageContext.request.contextPath}/friends"><i class="bi bi-people-fill"></i> Bạn bè</a>
+            <a class="nav-item" href="${pageContext.request.contextPath}/app"><i class="bi bi-people-fill"></i> Bạn bè</a>
         </nav>
 
         <div class="section-header">TIN NHẮN TRỰC TIẾP <button class="section-add" type="button" title="Tạo DM"><i class="bi bi-plus"></i></button></div>

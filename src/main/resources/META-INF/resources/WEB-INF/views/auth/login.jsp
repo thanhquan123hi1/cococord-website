@@ -397,11 +397,28 @@
     }
   }
 
-  // Handle login form submission
-  document
-    .getElementById("login-form")
-    .addEventListener("submit", async function (e) {
+  // Flag to prevent double submission
+  let isSubmitting = false;
+
+  // Handle login form submission - ONLY ONCE
+  const loginForm = document.getElementById("login-form");
+  if (loginForm && !loginForm.dataset.listenerAttached) {
+    loginForm.dataset.listenerAttached = "true";
+    console.log("🔵 Attaching login form listener...");
+    
+    loginForm.addEventListener("submit", async function (e) {
       e.preventDefault();
+
+      console.log("Form submitted! isSubmitting flag:", isSubmitting);
+
+      // Prevent double submission
+      if (isSubmitting) {
+        console.log("❌ Already submitting, ignoring duplicate request");
+        return;
+      }
+      
+      console.log("✅ Processing submit...");
+      isSubmitting = true;
 
       const btn = document.getElementById("login-btn");
       const originalText = btn.innerHTML;
@@ -416,7 +433,6 @@
 
       const rememberMe = !!document.getElementById("rememberMe")?.checked;
 
-      try {
         const { response, json: data } = await fetchJsonWithTimeout(
           "${pageContext.request.contextPath}/api/auth/login",
           {
@@ -448,68 +464,33 @@
           } else {
             document.cookie = cookieBase;
           }
-          showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
+          showAlert("Đăng nhập thành công", "success");
 
           setTimeout(() => {
             window.location.href = "${pageContext.request.contextPath}/app";
           }, 1000);
         } else {
-          // Debug: Log response data
-          console.log("Login error response:", { status: response.status, data });
-          
-          // Xác định loại thông báo dựa trên HTTP status
-          let alertType = "danger";
-          
-          // Đảm bảo errorMessage luôn là string hợp lệ (không phải boolean/null/undefined)
-          let errorMessage = (typeof data?.message === 'string' && data.message.trim()) 
-            ? data.message 
-            : "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
-          
-          // HTTP 403 = Tài khoản bị khóa/vô hiệu hóa (ràng buộc: isActive=false hoặc isBanned=true)
-          if (response.status === 403) {
-            alertType = "warning";
-          }
-          // HTTP 401 = Sai thông tin đăng nhập (ràng buộc: Password không đúng)
-          else if (response.status === 401) {
-            alertType = "danger";
-          }
-          // HTTP 400 = Validation errors (ràng buộc: dữ liệu không hợp lệ)
-          else if (response.status === 400) {
-            if (data?.errors && typeof data.errors === 'object') {
-              const errorValues = Object.values(data.errors).filter(v => typeof v === 'string');
-              if (errorValues.length > 0) {
-                errorMessage = errorValues.join("<br>");
-              }
-            }
-          }
-          
-          showAlert(errorMessage, alertType);
+          showAlert("Đăng nhập thất bại", "danger");
           setButtonLoading(btn, false, "", originalText);
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        if (error?.name === "AbortError") {
-          showAlert("Yêu cầu đăng nhập quá lâu. Vui lòng thử lại.", "danger");
-        } else {
-          showAlert("Có lỗi xảy ra. Vui lòng thử lại sau.", "danger");
-        }
-        setButtonLoading(btn, false, "", originalText);
-      }
-    });
+          isSubmitting = false;
+        } 
+      });
+  } else {
+    console.log("⚠️ Form already has listener or not found!");
+  }
 
   function showAlert(message, type) {
-    // Debug: Log showAlert params
-    console.log("showAlert called with:", { message, type });
+    // DEBUG: In ra console để kiểm tra
+    console.log("=== showAlert DEBUG ===");
+    console.log("Raw message:", message, "Type:", typeof message);
+    console.log("Raw type:", type, "Type:", typeof type);
     
-    // Validate parameters - convert non-string to fallback
-    if (typeof message !== 'string' || !message.trim()) {
-      console.warn("Invalid message param:", message);
-      message = "Có lỗi xảy ra";
-    }
-    if (typeof type !== 'string' || !['success', 'danger', 'warning', 'info'].includes(type)) {
-      console.warn("Invalid type param:", type);
-      type = 'danger';
-    }
+    // Force convert to string
+    message = String(message || "Có lỗi xảy ra");
+    type = String(type || "danger");
+    
+    console.log("After convert - message:", message, "type:", type);
+    console.log("======================");
     
     // Icon SVGs for different alert types
     const icons = {
@@ -532,6 +513,11 @@
       console.error('Alert container not found!');
       return;
     }
+
+    // XÓA TẤT CẢ alert cũ trước khi thêm mới
+    alertContainer.innerHTML = '';
+    
+    console.log("Container cleared. Adding new alert with message:", message);
 
     const variantClass = `cococord-alert--${type}`;
     const alertEl = document.createElement("div");

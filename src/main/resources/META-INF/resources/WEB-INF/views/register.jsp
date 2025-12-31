@@ -489,14 +489,16 @@
                 let alertType = 'danger';
                 
                 // Đảm bảo errorMessage luôn là string hợp lệ (không phải boolean/null/undefined)
-                let errorMessage = (typeof data?.message === 'string' && data.message.trim()) 
-                    ? data.message 
-                    : 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
+                let errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
+                
+                if (data?.message && typeof data.message === 'string' && data.message.trim()) {
+                    errorMessage = data.message;
+                }
                 
                 // HTTP 400 = Validation errors hoặc vi phạm ràng buộc uniqueness
                 if (response.status === 400) {
                     if (data?.errors && typeof data.errors === 'object') {
-                        const errorValues = Object.values(data.errors).filter(v => typeof v === 'string');
+                        const errorValues = Object.values(data.errors).filter(v => typeof v === 'string' && v.trim());
                         if (errorValues.length > 0) {
                             errorMessage = errorValues.join('<br>');
                         }
@@ -505,6 +507,11 @@
                     if (errorMessage.includes('tồn tại') || errorMessage.includes('exists') || errorMessage.includes('đã được đăng ký')) {
                         alertType = 'warning';
                     }
+                }
+                
+                // Kiểm tra cuối cùng trước khi hiển thị
+                if (!errorMessage || typeof errorMessage !== 'string' || !errorMessage.trim()) {
+                    errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
                 }
                 
                 showAlert(errorMessage, alertType);

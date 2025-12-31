@@ -53,11 +53,6 @@ public class ViewController {
         return "chat";
     }
 
-    @GetMapping("/friends")
-    public String friends() {
-        return "friends";
-    }
-
     @GetMapping("/messages")
     public String messages() {
         return "messages";

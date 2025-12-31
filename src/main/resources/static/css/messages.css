@@ -46,7 +46,7 @@ html, body {
 /* Discord App Layout */
 .discord-app {
     display: grid;
-    grid-template-columns: 72px 240px 1fr;
+    grid-template-columns: 240px 1fr;
     height: 100vh;
     overflow: hidden;
 }
@@ -1804,7 +1804,6 @@ html, body {
         grid-template-columns: 1fr;
     }
     
-    .server-bar,
     .dm-sidebar {
         display: none;
     }

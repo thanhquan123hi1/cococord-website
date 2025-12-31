@@ -1,12 +1,16 @@
 package vn.cococord.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.response.NotificationResponse;
 import vn.cococord.entity.mysql.Notification;
 import vn.cococord.entity.mysql.Notification.NotificationType;
@@ -16,13 +20,11 @@ import vn.cococord.repository.INotificationRepository;
 import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.INotificationService;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@SuppressWarnings("null")
 public class NotificationServiceImpl implements INotificationService {
 
     private final INotificationRepository notificationRepository;
@@ -41,7 +43,6 @@ public class NotificationServiceImpl implements INotificationService {
                 .isRead(false)
                 .build();
 
-        @SuppressWarnings("null")
         Notification saved = notificationRepository.save(notification);
         notification = saved;
         NotificationResponse response = mapToResponse(notification);
@@ -198,12 +199,10 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     public boolean deleteNotification(Long notificationId, String username) {
         User user = getUserByUsername(username);
-        @SuppressWarnings("null")
         Long id = notificationId;
         return notificationRepository.findById(id)
                 .filter(n -> n.getUser().getId().equals(user.getId()))
                 .map(n -> {
-                    @SuppressWarnings("null")
                     Notification toDelete = n;
                     notificationRepository.delete(toDelete);
                     sendNotificationCountUpdate(user.getId());
@@ -241,7 +240,6 @@ public class NotificationServiceImpl implements INotificationService {
 
     private void sendRealTimeNotification(Long userId, NotificationResponse notification) {
         try {
-            @SuppressWarnings("null")
             NotificationResponse notif = notification;
             messagingTemplate.convertAndSend("/topic/user." + userId + ".notifications", notif);
             log.debug("Sent real-time notification to user {}", userId);

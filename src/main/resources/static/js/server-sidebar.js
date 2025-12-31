@@ -145,7 +145,7 @@
         });
 
         // Set active based on current page
-        if (currentPath === '/friends' || currentPath === '/messages') {
+        if (currentPath === '/messages') {
             const homeBtn = el.serverList.querySelector('.home-btn');
             if (homeBtn) homeBtn.classList.add('active');
         } else if (serverId) {

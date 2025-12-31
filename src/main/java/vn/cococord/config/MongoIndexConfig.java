@@ -1,14 +1,15 @@
 package vn.cococord.config;
 
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.data.mongodb.core.index.TextIndexDefinition;
+
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.cococord.entity.mongodb.Message;
 
 /**
@@ -18,6 +19,7 @@ import vn.cococord.entity.mongodb.Message;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings({"null", "removal"})
 public class MongoIndexConfig {
 
     private final MongoTemplate mongoTemplate;

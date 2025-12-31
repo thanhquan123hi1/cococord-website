@@ -126,7 +126,7 @@
                     <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
                         <i class="bi bi-person"></i> Hồ sơ của tôi
                     </a>
-                    <a href="${pageContext.request.contextPath}/settings" class="dropdown-item">
+                    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
                         <i class="bi bi-gear"></i> Cài đặt
                     </a>
                     <div class="dropdown-divider"></div>
@@ -196,6 +196,17 @@
 
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Prevent scroll restoration jump -->
+    <script>
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        // Prevent any initial scroll
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    </script>
     
     <!-- SockJS & STOMP for WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>

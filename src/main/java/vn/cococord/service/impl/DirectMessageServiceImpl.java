@@ -29,6 +29,7 @@ import vn.cococord.service.INotificationService;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("null")
 public class DirectMessageServiceImpl implements IDirectMessageService {
 
     private static final int MAX_GROUP_DM_MEMBERS = 10;
@@ -51,10 +52,8 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         return dmGroupRepository.findOneToOneDM(userId1, userId2)
                 .orElseGet(() -> {
                     // Create new 1-1 DM
-                    @SuppressWarnings("null")
                     User user1 = userRepository.findById(userId1)
                             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId1));
-                    @SuppressWarnings("null")
                     User user2 = userRepository.findById(userId2)
                             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId2));
 
@@ -63,7 +62,6 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
                             .isGroup(false)
                             .build();
 
-                    @SuppressWarnings("null")
                     DirectMessageGroup savedGroup = dmGroupRepository.save(dmGroup);
                     dmGroup = savedGroup;
 
