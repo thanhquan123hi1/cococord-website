@@ -171,7 +171,6 @@
         left: 0;
         height: 3px;
         width: 100%;
-        animation: progress 5s linear forwards;
     }
 
     @keyframes progress {
@@ -491,27 +490,35 @@
                 // Đảm bảo errorMessage luôn là string hợp lệ (không phải boolean/null/undefined)
                 let errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
                 
-                if (data?.message && typeof data.message === 'string' && data.message.trim()) {
-                    errorMessage = data.message;
-                }
-                
-                // HTTP 400 = Validation errors hoặc vi phạm ràng buộc uniqueness
-                if (response.status === 400) {
-                    if (data?.errors && typeof data.errors === 'object') {
-                        const errorValues = Object.values(data.errors).filter(v => typeof v === 'string' && v.trim());
+                if (data && typeof data === 'object') {
+                    // Ưu tiên lấy data.message
+                    if (data.message && typeof data.message === 'string' && data.message.trim()) {
+                        errorMessage = data.message.trim();
+                    }
+                    // HTTP 400 = Validation errors hoặc vi phạm ràng buộc uniqueness
+                    else if (response.status === 400 && data.errors && typeof data.errors === 'object') {
+                        const errorValues = Object.values(data.errors)
+                            .filter(v => typeof v === 'string' && v.trim())
+                            .map(v => v.trim());
                         if (errorValues.length > 0) {
                             errorMessage = errorValues.join('<br>');
                         }
                     }
-                    // Kiểm tra ràng buộc: username/email đã tồn tại
-                    if (errorMessage.includes('tồn tại') || errorMessage.includes('exists') || errorMessage.includes('đã được đăng ký')) {
-                        alertType = 'warning';
-                    }
                 }
                 
-                // Kiểm tra cuối cùng trước khi hiển thị
-                if (!errorMessage || typeof errorMessage !== 'string' || !errorMessage.trim()) {
+                // Validation cuối cùng: đảm bảo không phải boolean/empty/"false"/"true"
+                if (typeof errorMessage !== 'string' || 
+                    !errorMessage.trim() || 
+                    errorMessage === 'false' || 
+                    errorMessage === 'true' ||
+                    errorMessage === 'null' ||
+                    errorMessage === 'undefined') {
                     errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
+                }
+                
+                // Kiểm tra ràng buộc: username/email đã tồn tại
+                if (errorMessage.includes('tồn tại') || errorMessage.includes('exists') || errorMessage.includes('đã được đăng ký')) {
+                    alertType = 'warning';
                 }
                 
                 showAlert(errorMessage, alertType);
@@ -568,12 +575,15 @@
         const alertEl = document.createElement('div');
         alertEl.className = `cococord-alert ${variantClass}`;
         alertEl.setAttribute('role', 'alert');
+        
+        const titleText = titles[type] || 'Thông báo';
+        const messageText = message;
+        
         alertEl.innerHTML = `
             <div class="cococord-alert__row">
-                <div class="cococord-alert__icon">${icons[type] || icons.info}</div>
                 <div class="cococord-alert__content">
-                    <div class="cococord-alert__title">${titles[type] || 'Thông báo'}</div>
-                    <div class="cococord-alert__message">${message}</div>
+                    <div class="cococord-alert__title">` + titleText + `</div>
+                    <div class="cococord-alert__message">` + messageText + `</div>
                 </div>
                 <button type="button" class="cococord-alert__close" aria-label="Đóng">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -588,8 +598,7 @@
         closeBtn.addEventListener('click', () => removeAlert(alertEl));
         
         alertContainer.appendChild(alertEl);
-        
-        // Auto remove after 5 seconds
+
         setTimeout(() => removeAlert(alertEl), 5000);
     }
 

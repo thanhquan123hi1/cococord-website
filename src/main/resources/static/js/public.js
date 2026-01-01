@@ -4,34 +4,7 @@
  */
 
 // Utility function to show alerts
-function showAlert(message, type = 'info') {
-    const alertContainer = document.getElementById('alert-container');
-    if (!alertContainer) {
-        console.warn('Alert container not found');
-        return;
-    }
-    
-    const alertId = 'alert-' + Date.now();
-    const alert = document.createElement('div');
-    alert.id = alertId;
-    alert.className = `alert alert-${type} alert-dismissible fade show`;
-    alert.setAttribute('role', 'alert');
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-    
-    alertContainer.appendChild(alert);
-    
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        const alertElement = document.getElementById(alertId);
-        if (alertElement) {
-            const bsAlert = new bootstrap.Alert(alertElement);
-            bsAlert.close();
-        }
-    }, 5000);
-}
+
 
 // Smooth scroll for anchor links
 document.addEventListener('DOMContentLoaded', function() {
@@ -171,7 +144,6 @@ async function apiRequest(url, options = {}) {
 
 // Export functions for use in other scripts
 window.CoCoCordUtils = {
-    showAlert,
     validateEmail,
     validateUsername,
     validatePassword,

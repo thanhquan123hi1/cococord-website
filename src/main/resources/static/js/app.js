@@ -3,6 +3,72 @@
  * Hỗ trợ cho các trang authenticated (Dashboard, Chat, Friends, etc.)
  */
 
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Fetch channels của server và navigate đến channel phù hợp
+ * Sử dụng function từ ServerSidebar nếu có, nếu không thì fallback
+ */
+async function navigateToServerWithChannel(serverId) {
+    // Sử dụng function từ ServerSidebar nếu đã load
+    if (window.ServerSidebar && window.ServerSidebar.navigateToServerWithChannel) {
+        return window.ServerSidebar.navigateToServerWithChannel(serverId);
+    }
+    
+    // Fallback nếu ServerSidebar chưa load
+    try {
+        console.log('[App -> Server] Fetching channels for server:', serverId);
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch(`/api/servers/${serverId}/channels`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            console.warn('[App -> Server] Failed to fetch channels, navigating without channelId');
+            window.location.href = `/chat?serverId=${serverId}`;
+            return;
+        }
+        
+        const channels = await response.json();
+        
+        if (!channels || channels.length === 0) {
+            console.warn('[App -> Server] No channels found, navigating without channelId');
+            window.location.href = `/chat?serverId=${serverId}`;
+            return;
+        }
+        
+        // Tìm general channel
+        let targetChannel = channels.find(ch => 
+            ch.name && ch.name.toLowerCase() === 'general'
+        );
+        
+        // Nếu không có general, tìm TEXT channel đầu tiên
+        if (!targetChannel) {
+            targetChannel = channels.find(ch => 
+                ch.type && ch.type.toUpperCase() === 'TEXT'
+            );
+        }
+        
+        // Nếu vẫn không có, lấy channel đầu tiên
+        if (!targetChannel) {
+            targetChannel = channels[0];
+        }
+        
+        console.log('[App -> Server] Navigating to channel:', targetChannel);
+        window.location.href = `/chat?serverId=${serverId}&channelId=${targetChannel.id}`;
+    } catch (err) {
+        console.error('[App -> Server] Failed to fetch channels:', err);
+        // Fallback: navigate chỉ với serverId
+        window.location.href = `/chat?serverId=${serverId}`;
+    }
+}
+
+// ==================== AUTHENTICATION ====================
+
 // Check authentication on app pages
 (function checkAuth() {
     const accessToken = localStorage.getItem('accessToken');
@@ -280,19 +346,9 @@ function bindGlobalUserPanelEvents() {
     if (settingsBtn) {
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Ngăn event bubble
-            // Prefer the integrated settings modal in UserPanel (user-panel.js)
-            if (window.UserPanel && typeof window.UserPanel.showSettingsModal === 'function') {
+            // Try to use UserSettingsModal if available (from chat.js or user-settings-modal.js)
+            if (window.UserSettingsModal && window.UserSettingsModal.open) {
                 // Close dropdown before opening modal
-                if (userDropdown) {
-                    userDropdown.style.display = 'none';
-                }
-                window.UserPanel.showSettingsModal();
-            } else if (window.UserSettingsModal && typeof window.UserSettingsModal.show === 'function') {
-                if (userDropdown) {
-                    userDropdown.style.display = 'none';
-                }
-                window.UserSettingsModal.show();
-            } else if (window.UserSettingsModal && typeof window.UserSettingsModal.open === 'function') {
                 if (userDropdown) {
                     userDropdown.style.display = 'none';
                 }
@@ -495,7 +551,7 @@ async function handleCreateServer(e) {
         
         // Refresh server list and navigate to new server
         await loadGlobalServers();
-        window.location.href = `/chat?serverId=${newServer.id}`;
+        await navigateToServerWithChannel(newServer.id);
     } catch (error) {
         console.error('Error creating server:', error);
         alert('Lỗi khi tạo server: ' + error.message);
@@ -535,7 +591,7 @@ async function handleJoinServer(e) {
         
         // Refresh and navigate
         await loadGlobalServers();
-        window.location.href = `/chat?serverId=${server.id}`;
+        await navigateToServerWithChannel(server.id);
     } catch (error) {
         console.error('Error joining server:', error);
         alert('Lỗi: ' + error.message);

@@ -8,10 +8,10 @@
 
     // ==================== DOM ELEMENTS ====================
     const el = {
-        serverList: document.getElementById('serverList'),
+        serverList: document.getElementById('serverList') || document.getElementById('globalServerList'),
         serverTooltip: document.getElementById('serverTooltip'),
-        addServerBtn: document.getElementById('addServerBtn'),
-        discoverBtn: document.getElementById('discoverBtn'),
+        addServerBtn: document.getElementById('addServerBtn') || document.getElementById('globalAddServerBtn'),
+        discoverBtn: document.getElementById('discoverBtn') || document.getElementById('globalDiscoverBtn'),
         createServerModal: document.getElementById('createServerModal'),
         serverContextMenu: document.getElementById('serverContextMenu')
     };
@@ -31,68 +31,118 @@
                 'Content-Type': 'application/json'
             }
         });
-        if (!res.ok) {
-            throw new Error(`Request failed: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         return res.json();
     }
 
-    async function apiPost(url, body = {}) {
-        const accessToken = localStorage.getItem('accessToken');
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-            const error = await res.json().catch(() => ({}));
-            throw new Error(error.message || `Request failed: ${res.status}`);
+    /**
+     * Fetch channels của server và navigate đến channel phù hợp
+     * Ưu tiên: general channel → TEXT channel đầu tiên → channel đầu tiên
+     * @param {number|string} serverId - ID của server
+     */
+    async function navigateToServerWithChannel(serverId) {
+        try {
+            console.log(`[Server Navigation] Fetching channels for server ${serverId}...`);
+            const channels = await apiGet(`/api/servers/${serverId}/channels`);
+            console.log(`[Server Navigation] Found ${channels.length} channels:`, channels);
+            
+            if (!channels || channels.length === 0) {
+                console.warn('[Server Navigation] No channels found, navigating without channelId');
+                window.location.href = `/chat?serverId=${serverId}`;
+                return;
+            }
+            
+            // Tìm general channel
+            let targetChannel = channels.find(ch => 
+                ch.name && ch.name.toLowerCase() === 'general'
+            );
+            
+            // Nếu không có general, tìm TEXT channel đầu tiên
+            if (!targetChannel) {
+                targetChannel = channels.find(ch => 
+                    ch.type && ch.type.toUpperCase() === 'TEXT'
+                );
+            }
+            
+            // Nếu vẫn không có, lấy channel đầu tiên
+            if (!targetChannel) {
+                targetChannel = channels[0];
+            }
+            
+            console.log('[Server Navigation] Navigating to channel:', targetChannel);
+            window.location.href = `/chat?serverId=${serverId}&channelId=${targetChannel.id}`;
+        } catch (error) {
+            console.error('[Server Navigation] Failed to fetch channels:', error);
+            // Fallback: navigate chỉ với serverId
+            window.location.href = `/chat?serverId=${serverId}`;
         }
-        return res.json();
     }
 
-    // ==================== SERVER LIST ====================
+    // ==================== LOAD SERVERS ====================
+    function onServerCreatedSuccess(newServerId) {
+        closeModal(); 
+        
+        if (window.ServerSidebar && window.ServerSidebar.loadServers) {
+            window.ServerSidebar.loadServers();
+        }
+        
+        sessionStorage.setItem('cococord_pending_reload_server', newServerId);
+        window.location.href = `/chat?serverId=${newServerId}`;
+    }
+
     async function loadServers() {
         try {
-            servers = await apiGet('/api/servers');
-            renderServerList();
+            servers = await apiGet('/api/servers'); // Sửa endpoint đúng
+            
+            console.log('[Server Sidebar] Loaded', servers.length, 'servers from API');
+            
+            // Nếu không có server items trong DOM (JSP empty), render từ API
+            const existingServerItems = document.querySelectorAll('#globalServerList a.server-item[data-server-id]');
+            if (existingServerItems.length === 0 && servers.length > 0) {
+                console.log('[Server Sidebar] No JSP servers found, rendering from API');
+                renderServerList();
+            } else {
+                console.log('[Server Sidebar] Found', existingServerItems.length, 'JSP servers, skipping render');
+            }
         } catch (error) {
             console.error('Failed to load servers:', error);
+            // Không sao, vì JSP đã render sẵn servers rồi
         }
     }
 
+    // ==================== RENDERING ====================
     function renderServerList() {
-        if (!el.serverList) return;
+        if (!el.serverList) {
+            console.warn('[Server Sidebar] serverList element not found');
+            return;
+        }
 
-        // Keep home button and divider
-        const homeBtn = el.serverList.querySelector('.home-btn');
-        const firstDivider = el.serverList.querySelector('.server-divider');
-        
-        // Remove existing server items (not home or divider)
-        const existingServers = el.serverList.querySelectorAll('.server-item:not(.home-btn):not(.add-server-btn):not(.discover-btn)');
+        // CHỈ xóa các server items được tạo dynamically (không có data-server-id từ JSP)
+        const existingServers = el.serverList.querySelectorAll('.server-item:not([data-server-id])');
         existingServers.forEach(item => item.remove());
 
-        // Add servers after the divider
         servers.forEach(server => {
-            const serverItem = createServerItem(server);
-            if (firstDivider) {
-                firstDivider.after(serverItem);
-            } else {
-                el.serverList.appendChild(serverItem);
+            // Kiểm tra xem server này đã được render trong JSP chưa
+            const existingItem = el.serverList.querySelector(`.server-item[data-server-id="${server.id}"]`);
+            if (existingItem) {
+                console.log('[Server Sidebar] Server', server.id, 'already rendered in JSP, skipping');
+                return; // Đã có rồi, skip
             }
+            
+            console.log('[Server Sidebar] Rendering server', server.id, server.name);
+            
+            // Render server mới (được tạo dynamically)
+            const serverItem = createServerItem(server);
+            el.serverList.appendChild(serverItem);
         });
 
-        // Update active state based on current page
         updateActiveServer();
     }
 
     function createServerItem(server) {
         const item = document.createElement('a');
         item.className = 'server-item';
-        item.href = `/chat?serverId=${server.id}`;
+        item.href = `/chat?serverId=${server.id}`; // URL này sẽ được kích hoạt
         item.dataset.serverId = server.id;
         item.dataset.tooltip = server.name;
         item.title = server.name;
@@ -116,17 +166,18 @@
             item.appendChild(initial);
         }
 
-        // Add event listeners
         item.addEventListener('mouseenter', (e) => showTooltip(e, server.name));
         item.addEventListener('mouseleave', hideTooltip);
         item.addEventListener('contextmenu', (e) => showContextMenu(e, server));
+
+        // Click handler được xử lý bởi event delegation trong attachFirstVisitHandlers()
+        // Không cần attach listener trực tiếp nữa
 
         return item;
     }
 
     function getServerInitial(name) {
         if (!name) return '?';
-        // Get first letter of each word, max 2 letters
         const words = name.split(/\s+/);
         if (words.length >= 2) {
             return (words[0][0] + words[1][0]).toUpperCase();
@@ -139,12 +190,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         const serverId = urlParams.get('serverId');
 
-        // Remove all active states
         el.serverList.querySelectorAll('.server-item').forEach(item => {
             item.classList.remove('active');
         });
 
-        // Set active based on current page
         if (currentPath === '/messages') {
             const homeBtn = el.serverList.querySelector('.home-btn');
             if (homeBtn) homeBtn.classList.add('active');
@@ -157,9 +206,7 @@
     // ==================== TOOLTIP ====================
     function showTooltip(e, text) {
         if (!el.serverTooltip) return;
-        
         clearTimeout(tooltipTimeout);
-        
         tooltipTimeout = setTimeout(() => {
             const rect = e.target.getBoundingClientRect();
             el.serverTooltip.textContent = text;
@@ -176,7 +223,6 @@
         }
     }
 
-    // Add tooltips to action buttons
     function initActionTooltips() {
         const buttons = [el.addServerBtn, el.discoverBtn];
         buttons.forEach(btn => {
@@ -188,75 +234,134 @@
         });
     }
 
-    // ==================== CONTEXT MENU ====================
+    // ==================== ATTACH HANDLERS TO STATIC ITEMS (JSP rendered) ====================
+    function attachFirstVisitHandlers() {
+        // Sử dụng event delegation thay vì attach trực tiếp
+        const serverListWrapper = document.querySelector('#globalServerList');
+        if (!serverListWrapper) {
+            console.warn('[Server Sidebar] globalServerList not found');
+            return;
+        }
+        
+        // Remove old listener nếu có
+        if (serverListWrapper.dataset.hasGlobalHandler === 'true') {
+            console.log('[Server Sidebar] Global handler already attached, skipping');
+            return;
+        }
+        
+        serverListWrapper.dataset.hasGlobalHandler = 'true';
+        
+        console.log('[Server Sidebar] Attaching global click handler via event delegation');
+        
+        serverListWrapper.addEventListener('click', async (e) => {
+            // Tìm server-item được click (có thể click vào child element)
+            const serverItem = e.target.closest('a.server-item[data-server-id]');
+            
+            if (!serverItem) {
+                console.log('[Global Handler] Click not on server item');
+                return; // Không phải server item
+            }
+            
+            const serverId = serverItem.dataset.serverId;
+            if (!serverId) {
+                console.warn('[Global Handler] No serverId found');
+                return;
+            }
+            
+            console.log('[Global Handler] Click detected on server:', serverId, e.target);
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log(`[Server Click] Clicking server ${serverId}`);
+            
+            // Nếu đang ở cùng server, không reload
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentServerId = urlParams.get('serverId');
+            if (currentServerId === String(serverId)) {
+                console.log('[Server Click] Already on this server, ignoring click');
+                return;
+            }
+            
+            // Fetch channel đầu tiên của server
+            try {
+                await navigateToServerWithChannel(serverId);
+            } catch (error) {
+                console.error('[Server Click] Failed to navigate:', error);
+                window.location.href = `/chat?serverId=${serverId}`;
+            }
+        }, true); // Use capture phase
+        
+        console.log('[Server Sidebar] Global handler attached successfully');
+    }
+
+    // ==================== OTHERS ====================
     function showContextMenu(e, server) {
         e.preventDefault();
-        // Context menu implementation - can be expanded
         console.log('Context menu for server:', server.name);
     }
 
-    // ==================== CREATE SERVER MODAL ====================
     function openCreateServerModal() {
         if (el.createServerModal) {
             el.createServerModal.style.display = 'flex';
         }
     }
 
-    // ==================== EVENT LISTENERS ====================
     function initEventListeners() {
-        // Add server button
         if (el.addServerBtn) {
             el.addServerBtn.addEventListener('click', openCreateServerModal);
         }
-
-        // Discover button
         if (el.discoverBtn) {
             el.discoverBtn.addEventListener('click', () => {
-                // Navigate to discover page or show modal
                 console.log('Discover servers clicked');
             });
         }
-
-        // Close context menu on click outside
         document.addEventListener('click', (e) => {
             if (el.serverContextMenu && !el.serverContextMenu.contains(e.target)) {
                 el.serverContextMenu.style.display = 'none';
             }
         });
-
-        // Close tooltip on scroll
         document.addEventListener('scroll', hideTooltip, true);
     }
 
-    // ==================== KEYBOARD SHORTCUTS ====================
     function initKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl+K - Quick channel switcher (future implementation)
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
-                console.log('Quick channel switcher - To be implemented');
             }
         });
     }
 
     // ==================== INITIALIZATION ====================
-    function init() {
-        loadServers();
+    async function init() {
+        console.log('[Server Sidebar] Initializing...');
+        
+        // 1. Attach handlers cho server items có sẵn từ JSP TRƯỚC (nếu có)
+        attachFirstVisitHandlers();
+        
+        // 2. Load servers từ API và render nếu cần
+        await loadServers();
+        
+        // 3. Attach handlers cho server items MỚI được render từ API
+        attachFirstVisitHandlers();
+        
+        // 4. Init các event listeners khác
         initEventListeners();
         initActionTooltips();
         initKeyboardShortcuts();
+        
+        console.log('[Server Sidebar] Initialized');
     }
 
-    // Wait for DOM
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Export for external use
     window.ServerSidebar = {
         loadServers,
-        servers: () => servers
+        servers: () => servers,
+        navigateToServerWithChannel // Export function để dùng chung
     };
 })();

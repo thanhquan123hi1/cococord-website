@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -175,7 +178,6 @@
     left: 0;
     height: 3px;
     width: 100%;
-    animation: progress 5s linear forwards;
   }
 
   @keyframes progress {
@@ -209,8 +211,8 @@
   .cococord-alert--info .cococord-alert__progress { background: #3b82f6; }
 </style>
 
-<!-- Alert Container - Góc phải trên cùng -->
-<div id="alert-container" class="cococord-alert-container"></div>
+<!-- Alert Container - Góc phải trên cùng (v2) -->
+<div id="alert-container" class="cococord-alert-container" data-version="2"></div>
 
 <div
   class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative"
@@ -404,20 +406,9 @@
   const loginForm = document.getElementById("login-form");
   if (loginForm && !loginForm.dataset.listenerAttached) {
     loginForm.dataset.listenerAttached = "true";
-    console.log("🔵 Attaching login form listener...");
     
     loginForm.addEventListener("submit", async function (e) {
       e.preventDefault();
-
-      console.log("Form submitted! isSubmitting flag:", isSubmitting);
-
-      // Prevent double submission
-      if (isSubmitting) {
-        console.log("❌ Already submitting, ignoring duplicate request");
-        return;
-      }
-      
-      console.log("✅ Processing submit...");
       isSubmitting = true;
 
       const btn = document.getElementById("login-btn");
@@ -433,6 +424,7 @@
 
       const rememberMe = !!document.getElementById("rememberMe")?.checked;
 
+      try {
         const { response, json: data } = await fetchJsonWithTimeout(
           "${pageContext.request.contextPath}/api/auth/login",
           {
@@ -445,7 +437,7 @@
           15000
         );
 
-        if (response.ok && data.accessToken) {
+        if (response.ok && data && data.accessToken) {
           // Lưu JWT tokens vào localStorage
           localStorage.setItem("accessToken", data.accessToken);
           localStorage.setItem("refreshToken", data.refreshToken);
@@ -470,27 +462,53 @@
             window.location.href = "${pageContext.request.contextPath}/app";
           }, 1000);
         } else {
-          showAlert("Đăng nhập thất bại", "danger");
+          // Lấy message lỗi từ server response với validation chặt chẽ
+          let errorMessage = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
+          
+          if (data && typeof data === 'object') {
+            // Ưu tiên lấy data.message
+            if (data.message && typeof data.message === 'string' && data.message.trim()) {
+              errorMessage = data.message.trim();
+            }
+            // Fallback: Nếu có errors object (validation errors)
+            else if (data.errors && typeof data.errors === 'object') {
+              const errorValues = Object.values(data.errors)
+                .filter(v => typeof v === 'string' && v.trim())
+                .map(v => v.trim());
+              if (errorValues.length > 0) {
+                errorMessage = errorValues.join('; ');
+              }
+            }
+          }
+          
+          // Validation cuối cùng: đảm bảo không phải boolean/empty
+          if (typeof errorMessage !== 'string' || !errorMessage.trim() || errorMessage === 'false' || errorMessage === 'true') {
+            errorMessage = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
+          }
+          
+          showAlert(errorMessage, "danger");
           setButtonLoading(btn, false, "", originalText);
           isSubmitting = false;
-        } 
-      });
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        let errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+        if (error.name === 'AbortError') {
+          errorMessage = "Yêu cầu hết thời gian chờ. Vui lòng thử lại.";
+        }
+        showAlert(errorMessage, "danger");
+        setButtonLoading(btn, false, "", originalText);
+        isSubmitting = false;
+      }
+    });
   } else {
     console.log("⚠️ Form already has listener or not found!");
   }
 
   function showAlert(message, type) {
-    // DEBUG: In ra console để kiểm tra
-    console.log("=== showAlert DEBUG ===");
-    console.log("Raw message:", message, "Type:", typeof message);
-    console.log("Raw type:", type, "Type:", typeof type);
     
-    // Force convert to string
     message = String(message || "Có lỗi xảy ra");
     type = String(type || "danger");
-    
-    console.log("After convert - message:", message, "type:", type);
-    console.log("======================");
     
     // Icon SVGs for different alert types
     const icons = {
@@ -499,7 +517,7 @@
       warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
       info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
     };
-
+    
     const titles = {
       success: 'Thành công',
       danger: 'Lỗi',
@@ -514,22 +532,20 @@
       return;
     }
 
-    // XÓA TẤT CẢ alert cũ trước khi thêm mới
-    alertContainer.innerHTML = '';
-    
-    console.log("Container cleared. Adding new alert with message:", message);
-
     const variantClass = `cococord-alert--${type}`;
     const alertEl = document.createElement("div");
 
     alertEl.className = `cococord-alert ${variantClass}`;
     alertEl.setAttribute("role", "alert");
+    
+    const titleText = titles[type] || 'Thông báo';
+    const messageText = message;
+    
     alertEl.innerHTML = `
       <div class="cococord-alert__row">
-        <div class="cococord-alert__icon">${icons[type] || icons.info}</div>
         <div class="cococord-alert__content">
-          <div class="cococord-alert__title">${titles[type] || 'Thông báo'}</div>
-          <div class="cococord-alert__message">${message}</div>
+          <div class="cococord-alert__title">` + titleText + `</div>
+          <div class="cococord-alert__message">` + messageText + `</div>
         </div>
         <button type="button" class="cococord-alert__close" aria-label="Đóng">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -542,10 +558,8 @@
 
     const closeBtn = alertEl.querySelector(".cococord-alert__close");
     closeBtn.addEventListener("click", () => removeAlert(alertEl));
-    
     alertContainer.appendChild(alertEl);
-
-    // Auto remove after 5 seconds
+    
     setTimeout(() => removeAlert(alertEl), 5000);
   }
 

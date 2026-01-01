@@ -143,6 +143,53 @@
         return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ` ${time}`;
     }
 
+    /**
+     * Fetch channels của server và navigate đến channel phù hợp
+     * Sử dụng function từ ServerSidebar nếu có, nếu không thì fallback
+     */
+    async function navigateToServerWithChannel(serverId) {
+        // Sử dụng function từ ServerSidebar nếu đã load
+        if (window.ServerSidebar && window.ServerSidebar.navigateToServerWithChannel) {
+            return window.ServerSidebar.navigateToServerWithChannel(serverId);
+        }
+        
+        // Fallback nếu ServerSidebar chưa load
+        try {
+            console.log('[Messages -> Server] Fetching channels for server:', serverId);
+            const channels = await apiJson(`/api/servers/${serverId}/channels`);
+            
+            if (!channels || channels.length === 0) {
+                console.warn('[Messages -> Server] No channels found, navigating without channelId');
+                window.location.href = `/chat?serverId=${encodeURIComponent(serverId)}`;
+                return;
+            }
+            
+            // Tìm general channel
+            let targetChannel = channels.find(ch => 
+                ch.name && ch.name.toLowerCase() === 'general'
+            );
+            
+            // Nếu không có general, tìm TEXT channel đầu tiên
+            if (!targetChannel) {
+                targetChannel = channels.find(ch => 
+                    ch.type && ch.type.toUpperCase() === 'TEXT'
+                );
+            }
+            
+            // Nếu vẫn không có, lấy channel đầu tiên
+            if (!targetChannel) {
+                targetChannel = channels[0];
+            }
+            
+            console.log('[Messages -> Server] Navigating to channel:', targetChannel);
+            window.location.href = `/chat?serverId=${encodeURIComponent(serverId)}&channelId=${encodeURIComponent(targetChannel.id)}`;
+        } catch (err) {
+            console.error('[Messages -> Server] Failed to fetch channels:', err);
+            // Fallback: navigate chỉ với serverId
+            window.location.href = `/chat?serverId=${encodeURIComponent(serverId)}`;
+        }
+    }
+
     async function apiJson(url, options = {}) {
         const token = localStorage.getItem('accessToken');
         const headers = {
@@ -309,6 +356,12 @@
             a.className = 'server-btn server';
             a.href = href;
             a.title = name;
+            
+            // Fetch channels trước khi navigate
+            a.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await navigateToServerWithChannel(id);
+            });
 
             if (s.iconUrl) {
                 a.innerHTML = `<img src="${escapeHtml(s.iconUrl)}" alt="${escapeHtml(name)}" />`;
@@ -1158,7 +1211,7 @@
                 hideCreateServerModal();
                 await loadServers();
                 renderServerBar();
-                window.location.href = `/chat?serverId=${encodeURIComponent(server.id)}`;
+                await navigateToServerWithChannel(server.id);
             }
         } catch (err) {
             alert(err?.message || 'Tạo máy chủ thất bại');
@@ -1204,7 +1257,7 @@
                 await loadServers();
                 renderServerBar();
                 const serverId = result.serverId || result.id;
-                window.location.href = `/chat?serverId=${encodeURIComponent(serverId)}`;
+                await navigateToServerWithChannel(serverId);
             }
         } catch (err) {
             alert(err?.message || 'Không thể tham gia máy chủ. Mã mời không hợp lệ.');
