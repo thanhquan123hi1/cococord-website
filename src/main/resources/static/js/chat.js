@@ -1906,6 +1906,20 @@
         }
     }
     
+    // Remote media streams keyed by peerId (used for remote video tiles)
+    const remoteMediaStreams = new Map();
+
+    function attachStreamToVideo(video, stream, { muted = false } = {}) {
+        if (!video || !stream) return;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = !!muted;
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            Promise.resolve(video.play()).catch(() => { /* ignore */ });
+        };
+    }
+
     function renderVoiceParticipants(participants) {
         const grid = document.getElementById('voiceParticipantsGrid');
         if (!grid) return;
@@ -1946,11 +1960,22 @@
         
         // Attach video streams sau khi render
         participants.forEach(p => {
-            if (p.isLocal && (p.isCameraOn || p.isScreenSharing) && localVideoStream) {
-                const video = document.getElementById(`video-${p.peerId}`);
-                if (video) {
-                    video.srcObject = localVideoStream;
-                }
+            const shouldShowVideo = (p.isCameraOn || p.isScreenSharing);
+            if (!shouldShowVideo) return;
+
+            const video = document.getElementById(`video-${p.peerId}`);
+            if (!video) return;
+
+            if (p.isLocal && localVideoStream) {
+                attachStreamToVideo(video, localVideoStream, { muted: true });
+                return;
+            }
+
+            // Remote video (if we have a remote stream with a video track)
+            const remoteStream = remoteMediaStreams.get(p.peerId);
+            const hasRemoteVideo = !!(remoteStream && remoteStream.getVideoTracks && remoteStream.getVideoTracks().length);
+            if (hasRemoteVideo) {
+                attachStreamToVideo(video, remoteStream, { muted: false });
             }
         });
     }
@@ -1961,6 +1986,16 @@
             localStream.getTracks().forEach(track => track.stop());
             localStream = null;
         }
+
+        // Stop local video stream (camera/screen share)
+        if (localVideoStream) {
+            try {
+                localVideoStream.getTracks().forEach(track => track.stop());
+            } catch (e) { /* ignore */ }
+            localVideoStream = null;
+        }
+        isCameraOn = false;
+        isScreenSharing = false;
         
         // Close all peer connections
         voiceConnections.forEach(({ call }) => {
@@ -2183,6 +2218,9 @@
     }
     
     function playRemoteStream(stream, peerId) {
+        // Save full remote stream for video tiles
+        remoteMediaStreams.set(peerId, stream);
+
         // Create audio element for this stream
         let audio = document.getElementById(`audio-${peerId}`);
         if (!audio) {
@@ -2194,6 +2232,9 @@
         }
         audio.srcObject = stream;
         audio.muted = isDeafened;
+
+        // Re-render to allow remote video element to appear (if camera flag is on)
+        renderVoiceParticipantsFromMap();
     }
     
     function removeRemoteStream(peerId) {
@@ -2201,6 +2242,13 @@
         if (audio) {
             audio.srcObject = null;
             audio.remove();
+        }
+
+        remoteMediaStreams.delete(peerId);
+
+        const video = document.getElementById(`video-${peerId}`);
+        if (video) {
+            video.srcObject = null;
         }
     }
     
@@ -2277,31 +2325,78 @@
         // This could update a participants list in the channel sidebar
         console.log('Voice participants:', participants);
         
-        // Update grid if available
-        if (participants && Array.isArray(participants)) {
-            renderVoiceParticipants(participants);
-        }
+        // Update participants map then re-render (self always uses local state)
+        if (!participants || !Array.isArray(participants)) return;
+
+        const remotePeerIds = new Set();
+        participants.forEach((p) => {
+            if (!p) return;
+
+            const normalizedPeerId = p.peerId || p.peerID || p.peer || p.id;
+            const normalizedUserId = p.userId || p.userID || p.user || p.user_id;
+
+            const isLocalParticipant = !!(
+                (peer?.id && normalizedPeerId && String(normalizedPeerId) === String(peer.id)) ||
+                (currentUser?.id && normalizedUserId && String(normalizedUserId) === String(currentUser.id))
+            );
+
+            if (isLocalParticipant) {
+                return;
+            }
+
+            if (!normalizedPeerId) {
+                return;
+            }
+
+            remotePeerIds.add(String(normalizedPeerId));
+            voiceParticipantsMap.set(normalizedPeerId, {
+                peerId: normalizedPeerId,
+                userId: normalizedUserId,
+                username: p.username,
+                avatarUrl: p.avatarUrl,
+                isMuted: !!p.isMuted,
+                isDeafened: !!p.isDeafened,
+                isCameraOn: !!p.isCameraOn,
+                isScreenSharing: !!p.isScreenSharing,
+                isLocal: false
+            });
+        });
+
+        // Remove remotes not present anymore (if server sends full snapshot)
+        Array.from(voiceParticipantsMap.keys()).forEach((pid) => {
+            if (!remotePeerIds.has(String(pid))) {
+                voiceParticipantsMap.delete(pid);
+            }
+        });
+
+        renderVoiceParticipantsFromMap();
     }
     
     // ==================== CAMERA/SCREENSHARE ====================
     let localVideoStream = null;
     let isCameraOn = false;
     let isScreenSharing = false;
+
+    function stopLocalVideoStream() {
+        if (!localVideoStream) return;
+        try {
+            localVideoStream.getTracks().forEach(t => t.stop());
+        } catch (e) { /* ignore */ }
+        localVideoStream = null;
+    }
     
     async function toggleCamera() {
-        // Stop screen share if active
-        if (isScreenSharing && localVideoStream) {
-            localVideoStream.getTracks().forEach(t => t.stop());
-            localVideoStream = null;
+        // Always stop any existing video stream first to avoid leaked/stale tracks
+        if (localVideoStream) {
+            stopLocalVideoStream();
+        }
+        if (isScreenSharing) {
             isScreenSharing = false;
         }
         
         if (isCameraOn) {
             // Turn off camera
-            if (localVideoStream) {
-                localVideoStream.getTracks().forEach(t => t.stop());
-                localVideoStream = null;
-            }
+            stopLocalVideoStream();
             isCameraOn = false;
             
             // Remove video from peer connections
@@ -2339,7 +2434,13 @@
                 
             } catch (err) {
                 console.error('Failed to get camera:', err);
-                showToast('Không thể bật camera');
+                if (err?.name === 'NotReadableError') {
+                    showToast('Camera đang được ứng dụng/tab khác sử dụng');
+                } else if (err?.name === 'NotAllowedError') {
+                    showToast('Vui lòng cho phép truy cập camera');
+                } else {
+                    showToast('Không thể bật camera');
+                }
                 return;
             }
         }
@@ -2359,18 +2460,14 @@
     async function toggleScreenShare() {
         if (isScreenSharing) {
             // Stop screen share
-            if (localVideoStream) {
-                localVideoStream.getTracks().forEach(t => t.stop());
-                localVideoStream = null;
-            }
+            stopLocalVideoStream();
             isScreenSharing = false;
         } else {
             // Start screen share
             try {
                 // Stop camera if on
-                if (isCameraOn && localVideoStream) {
-                    localVideoStream.getTracks().forEach(t => t.stop());
-                    localVideoStream = null;
+                if (isCameraOn) {
+                    stopLocalVideoStream();
                     isCameraOn = false;
                 }
                 
@@ -2503,7 +2600,7 @@
                 video.className = 'voice-participant-video';
                 selfTile.insertBefore(video, selfTile.firstChild);
             }
-            video.srcObject = localVideoStream;
+            attachStreamToVideo(video, localVideoStream, { muted: true });
             video.style.display = '';
             
             // Hide avatar

@@ -17,6 +17,18 @@
         dmSearch: ''
     };
 
+    // ==================== CALL (WebRTC + WebSocket signaling) ====================
+    const call = {
+        active: false,
+        roomId: null,
+        isCaller: false,
+        video: false,
+        pc: null,
+        localStream: null,
+        remoteStream: null,
+        sub: null
+    };
+
     // ==================== DOM ELEMENTS ====================
     const els = {
         // Server bar
@@ -55,6 +67,17 @@
         profileUsername: () => document.getElementById('profileUsername'),
         profileBio: () => document.getElementById('profileBio'),
         profileJoined: () => document.getElementById('profileJoined')
+    };
+
+    const callEls = {
+        voiceBtn: () => document.getElementById('dmVoiceCallBtn'),
+        videoBtn: () => document.getElementById('dmVideoCallBtn'),
+        overlay: () => document.getElementById('dmCallOverlay'),
+        title: () => document.getElementById('dmCallTitle'),
+        hangupBtn: () => document.getElementById('dmCallHangupBtn'),
+        localVideo: () => document.getElementById('dmCallLocalVideo'),
+        remoteVideo: () => document.getElementById('dmCallRemoteVideo'),
+        remoteAudio: () => document.getElementById('dmCallRemoteAudio')
     };
 
     // ==================== UTILITIES ====================
@@ -492,6 +515,272 @@
         dropdown.style.display = isVisible ? 'none' : 'block';
     }
 
+    function getCallRoomId() {
+        // For 1:1 DM we can use dmGroupId as the signaling room
+        return state.dmGroupId ? String(state.dmGroupId) : null;
+    }
+
+    function showCallOverlay({ video, outgoing }) {
+        const overlay = callEls.overlay();
+        if (!overlay) return;
+
+        const otherName = displayName(state.otherUser);
+        const typeLabel = video ? 'Video Call' : 'Voice Call';
+        const prefix = outgoing ? 'Đang gọi' : 'Đang nhận';
+        const title = callEls.title();
+        if (title) title.textContent = `${prefix}: ${otherName} • ${typeLabel}`;
+
+        overlay.style.display = 'flex';
+        overlay.setAttribute('aria-hidden', 'false');
+
+        const localVideo = callEls.localVideo();
+        const remoteVideo = callEls.remoteVideo();
+        if (localVideo) localVideo.style.display = video ? '' : 'none';
+        if (remoteVideo) remoteVideo.style.display = video ? '' : 'none';
+    }
+
+    function hideCallOverlay() {
+        const overlay = callEls.overlay();
+        if (!overlay) return;
+        overlay.style.display = 'none';
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function attachStreamToVideo(videoEl, stream, { muted = false } = {}) {
+        if (!videoEl || !stream) return;
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        videoEl.muted = !!muted;
+        videoEl.srcObject = stream;
+        videoEl.onloadedmetadata = () => {
+            Promise.resolve(videoEl.play()).catch(() => { /* ignore */ });
+        };
+    }
+
+    function attachStreamToAudio(audioEl, stream) {
+        if (!audioEl || !stream) return;
+        audioEl.autoplay = true;
+        audioEl.srcObject = stream;
+        Promise.resolve(audioEl.play()).catch(() => { /* ignore */ });
+    }
+
+    function stopStream(stream) {
+        if (!stream) return;
+        try {
+            stream.getTracks().forEach(t => t.stop());
+        } catch (_) { /* ignore */ }
+    }
+
+    function sendSignal(payload) {
+        if (!state.stomp || !state.stomp.connected) return;
+        try {
+            state.stomp.send('/app/call.signal', {}, JSON.stringify(payload));
+        } catch (_) { /* ignore */ }
+    }
+
+    function createPeerConnection() {
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        });
+
+        pc.onicecandidate = (e) => {
+            if (!e.candidate || !call.roomId) return;
+            sendSignal({
+                roomId: call.roomId,
+                type: 'ICE',
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex,
+                video: call.video
+            });
+        };
+
+        pc.ontrack = (e) => {
+            if (!call.remoteStream) {
+                call.remoteStream = new MediaStream();
+            }
+            call.remoteStream.addTrack(e.track);
+
+            // Always attach audio
+            attachStreamToAudio(callEls.remoteAudio(), call.remoteStream);
+
+            // Attach video when present and call is video
+            const hasVideo = call.remoteStream.getVideoTracks().length > 0;
+            if (call.video && hasVideo) {
+                attachStreamToVideo(callEls.remoteVideo(), call.remoteStream, { muted: false });
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const s = pc.connectionState;
+            if (s === 'failed' || s === 'closed' || s === 'disconnected') {
+                // Keep it simple: end call on teardown
+                endCall({ sendHangup: false });
+            }
+        };
+
+        return pc;
+    }
+
+    async function ensureLocalMedia(video) {
+        if (call.localStream) return call.localStream;
+
+        call.localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: video ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false
+        });
+
+        if (video) {
+            attachStreamToVideo(callEls.localVideo(), call.localStream, { muted: true });
+        }
+
+        return call.localStream;
+    }
+
+    async function startCall({ video }) {
+        const roomId = getCallRoomId();
+        if (!roomId || !state.otherUser) return;
+        if (!state.stomp || !state.stomp.connected) return;
+        if (call.active) return;
+
+        call.active = true;
+        call.roomId = roomId;
+        call.isCaller = true;
+        call.video = !!video;
+        call.pc = createPeerConnection();
+
+        showCallOverlay({ video: call.video, outgoing: true });
+
+        const stream = await ensureLocalMedia(call.video);
+        stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+
+        // Notify start (simple auto-join on other side)
+        sendSignal({ roomId: call.roomId, type: 'CALL_START', video: call.video });
+
+        const offer = await call.pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: call.video
+        });
+        await call.pc.setLocalDescription(offer);
+        sendSignal({ roomId: call.roomId, type: 'OFFER', sdp: offer.sdp, video: call.video });
+    }
+
+    function endCall({ sendHangup } = { sendHangup: true }) {
+        if (!call.active) {
+            hideCallOverlay();
+            return;
+        }
+
+        if (sendHangup && call.roomId) {
+            sendSignal({ roomId: call.roomId, type: 'HANGUP', video: call.video });
+        }
+
+        try {
+            if (call.pc) {
+                call.pc.onicecandidate = null;
+                call.pc.ontrack = null;
+                call.pc.close();
+            }
+        } catch (_) { /* ignore */ }
+
+        stopStream(call.localStream);
+        stopStream(call.remoteStream);
+
+        call.pc = null;
+        call.localStream = null;
+        call.remoteStream = null;
+        call.active = false;
+        call.roomId = null;
+        call.isCaller = false;
+        call.video = false;
+
+        const lv = callEls.localVideo();
+        const rv = callEls.remoteVideo();
+        const ra = callEls.remoteAudio();
+        if (lv) lv.srcObject = null;
+        if (rv) rv.srcObject = null;
+        if (ra) ra.srcObject = null;
+
+        hideCallOverlay();
+    }
+
+    async function handleSignal(evt) {
+        if (!evt || !evt.type) return;
+        const selfId = state.currentUser?.id;
+        if (selfId && evt.fromUserId && String(evt.fromUserId) === String(selfId)) return;
+        const roomId = getCallRoomId();
+        if (!roomId || evt.roomId !== roomId) return;
+
+        switch (evt.type) {
+            case 'CALL_START': {
+                if (call.active) return;
+                call.active = true;
+                call.roomId = roomId;
+                call.isCaller = false;
+                call.video = !!evt.video;
+                call.pc = createPeerConnection();
+                showCallOverlay({ video: call.video, outgoing: false });
+                // Ask permissions early so offer handling is smooth
+                try {
+                    const stream = await ensureLocalMedia(call.video);
+                    stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+                } catch (err) {
+                    // If callee can't open devices, end locally
+                    endCall({ sendHangup: true });
+                }
+                break;
+            }
+            case 'OFFER': {
+                if (!call.active) {
+                    call.active = true;
+                    call.roomId = roomId;
+                    call.isCaller = false;
+                    call.video = !!evt.video;
+                    call.pc = createPeerConnection();
+                    showCallOverlay({ video: call.video, outgoing: false });
+                }
+
+                if (!call.pc) {
+                    call.pc = createPeerConnection();
+                }
+
+                if (!call.localStream) {
+                    const stream = await ensureLocalMedia(!!evt.video);
+                    stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+                }
+
+                await call.pc.setRemoteDescription({ type: 'offer', sdp: evt.sdp });
+                const answer = await call.pc.createAnswer();
+                await call.pc.setLocalDescription(answer);
+                sendSignal({ roomId: call.roomId, type: 'ANSWER', sdp: answer.sdp, video: call.video });
+                break;
+            }
+            case 'ANSWER': {
+                if (!call.pc) return;
+                await call.pc.setRemoteDescription({ type: 'answer', sdp: evt.sdp });
+                break;
+            }
+            case 'ICE': {
+                if (!call.pc || !evt.candidate) return;
+                try {
+                    await call.pc.addIceCandidate({
+                        candidate: evt.candidate,
+                        sdpMid: evt.sdpMid,
+                        sdpMLineIndex: evt.sdpMLineIndex
+                    });
+                } catch (_) { /* ignore */ }
+                break;
+            }
+            case 'HANGUP': {
+                endCall({ sendHangup: false });
+                break;
+            }
+        }
+    }
+
     // ==================== WEBSOCKET ====================
     function connectPresenceAndDm() {
         const token = localStorage.getItem('accessToken');
@@ -526,6 +815,14 @@
                             state.messages.push(m);
                             renderMessages();
                             scrollToBottom();
+                        } catch (_) { /* ignore */ }
+                    });
+
+                    // Call signaling for this DM
+                    stomp.subscribe(`/topic/call/${state.dmGroupId}`, (msg) => {
+                        try {
+                            const evt = JSON.parse(msg.body);
+                            handleSignal(evt);
                         } catch (_) { /* ignore */ }
                     });
                 }
@@ -739,6 +1036,35 @@
                 deafenBtn.style.position = !isDeafened ? 'relative' : '';
             });
         }
+
+        // DM Call buttons
+        callEls.voiceBtn()?.addEventListener('click', async () => {
+            if (!state.dmGroupId || !state.otherUser) return;
+            try {
+                await startCall({ video: false });
+            } catch (err) {
+                alert(err?.name === 'NotAllowedError' ? 'Vui lòng cho phép microphone' : (err?.message || 'Không thể gọi thoại'));
+                endCall({ sendHangup: false });
+            }
+        });
+
+        callEls.videoBtn()?.addEventListener('click', async () => {
+            if (!state.dmGroupId || !state.otherUser) return;
+            try {
+                await startCall({ video: true });
+            } catch (err) {
+                if (err?.name === 'NotAllowedError') {
+                    alert('Vui lòng cho phép camera/microphone');
+                } else if (err?.name === 'NotReadableError') {
+                    alert('Camera đang được ứng dụng/tab khác sử dụng');
+                } else {
+                    alert(err?.message || 'Không thể gọi video');
+                }
+                endCall({ sendHangup: false });
+            }
+        });
+
+        callEls.hangupBtn()?.addEventListener('click', () => endCall({ sendHangup: true }));
     }
 
     // ==================== SERVER CONTEXT MENU ====================
