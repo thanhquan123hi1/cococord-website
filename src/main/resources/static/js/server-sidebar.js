@@ -21,6 +21,70 @@
     let activeServerId = null;
     let tooltipTimeout = null;
 
+    // ==================== FIRST SERVER VISIT RELOAD (per server) ====================
+    const VISITED_SERVERS_KEY = 'cococord_visited_servers';
+    const PENDING_RELOAD_SERVER_KEY = 'cococord_pending_reload_server';
+
+    function getVisitedServers() {
+        try {
+            const data = sessionStorage.getItem(VISITED_SERVERS_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function hasVisitedServer(serverId) {
+        return getVisitedServers().includes(String(serverId));
+    }
+
+    function markServerAsVisited(serverId) {
+        const visited = getVisitedServers();
+        if (!visited.includes(String(serverId))) {
+            visited.push(String(serverId));
+            sessionStorage.setItem(VISITED_SERVERS_KEY, JSON.stringify(visited));
+        }
+    }
+
+    function setPendingReloadForServer(serverId) {
+        sessionStorage.setItem(PENDING_RELOAD_SERVER_KEY, String(serverId));
+    }
+
+    function getPendingReloadServer() {
+        return sessionStorage.getItem(PENDING_RELOAD_SERVER_KEY);
+    }
+
+    function clearPendingReloadServer() {
+        sessionStorage.removeItem(PENDING_RELOAD_SERVER_KEY);
+    }
+
+    // Check reload logic - Runs IMMEDIATELY
+    function checkAndReloadForFirstVisit() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentServerId = urlParams.get('serverId');
+        
+        // Chỉ xử lý trên trang chat với serverId
+        if (!currentServerId) return false;
+
+        const pendingServerId = getPendingReloadServer();
+        
+        // Kiểm tra xem server hiện tại có cờ pending reload không
+        if (pendingServerId === currentServerId) {
+            console.log(`[First Visit] First time visiting server ${currentServerId}. Reloading page once...`);
+            clearPendingReloadServer();
+            markServerAsVisited(currentServerId);
+            window.location.reload();
+            return true;
+        }
+        
+        return false;
+    }
+
+    // Run the check IMMEDIATELY
+    if (checkAndReloadForFirstVisit()) {
+        return; // Stop execution if reloading
+    }
+
     // ==================== API HELPERS ====================
     async function apiGet(url) {
         const accessToken = localStorage.getItem('accessToken');
@@ -31,51 +95,35 @@
                 'Content-Type': 'application/json'
             }
         });
-        if (!res.ok) {
-            throw new Error(`Request failed: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         return res.json();
     }
 
-    async function apiPost(url, body = {}) {
-        const accessToken = localStorage.getItem('accessToken');
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-            const error = await res.json().catch(() => ({}));
-            throw new Error(error.message || `Request failed: ${res.status}`);
-        }
-        return res.json();
-    }
-
-    // ==================== SERVER LIST ====================
     async function loadServers() {
         try {
-            servers = await apiGet('/api/servers');
+            servers = await apiGet('/api/users/me/servers'); 
+            
+            // Mock data check (optional)
+            if (servers.length === 0 && typeof window.ServerSidebar !== 'undefined') {
+                 // Fallback logic if needed
+            }
+            
             renderServerList();
         } catch (error) {
             console.error('Failed to load servers:', error);
         }
     }
 
+    // ==================== RENDERING ====================
     function renderServerList() {
         if (!el.serverList) return;
 
-        // Keep home button and divider
         const homeBtn = el.serverList.querySelector('.home-btn');
         const firstDivider = el.serverList.querySelector('.server-divider');
         
-        // Remove existing server items (not home or divider)
         const existingServers = el.serverList.querySelectorAll('.server-item:not(.home-btn):not(.add-server-btn):not(.discover-btn)');
         existingServers.forEach(item => item.remove());
 
-        // Add servers after the divider
         servers.forEach(server => {
             const serverItem = createServerItem(server);
             if (firstDivider) {
@@ -85,14 +133,13 @@
             }
         });
 
-        // Update active state based on current page
         updateActiveServer();
     }
 
     function createServerItem(server) {
         const item = document.createElement('a');
         item.className = 'server-item';
-        item.href = `/chat?serverId=${server.id}`;
+        item.href = `/chat?serverId=${server.id}`; // URL này sẽ được kích hoạt
         item.dataset.serverId = server.id;
         item.dataset.tooltip = server.name;
         item.title = server.name;
@@ -116,17 +163,23 @@
             item.appendChild(initial);
         }
 
-        // Add event listeners
         item.addEventListener('mouseenter', (e) => showTooltip(e, server.name));
         item.addEventListener('mouseleave', hideTooltip);
         item.addEventListener('contextmenu', (e) => showContextMenu(e, server));
+
+        item.addEventListener('click', (e) => {
+            const serverId = String(server.id);
+            if (!hasVisitedServer(serverId)) {
+                console.log(`[First Visit] First time clicking server ${serverId}. Setting pending reload flag.`);
+                setPendingReloadForServer(serverId);
+            }
+        });
 
         return item;
     }
 
     function getServerInitial(name) {
         if (!name) return '?';
-        // Get first letter of each word, max 2 letters
         const words = name.split(/\s+/);
         if (words.length >= 2) {
             return (words[0][0] + words[1][0]).toUpperCase();
@@ -139,12 +192,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         const serverId = urlParams.get('serverId');
 
-        // Remove all active states
         el.serverList.querySelectorAll('.server-item').forEach(item => {
             item.classList.remove('active');
         });
 
-        // Set active based on current page
         if (currentPath === '/messages') {
             const homeBtn = el.serverList.querySelector('.home-btn');
             if (homeBtn) homeBtn.classList.add('active');
@@ -157,9 +208,7 @@
     // ==================== TOOLTIP ====================
     function showTooltip(e, text) {
         if (!el.serverTooltip) return;
-        
         clearTimeout(tooltipTimeout);
-        
         tooltipTimeout = setTimeout(() => {
             const rect = e.target.getBoundingClientRect();
             el.serverTooltip.textContent = text;
@@ -176,7 +225,6 @@
         }
     }
 
-    // Add tooltips to action buttons
     function initActionTooltips() {
         const buttons = [el.addServerBtn, el.discoverBtn];
         buttons.forEach(btn => {
@@ -188,73 +236,79 @@
         });
     }
 
-    // ==================== CONTEXT MENU ====================
+    // ==================== ATTACH HANDLERS TO STATIC ITEMS ====================
+    function attachFirstVisitHandlers() {
+        const allServerItems = document.querySelectorAll('#globalServerList .server-item, #mainServerSidebar .server-item');
+        
+        allServerItems.forEach(item => {
+            if (item.dataset.hasFirstVisitHandler || !item.href || item.classList.contains('home-btn')) {
+                return;
+            }
+            
+            item.dataset.hasFirstVisitHandler = 'true';
+            
+            item.addEventListener('click', (e) => {
+                const serverId = item.dataset.serverId;
+                if (serverId && !hasVisitedServer(serverId)) {
+                    console.log(`[First Visit] First time clicking server ${serverId}. Setting pending reload flag.`);
+                    setPendingReloadForServer(serverId);
+                }
+            });
+        });
+    }
+
+    // ==================== OTHERS ====================
     function showContextMenu(e, server) {
         e.preventDefault();
-        // Context menu implementation - can be expanded
         console.log('Context menu for server:', server.name);
     }
 
-    // ==================== CREATE SERVER MODAL ====================
     function openCreateServerModal() {
         if (el.createServerModal) {
             el.createServerModal.style.display = 'flex';
         }
     }
 
-    // ==================== EVENT LISTENERS ====================
     function initEventListeners() {
-        // Add server button
         if (el.addServerBtn) {
             el.addServerBtn.addEventListener('click', openCreateServerModal);
         }
-
-        // Discover button
         if (el.discoverBtn) {
             el.discoverBtn.addEventListener('click', () => {
-                // Navigate to discover page or show modal
                 console.log('Discover servers clicked');
             });
         }
-
-        // Close context menu on click outside
         document.addEventListener('click', (e) => {
             if (el.serverContextMenu && !el.serverContextMenu.contains(e.target)) {
                 el.serverContextMenu.style.display = 'none';
             }
         });
-
-        // Close tooltip on scroll
         document.addEventListener('scroll', hideTooltip, true);
     }
 
-    // ==================== KEYBOARD SHORTCUTS ====================
     function initKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl+K - Quick channel switcher (future implementation)
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
-                console.log('Quick channel switcher - To be implemented');
             }
         });
     }
 
     // ==================== INITIALIZATION ====================
     function init() {
+        attachFirstVisitHandlers();
         loadServers();
         initEventListeners();
         initActionTooltips();
         initKeyboardShortcuts();
     }
 
-    // Wait for DOM
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
 
-    // Export for external use
     window.ServerSidebar = {
         loadServers,
         servers: () => servers
