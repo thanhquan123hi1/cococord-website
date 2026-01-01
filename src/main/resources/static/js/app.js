@@ -200,26 +200,7 @@ async function apiRequest(url, options = {}) {
     return response;
 }
 
-// Load user info
-function loadUserInfo() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    // Update user display name
-    const displayNameElements = document.querySelectorAll('#user-display-name, #current-username, .user-name');
-    displayNameElements.forEach(element => {
-        if (user.displayName || user.username) {
-            element.textContent = user.displayName || user.username;
-        }
-    });
-    
-    // Update user avatar
-    const avatarElements = document.querySelectorAll('.user-avatar');
-    avatarElements.forEach(element => {
-        if (user.avatarUrl) {
-            element.innerHTML = `<img src="${user.avatarUrl}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%;">`;
-        }
-    });
-}
+// REMOVED: loadUserInfo() - now handled by UserPanel component (user-panel.js)
 
 // ==================== GLOBAL USER CONTROL PANEL ====================
 let globalCurrentUser = null;
@@ -313,13 +294,8 @@ function getStatusText(status) {
 
 // Bind events for UCP
 // Note: User Panel is now fully managed by user-panel.js
-// This function is kept for backward compatibility with other controls
+// This function only handles mic/deafen buttons for backward compatibility
 function bindGlobalUserPanelEvents() {
-    // Removed old dropdown logic - now handled by user-panel.js
-    
-    // Note: Settings button is now handled by user-panel.js
-    // Note: Status items are now handled by user-panel.js via User Popout
-    
     // Mic button (will be controlled by chat.js for voice, but we can toggle visual state)
     const micBtn = document.getElementById('micBtn');
     if (micBtn) {
@@ -923,7 +899,7 @@ function attachSPAEventsToServerList() {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-    loadUserInfo();
+    // REMOVED: loadUserInfo() - now handled by UserPanel component
     initGlobalSidebar();
     loadGlobalUserPanel(); // Load and init UCP
     
@@ -938,7 +914,6 @@ window.CoCoCordApp = {
     logout,
     apiRequest,
     refreshAccessToken,
-    loadUserInfo,
     loadGlobalServers,
     openGlobalModal,
     closeGlobalModal,

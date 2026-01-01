@@ -23,7 +23,7 @@
             
             const container = document.getElementById('userPanel');
             if (!container) {
-                console.log('UserPanel: #userPanel container not found');
+                console.warn('UserPanel: #userPanel container not found');
                 return;
             }
 

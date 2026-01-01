@@ -37,17 +37,10 @@
         onlineCount: document.getElementById('onlineCount'),
         offlineCount: document.getElementById('offlineCount'),
         
-        // User panel
+        // User panel - now handled by UserPanel component (user-panel.js)
+        // Legacy elements kept for backward compatibility but not actively used
         ucpAvatar: document.getElementById('ucpAvatar'),
         ucpName: document.getElementById('ucpName'),
-        ucpStatus: document.getElementById('ucpStatus'),
-        ucpStatusIndicator: document.getElementById('ucpStatusIndicator'),
-        settingsBtn: document.getElementById('settingsBtn'),
-        userSettingsDropdown: document.getElementById('userSettingsDropdown'),
-        logoutBtn: document.getElementById('logoutBtn'),
-        userInfoBtn: document.getElementById('userInfoBtn'),
-        userDropdown: document.getElementById('userDropdown'),
-        logoutBtnUser: document.getElementById('logoutBtnUser'),
         
         // Mic/Deafen buttons
         micBtn: document.getElementById('micBtn'),
@@ -58,13 +51,13 @@
         voiceChannelName: document.getElementById('voiceChannelName'),
         voiceDisconnectBtn: document.getElementById('voiceDisconnectBtn'),
         
-        // User Settings Modal
-        userSettingsModal: document.getElementById('userSettingsModal'),
-        closeUserSettingsModal: document.getElementById('closeUserSettingsModal'),
-        settingsNavItems: document.querySelectorAll('#userSettingsModal .settings-nav-item[data-tab]'),
-        settingsTabs: document.querySelectorAll('#userSettingsModal .settings-tab'),
-        settingsTitle: document.getElementById('settingsTitle'),
-        settingsLogoutBtn: document.getElementById('settingsLogoutBtn'),
+        // User Settings Modal - REMOVED (now handled by SettingsModal component)
+        userSettingsModal: null,
+        closeUserSettingsModal: null,
+        settingsNavItems: null,
+        settingsTabs: null,
+        settingsTitle: null,
+        settingsLogoutBtn: null,
         
         // Create Server Modal
         createServerModal: document.getElementById('createServerModal'),
@@ -1674,57 +1667,8 @@
     }
 
     // ==================== USER SETTINGS MODAL ====================
-    function showUserSettingsModal() {
-        if (!el.userSettingsModal) return;
-        
-        // Populate user data
-        populateSettingsData();
-        
-        // Show modal with animation
-        el.userSettingsModal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-        
-        // Focus first input or close button
-        setTimeout(() => {
-            el.closeUserSettingsModal?.focus();
-        }, 100);
-    }
-    
-    function hideUserSettingsModal() {
-        if (!el.userSettingsModal) return;
-        el.userSettingsModal.classList.remove('show');
-        document.body.style.overflow = '';
-    }
-    
-    function populateSettingsData() {
-        if (!currentUser) return;
-        
-        // Account tab
-        const usernameDisplay = document.getElementById('settingsUsername');
-        const emailDisplay = document.getElementById('settingsEmail');
-        const avatarDisplay = document.getElementById('settingsAvatar');
-        const displayNameDisplay = document.getElementById('settingsDisplayName');
-        
-        if (usernameDisplay) usernameDisplay.textContent = currentUser.username || 'user';
-        if (emailDisplay) emailDisplay.textContent = currentUser.email || 'email@example.com';
-        if (displayNameDisplay) displayNameDisplay.textContent = currentUser.displayName || currentUser.username || 'User';
-        
-        if (avatarDisplay) {
-            if (currentUser.avatarUrl) {
-                avatarDisplay.innerHTML = `<img src="${escapeHtml(currentUser.avatarUrl)}" alt="Avatar">`;
-            } else {
-                const initial = (currentUser.displayName || currentUser.username || 'U').charAt(0).toUpperCase();
-                avatarDisplay.innerHTML = `<span class="avatar-initial">${initial}</span>`;
-            }
-        }
-        
-        // Profile tab inputs
-        const displayNameInput = document.getElementById('profileDisplayName');
-        const aboutMeInput = document.getElementById('profileAboutMe');
-        
-        if (displayNameInput) displayNameInput.value = currentUser.displayName || '';
-        if (aboutMeInput) aboutMeInput.value = currentUser.aboutMe || '';
-    }
+    // REMOVED: showUserSettingsModal(), hideUserSettingsModal(), populateSettingsData()
+    // Now handled by global SettingsModal component (settings-modal.js)
     
     function switchSettingsTab(tabName) {
         // Update nav
@@ -2628,16 +2572,8 @@
         el.serverDropdown.style.display = isVisible ? 'none' : 'block';
     }
 
-    function toggleUserSettings() {
-        const isVisible = el.userSettingsDropdown.style.display !== 'none';
-        el.userSettingsDropdown.style.display = isVisible ? 'none' : 'block';
-    }
-    
-    function toggleUserDropdown() {
-        if (!el.userDropdown) return;
-        const isVisible = el.userDropdown.style.display !== 'none';
-        el.userDropdown.style.display = isVisible ? 'none' : 'block';
-    }
+    // REMOVED: toggleUserSettings(), toggleUserDropdown()
+    // Now handled by UserPanel popout component (user-panel.js)
 
     function toggleMembersSidebar() {
         el.membersSidebar.classList.toggle('show');
@@ -2735,31 +2671,12 @@
             });
         });
         
-        // User settings - now handled by app.js global UCP
+        // User settings - handled by global SettingsModal and UserPanel
         // el.settingsBtn?.addEventListener('click', showUserSettingsModal);
         // el.logoutBtn?.addEventListener('click', doLogout);
         
-        // User Settings Modal (still needed if modal is in chat page)
-        el.closeUserSettingsModal?.addEventListener('click', hideUserSettingsModal);
-        el.settingsLogoutBtn?.addEventListener('click', doLogout);
-        el.settingsNavItems?.forEach(item => {
-            item.addEventListener('click', () => {
-                const tab = item.dataset.tab;
-                if (tab) switchSettingsTab(tab);
-            });
-        });
-        el.userSettingsModal?.addEventListener('click', (e) => {
-            // Close on overlay click (outside modal content)
-            if (e.target === el.userSettingsModal) hideUserSettingsModal();
-        });
-        el.userSettingsModal?.querySelector('#saveProfileBtn')?.addEventListener('click', saveProfileSettings);
-        
-        // Escape key to close settings modal
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && el.userSettingsModal?.classList.contains('show')) {
-                hideUserSettingsModal();
-            }
-        });
+        // Legacy User Settings Modal event listeners removed
+        // Now handled by SettingsModal component (settings-modal.js)
         
         // Mic/Deafen buttons - app.js handles visual toggle, but voice logic stays here
         // These are now bound by app.js which calls our exported toggleMute/toggleDeafen

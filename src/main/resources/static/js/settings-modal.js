@@ -1000,7 +1000,6 @@
          * Handle field edit actions
          */
         handleFieldAction: function(action) {
-            console.log('Field action:', action);
             // TODO: Implement field edit modals
             alert('This feature is coming soon!');
         },

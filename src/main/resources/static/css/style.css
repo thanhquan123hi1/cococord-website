@@ -1,15 +1,31 @@
 /* Custom styles for CoCoCord */
 
 :root {
+    /* Brand Colors */
     --primary-color: #5865F2;
     --primary-dark: #4752C4;
     --secondary-color: #57F287;
     --danger-color: #ED4245;
     --warning-color: #FEE75C;
+    
+    /* Background Colors */
     --background-dark: #2C2F33;
     --background-light: #F6F6F6;
+    
+    /* Gradient Colors */
     --gradient-start: #5865F2;
     --gradient-end: #7289DA;
+    --default-banner-gradient: linear-gradient(135deg, #5865f2 0%, #eb459e 100%);
+    
+    /* Status Colors */
+    --status-online: #23a559;
+    --status-idle: #f0b232;
+    --status-dnd: #f23f43;
+    --status-offline: #80848e;
+    
+    /* CoCoCord Brand */
+    --brand-color: #5865f2;
+    --brand-secondary: #eb459e;
 }
 
 html,
