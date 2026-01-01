@@ -1,7 +1,9 @@
 package vn.cococord.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Controller điều hướng các trang view
@@ -49,7 +51,10 @@ public class ViewController {
     }
 
     @GetMapping("/chat")
-    public String chat() {
+    public String chat(@RequestParam(required = false) Long serverId, Model model) {
+        if (serverId != null) {
+            model.addAttribute("initialServerId", serverId);
+        }
         return "chat";
     }
 
@@ -66,5 +71,10 @@ public class ViewController {
     @GetMapping("/change-password")
     public String changePassword() {
         return "change-password"; // Change password
+    }
+
+    @GetMapping("/profile")
+    public String profile() {
+        return "profile"; // xài chung settings và profile luôn -Thịnh edit
     }
 }

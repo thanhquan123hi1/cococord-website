@@ -213,10 +213,11 @@
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     
     <!-- Custom JS for App -->
-    <script src="${pageContext.request.contextPath}/js/auth.js"></script>
-    <script src="${pageContext.request.contextPath}/js/app.js"></script>
+    <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/app.js?v=20260101f"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
-    <script src="${pageContext.request.contextPath}/js/app-home.js"></script>
+    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260101f"></script>
 
     <%
         if (sitemeshContent != null) {

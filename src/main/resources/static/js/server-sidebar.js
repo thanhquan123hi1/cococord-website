@@ -8,10 +8,10 @@
 
     // ==================== DOM ELEMENTS ====================
     const el = {
-        serverList: document.getElementById('serverList'),
+        serverList: document.getElementById('serverList') || document.getElementById('globalServerList'),
         serverTooltip: document.getElementById('serverTooltip'),
-        addServerBtn: document.getElementById('addServerBtn'),
-        discoverBtn: document.getElementById('discoverBtn'),
+        addServerBtn: document.getElementById('addServerBtn') || document.getElementById('globalAddServerBtn'),
+        discoverBtn: document.getElementById('discoverBtn') || document.getElementById('globalDiscoverBtn'),
         createServerModal: document.getElementById('createServerModal'),
         serverContextMenu: document.getElementById('serverContextMenu')
     };
@@ -20,70 +20,6 @@
     let servers = [];
     let activeServerId = null;
     let tooltipTimeout = null;
-
-    // ==================== FIRST SERVER VISIT RELOAD (per server) ====================
-    const VISITED_SERVERS_KEY = 'cococord_visited_servers';
-    const PENDING_RELOAD_SERVER_KEY = 'cococord_pending_reload_server';
-
-    function getVisitedServers() {
-        try {
-            const data = sessionStorage.getItem(VISITED_SERVERS_KEY);
-            return data ? JSON.parse(data) : [];
-        } catch {
-            return [];
-        }
-    }
-
-    function hasVisitedServer(serverId) {
-        return getVisitedServers().includes(String(serverId));
-    }
-
-    function markServerAsVisited(serverId) {
-        const visited = getVisitedServers();
-        if (!visited.includes(String(serverId))) {
-            visited.push(String(serverId));
-            sessionStorage.setItem(VISITED_SERVERS_KEY, JSON.stringify(visited));
-        }
-    }
-
-    function setPendingReloadForServer(serverId) {
-        sessionStorage.setItem(PENDING_RELOAD_SERVER_KEY, String(serverId));
-    }
-
-    function getPendingReloadServer() {
-        return sessionStorage.getItem(PENDING_RELOAD_SERVER_KEY);
-    }
-
-    function clearPendingReloadServer() {
-        sessionStorage.removeItem(PENDING_RELOAD_SERVER_KEY);
-    }
-
-    // Check reload logic - Runs IMMEDIATELY
-    function checkAndReloadForFirstVisit() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentServerId = urlParams.get('serverId');
-        
-        // Chỉ xử lý trên trang chat với serverId
-        if (!currentServerId) return false;
-
-        const pendingServerId = getPendingReloadServer();
-        
-        // Kiểm tra xem server hiện tại có cờ pending reload không
-        if (pendingServerId === currentServerId) {
-            console.log(`[First Visit] First time visiting server ${currentServerId}. Reloading page once...`);
-            clearPendingReloadServer();
-            markServerAsVisited(currentServerId);
-            window.location.reload();
-            return true;
-        }
-        
-        return false;
-    }
-
-    // Run the check IMMEDIATELY
-    if (checkAndReloadForFirstVisit()) {
-        return; // Stop execution if reloading
-    }
 
     // ==================== API HELPERS ====================
     async function apiGet(url) {
@@ -99,38 +35,105 @@
         return res.json();
     }
 
-    async function loadServers() {
+    /**
+     * Fetch channels của server và navigate đến channel phù hợp
+     * Ưu tiên: general channel → TEXT channel đầu tiên → channel đầu tiên
+     * @param {number|string} serverId - ID của server
+     */
+    async function navigateToServerWithChannel(serverId) {
         try {
-            servers = await apiGet('/api/users/me/servers'); 
+            console.log(`[Server Navigation] Fetching channels for server ${serverId}...`);
+            const channels = await apiGet(`/api/servers/${serverId}/channels`);
+            console.log(`[Server Navigation] Found ${channels.length} channels:`, channels);
             
-            // Mock data check (optional)
-            if (servers.length === 0 && typeof window.ServerSidebar !== 'undefined') {
-                 // Fallback logic if needed
+            if (!channels || channels.length === 0) {
+                console.warn('[Server Navigation] No channels found, navigating without channelId');
+                window.location.href = `/chat?serverId=${serverId}`;
+                return;
             }
             
-            renderServerList();
+            // Tìm general channel
+            let targetChannel = channels.find(ch => 
+                ch.name && ch.name.toLowerCase() === 'general'
+            );
+            
+            // Nếu không có general, tìm TEXT channel đầu tiên
+            if (!targetChannel) {
+                targetChannel = channels.find(ch => 
+                    ch.type && ch.type.toUpperCase() === 'TEXT'
+                );
+            }
+            
+            // Nếu vẫn không có, lấy channel đầu tiên
+            if (!targetChannel) {
+                targetChannel = channels[0];
+            }
+            
+            console.log('[Server Navigation] Navigating to channel:', targetChannel);
+            window.location.href = `/chat?serverId=${serverId}&channelId=${targetChannel.id}`;
+        } catch (error) {
+            console.error('[Server Navigation] Failed to fetch channels:', error);
+            // Fallback: navigate chỉ với serverId
+            window.location.href = `/chat?serverId=${serverId}`;
+        }
+    }
+
+    // ==================== LOAD SERVERS ====================
+    function onServerCreatedSuccess(newServerId) {
+        closeModal(); 
+        
+        if (window.ServerSidebar && window.ServerSidebar.loadServers) {
+            window.ServerSidebar.loadServers();
+        }
+        
+        sessionStorage.setItem('cococord_pending_reload_server', newServerId);
+        window.location.href = `/chat?serverId=${newServerId}`;
+    }
+
+    async function loadServers() {
+        try {
+            servers = await apiGet('/api/servers'); // Sửa endpoint đúng
+            
+            console.log('[Server Sidebar] Loaded', servers.length, 'servers from API');
+            
+            // Nếu không có server items trong DOM (JSP empty), render từ API
+            const existingServerItems = document.querySelectorAll('#globalServerList a.server-item[data-server-id]');
+            if (existingServerItems.length === 0 && servers.length > 0) {
+                console.log('[Server Sidebar] No JSP servers found, rendering from API');
+                renderServerList();
+            } else {
+                console.log('[Server Sidebar] Found', existingServerItems.length, 'JSP servers, skipping render');
+            }
         } catch (error) {
             console.error('Failed to load servers:', error);
+            // Không sao, vì JSP đã render sẵn servers rồi
         }
     }
 
     // ==================== RENDERING ====================
     function renderServerList() {
-        if (!el.serverList) return;
+        if (!el.serverList) {
+            console.warn('[Server Sidebar] serverList element not found');
+            return;
+        }
 
-        const homeBtn = el.serverList.querySelector('.home-btn');
-        const firstDivider = el.serverList.querySelector('.server-divider');
-        
-        const existingServers = el.serverList.querySelectorAll('.server-item:not(.home-btn):not(.add-server-btn):not(.discover-btn)');
+        // CHỈ xóa các server items được tạo dynamically (không có data-server-id từ JSP)
+        const existingServers = el.serverList.querySelectorAll('.server-item:not([data-server-id])');
         existingServers.forEach(item => item.remove());
 
         servers.forEach(server => {
-            const serverItem = createServerItem(server);
-            if (firstDivider) {
-                firstDivider.after(serverItem);
-            } else {
-                el.serverList.appendChild(serverItem);
+            // Kiểm tra xem server này đã được render trong JSP chưa
+            const existingItem = el.serverList.querySelector(`.server-item[data-server-id="${server.id}"]`);
+            if (existingItem) {
+                console.log('[Server Sidebar] Server', server.id, 'already rendered in JSP, skipping');
+                return; // Đã có rồi, skip
             }
+            
+            console.log('[Server Sidebar] Rendering server', server.id, server.name);
+            
+            // Render server mới (được tạo dynamically)
+            const serverItem = createServerItem(server);
+            el.serverList.appendChild(serverItem);
         });
 
         updateActiveServer();
@@ -167,13 +170,8 @@
         item.addEventListener('mouseleave', hideTooltip);
         item.addEventListener('contextmenu', (e) => showContextMenu(e, server));
 
-        item.addEventListener('click', (e) => {
-            const serverId = String(server.id);
-            if (!hasVisitedServer(serverId)) {
-                console.log(`[First Visit] First time clicking server ${serverId}. Setting pending reload flag.`);
-                setPendingReloadForServer(serverId);
-            }
-        });
+        // Click handler được xử lý bởi event delegation trong attachFirstVisitHandlers()
+        // Không cần attach listener trực tiếp nữa
 
         return item;
     }
@@ -236,25 +234,65 @@
         });
     }
 
-    // ==================== ATTACH HANDLERS TO STATIC ITEMS ====================
+    // ==================== ATTACH HANDLERS TO STATIC ITEMS (JSP rendered) ====================
     function attachFirstVisitHandlers() {
-        const allServerItems = document.querySelectorAll('#globalServerList .server-item, #mainServerSidebar .server-item');
+        // Sử dụng event delegation thay vì attach trực tiếp
+        const serverListWrapper = document.querySelector('#globalServerList');
+        if (!serverListWrapper) {
+            console.warn('[Server Sidebar] globalServerList not found');
+            return;
+        }
         
-        allServerItems.forEach(item => {
-            if (item.dataset.hasFirstVisitHandler || !item.href || item.classList.contains('home-btn')) {
+        // Remove old listener nếu có
+        if (serverListWrapper.dataset.hasGlobalHandler === 'true') {
+            console.log('[Server Sidebar] Global handler already attached, skipping');
+            return;
+        }
+        
+        serverListWrapper.dataset.hasGlobalHandler = 'true';
+        
+        console.log('[Server Sidebar] Attaching global click handler via event delegation');
+        
+        serverListWrapper.addEventListener('click', async (e) => {
+            // Tìm server-item được click (có thể click vào child element)
+            const serverItem = e.target.closest('a.server-item[data-server-id]');
+            
+            if (!serverItem) {
+                console.log('[Global Handler] Click not on server item');
+                return; // Không phải server item
+            }
+            
+            const serverId = serverItem.dataset.serverId;
+            if (!serverId) {
+                console.warn('[Global Handler] No serverId found');
                 return;
             }
             
-            item.dataset.hasFirstVisitHandler = 'true';
+            console.log('[Global Handler] Click detected on server:', serverId, e.target);
             
-            item.addEventListener('click', (e) => {
-                const serverId = item.dataset.serverId;
-                if (serverId && !hasVisitedServer(serverId)) {
-                    console.log(`[First Visit] First time clicking server ${serverId}. Setting pending reload flag.`);
-                    setPendingReloadForServer(serverId);
-                }
-            });
-        });
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log(`[Server Click] Clicking server ${serverId}`);
+            
+            // Nếu đang ở cùng server, không reload
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentServerId = urlParams.get('serverId');
+            if (currentServerId === String(serverId)) {
+                console.log('[Server Click] Already on this server, ignoring click');
+                return;
+            }
+            
+            // Fetch channel đầu tiên của server
+            try {
+                await navigateToServerWithChannel(serverId);
+            } catch (error) {
+                console.error('[Server Click] Failed to navigate:', error);
+                window.location.href = `/chat?serverId=${serverId}`;
+            }
+        }, true); // Use capture phase
+        
+        console.log('[Server Sidebar] Global handler attached successfully');
     }
 
     // ==================== OTHERS ====================
@@ -295,12 +333,24 @@
     }
 
     // ==================== INITIALIZATION ====================
-    function init() {
+    async function init() {
+        console.log('[Server Sidebar] Initializing...');
+        
+        // 1. Attach handlers cho server items có sẵn từ JSP TRƯỚC (nếu có)
         attachFirstVisitHandlers();
-        loadServers();
+        
+        // 2. Load servers từ API và render nếu cần
+        await loadServers();
+        
+        // 3. Attach handlers cho server items MỚI được render từ API
+        attachFirstVisitHandlers();
+        
+        // 4. Init các event listeners khác
         initEventListeners();
         initActionTooltips();
         initKeyboardShortcuts();
+        
+        console.log('[Server Sidebar] Initialized');
     }
 
     if (document.readyState === 'loading') {
@@ -311,6 +361,7 @@
 
     window.ServerSidebar = {
         loadServers,
-        servers: () => servers
+        servers: () => servers,
+        navigateToServerWithChannel // Export function để dùng chung
     };
 })();

@@ -982,7 +982,7 @@
         activeServerId = serverId;
         
         // Cập nhật URL (SPA-style, không reload)
-        const newUrl = `/chat?serverId=${serverId}`;
+        const newUrl = `/chat?serverId=${serverId}&channelId=${channelId}`;
         history.pushState({ serverId }, '', newUrl);
 
         const server = servers.find(s => String(s.id) === String(serverId));
@@ -3097,6 +3097,23 @@
             });
         }
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverId = urlParams.get('serverId');
+
+    if (serverId) {
+        console.log("Detected serverId from URL:", serverId);
+        if (typeof loadServerDetails === 'function') {
+            loadServerDetails(serverId);
+        } else {
+            console.error("Hàm loadServerDetails chưa được định nghĩa trong chat.js!");
+        }
+        
+        const serverItem = document.querySelector(`.server-item[data-server-id="${serverId}"]`);
+        if (serverItem) serverItem.classList.add('active');
+    }
+});
     
     // Export API cho SPA navigation từ app.js
     window.CoCoCordChat = {

@@ -138,27 +138,7 @@ async function logout() {
     window.location.href = '/login';
 }
 
-// Show alert
-function showAlert(message, type) {
-    const alertContainer = document.getElementById('alert-container');
-    
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type} alert-dismissible fade show`;
-    alert.role = 'alert';
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
 
-    alertContainer.innerHTML = '';
-    alertContainer.appendChild(alert);
-
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        alert.classList.remove('show');
-        setTimeout(() => alert.remove(), 150);
-    }, 5000);
-}
 
 // Update navigation based on login status
 function updateNavigation() {
