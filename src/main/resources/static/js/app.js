@@ -346,15 +346,20 @@ function bindGlobalUserPanelEvents() {
     if (settingsBtn) {
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Ngăn event bubble
-            // Try to use UserSettingsModal if available (from chat.js or user-settings-modal.js)
-            if (window.UserSettingsModal && window.UserSettingsModal.open) {
-                // Close dropdown before opening modal
-                if (userDropdown) {
-                    userDropdown.style.display = 'none';
-                }
+            // Close dropdown before opening modal
+            if (userDropdown) {
+                userDropdown.style.display = 'none';
+            }
+            
+            // Try to use SettingsModal (new full-screen modal)
+            if (window.SettingsModal && window.SettingsModal.open) {
+                window.SettingsModal.open('my-account');
+            }
+            // Fallback to UserSettingsModal if available (from chat.js or user-settings-modal.js)
+            else if (window.UserSettingsModal && window.UserSettingsModal.open) {
                 window.UserSettingsModal.open();
             } else {
-                // Fallback: navigate to profile page
+                // Final fallback: navigate to profile page
                 window.location.href = '/profile';
             }
         });

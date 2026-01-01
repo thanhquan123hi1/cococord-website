@@ -296,12 +296,18 @@
          * Show settings modal
          */
         showSettingsModal: function() {
-            // Remove existing modal if any
+            // Use the new SettingsModal component if available
+            if (window.SettingsModal && typeof window.SettingsModal.open === 'function') {
+                window.SettingsModal.open('my-account');
+                return;
+            }
+
+            // Fallback to old modal (remove existing modal if any)
             this.hideSettingsModal();
 
             const modal = document.createElement('div');
             modal.id = 'userSettingsModal';
-            modal.className = 'settings-modal-overlay';
+            modal.className = 'settings-modal-overlay-legacy';
             modal.innerHTML = `
                 <div class="settings-modal">
                     <div class="settings-modal-header">

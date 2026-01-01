@@ -33,6 +33,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <!-- Channel panel CSS (used for global User Control Panel styling) -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css">
+    <!-- Settings Modal CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css">
     
@@ -216,6 +218,7 @@
     <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101f"></script>
     <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260101f"></script>
     <script src="${pageContext.request.contextPath}/js/app.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
     <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260101f"></script>
 
