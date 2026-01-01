@@ -25,7 +25,6 @@
     <script src="${pageContext.request.contextPath}/js/status-picker.js"></script>
     <script src="${pageContext.request.contextPath}/js/user-panel.js"></script>
     <script src="${pageContext.request.contextPath}/js/user-profile-modal.js"></script>
-    <script src="${pageContext.request.contextPath}/js/user-settings-modal.js"></script>
     
     <script>
         // Initialize User Profile & Presence System

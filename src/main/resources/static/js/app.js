@@ -280,9 +280,19 @@ function bindGlobalUserPanelEvents() {
     if (settingsBtn) {
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Ngăn event bubble
-            // Try to use UserSettingsModal if available (from chat.js or user-settings-modal.js)
-            if (window.UserSettingsModal && window.UserSettingsModal.open) {
+            // Prefer the integrated settings modal in UserPanel (user-panel.js)
+            if (window.UserPanel && typeof window.UserPanel.showSettingsModal === 'function') {
                 // Close dropdown before opening modal
+                if (userDropdown) {
+                    userDropdown.style.display = 'none';
+                }
+                window.UserPanel.showSettingsModal();
+            } else if (window.UserSettingsModal && typeof window.UserSettingsModal.show === 'function') {
+                if (userDropdown) {
+                    userDropdown.style.display = 'none';
+                }
+                window.UserSettingsModal.show();
+            } else if (window.UserSettingsModal && typeof window.UserSettingsModal.open === 'function') {
                 if (userDropdown) {
                     userDropdown.style.display = 'none';
                 }

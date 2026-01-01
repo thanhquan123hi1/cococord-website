@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <head>
     <title>Phiên đăng nhập - CoCoCord</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <style>
         .sessions-container {
             max-width: 960px;
