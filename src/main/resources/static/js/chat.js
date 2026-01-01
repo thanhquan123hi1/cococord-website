@@ -1844,12 +1844,41 @@
             
             // Update UI
             const channel = channels.find(c => String(c.id) === String(channelId));
+            const server = servers.find(s => String(s.id) === String(activeServerId));
+            const channelName = channel?.name || 'Voice Channel';
+            const serverName = server?.name || 'Máy chủ';
+            
             if (el.voiceChannelName) {
-                el.voiceChannelName.textContent = channel?.name || 'Voice Channel';
+                el.voiceChannelName.textContent = channelName;
+            }
+            const voiceServerName = document.getElementById('voiceServerName');
+            if (voiceServerName) {
+                voiceServerName.textContent = serverName;
             }
             if (el.voiceConnectedBar) {
                 el.voiceConnectedBar.classList.add('show');
             }
+            
+            // Show Voice Channel View
+            const voiceView = document.getElementById('voiceChannelView');
+            const textView = document.querySelector('.text-channel-view');
+            if (voiceView) {
+                voiceView.classList.add('active');
+            }
+            if (textView) {
+                textView.style.display = 'none';
+            }
+            
+            // Render self in participants grid
+            renderVoiceParticipants([{
+                peerId: peer?.id,
+                username: currentUser?.displayName || currentUser?.username || 'Bạn',
+                avatarUrl: currentUser?.avatarUrl,
+                isMuted: isMuted,
+                isDeafened: isDeafened,
+                isCameraOn: false,
+                isLocal: true
+            }]);
             
             // Subscribe to voice channel via WebSocket
             await subscribeToVoiceChannel(channelId);
@@ -1875,6 +1904,55 @@
             }
             await leaveVoiceChannel();
         }
+    }
+    
+    function renderVoiceParticipants(participants) {
+        const grid = document.getElementById('voiceParticipantsGrid');
+        if (!grid) return;
+        
+        grid.setAttribute('data-count', participants.length);
+        grid.innerHTML = participants.map(p => {
+            const avatarHtml = p.avatarUrl
+                ? `<img class="voice-participant-avatar" src="${p.avatarUrl}" alt="${escapeHtml(p.username)}">`
+                : `<div class="voice-participant-avatar-placeholder">${(p.username || '?').charAt(0).toUpperCase()}</div>`;
+            
+            // Video element cho camera/screenshare
+            const videoHtml = p.isCameraOn || p.isScreenSharing
+                ? `<video class="voice-participant-video" id="video-${p.peerId}" autoplay playsinline ${p.isLocal ? 'muted' : ''}></video>`
+                : '';
+            
+            return `
+                <div class="voice-participant-tile ${p.isLocal ? 'self' : ''} ${p.isCameraOn ? 'camera-on' : ''} ${p.isScreenSharing ? 'screen-sharing' : ''}" id="voice-tile-${p.peerId}">
+                    ${videoHtml}
+                    <div class="voice-avatar-wrapper" style="${p.isCameraOn || p.isScreenSharing ? 'display:none' : ''}">
+                        ${avatarHtml}
+                    </div>
+                    <div class="voice-participant-info">
+                        <div class="voice-participant-name">
+                            ${p.isMuted ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 11c0 1.19-.34 2.3-.9 3.28l-1.23-1.23c.27-.62.43-1.3.43-2.05V9.5c0-.28.22-.5.5-.5s.5.22.5.5V11zm-5.5 4.28l-1.23-1.23V15c0 .55-.45 1-1 1H9.27l-2 2h4c1.66 0 3-1.34 3-3v-.72zm3.13 3.13L4.41 6.41 3 7.82l3.03 3.03C6.01 11.23 6 11.61 6 12v3c0 1.66 1.34 3 3 3h2v2h2v-2h.17l3.31 3.31 1.15-1.15zM12 3c-1.66 0-3 1.34-3 3v2.17l6 6V6c0-1.66-1.34-3-3-3z"/></svg>' : ''}
+                            ${escapeHtml(p.username)}
+                        </div>
+                        ${!p.isCameraOn && !p.isScreenSharing ? `
+                            <div class="voice-indicator">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/>
+                                </svg>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Attach video streams sau khi render
+        participants.forEach(p => {
+            if (p.isLocal && (p.isCameraOn || p.isScreenSharing) && localVideoStream) {
+                const video = document.getElementById(`video-${p.peerId}`);
+                if (video) {
+                    video.srcObject = localVideoStream;
+                }
+            }
+        });
     }
     
     async function leaveVoiceChannel() {
@@ -1909,10 +1987,22 @@
         // Re-render channel list to remove active state
         renderChannelList();
         
-        // Update UI
+        // Update UI - hide voice view, show text view
+        const voiceView = document.getElementById('voiceChannelView');
+        const textView = document.querySelector('.text-channel-view');
+        if (voiceView) {
+            voiceView.classList.remove('active');
+        }
+        if (textView) {
+            textView.style.display = '';
+        }
+        
         if (el.voiceConnectedBar) {
             el.voiceConnectedBar.classList.remove('show');
         }
+        
+        // Remove all audio elements
+        document.querySelectorAll('[id^="audio-"]').forEach(el => el.remove());
     }
     
     async function subscribeToVoiceChannel(channelId) {
@@ -1931,7 +2021,7 @@
     }
     
     function handleVoiceEvent(payload) {
-        const { type, peerId, userId, username } = payload;
+        const { type, peerId, userId, username, avatarUrl, isMuted: peerMuted, isDeafened: peerDeafened, isCameraOn: peerCameraOn } = payload;
         
         switch (type) {
             case 'USER_JOINED':
@@ -1939,6 +2029,19 @@
                 if (peerId && peerId !== peer?.id) {
                     console.log('User joined voice, calling:', username);
                     callPeer(peerId, userId, username);
+                    
+                    // Add to participants and re-render
+                    voiceParticipantsMap.set(peerId, {
+                        peerId,
+                        userId,
+                        username,
+                        avatarUrl,
+                        isMuted: peerMuted || false,
+                        isDeafened: peerDeafened || false,
+                        isCameraOn: peerCameraOn || false,
+                        isLocal: false
+                    });
+                    renderVoiceParticipantsFromMap();
                 }
                 break;
                 
@@ -1950,6 +2053,12 @@
                         try { conn.call.close(); } catch (e) { /* ignore */ }
                         voiceConnections.delete(peerId);
                     }
+                    voiceParticipantsMap.delete(peerId);
+                    renderVoiceParticipantsFromMap();
+                    
+                    // Remove their audio
+                    const audio = document.getElementById(`audio-${peerId}`);
+                    if (audio) audio.remove();
                 }
                 break;
                 
@@ -1959,7 +2068,78 @@
                     updateVoiceParticipants(payload.participants);
                 }
                 break;
+                
+            case 'MUTE_CHANGE':
+                // Update participant's mute state
+                if (peerId) {
+                    const participant = voiceParticipantsMap.get(peerId);
+                    if (participant) {
+                        participant.isMuted = payload.isMuted;
+                        renderVoiceParticipantsFromMap();
+                    }
+                }
+                break;
+                
+            case 'DEAFEN_CHANGE':
+                // Update participant's deafen state
+                if (peerId) {
+                    const participant = voiceParticipantsMap.get(peerId);
+                    if (participant) {
+                        participant.isDeafened = payload.isDeafened;
+                        participant.isMuted = payload.isMuted || participant.isMuted;
+                        renderVoiceParticipantsFromMap();
+                    }
+                }
+                break;
+                
+            case 'CAMERA_CHANGE':
+                // Update participant's camera state
+                if (peerId) {
+                    const participant = voiceParticipantsMap.get(peerId);
+                    if (participant) {
+                        participant.isCameraOn = payload.isCameraOn;
+                        renderVoiceParticipantsFromMap();
+                    }
+                }
+                break;
+                
+            case 'SCREEN_CHANGE':
+                // Update participant's screen share state
+                if (peerId) {
+                    const participant = voiceParticipantsMap.get(peerId);
+                    if (participant) {
+                        participant.isScreenSharing = payload.isScreenSharing;
+                        renderVoiceParticipantsFromMap();
+                    }
+                }
+                break;
         }
+    }
+    
+    // Store participants for rendering
+    const voiceParticipantsMap = new Map();
+    
+    function renderVoiceParticipantsFromMap() {
+        const participants = [];
+        
+        // Add self first
+        if (peer?.id) {
+            participants.push({
+                peerId: peer.id,
+                username: currentUser?.displayName || currentUser?.username || 'Bạn',
+                avatarUrl: currentUser?.avatarUrl,
+                isMuted: isMuted,
+                isDeafened: isDeafened,
+                isCameraOn: isCameraOn,
+                isScreenSharing: isScreenSharing,
+                isLocal: true
+            });
+        }
+        
+        // Add others
+        voiceParticipantsMap.forEach(p => participants.push(p));
+        
+        renderVoiceParticipants(participants);
     }
     
     function callPeer(peerId, userId, username) {
@@ -2096,6 +2276,253 @@
         // Update UI to show who's in voice channel
         // This could update a participants list in the channel sidebar
         console.log('Voice participants:', participants);
+        
+        // Update grid if available
+        if (participants && Array.isArray(participants)) {
+            renderVoiceParticipants(participants);
+        }
+    }
+    
+    // ==================== CAMERA/SCREENSHARE ====================
+    let localVideoStream = null;
+    let isCameraOn = false;
+    let isScreenSharing = false;
+    
+    async function toggleCamera() {
+        // Stop screen share if active
+        if (isScreenSharing && localVideoStream) {
+            localVideoStream.getTracks().forEach(t => t.stop());
+            localVideoStream = null;
+            isScreenSharing = false;
+        }
+        
+        if (isCameraOn) {
+            // Turn off camera
+            if (localVideoStream) {
+                localVideoStream.getTracks().forEach(t => t.stop());
+                localVideoStream = null;
+            }
+            isCameraOn = false;
+            
+            // Remove video from peer connections
+            voiceConnections.forEach(({ call }) => {
+                const pc = call.peerConnection;
+                if (pc) {
+                    const senders = pc.getSenders();
+                    const videoSender = senders.find(s => s.track?.kind === 'video');
+                    if (videoSender) {
+                        pc.removeTrack(videoSender);
+                    }
+                }
+            });
+            
+        } else {
+            // Turn on camera
+            try {
+                localVideoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+                isCameraOn = true;
+                
+                // Add video track to peer connections
+                const videoTrack = localVideoStream.getVideoTracks()[0];
+                voiceConnections.forEach(({ call }) => {
+                    const pc = call.peerConnection;
+                    if (pc && videoTrack) {
+                        pc.addTrack(videoTrack, localVideoStream);
+                    }
+                });
+                
+            } catch (err) {
+                console.error('Failed to get camera:', err);
+                showToast('Không thể bật camera');
+                return;
+            }
+        }
+        
+        // Notify server
+        if (stompClient?.connected && activeVoiceChannelId) {
+            stompClient.send('/app/voice.camera', {}, JSON.stringify({
+                channelId: activeVoiceChannelId,
+                isCameraOn: isCameraOn
+            }));
+        }
+        
+        updateVoiceViewButtons();
+        updateSelfVideoTile();
+    }
+    
+    async function toggleScreenShare() {
+        if (isScreenSharing) {
+            // Stop screen share
+            if (localVideoStream) {
+                localVideoStream.getTracks().forEach(t => t.stop());
+                localVideoStream = null;
+            }
+            isScreenSharing = false;
+        } else {
+            // Start screen share
+            try {
+                // Stop camera if on
+                if (isCameraOn && localVideoStream) {
+                    localVideoStream.getTracks().forEach(t => t.stop());
+                    localVideoStream = null;
+                    isCameraOn = false;
+                }
+                
+                localVideoStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: 'always'
+                    },
+                    audio: false
+                });
+                
+                isScreenSharing = true;
+                
+                // Add video track to peer connections
+                const videoTrack = localVideoStream.getVideoTracks()[0];
+                voiceConnections.forEach(({ call }) => {
+                    const pc = call.peerConnection;
+                    if (pc && videoTrack) {
+                        pc.addTrack(videoTrack, localVideoStream);
+                    }
+                });
+                
+                // Handle when user stops sharing via browser UI
+                videoTrack.onended = () => {
+                    isScreenSharing = false;
+                    localVideoStream = null;
+                    updateVoiceViewButtons();
+                    updateSelfVideoTile();
+                };
+                
+            } catch (err) {
+                console.error('Failed to share screen:', err);
+                if (err.name !== 'NotAllowedError') {
+                    showToast('Không thể chia sẻ màn hình');
+                }
+                return;
+            }
+        }
+        
+        // Notify server
+        if (stompClient?.connected && activeVoiceChannelId) {
+            stompClient.send('/app/voice.screen', {}, JSON.stringify({
+                channelId: activeVoiceChannelId,
+                isScreenSharing: isScreenSharing
+            }));
+        }
+        
+        updateVoiceViewButtons();
+        updateSelfVideoTile();
+    }
+    
+    function updateVoiceViewButtons() {
+        // Update mute button
+        const btnMute = document.getElementById('voiceBtnMute');
+        if (btnMute) {
+            btnMute.classList.toggle('active', isMuted);
+            btnMute.innerHTML = isMuted 
+                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 11c0 1.19-.34 2.3-.9 3.28l-1.23-1.23c.27-.62.43-1.3.43-2.05V9.5c0-.28.22-.5.5-.5s.5.22.5.5V11zm-5.5 4.28l-1.23-1.23V15c0 .55-.45 1-1 1H9.27l-2 2h4c1.66 0 3-1.34 3-3v-.72zm3.13 3.13L4.41 6.41 3 7.82l3.03 3.03C6.01 11.23 6 11.61 6 12v3c0 1.66 1.34 3 3 3h2v2h2v-2h.17l3.31 3.31 1.15-1.15zM12 3c-1.66 0-3 1.34-3 3v2.17l6 6V6c0-1.66-1.34-3-3-3z"/></svg>
+                <span class="voice-btn-label">Tắt tiếng</span>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                <span class="voice-btn-label">Tắt tiếng</span>`;
+        }
+        
+        // Update deafen button
+        const btnDeafen = document.getElementById('voiceBtnDeafen');
+        if (btnDeafen) {
+            btnDeafen.classList.toggle('active', isDeafened);
+            btnDeafen.innerHTML = isDeafened
+                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3.63 3.63L2.21 5.05 6.16 9H4.41C3.07 9 2.2 10.33 2.56 11.6L4.1 16.93C4.3 17.59 4.89 18.04 5.58 18.04H8.5L12 21.5V15.5l3.76 3.76c-.37.23-.76.43-1.18.58v2.09c.72-.23 1.41-.53 2.06-.92l2.31 2.31 1.41-1.41L3.63 3.63zM12 4L9.91 6.09 12 8.18V4zm6.5 8c0-1.77-.77-3.29-2-4.35V13.5l2-2v.5z"/></svg>
+                <span class="voice-btn-label">Bật nghe</span>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/></svg>
+                <span class="voice-btn-label">Tắt nghe</span>`;
+        }
+        
+        // Update camera button
+        const btnCamera = document.getElementById('voiceBtnCamera');
+        if (btnCamera) {
+            btnCamera.classList.toggle('active', isCameraOn);
+            btnCamera.innerHTML = isCameraOn
+                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                <span class="voice-btn-label">Tắt Camera</span>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>
+                <span class="voice-btn-label">Bật Camera</span>`;
+        }
+        
+        // Update screen share button
+        const btnScreen = document.getElementById('voiceBtnScreen');
+        if (btnScreen) {
+            btnScreen.classList.toggle('active', isScreenSharing);
+        }
+        
+        // Update voice bar buttons
+        const barMute = document.getElementById('voiceBarMute');
+        if (barMute) {
+            barMute.classList.toggle('muted', isMuted);
+            barMute.innerHTML = isMuted 
+                ? '<i class="bi bi-mic-mute-fill"></i>' 
+                : '<i class="bi bi-mic-fill"></i>';
+        }
+        
+        const barDeafen = document.getElementById('voiceBarDeafen');
+        if (barDeafen) {
+            barDeafen.classList.toggle('deafened', isDeafened);
+            barDeafen.innerHTML = isDeafened 
+                ? '<i class="bi bi-volume-mute-fill"></i>' 
+                : '<i class="bi bi-headphones"></i>';
+        }
+    }
+    
+    // Update video tile cho self user
+    function updateSelfVideoTile() {
+        const selfTile = document.getElementById(`voice-tile-${peer?.id}`);
+        if (!selfTile) return;
+        
+        const hasVideo = isCameraOn || isScreenSharing;
+        selfTile.classList.toggle('camera-on', isCameraOn);
+        selfTile.classList.toggle('screen-sharing', isScreenSharing);
+        
+        // Get or create video element
+        let video = selfTile.querySelector('video');
+        const avatarWrapper = selfTile.querySelector('.voice-avatar-wrapper');
+        
+        if (hasVideo && localVideoStream) {
+            // Show video
+            if (!video) {
+                video = document.createElement('video');
+                video.id = `video-${peer?.id}`;
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.className = 'voice-participant-video';
+                selfTile.insertBefore(video, selfTile.firstChild);
+            }
+            video.srcObject = localVideoStream;
+            video.style.display = '';
+            
+            // Hide avatar
+            if (avatarWrapper) avatarWrapper.style.display = 'none';
+        } else {
+            // Hide video
+            if (video) {
+                video.srcObject = null;
+                video.style.display = 'none';
+            }
+            // Show avatar
+            if (avatarWrapper) avatarWrapper.style.display = '';
+        }
+        
+        // Update camera off indicator
+        const indicator = selfTile.querySelector('.voice-indicator');
+        if (indicator) {
+            indicator.style.display = hasVideo ? 'none' : '';
+        }
     }
 
     // ==================== DROPDOWNS ====================
@@ -2242,6 +2669,38 @@
         
         // Voice disconnect button
         el.voiceDisconnectBtn?.addEventListener('click', leaveVoiceChannel);
+        
+        // Voice view controls
+        const voiceBtnMute = document.getElementById('voiceBtnMute');
+        const voiceBtnDeafen = document.getElementById('voiceBtnDeafen');
+        const voiceBtnCamera = document.getElementById('voiceBtnCamera');
+        const voiceBtnScreen = document.getElementById('voiceBtnScreen');
+        const voiceBtnDisconnect = document.getElementById('voiceBtnDisconnect');
+        
+        voiceBtnMute?.addEventListener('click', () => {
+            toggleMute();
+            updateVoiceViewButtons();
+        });
+        
+        voiceBtnDeafen?.addEventListener('click', () => {
+            toggleDeafen();
+            updateVoiceViewButtons();
+        });
+        
+        voiceBtnCamera?.addEventListener('click', toggleCamera);
+        voiceBtnScreen?.addEventListener('click', toggleScreenShare);
+        voiceBtnDisconnect?.addEventListener('click', leaveVoiceChannel);
+        
+        // Voice connected bar controls
+        document.getElementById('voiceBarMute')?.addEventListener('click', () => {
+            toggleMute();
+            updateVoiceViewButtons();
+        });
+        document.getElementById('voiceBarDeafen')?.addEventListener('click', () => {
+            toggleDeafen();
+            updateVoiceViewButtons();
+        });
+        document.getElementById('voiceBarDisconnect')?.addEventListener('click', leaveVoiceChannel);
         
         // User info dropdown - now handled by app.js global UCP
         // el.userInfoBtn?.addEventListener('click', ...);

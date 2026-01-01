@@ -311,8 +311,24 @@ Broadcast:
 
 ### Voice
 
-- Send: `/app/voice.join`, `/app/voice.leave`, `/app/voice.mute`, `/app/voice.deafen`
+- Send (implemented in `VoiceController`):
+  - `/app/voice.join`
+  - `/app/voice.leave`
+  - `/app/voice.mute`
+  - `/app/voice.deafen`
 - Broadcast: `/topic/voice/{channelId}`
+
+Event types (server → client) trên `/topic/voice/{channelId}`:
+
+- `USER_JOINED` (kèm `userId`, `username`, `displayName`, `avatarUrl`, `peerId`)
+- `USER_LEFT` (kèm `userId`, `username`, `peerId`)
+- `PARTICIPANTS_UPDATE` (kèm `participants`: danh sách `VoiceSession.VoiceParticipant`)
+- `USER_MUTE` (kèm `userId`, `isMuted`)
+- `USER_DEAFEN` (kèm `userId`, `isDeafened`, `isMuted`)
+
+Ghi chú:
+
+- Frontend hiện có gửi thêm `/app/voice.camera` và `/app/voice.screen` để sync trạng thái camera/screen-share, nhưng backend chưa có `@MessageMapping` tương ứng (nên nếu cần “official contract” thì cần bổ sung server-side và cập nhật docs).
 
 ## 4) GraphQL
 

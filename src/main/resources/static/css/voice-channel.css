@@ -1,0 +1,606 @@
+/* ==================== VOICE CHANNEL UI - Discord Style ==================== */
+
+/* Voice Connected Bar (Bottom of channel list) */
+.voice-connected-bar {
+    position: absolute;
+    bottom: 52px;
+    left: 0;
+    right: 0;
+    background: var(--background-secondary-alt, #292b2f);
+    border-top: 1px solid var(--background-tertiary, #202225);
+    padding: 0;
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.voice-connected-bar.show {
+    display: flex;
+}
+
+.voice-connected-info {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    gap: 8px;
+}
+
+.voice-connected-status {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.voice-connected-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #23a559;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.voice-connected-label svg {
+    width: 14px;
+    height: 14px;
+}
+
+.voice-connected-channel {
+    font-size: 12px;
+    color: var(--text-muted, #949ba4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voice-signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.voice-signal-bars span {
+    width: 4px;
+    background: #23a559;
+    border-radius: 1px;
+}
+
+.voice-signal-bars span:nth-child(1) { height: 4px; }
+.voice-signal-bars span:nth-child(2) { height: 8px; }
+.voice-signal-bars span:nth-child(3) { height: 12px; }
+
+.voice-disconnect-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    color: var(--text-muted, #949ba4);
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.voice-disconnect-btn:hover {
+    background: var(--background-modifier-hover, #3c3f45);
+    color: #f23f43;
+}
+
+.voice-disconnect-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.voice-controls {
+    display: flex;
+    padding: 0 8px 8px;
+    gap: 8px;
+}
+
+.voice-control-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    background: var(--background-secondary, #2b2d31);
+    border: none;
+    border-radius: 4px;
+    color: var(--interactive-normal, #b5bac1);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.voice-control-btn:hover {
+    background: var(--background-modifier-hover, #404249);
+    color: var(--interactive-hover, #dcddde);
+}
+
+.voice-control-btn.active,
+.voice-control-btn.muted,
+.voice-control-btn.deafened {
+    color: #f23f43;
+}
+
+.voice-control-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ==================== VOICE CHANNEL MAIN VIEW ==================== */
+.voice-channel-view {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    background: var(--background-tertiary, #1e1f22);
+}
+
+.voice-channel-view.active {
+    display: flex;
+}
+
+.voice-channel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--background-secondary, #2b2d31);
+    border-bottom: 1px solid var(--background-tertiary, #1e1f22);
+}
+
+.voice-channel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--header-primary, #f2f3f5);
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.voice-channel-title svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted, #949ba4);
+}
+
+/* ==================== VOICE PARTICIPANTS GRID ==================== */
+.voice-participants-area {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.voice-participants-grid {
+    flex: 1;
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    align-content: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+/* Dynamic grid based on participant count */
+.voice-participants-grid[data-count="1"] {
+    grid-template-columns: 1fr;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.voice-participants-grid[data-count="2"] {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.voice-participants-grid[data-count="3"],
+.voice-participants-grid[data-count="4"] {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.voice-participants-grid[data-count="5"],
+.voice-participants-grid[data-count="6"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* ==================== VOICE PARTICIPANT TILE ==================== */
+.voice-participant-tile {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: var(--background-secondary, #2b2d31);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.voice-participant-tile.speaking {
+    box-shadow: 0 0 0 3px #23a559;
+}
+
+.voice-participant-tile.self {
+    background: var(--background-tertiary, #1e1f22);
+}
+
+.voice-participant-tile.camera-on,
+.voice-participant-tile.screen-sharing {
+    background: #000;
+}
+
+/* Avatar wrapper */
+.voice-avatar-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Avatar display (when camera is off) */
+.voice-participant-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.voice-participant-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--brand-experiment, #5865f2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+/* Video display (when camera is on) */
+.voice-participant-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+/* Screen sharing - contain instead of cover */
+.voice-participant-tile.screen-sharing .voice-participant-video {
+    object-fit: contain;
+    background: #000;
+}
+
+/* Participant info overlay - above video */
+.voice-participant-info {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2;
+}
+
+.voice-participant-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: white;
+}
+
+.voice-participant-name svg {
+    width: 16px;
+    height: 16px;
+}
+
+.voice-participant-indicators {
+    display: flex;
+    gap: 4px;
+}
+
+.voice-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.voice-indicator.muted {
+    color: #f23f43;
+}
+
+.voice-indicator svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Camera off indicator */
+.voice-camera-off-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #f23f43;
+    font-size: 12px;
+}
+
+/* Avatar decoration in voice */
+.voice-avatar-decoration {
+    position: absolute;
+    width: 96px;
+    height: 96px;
+    pointer-events: none;
+}
+
+/* ==================== VOICE SIDEBAR (Activity Panel) ==================== */
+.voice-activity-panel {
+    width: 340px;
+    background: var(--background-secondary, #2b2d31);
+    border-left: 1px solid var(--background-tertiary, #1e1f22);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.voice-activity-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    background: linear-gradient(180deg, #1a1b1e 0%, transparent 100%);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.voice-activity-graphic {
+    width: 200px;
+    height: 120px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-activity-graphic img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.voice-activity-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.voice-activity-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--background-tertiary, #1e1f22);
+    border: none;
+    border-radius: 4px;
+    color: var(--text-normal, #dbdee1);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.voice-activity-btn:hover {
+    background: var(--background-modifier-hover, #404249);
+}
+
+.voice-activity-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ==================== VOICE BOTTOM CONTROLS ==================== */
+.voice-bottom-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--background-secondary, #2b2d31);
+    border-top: 1px solid var(--background-tertiary, #1e1f22);
+}
+
+.voice-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: white;
+}
+
+.voice-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Buttons with labels */
+.voice-btn-with-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: var(--background-secondary-alt, #232428);
+    border: none;
+    border-radius: 8px;
+    color: var(--interactive-normal, #b5bac1);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 70px;
+}
+
+.voice-btn-with-label:hover {
+    background: var(--background-modifier-hover, #404249);
+    color: var(--interactive-hover, #dcddde);
+}
+
+.voice-btn-with-label svg {
+    width: 24px;
+    height: 24px;
+}
+
+.voice-btn-label {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.voice-btn-with-label.active,
+.voice-btn-mute.active,
+.voice-btn-deafen.active {
+    background: #f23f43;
+    color: white;
+}
+
+.voice-btn-camera.active {
+    background: #23a559;
+    color: white;
+}
+
+.voice-btn-screen.active {
+    background: #5865f2;
+    color: white;
+}
+
+/* Disconnect button - big red circle */
+.voice-btn-disconnect-big {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #f23f43;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: white;
+    margin-left: 8px;
+}
+
+.voice-btn-disconnect-big:hover {
+    background: #d83c3e;
+}
+
+.voice-btn-disconnect-big svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .voice-btn-with-label {
+        min-width: 50px;
+        padding: 8px 10px;
+    }
+    
+    .voice-btn-label {
+        font-size: 10px;
+    }
+}
+
+/* ==================== CHANNEL LIST VOICE ITEMS ==================== */
+.channel-item.voice-channel {
+    cursor: pointer;
+}
+
+.channel-item.voice-channel .channel-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.channel-item.voice-channel .channel-icon {
+    color: var(--text-muted, #949ba4);
+}
+
+.channel-item.voice-channel.voice-active {
+    background: var(--background-modifier-selected, #404249);
+}
+
+.channel-item.voice-channel.voice-active .channel-name {
+    color: var(--interactive-active, #ffffff);
+}
+
+/* Voice channel participants in sidebar */
+.voice-channel-participants {
+    padding-left: 32px;
+    margin-top: 4px;
+}
+
+.voice-channel-participant {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.voice-channel-participant:hover {
+    background: var(--background-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.voice-channel-participant-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.voice-channel-participant-name {
+    font-size: 13px;
+    color: var(--text-normal, #dbdee1);
+    flex: 1;
+}
+
+.voice-channel-participant-icons {
+    display: flex;
+    gap: 2px;
+}
+
+.voice-channel-participant-icons svg {
+    width: 16px;
+    height: 16px;
+    color: #f23f43;
+}
+
+/* Voice channel timer */
+.voice-channel-timer {
+    font-size: 12px;
+    color: #23a559;
+    margin-left: auto;
+}

@@ -244,49 +244,58 @@
             
             const displayName = this.currentUser.displayName || this.currentUser.username;
             const status = this.currentUser.status || 'OFFLINE';
-            const customStatus = this.getCustomStatusText();
+            const customStatus = this.currentUser.customStatus || '';
+            const customEmoji = this.currentUser.customStatusEmoji || '';
             const bannerUrl = this.currentUser.bannerUrl || '';
-            const bannerColor = this.currentUser.bannerColor || '#5865f2';
+            const bannerColor = this.currentUser.bannerColor || '#f04747';
+            const bio = this.currentUser.bio || '';
 
             popup.innerHTML = `
                 <div class="ucp-popup-banner" style="${bannerUrl ? `background-image: url('${bannerUrl}')` : `background-color: ${bannerColor}`}">
-                    <div class="ucp-popup-avatar-wrapper">
+                    <div class="ucp-popup-avatar-container">
                         ${this.renderPopupAvatar()}
-                        <span class="ucp-popup-status status-${status.toLowerCase()}"></span>
+                        <span class="ucp-popup-status-ring status-${status.toLowerCase()}"></span>
+                        ${this.currentUser.avatarDecorationUrl ? `<img class="ucp-popup-avatar-decoration" src="${this.currentUser.avatarDecorationUrl}" alt="">` : ''}
                     </div>
-                    ${this.currentUser.avatarDecorationUrl ? `<img class="ucp-popup-decoration" src="${this.currentUser.avatarDecorationUrl}" alt="">` : ''}
+                    ${customStatus ? `
+                        <div class="ucp-popup-custom-bubble">
+                            <span class="ucp-bubble-icon">➕</span>
+                            <span class="ucp-bubble-text">${this.escapeHtml(customStatus)}</span>
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="ucp-popup-badge-area">
-                    ${customStatus ? `<div class="ucp-popup-custom-status">${customStatus}</div>` : ''}
-                </div>
+                
                 <div class="ucp-popup-body">
-                    <div class="ucp-popup-name-section">
-                        <div class="ucp-popup-display-name">${this.escapeHtml(displayName)}</div>
-                        <div class="ucp-popup-username">${this.escapeHtml(this.currentUser.username)}</div>
+                    <div class="ucp-popup-identity">
+                        <span class="ucp-popup-displayname">${this.escapeHtml(displayName)}</span>
+                        ${this.currentUser.nitro ? `<img class="ucp-popup-badge" src="/images/nitro-badge.svg" alt="Nitro" title="Nitro">` : ''}
                     </div>
-                    
-                    <div class="ucp-popup-divider"></div>
+                    <div class="ucp-popup-username">${this.escapeHtml(this.currentUser.username)}</div>
                     
                     <div class="ucp-popup-menu">
-                        <button class="ucp-popup-menu-item" data-action="edit-profile">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <button class="ucp-menu-item" data-action="edit-profile">
+                            <svg class="ucp-menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                             </svg>
-                            Sửa Hồ Sơ
+                            <span class="ucp-menu-text">Sửa Hồ Sơ</span>
                         </button>
-                        <button class="ucp-popup-menu-item" data-action="set-status">
-                            <span class="ucp-menu-status-dot status-${status.toLowerCase()}"></span>
-                            ${this.getStatusLabel(status)}
-                            <svg class="ucp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        
+                        <button class="ucp-menu-item ucp-menu-expandable" data-action="set-status">
+                            <span class="ucp-status-indicator status-${status.toLowerCase()}"></span>
+                            <span class="ucp-menu-text">${this.getStatusLabel(status)}</span>
+                            <svg class="ucp-menu-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                             </svg>
                         </button>
-                        <button class="ucp-popup-menu-item" data-action="switch-account">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        
+                        <div class="ucp-menu-separator"></div>
+                        
+                        <button class="ucp-menu-item" data-action="switch-account">
+                            <svg class="ucp-menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/>
                             </svg>
-                            Đổi Tài Khoản
-                            <svg class="ucp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <span class="ucp-menu-text">Đổi Tài Khoản</span>
+                            <svg class="ucp-menu-arrow" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
                             </svg>
                         </button>

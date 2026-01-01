@@ -857,6 +857,38 @@ body {
     flex-direction: column;
     background-color: var(--bg-primary);
     min-width: 0;
+    position: relative;
+}
+
+/* Text Channel View */
+#chatApp .text-channel-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+#chatApp .text-channel-view .content-body {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Voice Channel View (hidden by default, shown when in voice channel) */
+#chatApp .voice-channel-view {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    background: var(--bg-tertiary);
+}
+
+#chatApp .voice-channel-view.active {
+    display: flex;
+}
+
+/* When voice view is active, hide text view */
+#chatApp .main-content:has(.voice-channel-view.active) .text-channel-view {
+    display: none;
 }
 
 #chatApp .content-header {
