@@ -1014,4 +1014,22 @@
 
     // Run again when app.js swaps page content without reloading
     document.addEventListener('cococord:page:loaded', maybeInit);
+
+    // ===== Expose API for Quick Switcher =====
+    window.AppHome = {
+        getDmItems: () => [...state.dmItems],
+        getFriends: () => [...state.friends],
+        getServers: () => [], // TODO: implement when servers are added
+        openDmChat,
+        openDmWithUser: async (userId) => {
+            // Find existing DM or create new one
+            const existingDm = state.dmItems.find(dm => dm.recipientId === userId || dm.id === userId);
+            if (existingDm) {
+                openDmChat(existingDm.dmGroupId, existingDm);
+                return;
+            }
+            // If no existing DM, create one via openDM
+            await openDM(userId);
+        }
+    };
 })();

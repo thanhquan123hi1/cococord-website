@@ -37,6 +37,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/user-panel.css">
     <!-- Settings Modal CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
+    <!-- Quick Switcher CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/quick-switcher.css">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css">
     
@@ -177,6 +179,8 @@
     <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260102"></script>
     <script src="${pageContext.request.contextPath}/js/app.js?v=20260101f"></script>
     <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
+    <!-- Quick Switcher Modal -->
+    <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260102"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
     <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260101f"></script>
 

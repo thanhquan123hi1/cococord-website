@@ -1,0 +1,398 @@
+/**
+ * Quick Switcher Modal Styles
+ * Discord-style command palette / search modal
+ */
+
+/* ============================================
+   Quick Switcher Trigger Button (Sidebar)
+   ============================================ */
+.search-switcher-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background-color: #1e1f22;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-muted, #949ba4);
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    text-align: left;
+}
+
+.search-switcher-btn:hover {
+    background-color: #232428;
+}
+
+.search-switcher-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-experiment, #5865f2);
+}
+
+.search-switcher-btn svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted, #949ba4);
+}
+
+.search-switcher-btn span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Keyboard shortcut hint */
+.search-switcher-btn .shortcut-hint {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    color: var(--text-muted, #949ba4);
+    font-weight: 500;
+}
+
+/* ============================================
+   Quick Switcher Modal Overlay
+   ============================================ */
+.quick-switcher-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 999999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 100px;
+    animation: qsOverlayFadeIn 0.15s ease;
+}
+
+@keyframes qsOverlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   Quick Switcher Modal Container
+   ============================================ */
+.quick-switcher-modal {
+    width: 100%;
+    max-width: 570px;
+    background-color: #2f3136;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: qsModalSlideIn 0.2s ease;
+}
+
+@keyframes qsModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================
+   Search Input Section
+   ============================================ */
+.quick-switcher-input-wrapper {
+    position: relative;
+    padding: 0;
+    background-color: #1e1f22;
+}
+
+.quick-switcher-input {
+    width: 100%;
+    padding: 20px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-normal, #dbdee1);
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.quick-switcher-input::placeholder {
+    color: var(--text-muted, #949ba4);
+}
+
+.quick-switcher-input:focus {
+    outline: none;
+}
+
+/* ============================================
+   Content Area (Results / Empty State)
+   ============================================ */
+.quick-switcher-content {
+    min-height: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Empty State */
+.quick-switcher-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.quick-switcher-empty-emoji {
+    font-size: 48px;
+    margin-bottom: 16px;
+    line-height: 1;
+}
+
+.quick-switcher-empty-text {
+    color: var(--text-muted, #949ba4);
+    font-size: 14px;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+/* ============================================
+   Results List
+   ============================================ */
+.quick-switcher-results {
+    padding: 8px;
+}
+
+.quick-switcher-section {
+    margin-bottom: 8px;
+}
+
+.quick-switcher-section-title {
+    padding: 8px 12px 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted, #949ba4);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.quick-switcher-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.quick-switcher-item:hover,
+.quick-switcher-item.selected {
+    background-color: rgba(79, 84, 92, 0.4);
+}
+
+.quick-switcher-item.selected {
+    background-color: var(--brand-experiment, #5865f2);
+}
+
+.quick-switcher-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--brand-experiment, #5865f2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    overflow: hidden;
+}
+
+.quick-switcher-item-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.quick-switcher-item-icon.channel {
+    background-color: transparent;
+    color: var(--text-muted, #949ba4);
+    font-size: 20px;
+}
+
+.quick-switcher-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.quick-switcher-item-name {
+    color: var(--text-normal, #dbdee1);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quick-switcher-item-meta {
+    color: var(--text-muted, #949ba4);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================
+   Footer (Keyboard Hints)
+   ============================================ */
+.quick-switcher-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: #292b2f;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.quick-switcher-hints {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.quick-switcher-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted, #949ba4);
+    font-size: 12px;
+}
+
+.quick-switcher-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background-color: #202225;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-normal, #dbdee1);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.quick-switcher-protip {
+    color: var(--text-muted, #949ba4);
+    font-size: 12px;
+}
+
+.quick-switcher-protip strong {
+    color: var(--brand-experiment, #5865f2);
+    font-weight: 600;
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+.quick-switcher-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.quick-switcher-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.quick-switcher-content::-webkit-scrollbar-thumb {
+    background: #202225;
+    border-radius: 4px;
+}
+
+.quick-switcher-content::-webkit-scrollbar-thumb:hover {
+    background: #2e3035;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 640px) {
+    .quick-switcher-overlay {
+        padding: 60px 16px 16px;
+        align-items: flex-start;
+    }
+
+    .quick-switcher-modal {
+        max-width: 100%;
+        max-height: calc(100vh - 120px);
+    }
+
+    .quick-switcher-input {
+        padding: 16px;
+        font-size: 16px;
+    }
+
+    .quick-switcher-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .quick-switcher-hints {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .quick-switcher-protip {
+        display: none;
+    }
+}
+
+/* ============================================
+   Loading State
+   ============================================ */
+.quick-switcher-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.quick-switcher-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--brand-experiment, #5865f2);
+    border-radius: 50%;
+    animation: qsSpinner 0.8s linear infinite;
+}
+
+@keyframes qsSpinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   Highlight matched text
+   ============================================ */
+.quick-switcher-item-name mark,
+.quick-switcher-item-meta mark {
+    background-color: transparent;
+    color: var(--brand-experiment, #5865f2);
+    font-weight: 600;
+}

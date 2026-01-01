@@ -9,7 +9,10 @@
     <!-- DM Sidebar -->
     <aside class="dm-sidebar">
         <div class="sidebar-search">
-            <input id="globalSearch" class="search-input" type="text" placeholder="Tìm hoặc bắt đầu cuộc trò chuyện" autocomplete="off" />
+            <button class="search-switcher-btn" onclick="QuickSwitcherModal.open()" type="button">
+                <i class="bi bi-search"></i>
+                <span>Tìm hoặc bắt đầu cuộc trò chuyện</span>
+            </button>
         </div>
 
         <nav class="nav-menu" aria-label="Menu">
