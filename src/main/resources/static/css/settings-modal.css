@@ -1,29 +1,36 @@
 /**
  * Settings Modal Styles - Discord Style
- * Full-screen overlay modal with two-column layout
+ * Floating modal overlay with two-column layout
  */
 
 /* ============================================
-   Settings Modal Overlay
+   Settings Modal Overlay (Semi-transparent background)
    ============================================ */
 .settings-modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #313338;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
     z-index: 999999;
     display: flex;
-    animation: settingsZoomIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    animation: overlayFadeIn 0.2s ease;
 }
 
-@keyframes settingsZoomIn {
+@keyframes overlayFadeIn {
     from {
         opacity: 0;
-        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
     }
     to {
         opacity: 1;
@@ -43,37 +50,47 @@
 }
 
 /* ============================================
-   Settings Layout Container
+   Settings Modal Container (Floating box)
    ============================================ */
 .settings-modal-container {
     display: flex;
     width: 100%;
-    height: 100%;
+    max-width: 1000px;
+    height: 80vh;
+    max-height: 800px;
+    background: #313338;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 
+        0 0 0 1px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.24),
+        0 24px 48px rgba(0, 0, 0, 0.4);
+    animation: modalZoomIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================
-   Left Sidebar - Navigation (30%)
+   Left Sidebar - Navigation
    ============================================ */
 .settings-sidebar-wrapper {
-    width: 218px;
-    min-width: 218px;
+    width: 220px;
+    min-width: 220px;
     background: #2b2d31;
     display: flex;
     flex-direction: column;
-    flex: 1 0 218px;
+    border-radius: 8px 0 0 8px;
 }
 
 .settings-sidebar-scroller {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
 .settings-sidebar {
-    width: 218px;
-    padding: 60px 6px 60px 20px;
+    width: 100%;
+    padding: 16px 8px 16px 12px;
     box-sizing: border-box;
 }
 
@@ -159,7 +176,7 @@
 }
 
 /* ============================================
-   Right Content Area (70%)
+   Right Content Area
    ============================================ */
 .settings-content-wrapper {
     flex: 1;
@@ -167,18 +184,20 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    border-radius: 0 8px 8px 0;
+    min-width: 0;
 }
 
 .settings-content-scroller {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 60px 40px 80px;
+    padding: 24px 32px 40px;
 }
 
 .settings-content-column {
-    max-width: 740px;
-    min-width: 460px;
+    max-width: 660px;
+    min-width: 0;
     animation: settingsSlideUp 0.2s ease;
 }
 
@@ -187,19 +206,19 @@
    ============================================ */
 .settings-close-wrapper {
     position: absolute;
-    top: 60px;
-    right: 21px;
+    top: 16px;
+    right: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     z-index: 10;
 }
 
 .settings-close-button {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border: 2px solid #b5bac1;
     border-radius: 50%;
     background: transparent;
@@ -214,6 +233,7 @@
 .settings-close-button:hover {
     border-color: #dbdee1;
     color: #dbdee1;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .settings-close-button svg {
@@ -222,9 +242,9 @@
 }
 
 .settings-close-keybind {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: #b5bac1;
+    color: #949ba4;
 }
 
 /* ============================================
@@ -927,15 +947,20 @@
 /* ============================================
    Responsive Styles
    ============================================ */
-@media (max-width: 1024px) {
+
+/* Tablet - Collapse sidebar */
+@media (max-width: 900px) {
+    .settings-modal-overlay {
+        padding: 24px;
+    }
+
     .settings-sidebar-wrapper {
-        width: 56px;
-        min-width: 56px;
+        width: 60px;
+        min-width: 60px;
     }
 
     .settings-sidebar {
-        width: 56px;
-        padding: 60px 6px;
+        padding: 16px 6px;
     }
 
     .settings-search-container {
@@ -948,7 +973,7 @@
 
     .settings-nav-item {
         justify-content: center;
-        padding: 12px;
+        padding: 10px;
     }
 
     .settings-nav-item span {
@@ -956,7 +981,7 @@
     }
 
     .settings-content-scroller {
-        padding: 60px 20px 80px;
+        padding: 20px 24px 40px;
     }
 
     .settings-content-column {
@@ -965,8 +990,18 @@
     }
 }
 
+/* Mobile - Full screen modal */
 @media (max-width: 768px) {
+    .settings-modal-overlay {
+        padding: 0;
+    }
+
     .settings-modal-container {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
         flex-direction: column;
     }
 
@@ -975,6 +1010,7 @@
         min-width: 100%;
         height: auto;
         flex: none;
+        border-radius: 0;
     }
 
     .settings-sidebar-scroller {
@@ -983,10 +1019,10 @@
 
     .settings-sidebar {
         width: 100%;
-        padding: 16px;
+        padding: 12px;
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
     }
 
     .settings-nav-group {
@@ -1003,7 +1039,12 @@
     .settings-nav-item {
         flex: none;
         width: auto;
-        padding: 8px 16px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .settings-nav-item span {
+        display: inline;
     }
 
     .settings-nav-divider {
@@ -1013,15 +1054,20 @@
     .settings-content-wrapper {
         height: auto;
         flex: 1;
+        border-radius: 0;
     }
 
     .settings-content-scroller {
-        padding: 20px 16px 40px;
+        padding: 16px;
     }
 
     .settings-close-wrapper {
-        top: 16px;
-        right: 16px;
+        top: 12px;
+        right: 12px;
+    }
+
+    .settings-close-keybind {
+        display: none;
     }
 
     .settings-profile-info {

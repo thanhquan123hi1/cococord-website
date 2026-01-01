@@ -312,93 +312,13 @@ function getStatusText(status) {
 }
 
 // Bind events for UCP
+// Note: User Panel is now fully managed by user-panel.js
+// This function is kept for backward compatibility with other controls
 function bindGlobalUserPanelEvents() {
-    const userInfoBtn = document.getElementById('userInfoBtn');
-    const userDropdown = document.getElementById('userDropdown');
-    const logoutBtnUser = document.getElementById('logoutBtnUser');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const statusItems = document.querySelectorAll('#userDropdown .status-item');
+    // Removed old dropdown logic - now handled by user-panel.js
     
-    // Toggle user dropdown
-    if (userInfoBtn && userDropdown) {
-        userInfoBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isVisible = userDropdown.style.display !== 'none';
-            userDropdown.style.display = isVisible ? 'none' : 'block';
-        });
-    }
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (userDropdown && !userDropdown.contains(e.target) && e.target !== userInfoBtn) {
-            userDropdown.style.display = 'none';
-        }
-    });
-    
-    // Logout button in dropdown
-    if (logoutBtnUser) {
-        logoutBtnUser.addEventListener('click', () => {
-            logout();
-        });
-    }
-    
-    // Settings button - open user settings modal if available
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Ngăn event bubble
-            // Close dropdown before opening modal
-            if (userDropdown) {
-                userDropdown.style.display = 'none';
-            }
-            
-            // Try to use SettingsModal (new full-screen modal)
-            if (window.SettingsModal && window.SettingsModal.open) {
-                window.SettingsModal.open('my-account');
-            }
-            // Fallback to UserSettingsModal if available (from chat.js or user-settings-modal.js)
-            else if (window.UserSettingsModal && window.UserSettingsModal.open) {
-                window.UserSettingsModal.open();
-            } else {
-                // Final fallback: navigate to profile page
-                window.location.href = '/profile';
-            }
-        });
-    }
-    
-    // Status change items
-    statusItems.forEach(item => {
-        item.addEventListener('click', async () => {
-            const newStatus = item.dataset.status;
-            if (!newStatus) return;
-            
-            try {
-                const response = await apiRequest('/api/users/me/status', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        status: newStatus,
-                        customStatus: globalCurrentUser?.customStatus || null,
-                        customStatusEmoji: globalCurrentUser?.customStatusEmoji || null
-                    })
-                });
-                
-                if (response.ok) {
-                    // Update local state
-                    if (globalCurrentUser) {
-                        globalCurrentUser.status = newStatus;
-                    }
-                    renderGlobalUserPanel();
-                    
-                    // Close dropdown
-                    if (userDropdown) {
-                        userDropdown.style.display = 'none';
-                    }
-                }
-            } catch (e) {
-                console.error('Failed to update status', e);
-            }
-        });
-    });
+    // Note: Settings button is now handled by user-panel.js
+    // Note: Status items are now handled by user-panel.js via User Popout
     
     // Mic button (will be controlled by chat.js for voice, but we can toggle visual state)
     const micBtn = document.getElementById('micBtn');

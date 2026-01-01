@@ -33,6 +33,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <!-- Channel panel CSS (used for global User Control Panel styling) -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css">
+    <!-- User Panel CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/user-panel.css">
     <!-- Settings Modal CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
@@ -100,55 +102,10 @@
         </div>
 
         <!-- Global User Control Panel (persistent across pages) -->
+        <!-- Now fully managed by user-panel.js -->
         <div class="global-user-control-panel" aria-label="User Control Panel">
             <div class="user-area" id="userPanel">
-                <div class="user-info" id="userInfoBtn" role="button" tabindex="0">
-                    <div class="user-avatar" id="ucpAvatar">
-                        <span class="status-indicator online" id="ucpStatusIndicator"></span>
-                    </div>
-                    <div class="user-details">
-                        <div class="user-name" id="ucpName">User</div>
-                        <div class="user-status" id="ucpStatus">Trực tuyến</div>
-                    </div>
-                </div>
-                <div class="user-controls" aria-label="Controls">
-                    <button class="control-btn" id="micBtn" title="Tắt/Bật Mic">
-                        <i class="bi bi-mic"></i>
-                    </button>
-                    <button class="control-btn" id="deafenBtn" title="Tắt/Bật Tai nghe">
-                        <i class="bi bi-headphones"></i>
-                    </button>
-                    <button class="control-btn" id="settingsBtn" title="Cài đặt người dùng">
-                        <i class="bi bi-gear"></i>
-                    </button>
-                </div>
-
-                <!-- User Dropdown Menu -->
-                <div class="user-dropdown" id="userDropdown" style="display:none;">
-                    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
-                        <i class="bi bi-person"></i> Hồ sơ của tôi
-                    </a>
-                    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
-                        <i class="bi bi-gear"></i> Cài đặt
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-item status-item" data-status="ONLINE">
-                        <i class="bi bi-circle-fill online"></i> Trực tuyến
-                    </div>
-                    <div class="dropdown-item status-item" data-status="IDLE">
-                        <i class="bi bi-moon-fill idle"></i> Vắng mặt
-                    </div>
-                    <div class="dropdown-item status-item" data-status="DO_NOT_DISTURB">
-                        <i class="bi bi-dash-circle-fill dnd"></i> Không làm phiền
-                    </div>
-                    <div class="dropdown-item status-item" data-status="INVISIBLE">
-                        <i class="bi bi-circle offline"></i> Ẩn
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-item text-danger" id="logoutBtnUser">
-                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
-                    </div>
-                </div>
+                <!-- Dynamic content rendered by user-panel.js -->
             </div>
         </div>
     </div>
@@ -217,6 +174,7 @@
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101f"></script>
     <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260102"></script>
     <script src="${pageContext.request.contextPath}/js/app.js?v=20260101f"></script>
     <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
