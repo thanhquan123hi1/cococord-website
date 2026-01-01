@@ -58,11 +58,6 @@ public class ViewController {
         return "messages";
     }
 
-    @GetMapping("/profile")
-    public String profile() {
-        return "profile"; // User profile
-    }
-
     @GetMapping("/sessions")
     public String sessions() {
         return "sessions"; // Active sessions

@@ -30,8 +30,8 @@
                 <span class="header-status" id="headerStatus"></span>
             </div>
             <div class="header-right">
-                <button class="icon-btn" type="button" title="Gọi thoại"><i class="bi bi-telephone"></i></button>
-                <button class="icon-btn" type="button" title="Gọi video"><i class="bi bi-camera-video"></i></button>
+                <button class="icon-btn" type="button" id="dmVoiceCallBtn" title="Gọi thoại"><i class="bi bi-telephone"></i></button>
+                <button class="icon-btn" type="button" id="dmVideoCallBtn" title="Gọi video"><i class="bi bi-camera-video"></i></button>
                 <button class="icon-btn" type="button" title="Ghim tin nhắn"><i class="bi bi-pin"></i></button>
                 <button class="icon-btn" type="button" title="Thêm bạn bè vào DM"><i class="bi bi-person-plus"></i></button>
                 <div class="header-search">
@@ -98,12 +98,26 @@
     </aside>
 </div>
 
+<!-- DM Call Overlay (Voice/Video) -->
+<div class="dm-call-overlay" id="dmCallOverlay" style="display:none;" aria-hidden="true">
+    <div class="dm-call-surface">
+        <div class="dm-call-header">
+            <div class="dm-call-title" id="dmCallTitle">Call</div>
+            <button class="icon-btn" type="button" id="dmCallHangupBtn" title="Kết thúc cuộc gọi">
+                <i class="bi bi-telephone-x"></i>
+            </button>
+        </div>
+
+        <div class="dm-call-body">
+            <video class="dm-call-remote" id="dmCallRemoteVideo" autoplay playsinline></video>
+            <video class="dm-call-local" id="dmCallLocalVideo" autoplay playsinline muted></video>
+            <audio id="dmCallRemoteAudio" autoplay></audio>
+        </div>
+    </div>
+</div>
+
 <!-- User Settings Dropdown -->
 <div class="settings-dropdown" id="settingsDropdown" style="display:none;">
-    <a href="${pageContext.request.contextPath}/profile" class="dropdown-item">
-        <i class="bi bi-person"></i>
-        <span>Hồ sơ</span>
-    </a>
     <a href="${pageContext.request.contextPath}/sessions" class="dropdown-item">
         <i class="bi bi-shield-lock"></i>
         <span>Phiên đăng nhập</span>

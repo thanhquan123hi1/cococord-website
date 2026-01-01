@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <head>
     <title>Hồ sơ - CoCoCord</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/friends.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
     <style>
         .profile-container {
             max-width: 960px;

@@ -23,8 +23,6 @@
     <mapping path="/messages/**" decorator="app" />
     <mapping path="/chat" decorator="app" />
     <mapping path="/chat/**" decorator="app" />
-    <mapping path="/profile" decorator="app" />
-    <mapping path="/profile/**" decorator="app" />
     <mapping path="/settings" decorator="app" />
     <mapping path="/settings/**" decorator="app" />
     <mapping path="/sessions" decorator="app" />

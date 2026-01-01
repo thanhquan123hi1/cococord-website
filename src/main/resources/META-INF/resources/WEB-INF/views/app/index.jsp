@@ -53,6 +53,7 @@
                     <button class="tab active" type="button" data-tab="online">Trực tuyến</button>
                     <button class="tab" type="button" data-tab="all">Tất cả</button>
                     <button class="tab" type="button" data-tab="pending">Đang chờ xử lý</button>
+                    <button class="tab" type="button" data-tab="blocked">Bị chặn</button>
                 </div>
                 <button class="btn-primary" type="button" id="addFriendBtn">Thêm Bạn</button>
             </div>
@@ -82,6 +83,50 @@
             </div>
             <div class="add-friend-hint" id="addFriendHint"></div>
         </section>
+    </main>
+
+    <!-- DM Chat View (hidden by default, shown when clicking a DM) -->
+    <main class="dm-chat-area" id="dmChatArea" style="display:none;">
+        <header class="dm-chat-header">
+            <div class="header-left">
+                <button class="icon-btn" type="button" id="closeDmChatBtn" title="Quay lại"><i class="bi bi-arrow-left"></i></button>
+                <i class="bi bi-at" style="font-size: 20px; color: var(--text-muted); margin-right: 8px;"></i>
+                <span class="header-title" id="dmChatTitle">User</span>
+            </div>
+            <div class="header-right">
+                <button class="icon-btn" type="button" title="Gọi thoại"><i class="bi bi-telephone"></i></button>
+                <button class="icon-btn" type="button" title="Gọi video"><i class="bi bi-camera-video"></i></button>
+                <button class="icon-btn" type="button" title="Ghim"><i class="bi bi-pin"></i></button>
+                <button class="icon-btn" type="button" title="Thêm bạn vào DM"><i class="bi bi-person-plus"></i></button>
+                <div class="search-wrap" style="width: 140px;">
+                    <input type="text" class="search-input" placeholder="Tìm kiếm" style="padding: 4px 8px; font-size: 13px;" />
+                    <i class="bi bi-search" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px;"></i>
+                </div>
+                <button class="icon-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
+                <button class="icon-btn" type="button" title="Trợ giúp"><i class="bi bi-question-circle"></i></button>
+            </div>
+        </header>
+
+        <section class="dm-messages-area" id="dmMessagesArea">
+            <div class="dm-start" id="dmStartHeader">
+                <div class="dm-start-avatar" id="dmStartAvatar"></div>
+                <h2 class="dm-start-name" id="dmStartName"></h2>
+                <p class="dm-start-info" id="dmStartInfo"></p>
+            </div>
+            <div class="dm-messages-list" id="dmMessagesList"></div>
+        </section>
+
+        <form class="dm-composer" id="dmComposer" autocomplete="off">
+            <div class="composer-inner">
+                <button class="composer-btn" type="button" title="Đính kèm"><i class="bi bi-plus-circle"></i></button>
+                <input id="dmMessageInput" class="composer-input" type="text" placeholder="Nhắn tin tới @User" />
+                <div class="composer-actions">
+                    <button class="composer-btn" type="button" title="GIF"><i class="bi bi-filetype-gif"></i></button>
+                    <button class="composer-btn" type="button" title="Sticker"><i class="bi bi-sticky"></i></button>
+                    <button class="composer-btn" type="button" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                </div>
+            </div>
+        </form>
     </main>
 </div>
 
