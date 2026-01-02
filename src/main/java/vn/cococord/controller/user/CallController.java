@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.CallSignalRequest;
 import vn.cococord.entity.mysql.User;
+import vn.cococord.repository.IDirectMessageMemberRepository;
 import vn.cococord.repository.IUserRepository;
 
 /**
@@ -29,6 +30,7 @@ public class CallController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final IUserRepository userRepository;
+    private final IDirectMessageMemberRepository dmMemberRepository;
 
     /**
      * Client sends to: /app/call.signal
@@ -63,6 +65,39 @@ public class CallController {
                 event.put("sdpMLineIndex", request.getSdpMLineIndex());
 
             messagingTemplate.convertAndSend("/topic/call/" + request.getRoomId(), event);
+
+            // For CALL_START, also send to target user's personal topic so they receive
+            // the incoming call even if they haven't opened the DM chat yet.
+            if ("CALL_START".equals(request.getType())) {
+                // Preferred: client provides targetUserId.
+                if (request.getTargetUserId() != null) {
+                    log.info("[CALL] CALL_START roomId={} fromUserId={} targetUserId={} (client)",
+                            request.getRoomId(), user.getId(), request.getTargetUserId());
+                    messagingTemplate.convertAndSend(
+                            "/topic/user." + request.getTargetUserId() + ".calls",
+                            event);
+                } else {
+                    // Fallback: derive recipients from DM group membership.
+                    // This makes incoming call notification reliable even if frontend payload
+                    // cannot resolve targetUserId.
+                    try {
+                        Long dmGroupId = Long.valueOf(request.getRoomId());
+                        var recipients = dmMemberRepository.findOtherUserIds(dmGroupId, user.getId());
+                        log.info("[CALL] CALL_START roomId={} fromUserId={} recipients={} (derived)",
+                                request.getRoomId(), user.getId(), recipients);
+                        for (Long recipientId : recipients) {
+                            if (recipientId == null) {
+                                continue;
+                            }
+                            messagingTemplate.convertAndSend(
+                                    "/topic/user." + recipientId + ".calls",
+                                    event);
+                        }
+                    } catch (Exception ignored) {
+                        // ignore: roomId may not be numeric or DM membership lookup failed
+                    }
+                }
+            }
         } catch (Exception e) {
             log.error("Error in call signaling: {}", e.getMessage(), e);
         }

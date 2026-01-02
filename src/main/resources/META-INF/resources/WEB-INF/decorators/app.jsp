@@ -181,8 +181,10 @@
     <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
     <!-- Quick Switcher Modal -->
     <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260102"></script>
+    <!-- Notification system with global call subscription -->
+    <script src="${pageContext.request.contextPath}/js/notification.js?v=20260102a"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
-    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260102a"></script>
 
     <%
         if (sitemeshContent != null) {

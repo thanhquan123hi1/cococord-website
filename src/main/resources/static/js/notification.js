@@ -41,15 +41,29 @@ class NotificationManager {
     }
 
     connectWebSocket() {
+        // Wait for userId to be available (may be set by app-home.js after API call)
+        const userId = this.getCurrentUserId();
+        if (!userId) {
+            console.log('Notification WebSocket: waiting for userId...');
+            setTimeout(() => this.connectWebSocket(), 1000);
+            return;
+        }
+
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            console.log('Notification WebSocket: waiting for accessToken...');
+            setTimeout(() => this.connectWebSocket(), 1000);
+            return;
+        }
+
         const socket = new SockJS('/ws');
         this.stompClient = Stomp.over(socket);
         this.stompClient.debug = null; // Disable debug logs
 
-        this.stompClient.connect({}, () => {
-            console.log('Notification WebSocket connected');
+        this.stompClient.connect({ Authorization: 'Bearer ' + token }, () => {
+            console.log('Notification WebSocket connected for user:', userId);
             
             // Subscribe to user's notification channel
-            const userId = this.getCurrentUserId();
             if (userId) {
                 // New notifications
                 this.stompClient.subscribe(`/topic/user.${userId}.notifications`, (message) => {
@@ -68,6 +82,22 @@ class NotificationManager {
                     const mentionEvent = JSON.parse(message.body);
                     this.handleMentionEvent(mentionEvent);
                 });
+
+                // Incoming call events - for receiving calls anywhere on /app
+                this.stompClient.subscribe(`/topic/user.${userId}.calls`, (message) => {
+                    try {
+                        const callEvent = JSON.parse(message.body);
+                        // Buffer events in case app-home.js hasn't attached listeners yet.
+                        if (!Array.isArray(window.__cococordIncomingCallQueue)) {
+                            window.__cococordIncomingCallQueue = [];
+                        }
+                        window.__cococordIncomingCallQueue.push(callEvent);
+                        // Dispatch a custom event so app-home.js can handle it
+                        window.dispatchEvent(new CustomEvent('incomingCall', { detail: callEvent }));
+                    } catch (e) {
+                        console.error('Failed to parse call event:', e);
+                    }
+                });
             }
         }, (error) => {
             console.error('Notification WebSocket error:', error);
@@ -77,10 +107,20 @@ class NotificationManager {
     }
 
     getCurrentUserId() {
-        // Get user ID from data attribute or localStorage
+        // Get user ID from data attribute, localStorage user object, or userId key
         const userIdElem = document.querySelector('[data-user-id]');
         if (userIdElem) {
             return userIdElem.dataset.userId;
+        }
+        // Try to get from cached user object (set by app-home.js)
+        const userJson = localStorage.getItem('user');
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                if (user && user.id) {
+                    return user.id;
+                }
+            } catch (_) { /* ignore */ }
         }
         return localStorage.getItem('userId');
     }

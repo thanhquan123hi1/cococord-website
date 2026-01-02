@@ -45,4 +45,9 @@ public class CallSignalRequest {
      * Whether this call intends video.
      */
     private Boolean video;
+
+    /**
+     * Target user ID for incoming call notification (used with CALL_START).
+     */
+    private Long targetUserId;
 }

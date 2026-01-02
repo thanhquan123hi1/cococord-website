@@ -21,6 +21,25 @@
     // WebSocket for DM
     let stompClient = null;
     let dmSubscription = null;
+    let callSubscription = null;
+
+    // ==================== CALL (WebRTC + WebSocket signaling) ====================
+    const call = {
+        active: false,
+        roomId: null,
+        isCaller: false,
+        video: false,
+        pc: null,
+        localStream: null,
+        remoteStream: null,
+
+        incomingPending: false,
+        incomingFrom: null,
+        incomingVideo: false,
+
+        pendingOfferSdp: null,
+        pendingCandidates: []
+    };
 
     const els = {
         globalSearch: () => document.getElementById('globalSearch'),
@@ -47,6 +66,21 @@
         dmMessagesList: () => document.getElementById('dmMessagesList'),
         dmComposer: () => document.getElementById('dmComposer'),
         dmMessageInput: () => document.getElementById('dmMessageInput')
+    };
+
+    const callEls = {
+        voiceBtn: () => document.getElementById('dmVoiceCallBtn'),
+        videoBtn: () => document.getElementById('dmVideoCallBtn'),
+        overlay: () => document.getElementById('dmCallOverlay'),
+        title: () => document.getElementById('dmCallTitle'),
+        prompt: () => document.getElementById('dmCallPrompt'),
+        promptText: () => document.getElementById('dmCallPromptText'),
+        acceptBtn: () => document.getElementById('dmCallAcceptBtn'),
+        declineBtn: () => document.getElementById('dmCallDeclineBtn'),
+        hangupBtn: () => document.getElementById('dmCallHangupBtn'),
+        localVideo: () => document.getElementById('dmCallLocalVideo'),
+        remoteVideo: () => document.getElementById('dmCallRemoteVideo'),
+        remoteAudio: () => document.getElementById('dmCallRemoteAudio')
     };
 
     function safeText(value) {
@@ -85,6 +119,468 @@
     function isOnline(user) {
         const s = user?.status;
         return String(s || '').toUpperCase() === 'ONLINE';
+    }
+
+    function getCallRoomId() {
+        return state.activeDmGroupId ? String(state.activeDmGroupId) : null;
+    }
+
+    function getActiveDmTargetUserId() {
+        const fromActive = state.activeDmUser?.userId || state.activeDmUser?.id;
+        if (fromActive) return fromActive;
+        if (state.activeDmGroupId) {
+            const dmItem = state.dmItems.find(it => String(it.dmGroupId) === String(state.activeDmGroupId));
+            return dmItem?.userId || dmItem?.id || null;
+        }
+        return null;
+    }
+
+    function otherUserName() {
+        const u = state.activeDmUser;
+        return u?.displayName || u?.username || 'Unknown';
+    }
+
+    function showCallOverlay({ video, title, showPrompt = false, promptText = '', showAccept = false, showDecline = false } = {}) {
+        const overlay = callEls.overlay();
+        if (!overlay) return;
+
+        overlay.style.display = 'flex';
+        overlay.setAttribute('aria-hidden', 'false');
+
+        const t = callEls.title();
+        if (t && title) t.textContent = title;
+
+        const prompt = callEls.prompt();
+        const pt = callEls.promptText();
+        if (prompt) prompt.style.display = showPrompt ? 'flex' : 'none';
+        if (pt) pt.textContent = promptText || '';
+
+        const acceptBtn = callEls.acceptBtn();
+        const declineBtn = callEls.declineBtn();
+        if (acceptBtn) acceptBtn.style.display = showAccept ? '' : 'none';
+        if (declineBtn) declineBtn.style.display = showDecline ? '' : 'none';
+
+        const localVideo = callEls.localVideo();
+        const remoteVideo = callEls.remoteVideo();
+        if (localVideo) localVideo.style.display = video ? '' : 'none';
+        if (remoteVideo) remoteVideo.style.display = video ? '' : 'none';
+    }
+
+    function hideCallOverlay() {
+        const overlay = callEls.overlay();
+        if (!overlay) return;
+        overlay.style.display = 'none';
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function attachStreamToVideo(videoEl, stream, { muted = false } = {}) {
+        if (!videoEl || !stream) return;
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        videoEl.muted = !!muted;
+        videoEl.srcObject = stream;
+        videoEl.onloadedmetadata = () => {
+            Promise.resolve(videoEl.play()).catch(() => { /* ignore */ });
+        };
+    }
+
+    function attachStreamToAudio(audioEl, stream) {
+        if (!audioEl || !stream) return;
+        audioEl.autoplay = true;
+        audioEl.srcObject = stream;
+        Promise.resolve(audioEl.play()).catch(() => { /* ignore */ });
+    }
+
+    function stopStream(stream) {
+        if (!stream) return;
+        try {
+            stream.getTracks().forEach(t => t.stop());
+        } catch (_) { /* ignore */ }
+    }
+
+    function sendCallSignal(payload) {
+        if (!stompClient || !stompClient.connected) return;
+        try {
+            stompClient.send('/app/call.signal', {}, JSON.stringify(payload));
+        } catch (_) { /* ignore */ }
+    }
+
+    function createPeerConnection() {
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        });
+
+        pc.onicecandidate = (e) => {
+            if (!e.candidate || !call.roomId) return;
+            sendCallSignal({
+                roomId: call.roomId,
+                type: 'ICE',
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex,
+                video: call.video
+            });
+        };
+
+        pc.ontrack = (e) => {
+            if (!call.remoteStream) {
+                call.remoteStream = new MediaStream();
+            }
+            call.remoteStream.addTrack(e.track);
+            attachStreamToAudio(callEls.remoteAudio(), call.remoteStream);
+
+            const hasVideo = call.remoteStream.getVideoTracks().length > 0;
+            if (call.video && hasVideo) {
+                attachStreamToVideo(callEls.remoteVideo(), call.remoteStream, { muted: false });
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            const s = pc.connectionState;
+            if (s === 'failed' || s === 'closed' || s === 'disconnected') {
+                endCall({ sendHangup: false });
+            }
+        };
+
+        return pc;
+    }
+
+    async function ensureLocalMedia(video) {
+        if (call.localStream) return call.localStream;
+
+        call.localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: video ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false
+        });
+
+        if (video) {
+            attachStreamToVideo(callEls.localVideo(), call.localStream, { muted: true });
+        }
+
+        return call.localStream;
+    }
+
+    function resetCallState() {
+        call.active = false;
+        call.roomId = null;
+        call.isCaller = false;
+        call.video = false;
+        call.incomingPending = false;
+        call.incomingFrom = null;
+        call.incomingVideo = false;
+        call.pendingOfferSdp = null;
+        call.pendingCandidates = [];
+    }
+
+    function endCall({ sendHangup } = { sendHangup: true }) {
+        if (!call.active && !call.incomingPending) {
+            hideCallOverlay();
+            return;
+        }
+
+        if (sendHangup && call.roomId) {
+            sendCallSignal({ roomId: call.roomId, type: 'HANGUP', video: call.video });
+        }
+
+        try {
+            if (call.pc) {
+                call.pc.onicecandidate = null;
+                call.pc.ontrack = null;
+                call.pc.close();
+            }
+        } catch (_) { /* ignore */ }
+
+        stopStream(call.localStream);
+        stopStream(call.remoteStream);
+
+        call.pc = null;
+        call.localStream = null;
+        call.remoteStream = null;
+
+        const lv = callEls.localVideo();
+        const rv = callEls.remoteVideo();
+        const ra = callEls.remoteAudio();
+        if (lv) lv.srcObject = null;
+        if (rv) rv.srcObject = null;
+        if (ra) ra.srcObject = null;
+
+        resetCallState();
+        hideCallOverlay();
+    }
+
+    async function acceptIncomingCall() {
+        if (!call.incomingPending || !call.roomId) return;
+        call.incomingPending = false;
+        sendCallSignal({ roomId: call.roomId, type: 'CALL_ACCEPT', video: call.video });
+
+        const typeLabel = call.video ? 'Video Call' : 'Voice Call';
+        showCallOverlay({
+            video: call.video,
+            title: `Đang kết nối: ${otherUserName()} • ${typeLabel}`,
+            showPrompt: true,
+            promptText: 'Đang thiết lập kết nối…',
+            showAccept: false,
+            showDecline: false
+        });
+
+        call.pc = createPeerConnection();
+        const stream = await ensureLocalMedia(call.video);
+        stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+
+        // If offer already arrived, handle it now
+        if (call.pendingOfferSdp) {
+            await handleRemoteOffer(call.pendingOfferSdp);
+            call.pendingOfferSdp = null;
+        }
+
+        // Flush queued ICE
+        if (call.pendingCandidates.length) {
+            const queued = call.pendingCandidates.slice();
+            call.pendingCandidates = [];
+            for (const c of queued) {
+                try { await call.pc.addIceCandidate(c); } catch (_) { /* ignore */ }
+            }
+        }
+    }
+
+    function declineIncomingCall() {
+        if (!call.incomingPending || !call.roomId) {
+            endCall({ sendHangup: false });
+            return;
+        }
+        sendCallSignal({ roomId: call.roomId, type: 'CALL_DECLINE', video: call.video });
+        endCall({ sendHangup: false });
+    }
+
+    async function startOutgoingCall({ video }) {
+        const roomId = getCallRoomId();
+        if (!roomId || !stompClient || !stompClient.connected) return;
+        if (call.active || call.incomingPending) return;
+
+        call.active = true;
+        call.roomId = roomId;
+        call.isCaller = true;
+        call.video = !!video;
+
+        const typeLabel = call.video ? 'Video Call' : 'Voice Call';
+        showCallOverlay({
+            video: call.video,
+            title: `Đang gọi: ${otherUserName()} • ${typeLabel}`,
+            showPrompt: true,
+            promptText: 'Đang chờ đối phương chấp nhận…',
+            showAccept: false,
+            showDecline: false
+        });
+
+        // Send invite first; only open devices after callee accepts.
+        // Include targetUserId so backend can notify callee even if they haven't opened DM chat.
+        const targetUserId = getActiveDmTargetUserId();
+        sendCallSignal({ roomId: call.roomId, type: 'CALL_START', video: call.video, targetUserId });
+    }
+
+    async function beginCallerNegotiation() {
+        if (!call.active || !call.isCaller || !call.roomId) return;
+        if (call.pc) return;
+
+        const typeLabel = call.video ? 'Video Call' : 'Voice Call';
+        showCallOverlay({
+            video: call.video,
+            title: `Đang kết nối: ${otherUserName()} • ${typeLabel}`,
+            showPrompt: true,
+            promptText: 'Đang thiết lập kết nối…',
+            showAccept: false,
+            showDecline: false
+        });
+
+        call.pc = createPeerConnection();
+        const stream = await ensureLocalMedia(call.video);
+        stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+
+        const offer = await call.pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: call.video
+        });
+        await call.pc.setLocalDescription(offer);
+        sendCallSignal({ roomId: call.roomId, type: 'OFFER', sdp: offer.sdp, video: call.video });
+    }
+
+    async function handleRemoteOffer(sdp) {
+        if (!call.pc || !sdp) return;
+        await call.pc.setRemoteDescription({ type: 'offer', sdp });
+        const answer = await call.pc.createAnswer();
+        await call.pc.setLocalDescription(answer);
+        sendCallSignal({ roomId: call.roomId, type: 'ANSWER', sdp: answer.sdp, video: call.video });
+
+        // Once we have SDP exchange, hide the prompt
+        showCallOverlay({
+            video: call.video,
+            title: `${otherUserName()} • ${call.video ? 'Video Call' : 'Voice Call'}`,
+            showPrompt: false,
+            showAccept: false,
+            showDecline: false
+        });
+    }
+
+    // Handle incoming call from global subscription (when DM not opened yet)
+    async function handleGlobalIncomingCall(evt) {
+        if (!evt || evt.type !== 'CALL_START') return;
+        if (call.active || call.incomingPending) return;
+
+        const selfId = state.currentUser?.id;
+        if (selfId && evt.fromUserId && String(evt.fromUserId) === String(selfId)) return;
+
+        // Auto-open the DM chat if not already open
+        const incomingRoomId = evt.roomId;
+        if (!incomingRoomId) return;
+
+        // If DM is already open to this room, route through the same handler so we
+        // still show the accept/decline UI even if the per-room call subscription
+        // isn't active for some reason.
+        if (state.activeDmGroupId && String(state.activeDmGroupId) === String(incomingRoomId)) {
+            await handleCallSignal(evt);
+            return;
+        }
+
+        // Find the DM item matching this roomId
+        const dmItem = state.dmItems.find(dm => String(dm.dmGroupId) === String(incomingRoomId));
+        if (dmItem) {
+            // Open the DM chat first
+            await openDmChat(incomingRoomId, dmItem);
+        }
+
+        // Now set up the incoming call state
+        call.active = true;
+        call.roomId = String(incomingRoomId);
+        call.isCaller = false;
+        call.video = !!evt.video;
+        call.incomingPending = true;
+        call.incomingFrom = evt.fromUsername || null;
+        call.incomingVideo = !!evt.video;
+
+        const typeLabel = call.video ? 'Video Call' : 'Voice Call';
+        const callerName = evt.fromUsername || dmItem?.displayName || dmItem?.username || 'Unknown';
+        showCallOverlay({
+            video: call.video,
+            title: `Cuộc gọi đến: ${callerName} • ${typeLabel}`,
+            showPrompt: true,
+            promptText: 'Chọn Chấp nhận hoặc Từ chối để tiếp tục.',
+            showAccept: true,
+            showDecline: true
+        });
+    }
+
+    async function handleCallSignal(evt) {
+        if (!evt || !evt.type) return;
+
+        const roomId = getCallRoomId();
+        if (!roomId || String(evt.roomId) !== String(roomId)) return;
+
+        const selfId = state.currentUser?.id;
+        if (selfId && evt.fromUserId && String(evt.fromUserId) === String(selfId)) return;
+
+        switch (evt.type) {
+            case 'CALL_START': {
+                if (call.active || call.incomingPending) return;
+
+                call.active = true;
+                call.roomId = roomId;
+                call.isCaller = false;
+                call.video = !!evt.video;
+                call.incomingPending = true;
+                call.incomingFrom = evt.fromUsername || null;
+                call.incomingVideo = !!evt.video;
+
+                const typeLabel = call.video ? 'Video Call' : 'Voice Call';
+                showCallOverlay({
+                    video: call.video,
+                    title: `Cuộc gọi đến: ${otherUserName()} • ${typeLabel}`,
+                    showPrompt: true,
+                    promptText: 'Chọn Chấp nhận hoặc Từ chối để tiếp tục.',
+                    showAccept: true,
+                    showDecline: true
+                });
+                break;
+            }
+            case 'CALL_ACCEPT': {
+                if (!call.active || !call.isCaller) return;
+                await beginCallerNegotiation();
+                break;
+            }
+            case 'CALL_DECLINE': {
+                if (!call.active || !call.isCaller) return;
+                endCall({ sendHangup: false });
+                alert('Đối phương đã từ chối cuộc gọi');
+                break;
+            }
+            case 'OFFER': {
+                // Callee receives offer only after accepting, but be defensive.
+                if (!call.active) {
+                    call.active = true;
+                    call.roomId = roomId;
+                    call.isCaller = false;
+                    call.video = !!evt.video;
+                    call.incomingPending = true;
+                    showCallOverlay({
+                        video: call.video,
+                        title: `Cuộc gọi đến: ${otherUserName()} • ${call.video ? 'Video Call' : 'Voice Call'}`,
+                        showPrompt: true,
+                        promptText: 'Chọn Chấp nhận hoặc Từ chối để tiếp tục.',
+                        showAccept: true,
+                        showDecline: true
+                    });
+                }
+
+                if (call.incomingPending) {
+                    call.pendingOfferSdp = evt.sdp || null;
+                    return;
+                }
+
+                if (!call.pc) {
+                    call.pc = createPeerConnection();
+                    const stream = await ensureLocalMedia(!!evt.video);
+                    stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
+                }
+
+                await handleRemoteOffer(evt.sdp);
+                break;
+            }
+            case 'ANSWER': {
+                if (!call.pc || !evt.sdp) return;
+                await call.pc.setRemoteDescription({ type: 'answer', sdp: evt.sdp });
+                // Once connected, hide prompt
+                showCallOverlay({
+                    video: call.video,
+                    title: `${otherUserName()} • ${call.video ? 'Video Call' : 'Voice Call'}`,
+                    showPrompt: false,
+                    showAccept: false,
+                    showDecline: false
+                });
+                break;
+            }
+            case 'ICE': {
+                if (!evt.candidate) return;
+                const ice = {
+                    candidate: evt.candidate,
+                    sdpMid: evt.sdpMid,
+                    sdpMLineIndex: evt.sdpMLineIndex
+                };
+
+                if (!call.pc) {
+                    call.pendingCandidates.push(ice);
+                    return;
+                }
+
+                try { await call.pc.addIceCandidate(ice); } catch (_) { /* ignore */ }
+                break;
+            }
+            case 'HANGUP': {
+                endCall({ sendHangup: false });
+                break;
+            }
+        }
     }
 
     async function apiJson(url, options = {}) {
@@ -828,11 +1324,11 @@
         const token = localStorage.getItem('accessToken');
         if (!token || !state.activeDmGroupId) return;
 
-        const socket = new SockJS('/ws?token=' + encodeURIComponent(token));
+        const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null; // Disable debug
 
-        stompClient.connect({}, () => {
+        stompClient.connect({ Authorization: 'Bearer ' + token }, () => {
             dmSubscription = stompClient.subscribe(`/topic/dm/${state.activeDmGroupId}`, (message) => {
                 try {
                     const msg = JSON.parse(message.body);
@@ -845,12 +1341,31 @@
                     console.error('Failed to parse DM message:', e);
                 }
             });
+
+            // Call signaling for this DM
+            callSubscription = stompClient.subscribe(`/topic/call/${state.activeDmGroupId}`, (message) => {
+                try {
+                    const evt = JSON.parse(message.body);
+                    handleCallSignal(evt);
+                } catch (e) {
+                    console.error('Failed to parse call signal:', e);
+                }
+            });
         }, (err) => {
             console.error('DM WebSocket error:', err);
         });
     }
 
     function disconnectDmWebSocket() {
+        // End any active call when leaving DM view
+        if (call.active || call.incomingPending) {
+            endCall({ sendHangup: true });
+        }
+
+        if (callSubscription) {
+            try { callSubscription.unsubscribe(); } catch (_) {}
+            callSubscription = null;
+        }
         if (dmSubscription) {
             try { dmSubscription.unsubscribe(); } catch (_) {}
             dmSubscription = null;
@@ -921,6 +1436,44 @@
         // DM Chat close button
         document.getElementById('closeDmChatBtn')?.addEventListener('click', closeDmChat);
 
+        // DM Call buttons
+        callEls.voiceBtn()?.addEventListener('click', async () => {
+            if (!state.activeDmGroupId) return;
+            try {
+                await startOutgoingCall({ video: false });
+            } catch (err) {
+                alert(err?.name === 'NotAllowedError' ? 'Vui lòng cho phép microphone' : (err?.message || 'Không thể gọi thoại'));
+                endCall({ sendHangup: false });
+            }
+        });
+
+        callEls.videoBtn()?.addEventListener('click', async () => {
+            if (!state.activeDmGroupId) return;
+            try {
+                await startOutgoingCall({ video: true });
+            } catch (err) {
+                if (err?.name === 'NotAllowedError') {
+                    alert('Vui lòng cho phép camera/microphone');
+                } else if (err?.name === 'NotReadableError') {
+                    alert('Camera đang được ứng dụng/tab khác sử dụng');
+                } else {
+                    alert(err?.message || 'Không thể gọi video');
+                }
+                endCall({ sendHangup: false });
+            }
+        });
+
+        callEls.hangupBtn()?.addEventListener('click', () => endCall({ sendHangup: true }));
+        callEls.acceptBtn()?.addEventListener('click', async () => {
+            try {
+                await acceptIncomingCall();
+            } catch (err) {
+                alert(err?.name === 'NotAllowedError' ? 'Vui lòng cho phép microphone/camera' : (err?.message || 'Không thể tham gia cuộc gọi'));
+                endCall({ sendHangup: true });
+            }
+        });
+        callEls.declineBtn()?.addEventListener('click', () => declineIncomingCall());
+
         // DM Composer form
         els.dmComposer()?.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -978,6 +1531,18 @@
     }
 
     async function init() {
+        // Listen for global incoming call events (from notification.js) ASAP.
+        // Guard to avoid attaching duplicate listeners when init() reruns.
+        if (!window.__cococordIncomingCallListenerAttached) {
+            window.__cococordIncomingCallListenerAttached = true;
+            window.addEventListener('incomingCall', (e) => {
+                const evt = e.detail;
+                if (evt && evt.type === 'CALL_START') {
+                    handleGlobalIncomingCall(evt);
+                }
+            });
+        }
+
         wireEvents();
         await loadCurrentUser();
         await Promise.all([loadFriends(), loadRequests(), loadBlocked(), loadDmSidebar()]);
@@ -985,6 +1550,17 @@
         
         // Start periodic refresh for online status
         startPeriodicRefresh();
+
+        // Drain any buffered call events that arrived before init completed.
+        if (Array.isArray(window.__cococordIncomingCallQueue) && window.__cococordIncomingCallQueue.length) {
+            const queued = window.__cococordIncomingCallQueue.slice();
+            window.__cococordIncomingCallQueue.length = 0;
+            for (const evt of queued) {
+                if (evt && evt.type === 'CALL_START') {
+                    handleGlobalIncomingCall(evt);
+                }
+            }
+        }
 
         // Check URL params for dmGroupId
         const urlParams = new URLSearchParams(window.location.search);

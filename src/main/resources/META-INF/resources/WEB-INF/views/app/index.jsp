@@ -94,8 +94,8 @@
                 <span class="header-title" id="dmChatTitle">User</span>
             </div>
             <div class="header-right">
-                <button class="icon-btn" type="button" title="Gọi thoại"><i class="bi bi-telephone"></i></button>
-                <button class="icon-btn" type="button" title="Gọi video"><i class="bi bi-camera-video"></i></button>
+                <button class="icon-btn" type="button" id="dmVoiceCallBtn" title="Gọi thoại"><i class="bi bi-telephone"></i></button>
+                <button class="icon-btn" type="button" id="dmVideoCallBtn" title="Gọi video"><i class="bi bi-camera-video"></i></button>
                 <button class="icon-btn" type="button" title="Ghim"><i class="bi bi-pin"></i></button>
                 <button class="icon-btn" type="button" title="Thêm bạn vào DM"><i class="bi bi-person-plus"></i></button>
                 <div class="search-wrap" style="width: 140px;">
@@ -128,5 +128,30 @@
             </div>
         </form>
     </main>
+
+    <!-- DM Call Overlay (Voice/Video) -->
+    <div class="dm-call-overlay" id="dmCallOverlay" style="display:none;" aria-hidden="true">
+        <div class="dm-call-surface">
+            <div class="dm-call-header">
+                <div class="dm-call-title" id="dmCallTitle">Call</div>
+                <div class="dm-call-header-actions">
+                    <button class="btn-primary" type="button" id="dmCallAcceptBtn" style="display:none;">Chấp nhận</button>
+                    <button class="btn-secondary" type="button" id="dmCallDeclineBtn" style="display:none;">Từ chối</button>
+                    <button class="icon-btn" type="button" id="dmCallHangupBtn" title="Kết thúc cuộc gọi">
+                        <i class="bi bi-telephone-x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="dm-call-body">
+                <div class="dm-call-prompt" id="dmCallPrompt" style="display:none;">
+                    <div class="dm-call-prompt-text" id="dmCallPromptText"></div>
+                </div>
+                <video class="dm-call-remote" id="dmCallRemoteVideo" autoplay playsinline></video>
+                <video class="dm-call-local" id="dmCallLocalVideo" autoplay playsinline muted></video>
+                <audio id="dmCallRemoteAudio" autoplay></audio>
+            </div>
+        </div>
+    </div>
 </div>
 
