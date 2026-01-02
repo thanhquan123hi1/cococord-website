@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import vn.cococord.entity.mongodb.VoiceSession;
 
 @Repository
-public interface VoiceSessionRepository extends MongoRepository<VoiceSession, String> {
+public interface IVoiceSessionRepository extends MongoRepository<VoiceSession, String> {
 
     /**
      * Find active voice session for a channel

@@ -19,9 +19,10 @@ import vn.cococord.dto.request.VoiceSignalAnswerRequest;
 import vn.cococord.dto.request.VoiceSignalIceRequest;
 import vn.cococord.dto.request.VoiceSignalOfferRequest;
 import vn.cococord.dto.request.VoiceStateUpdateRequest;
+import vn.cococord.entity.voice.VoiceMemberState;
 import vn.cococord.entity.mysql.User;
 import vn.cococord.repository.IUserRepository;
-import vn.cococord.service.voice.VoiceRoomRegistry;
+import vn.cococord.service.IVoiceRoomRegistry;
 
 @Controller
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class VoiceRealtimeController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final IUserRepository userRepository;
-    private final VoiceRoomRegistry voiceRoomRegistry;
+    private final IVoiceRoomRegistry voiceRoomRegistry;
 
     private static String topic(long channelId) {
         return "/topic/voice/" + channelId;
@@ -46,8 +47,10 @@ public class VoiceRealtimeController {
             @Payload VoicePresenceJoinRequest request,
             Principal principal,
             SimpMessageHeaderAccessor headerAccessor) {
-        if (request == null || request.getChannelId() == null) return;
-        if (principal == null) return;
+        if (request == null || request.getChannelId() == null)
+            return;
+        if (principal == null)
+            return;
 
         long channelId = request.getChannelId();
         String sessionId = headerAccessor != null ? headerAccessor.getSessionId() : null;
@@ -57,7 +60,7 @@ public class VoiceRealtimeController {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            VoiceRoomRegistry.VoiceMemberState member = VoiceRoomRegistry.VoiceMemberState.builder()
+            VoiceMemberState member = VoiceMemberState.builder()
                     .userId(user.getId())
                     .username(user.getUsername())
                     .displayName(user.getDisplayName())
@@ -67,9 +70,10 @@ public class VoiceRealtimeController {
                     .speaking(false)
                     .build();
 
-            List<VoiceRoomRegistry.VoiceMemberState> users = voiceRoomRegistry.join(channelId, member, sessionId);
+            List<VoiceMemberState> users = voiceRoomRegistry.join(channelId, member, sessionId);
 
-            log.info("[VOICE] JOIN channelId={} userId={} username={} sessionId={}", channelId, user.getId(), user.getUsername(), sessionId);
+            log.info("[VOICE] JOIN channelId={} userId={} username={} sessionId={}", channelId, user.getId(),
+                    user.getUsername(), sessionId);
 
             Map<String, Object> joinEvt = new HashMap<>();
             joinEvt.put("type", "USER_JOIN");
@@ -90,8 +94,10 @@ public class VoiceRealtimeController {
 
     @MessageMapping("/voice/leave")
     public void leave(@Payload VoicePresenceLeaveRequest request, Principal principal) {
-        if (request == null || request.getChannelId() == null) return;
-        if (principal == null) return;
+        if (request == null || request.getChannelId() == null)
+            return;
+        if (principal == null)
+            return;
 
         long channelId = request.getChannelId();
 
@@ -100,7 +106,7 @@ public class VoiceRealtimeController {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            List<VoiceRoomRegistry.VoiceMemberState> users = voiceRoomRegistry.leave(channelId, user.getId());
+            List<VoiceMemberState> users = voiceRoomRegistry.leave(channelId, user.getId());
 
             log.info("[VOICE] LEAVE channelId={} userId={} username={}", channelId, user.getId(), user.getUsername());
 
@@ -123,8 +129,10 @@ public class VoiceRealtimeController {
 
     @MessageMapping("/voice/state")
     public void updateState(@Payload VoiceStateUpdateRequest request, Principal principal) {
-        if (request == null || request.getChannelId() == null) return;
-        if (principal == null) return;
+        if (request == null || request.getChannelId() == null)
+            return;
+        if (principal == null)
+            return;
 
         long channelId = request.getChannelId();
 
@@ -133,7 +141,8 @@ public class VoiceRealtimeController {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-                voiceRoomRegistry.updateState(channelId, user.getId(), request.getMicOn(), request.getCamOn(), request.getScreenOn(), request.getSpeaking());
+            voiceRoomRegistry.updateState(channelId, user.getId(), request.getMicOn(), request.getCamOn(),
+                    request.getScreenOn(), request.getSpeaking());
 
             Map<String, Object> evt = new HashMap<>();
             evt.put("type", "VOICE_STATE_UPDATE");
@@ -154,8 +163,10 @@ public class VoiceRealtimeController {
 
     @MessageMapping("/voice/signal/offer")
     public void offer(@Payload VoiceSignalOfferRequest request, Principal principal) {
-        if (request == null || request.getChannelId() == null) return;
-        if (principal == null) return;
+        if (request == null || request.getChannelId() == null)
+            return;
+        if (principal == null)
+            return;
 
         long channelId = request.getChannelId();
         try {
@@ -166,7 +177,8 @@ public class VoiceRealtimeController {
             evt.put("toUserId", request.getToUserId());
             evt.put("sdp", request.getSdp());
 
-            log.debug("[SIGNAL] OFFER channelId={} from={} to={}", channelId, request.getFromUserId(), request.getToUserId());
+            log.debug("[SIGNAL] OFFER channelId={} from={} to={}", channelId, request.getFromUserId(),
+                    request.getToUserId());
             messagingTemplate.convertAndSend(signalTopic(channelId), evt);
         } catch (Exception e) {
             log.error("[SIGNAL] OFFER failed channelId={} err={}", channelId, e.getMessage(), e);
@@ -175,8 +187,10 @@ public class VoiceRealtimeController {
 
     @MessageMapping("/voice/signal/answer")
     public void answer(@Payload VoiceSignalAnswerRequest request, Principal principal) {
-        if (request == null || request.getChannelId() == null) return;
-        if (principal == null) return;
+        if (request == null || request.getChannelId() == null)
+            return;
+        if (principal == null)
+            return;
 
         long channelId = request.getChannelId();
         try {
@@ -187,7 +201,8 @@ public class VoiceRealtimeController {
             evt.put("toUserId", request.getToUserId());
             evt.put("sdp", request.getSdp());
 
-            log.debug("[SIGNAL] ANSWER channelId={} from={} to={}", channelId, request.getFromUserId(), request.getToUserId());
+            log.debug("[SIGNAL] ANSWER channelId={} from={} to={}", channelId, request.getFromUserId(),
+                    request.getToUserId());
             messagingTemplate.convertAndSend(signalTopic(channelId), evt);
         } catch (Exception e) {
             log.error("[SIGNAL] ANSWER failed channelId={} err={}", channelId, e.getMessage(), e);
@@ -196,8 +211,10 @@ public class VoiceRealtimeController {
 
     @MessageMapping("/voice/signal/ice")
     public void ice(@Payload VoiceSignalIceRequest request, Principal principal) {
-        if (request == null || request.getChannelId() == null) return;
-        if (principal == null) return;
+        if (request == null || request.getChannelId() == null)
+            return;
+        if (principal == null)
+            return;
 
         long channelId = request.getChannelId();
         try {
@@ -208,7 +225,8 @@ public class VoiceRealtimeController {
             evt.put("toUserId", request.getToUserId());
             evt.put("candidate", request.getCandidate());
 
-            log.debug("[SIGNAL] ICE channelId={} from={} to={}", channelId, request.getFromUserId(), request.getToUserId());
+            log.debug("[SIGNAL] ICE channelId={} from={} to={}", channelId, request.getFromUserId(),
+                    request.getToUserId());
             messagingTemplate.convertAndSend(signalTopic(channelId), evt);
         } catch (Exception e) {
             log.error("[SIGNAL] ICE failed channelId={} err={}", channelId, e.getMessage(), e);

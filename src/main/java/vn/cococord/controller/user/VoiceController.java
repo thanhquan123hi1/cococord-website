@@ -21,7 +21,7 @@ import vn.cococord.dto.request.VoiceSpeakingRequest;
 import vn.cococord.entity.mongodb.VoiceSession;
 import vn.cococord.entity.mysql.User;
 import vn.cococord.repository.IUserRepository;
-import vn.cococord.repository.VoiceSessionRepository;
+import vn.cococord.repository.IVoiceSessionRepository;
 
 /**
  * WebSocket Controller for Voice Channel functionality
@@ -34,7 +34,7 @@ import vn.cococord.repository.VoiceSessionRepository;
 public class VoiceController {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final VoiceSessionRepository voiceSessionRepository;
+    private final IVoiceSessionRepository voiceSessionRepository;
     private final IUserRepository userRepository;
 
     /**
@@ -126,7 +126,7 @@ public class VoiceController {
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
-                
+
                 // Mark user as left
                 session.getParticipants().stream()
                         .filter(p -> p.getUserId().equals(user.getId()))
