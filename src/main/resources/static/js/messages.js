@@ -38,14 +38,7 @@
         globalSearch: () => document.getElementById('globalSearch'),
         dmList: () => document.getElementById('dmList'),
         
-        // User panel
-        ucpAvatar: () => document.getElementById('ucpAvatar'),
-        ucpName: () => document.getElementById('ucpName'),
-        ucpStatus: () => document.getElementById('ucpStatus'),
-        ucpStatusDot: () => document.getElementById('ucpStatusDot'),
-        settingsBtn: () => document.getElementById('settingsBtn'),
-        settingsDropdown: () => document.getElementById('settingsDropdown'),
-        logoutBtn: () => document.getElementById('logoutBtn'),
+        // User panel - REMOVED, now handled by UserPanel component (user-panel.js)
         
         // Main content
         dmTitle: () => document.getElementById('dmTitle'),
@@ -236,11 +229,7 @@
         try {
             localStorage.setItem('user', JSON.stringify(state.currentUser || {}));
         } catch (_) { /* ignore */ }
-        // If the global app shell provides the User Control Panel, do not render/bind it here.
-        const hasGlobalUcp = !!document.getElementById('userInfoBtn') || !!document.getElementById('ucpStatusIndicator');
-        if (!hasGlobalUcp) {
-            renderUserPanel();
-        }
+        // User Panel is now handled globally by UserPanel component (user-panel.js)
     }
 
     async function loadServers() {
@@ -312,31 +301,7 @@
     }
 
     // ==================== RENDER FUNCTIONS ====================
-    function renderUserPanel() {
-        const user = state.currentUser;
-        const nameEl = els.ucpName();
-        const statusEl = els.ucpStatus();
-        const avatarEl = els.ucpAvatar();
-
-        if (nameEl) {
-            nameEl.textContent = displayName(user);
-            nameEl.title = fullUsername(user);
-        }
-        
-        if (statusEl) {
-            const customStatus = user?.customStatus;
-            statusEl.textContent = customStatus || 'Trực tuyến';
-        }
-        
-        if (avatarEl) {
-            const url = user?.avatarUrl;
-            if (url) {
-                avatarEl.innerHTML = `<img src="${escapeHtml(url)}" alt="${escapeHtml(displayName(user))}"><span class="status-dot online" id="ucpStatusDot"></span>`;
-            } else {
-                avatarEl.innerHTML = `${escapeHtml(displayName(user).charAt(0).toUpperCase())}<span class="status-dot online" id="ucpStatusDot"></span>`;
-            }
-        }
-    }
+    // REMOVED: renderUserPanel() - now handled by global UserPanel component (user-panel.js)
 
     function renderServerBar() {
         const container = els.serverList();

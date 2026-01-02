@@ -6,10 +6,10 @@
     <!-- Primary Sidebar (persistent within /app) -->
     <aside class="primary-sidebar" aria-label="Primary Sidebar">
         <div class="sidebar-search">
-            <div class="search-wrap">
+            <button class="search-switcher-btn" onclick="QuickSwitcherModal.open()" type="button">
                 <i class="bi bi-search"></i>
-                <input id="globalSearch" class="search-input" type="text" placeholder="Tìm hoặc bắt đầu cuộc trò chuyện" autocomplete="off" />
-            </div>
+                <span>Tìm hoặc bắt đầu cuộc trò chuyện</span>
+            </button>
         </div>
 
         <nav class="sidebar-nav" aria-label="Menu">

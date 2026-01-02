@@ -607,15 +607,6 @@ body {
     margin: 4px 0;
 }
 
-/* Legacy styles - hidden */
-#chatApp .user-panel-full {
-    display: none;
-}
-
-#chatApp .user-panel {
-    display: none;
-}
-
 /* ==================== INVITE FRIENDS MODAL ==================== */
 .modal-invite-friends {
     width: 440px;
