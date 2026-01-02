@@ -3,6 +3,7 @@ package vn.cococord.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
@@ -76,5 +77,11 @@ public class ViewController {
     @GetMapping("/profile")
     public String profile() {
         return "profile"; // xài chung settings và profile luôn -Thịnh edit
+    }
+
+    @GetMapping("/invite/{code}")
+    public String invite(@PathVariable String code) {
+        // Redirect to the main app shell; client JS will prompt to join using this code.
+        return "redirect:/app?invite=" + code;
     }
 }

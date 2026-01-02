@@ -197,30 +197,42 @@
             headers['Content-Type'] = 'application/json';
         }
 
-        try {
-            const response = await fetch(url, { ...options, headers });
+        const response = await fetch(url, { ...options, headers });
 
-            if (!response) return null;
-            if (response.status === 204) return null;
-            if (!response.ok) {
-                if (response.status === 401) {
-                    window.location.href = '/login';
-                    return null;
-                }
-                const text = await response.text().catch(() => '');
-                throw new Error(text || `Request failed: ${response.status}`);
+        if (!response) throw new Error('Không thể kết nối tới máy chủ');
+        if (response.status === 204) return null;
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return null;
             }
-            
-            // Check if response has content
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json();
+
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            let payload = null;
+            let text = '';
+
+            if (contentType.includes('application/json')) {
+                payload = await response.json().catch(() => null);
+            } else {
+                text = await response.text().catch(() => '');
+                payload = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
             }
-            return null;
-        } catch (err) {
-            console.error('API Error:', err);
-            throw err;
+
+            const message =
+                (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
+                (typeof payload === 'string' ? payload : '') ||
+                text ||
+                `Request failed: ${response.status}`;
+
+            throw new Error(String(message).trim() || 'Có lỗi xảy ra. Vui lòng thử lại sau.');
         }
+
+        const okContentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (okContentType.includes('application/json')) {
+            return response.json();
+        }
+        return null;
     }
 
     // ==================== DATA LOADING ====================
@@ -815,9 +827,12 @@
 
                 stomp.subscribe('/topic/presence', (msg) => {
                     try {
-                        const presence = JSON.parse(msg.body);
-                        if (presence?.username) {
-                            state.presenceByUsername.set(presence.username, presence);
+                        const data = JSON.parse(msg.body);
+                        const payload = (data && data.type && data.payload) ? data.payload : data;
+                        const username = payload?.username;
+                        const status = payload?.newStatus || payload?.status;
+                        if (username && status) {
+                            state.presenceByUsername.set(username, { username, status: String(status).toUpperCase() });
                             renderDmList();
                             renderHeader();
                         }
@@ -845,15 +860,7 @@
                     });
                 }
 
-                try {
-                    stomp.send('/app/presence.update', {}, JSON.stringify({ status: 'ONLINE' }));
-                } catch (_) { /* ignore */ }
-
-                window.addEventListener('beforeunload', () => {
-                    try {
-                        stomp.send('/app/presence.update', {}, JSON.stringify({ status: 'OFFLINE' }));
-                    } catch (_) { /* ignore */ }
-                });
+                // Presence is tracked authoritatively by websocket connect/disconnect.
             },
             () => { /* ignore */ }
         );

@@ -459,7 +459,20 @@
           showAlert("Đăng nhập thành công", "success");
 
           setTimeout(() => {
-            window.location.href = "${pageContext.request.contextPath}/app";
+            let next = null;
+            try {
+              const params = new URLSearchParams(window.location.search);
+              const raw = params.get('next');
+              if (raw && typeof raw === 'string') {
+                // Only allow relative redirects.
+                if (raw.startsWith('/') && !raw.startsWith('//')) {
+                  next = raw;
+                }
+              }
+            } catch (_) {
+              next = null;
+            }
+            window.location.href = next || "${pageContext.request.contextPath}/app";
           }, 1000);
         } else {
           // Lấy message lỗi từ server response với validation chặt chẽ

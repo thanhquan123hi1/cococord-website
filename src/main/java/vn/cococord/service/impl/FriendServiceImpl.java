@@ -2,6 +2,7 @@ package vn.cococord.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.cococord.dto.request.SendFriendRequestRequest;
@@ -43,21 +44,21 @@ public class FriendServiceImpl implements IFriendService {
     public FriendRequestResponse sendFriendRequest(SendFriendRequestRequest request, String username) {
         User sender = getUserByUsername(username);
         User receiver = userRepository.findById(request.getReceiverUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng."));
 
         // Can't friend yourself
         if (sender.getId().equals(receiver.getId())) {
-            throw new BadRequestException("You cannot send a friend request to yourself");
+            throw new BadRequestException("Bạn không thể kết bạn với chính mình.");
         }
 
         // Check if blocked
         if (blockedUserRepository.existsByUserIdAndBlockedUserId(receiver.getId(), sender.getId())) {
-            throw new BadRequestException("Cannot send friend request to this user");
+            throw new BadRequestException("Bạn không thể gửi lời mời kết bạn tới người dùng này.");
         }
 
         // Check if already friends
         if (friendRequestRepository.areFriends(sender.getId(), receiver.getId())) {
-            throw new BadRequestException("You are already friends with this user");
+            throw new BadRequestException("Bạn đã là bạn bè với người này rồi.");
         }
 
         // Check if request already exists
@@ -65,7 +66,13 @@ public class FriendServiceImpl implements IFriendService {
         if (existingRequest.isPresent()) {
             FriendRequest existing = existingRequest.get();
             if (existing.getStatus() == FriendRequestStatus.PENDING) {
-                throw new BadRequestException("A friend request already exists");
+                boolean sentByMe = existing.getSender() != null && existing.getSender().getId() != null
+                        && existing.getSender().getId().equals(sender.getId());
+                if (sentByMe) {
+                    throw new BadRequestException("Bạn đã gửi lời mời kết bạn cho người này rồi.");
+                }
+                throw new BadRequestException(
+                        "Người này đã gửi lời mời kết bạn cho bạn. Hãy vào tab \"Đang chờ xử lý\" để chấp nhận.");
             }
             // If was rejected/cancelled, can try again - delete old and create new
             if (existing.getStatus() == FriendRequestStatus.REJECTED ||
@@ -81,7 +88,12 @@ public class FriendServiceImpl implements IFriendService {
                 .status(FriendRequestStatus.PENDING)
                 .build();
 
-        friendRequest = friendRequestRepository.save(friendRequest);
+        try {
+            friendRequest = friendRequestRepository.save(friendRequest);
+        } catch (DataIntegrityViolationException e) {
+            // Most common case: double-submit race or existing unique constraint hit
+            throw new BadRequestException("Bạn đã gửi lời mời kết bạn cho người này rồi.");
+        }
         log.info("Friend request sent from {} to {}", sender.getUsername(), receiver.getUsername());
 
         // Send notification to receiver

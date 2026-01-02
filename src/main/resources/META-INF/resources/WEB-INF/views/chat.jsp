@@ -192,50 +192,23 @@
                 <div class="voice-participants-grid" id="voiceParticipantsGrid" data-count="0">
                     <!-- Participant tiles will be rendered here -->
                 </div>
-                
-                <!-- Voice Activity Panel (Right side) -->
-                <div class="voice-activity-panel" id="voiceActivityPanel">
-                    <div class="voice-activity-header">
-                        <div class="voice-activity-graphic">
-                            <img src="/images/voice-activity.svg" alt="Activities" onerror="this.style.display='none'">
-                        </div>
-                        <div class="voice-activity-actions">
-                            <button class="voice-activity-btn" id="voiceInviteBtn">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                                Mời vào Kênh thoại
-                            </button>
-                            <button class="voice-activity-btn" id="voiceActivitiesBtn">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                Chọn Hoạt Động
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <!-- Voice Bottom Controls -->
             <div class="voice-bottom-controls">
-                <button class="voice-btn-with-label voice-btn-mute" id="voiceBtnMute" title="Tắt tiếng">
+                <button class="voice-btn voice-btn-mute" id="voiceBtnMute" title="Bật/Tắt mic">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                    <span class="voice-btn-label">Tắt tiếng</span>
                 </button>
-                <button class="voice-btn-with-label voice-btn-deafen" id="voiceBtnDeafen" title="Tắt nghe">
+                <button class="voice-btn voice-btn-deafen" id="voiceBtnDeafen" title="Bật/Tắt headphone (deafen)">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/></svg>
-                    <span class="voice-btn-label">Tắt nghe</span>
                 </button>
-                <button class="voice-btn-with-label voice-btn-camera" id="voiceBtnCamera" title="Bật/Tắt Camera">
+                <button class="voice-btn voice-btn-camera" id="voiceBtnCamera" title="Bật/Tắt camera">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>
-                    <span class="voice-btn-label">Bật Camera</span>
                 </button>
-                <button class="voice-btn-with-label voice-btn-screen" id="voiceBtnScreen" title="Chia sẻ màn hình">
+                <button class="voice-btn voice-btn-screen" id="voiceBtnScreen" title="Chia sẻ màn hình">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.11-.9-2-2-2H4c-1.11 0-2 .89-2 2v10c0 1.1.89 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
-                    <span class="voice-btn-label">Màn hình</span>
                 </button>
-                <button class="voice-btn-with-label voice-btn-activities" id="voiceBtnActivities" title="Hoạt động">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
-                    <span class="voice-btn-label">Hoạt động</span>
-                </button>
-                <button class="voice-btn-disconnect-big" id="voiceBtnDisconnect" title="Ngắt kết nối">
+                <button class="voice-btn voice-btn-disconnect" id="voiceBtnDisconnect" title="Rời kênh thoại">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.51-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
                 </button>
             </div>
@@ -391,4 +364,4 @@
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101"></script>
 <script src="${pageContext.request.contextPath}/js/voice-manager.js?v=20260102b"></script>
-<script src="${pageContext.request.contextPath}/js/chat.js?v=20260102b"></script>
+<script src="${pageContext.request.contextPath}/js/chat.js?v=20260103a"></script>

@@ -40,7 +40,7 @@
     <!-- Quick Switcher CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/quick-switcher.css">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260103a">
     
     <%
         if (sitemeshContent != null) {
@@ -176,15 +176,15 @@
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101f"></script>
     <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260101f"></script>
-    <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260102"></script>
-    <script src="${pageContext.request.contextPath}/js/app.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260103a"></script>
+    <script src="${pageContext.request.contextPath}/js/app.js?v=20260103b"></script>
     <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
     <!-- Quick Switcher Modal -->
     <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260102"></script>
     <!-- Notification system with global call subscription -->
-    <script src="${pageContext.request.contextPath}/js/notification.js?v=20260102a"></script>
+    <script src="${pageContext.request.contextPath}/js/notification.js?v=20260103a"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
-    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260102a"></script>
+    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260103a"></script>
 
     <%
         if (sitemeshContent != null) {

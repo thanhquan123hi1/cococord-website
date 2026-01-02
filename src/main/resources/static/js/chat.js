@@ -147,11 +147,30 @@
 
     async function apiGet(url) {
         const res = await fetchWithAuth(url);
-        if (!res || !res.ok) {
-            const text = res ? await res.text().catch(() => '') : '';
-            throw new Error(text || `Request failed: ${res ? res.status : 'no response'}`);
+        if (!res) throw new Error('Không thể kết nối tới máy chủ');
+
+        if (!res.ok) {
+            const contentType = (res.headers.get('content-type') || '').toLowerCase();
+            let payload = null;
+            let text = '';
+            if (contentType.includes('application/json')) {
+                payload = await res.json().catch(() => null);
+            } else {
+                text = await res.text().catch(() => '');
+                payload = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
+            }
+            const message =
+                (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
+                (typeof payload === 'string' ? payload : '') ||
+                text ||
+                `Request failed: ${res.status}`;
+            throw new Error(String(message).trim() || 'Có lỗi xảy ra. Vui lòng thử lại sau.');
         }
-        return res.json();
+
+        if (res.status === 204) return null;
+        const okContentType = (res.headers.get('content-type') || '').toLowerCase();
+        if (okContentType.includes('application/json')) return res.json();
+        return null;
     }
 
     async function apiPost(url, body = {}) {
@@ -160,12 +179,30 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
-        if (!res || !res.ok) {
-            const text = res ? await res.text().catch(() => '') : '';
-            throw new Error(text || `Request failed: ${res ? res.status : 'no response'}`);
+        if (!res) throw new Error('Không thể kết nối tới máy chủ');
+
+        if (!res.ok) {
+            const contentType = (res.headers.get('content-type') || '').toLowerCase();
+            let payload = null;
+            let text = '';
+            if (contentType.includes('application/json')) {
+                payload = await res.json().catch(() => null);
+            } else {
+                text = await res.text().catch(() => '');
+                payload = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
+            }
+            const message =
+                (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
+                (typeof payload === 'string' ? payload : '') ||
+                text ||
+                `Request failed: ${res.status}`;
+            throw new Error(String(message).trim() || 'Có lỗi xảy ra. Vui lòng thử lại sau.');
         }
+
         if (res.status === 204) return null;
-        return res.json();
+        const okContentType = (res.headers.get('content-type') || '').toLowerCase();
+        if (okContentType.includes('application/json')) return res.json();
+        return null;
     }
 
     function formatTime(isoString) {
@@ -897,18 +934,16 @@
                     // Subscribe to presence updates
                     presenceSubscription = stompClient.subscribe('/topic/presence', (message) => {
                         try {
-                            const presence = JSON.parse(message.body);
-                            if (presence?.username) {
-                                presenceMap.set(presence.username, presence.status);
+                            const data = JSON.parse(message.body);
+                            const presence = (data && data.type && data.payload) ? data.payload : data;
+                            const username = presence?.username;
+                            const status = presence?.newStatus || presence?.status;
+                            if (username && status) {
+                                presenceMap.set(username, String(status).toUpperCase());
                                 renderMembersList();
                             }
                         } catch (e) { /* ignore */ }
                     });
-
-                    // Announce online
-                    try {
-                        stompClient.send('/app/presence.update', {}, JSON.stringify({ status: 'ONLINE' }));
-                    } catch (e) { /* ignore */ }
 
                     resolve();
                 },
@@ -2114,13 +2149,6 @@
     function renderVoiceParticipants(participants) {
         const grid = document.getElementById('voiceParticipantsGrid');
         if (!grid) return;
-
-        // Activity panel: only show when someone is streaming (screen share)
-        const activityPanel = document.getElementById('voiceActivityPanel');
-        const shouldShowActivity = !!participants?.some(p => p && (p.isScreenSharing));
-        if (activityPanel) {
-            activityPanel.classList.toggle('hidden', !shouldShowActivity);
-        }
         
         grid.setAttribute('data-count', participants.length);
         grid.innerHTML = participants.map(p => {
@@ -3230,14 +3258,7 @@
             if (e.target === el.createCategoryModal) hideCreateCategoryModal();
         });
 
-        // Announce offline on page unload
-        window.addEventListener('beforeunload', () => {
-            try {
-                if (stompClient?.connected) {
-                    stompClient.send('/app/presence.update', {}, JSON.stringify({ status: 'OFFLINE' }));
-                }
-            } catch (e) { /* ignore */ }
-        });
+        // Presence is tracked authoritatively by websocket connect/disconnect.
     }
 
     // ==================== INITIALIZATION ====================

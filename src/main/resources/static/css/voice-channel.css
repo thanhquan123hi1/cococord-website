@@ -177,34 +177,18 @@
     display: grid;
     gap: 8px;
     padding: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     align-content: center;
     justify-content: center;
     overflow-y: auto;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-/* Dynamic grid based on participant count */
+/* Single participant: keep a larger centered tile */
 .voice-participants-grid[data-count="1"] {
-    grid-template-columns: 1fr;
-    max-width: 640px;
-    margin: 0 auto;
-}
-
-.voice-participants-grid[data-count="2"] {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: minmax(320px, 1fr);
     max-width: 900px;
-    margin: 0 auto;
-}
-
-.voice-participants-grid[data-count="3"],
-.voice-participants-grid[data-count="4"] {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.voice-participants-grid[data-count="5"],
-.voice-participants-grid[data-count="6"] {
-    grid-template-columns: repeat(3, 1fr);
 }
 
 /* ==================== VOICE PARTICIPANT TILE ==================== */
@@ -266,10 +250,6 @@
 .voice-tile-badges i {
     font-size: 14px;
     line-height: 1;
-}
-
-.voice-activity-panel.hidden {
-    display: none;
 }
 
 .voice-participant-tile.self {
@@ -403,69 +383,6 @@
     pointer-events: none;
 }
 
-/* ==================== VOICE SIDEBAR (Activity Panel) ==================== */
-.voice-activity-panel {
-    width: 340px;
-    background: var(--background-secondary, #2b2d31);
-    border-left: 1px solid var(--background-tertiary, #1e1f22);
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-}
-
-.voice-activity-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px;
-    background: linear-gradient(180deg, #1a1b1e 0%, transparent 100%);
-    border-radius: 8px;
-    margin-bottom: 16px;
-}
-
-.voice-activity-graphic {
-    width: 200px;
-    height: 120px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.voice-activity-graphic img {
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.voice-activity-actions {
-    display: flex;
-    gap: 12px;
-}
-
-.voice-activity-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: var(--background-tertiary, #1e1f22);
-    border: none;
-    border-radius: 4px;
-    color: var(--text-normal, #dbdee1);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.voice-activity-btn:hover {
-    background: var(--background-modifier-hover, #404249);
-}
-
-.voice-activity-btn svg {
-    width: 18px;
-    height: 18px;
-}
-
 /* ==================== VOICE BOTTOM CONTROLS ==================== */
 .voice-bottom-controls {
     display: flex;
@@ -475,6 +392,9 @@
     padding: 16px;
     background: var(--background-secondary, #2b2d31);
     border-top: 1px solid var(--background-tertiary, #1e1f22);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 .voice-btn {
@@ -487,7 +407,13 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: white;
+    color: var(--interactive-normal, #b5bac1);
+    background: var(--background-secondary-alt, #232428);
+}
+
+.voice-btn:hover {
+    background: var(--background-modifier-hover, #404249);
+    color: var(--interactive-hover, #dcddde);
 }
 
 .voice-btn svg {
@@ -495,38 +421,7 @@
     height: 22px;
 }
 
-/* Buttons with labels */
-.voice-btn-with-label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 16px;
-    background: var(--background-secondary-alt, #232428);
-    border: none;
-    border-radius: 8px;
-    color: var(--interactive-normal, #b5bac1);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    min-width: 70px;
-}
 
-.voice-btn-with-label:hover {
-    background: var(--background-modifier-hover, #404249);
-    color: var(--interactive-hover, #dcddde);
-}
-
-.voice-btn-with-label svg {
-    width: 24px;
-    height: 24px;
-}
-
-.voice-btn-label {
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.voice-btn-with-label.active,
 .voice-btn-mute.active,
 .voice-btn-deafen.active {
     background: #f23f43;
@@ -543,20 +438,22 @@
     color: white;
 }
 
-/* Disconnect button - big red circle */
-.voice-btn-disconnect-big {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: none;
+/* Disconnect button - red */
+.voice-btn-disconnect {
     background: #f23f43;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s ease;
     color: white;
     margin-left: 8px;
+}
+
+.voice-btn-disconnect:hover {
+    background: #f23f43;
+    filter: brightness(0.95);
+    color: white;
+}
+
+/* Voice mode: hide members list to keep screen focused on voice/video */
+#chatApp:has(.voice-channel-view.active) .members-sidebar {
+    display: none !important;
 }
 
 .voice-btn-disconnect-big:hover {

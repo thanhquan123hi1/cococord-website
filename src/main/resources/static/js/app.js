@@ -74,8 +74,9 @@ async function navigateToServerWithChannel(serverId) {
     const accessToken = localStorage.getItem('accessToken');
     
     if (!accessToken) {
-        // No token found, redirect to login
-        window.location.href = '/login';
+        // No token found, redirect to login and preserve where we were going.
+        const next = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+        window.location.href = `/login?next=${next}`;
         return;
     }
     
@@ -99,6 +100,33 @@ async function navigateToServerWithChannel(serverId) {
         window.location.href = '/login';
     });
 })();
+
+function maybeOpenJoinServerFromInviteLink() {
+    try {
+        const url = new URL(window.location.href);
+        let code = url.searchParams.get('invite') || url.searchParams.get('inviteCode') || null;
+        if (!code) return;
+
+        // Basic open-redirect hardening: only accept simple codes.
+        code = String(code).trim();
+        if (!code || code.includes('/') || code.includes('\\')) return;
+
+        const input = document.getElementById('globalInviteCodeInput');
+        if (input) input.value = code;
+
+        // Ensure modal is visible.
+        openGlobalModal('globalJoinServerModal');
+
+        // Clean URL so refresh doesn't re-open repeatedly.
+        url.searchParams.delete('invite');
+        url.searchParams.delete('inviteCode');
+        const qs = url.searchParams.toString();
+        const cleaned = url.pathname + (qs ? `?${qs}` : '') + url.hash;
+        window.history.replaceState({}, '', cleaned);
+    } catch (_) {
+        // ignore
+    }
+}
 
 // Logout function
 function logout() {
@@ -902,6 +930,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // REMOVED: loadUserInfo() - now handled by UserPanel component
     initGlobalSidebar();
     loadGlobalUserPanel(); // Load and init UCP
+
+    // If we arrived from an invite link (/invite/{code} -> /app?invite=code), open Join modal.
+    maybeOpenJoinServerFromInviteLink();
     
     // Auto-refresh token before it expires (every 45 minutes)
     setInterval(() => {
@@ -920,3 +951,151 @@ window.CoCoCordApp = {
     updateGlobalUserPanel,
     renderGlobalUserPanel
 };
+
+// ==================== GLOBAL PRESENCE STORE ====================
+// One source of truth for ONLINE/OFFLINE across /app friends + DM sidebar.
+(function initPresenceStore() {
+    const statusByUserId = new Map(); // userId(string) -> status(string)
+    const listeners = new Set();
+
+    let stomp = null;
+    let connectPromise = null;
+
+    function normalizeStatus(raw) {
+        const s = String(raw || '').toUpperCase();
+        return s || null;
+    }
+
+    function isOnlineStatus(status) {
+        const s = normalizeStatus(status);
+        if (!s) return false;
+        return s !== 'OFFLINE' && s !== 'INVISIBLE';
+    }
+
+    function emit(userId, status) {
+        const payload = { userId: String(userId), status: normalizeStatus(status) };
+        for (const fn of listeners) {
+            try { fn(payload); } catch (_) { /* ignore */ }
+        }
+    }
+
+    function applyStatus(userId, status) {
+        if (userId == null) return;
+        const key = String(userId);
+        const normalized = normalizeStatus(status);
+        if (!normalized) return;
+        const prev = statusByUserId.get(key);
+        if (prev === normalized) return;
+        statusByUserId.set(key, normalized);
+        emit(key, normalized);
+    }
+
+    function parsePresenceMessage(body) {
+        // Supports:
+        // - WebSocketEvent: { type: 'user.status.changed', payload: { userId, newStatus, ... } }
+        // - Legacy: { userId, status } or { username, status }
+        let data;
+        try { data = JSON.parse(body); } catch (_) { return null; }
+        if (!data) return null;
+
+        if (data.type && data.payload) {
+            const t = String(data.type);
+            if (t !== 'user.status.changed') return null;
+            const p = data.payload || {};
+            return { userId: p.userId, status: p.newStatus || p.status || null };
+        }
+        if (data.userId && (data.newStatus || data.status)) {
+            return { userId: data.userId, status: data.newStatus || data.status };
+        }
+        return null;
+    }
+
+    async function ensureConnected() {
+        if (connectPromise) return connectPromise;
+        const token = localStorage.getItem('accessToken');
+        if (!token || !window.SockJS || !window.Stomp) {
+            connectPromise = Promise.resolve(false);
+            return connectPromise;
+        }
+
+        connectPromise = new Promise((resolve) => {
+            try {
+                const socket = new window.SockJS('/ws');
+                stomp = window.Stomp.over(socket);
+                stomp.debug = null;
+
+                stomp.connect(
+                    { Authorization: 'Bearer ' + token },
+                    () => {
+                        // Global + per-user presence channels
+                        stomp.subscribe('/topic/presence', (msg) => {
+                            const evt = parsePresenceMessage(msg.body);
+                            if (evt?.userId) applyStatus(evt.userId, evt.status);
+                        });
+                        stomp.subscribe('/user/queue/presence', (msg) => {
+                            const evt = parsePresenceMessage(msg.body);
+                            if (evt?.userId) applyStatus(evt.userId, evt.status);
+                        });
+                        resolve(true);
+                    },
+                    () => resolve(false)
+                );
+            } catch (_) {
+                resolve(false);
+            }
+        });
+
+        return connectPromise;
+    }
+
+    async function hydrateSnapshot(userIds) {
+        const ids = Array.from(new Set((userIds || []).map((x) => Number(x)).filter((n) => Number.isFinite(n))));
+        if (!ids.length) return;
+
+        try {
+            const params = new URLSearchParams();
+            ids.forEach((id) => params.append('ids', String(id)));
+            const qs = params.toString();
+            const resp = (window.CoCoCordApp && window.CoCoCordApp.apiRequest)
+                ? await window.CoCoCordApp.apiRequest(`/api/presence/users?${qs}`, { method: 'GET' })
+                : await fetch(`/api/presence/users?${qs}`, {
+                    method: 'GET',
+                    headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+            if (!resp || !resp.ok) return;
+            const map = await resp.json();
+            if (!map) return;
+            Object.keys(map).forEach((k) => applyStatus(k, map[k]));
+            // Ensure every requested id has a value (avoid null status).
+            ids.forEach((id) => {
+                const key = String(id);
+                if (!statusByUserId.has(key)) applyStatus(key, 'OFFLINE');
+            });
+        } catch (_) { /* ignore */ }
+    }
+
+    function getStatus(userId) {
+        if (userId == null) return null;
+        return statusByUserId.get(String(userId)) || null;
+    }
+
+    function isOnline(userId) {
+        const s = getStatus(userId);
+        return s ? isOnlineStatus(s) : null;
+    }
+
+    function subscribe(fn) {
+        if (typeof fn !== 'function') return () => {};
+        listeners.add(fn);
+        return () => listeners.delete(fn);
+    }
+
+    window.CoCoCordPresence = {
+        ensureConnected,
+        hydrateSnapshot,
+        subscribe,
+        getStatus,
+        isOnline
+    };
+})();

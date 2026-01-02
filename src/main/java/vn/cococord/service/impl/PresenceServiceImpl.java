@@ -163,7 +163,6 @@ public class PresenceServiceImpl implements IPresenceService {
     private void trackConnectionRedis(Long userId, String sessionId) {
         String sessionsKey = PRESENCE_SESSIONS_PREFIX + userId;
         redisTemplate.opsForSet().add(sessionsKey, sessionId);
-        redisTemplate.expire(sessionsKey, PRESENCE_TTL_SECONDS, TimeUnit.SECONDS);
         redisTemplate.opsForSet().add(PRESENCE_ONLINE_SET, String.valueOf(userId));
         updateLastActivityInternal(userId);
     }
@@ -386,7 +385,7 @@ public class PresenceServiceImpl implements IPresenceService {
             var friends = friendService.getFriends(user.getUsername());
             for (var friend : friends) {
                 messagingTemplate.convertAndSendToUser(
-                        String.valueOf(friend.getId()),
+                        friend.getUsername(),
                         "/queue/presence",
                         event);
             }
@@ -406,5 +405,8 @@ public class PresenceServiceImpl implements IPresenceService {
         } catch (Exception e) {
             log.error("Failed to broadcast to servers: {}", e.getMessage());
         }
+
+        // Also broadcast to global presence topic for legacy consumers.
+        messagingTemplate.convertAndSend("/topic/presence", event);
     }
 }

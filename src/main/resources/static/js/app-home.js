@@ -116,9 +116,42 @@
         return user?.customStatus || user?.bio || '';
     }
 
+    function userIdOf(user) {
+        return user?.userId ?? user?.id ?? null;
+    }
+
     function isOnline(user) {
+        const id = userIdOf(user);
+        const store = window.CoCoCordPresence;
+        if (store && typeof store.isOnline === 'function' && id != null) {
+            const v = store.isOnline(id);
+            if (typeof v === 'boolean') return v;
+        }
         const s = user?.status;
         return String(s || '').toUpperCase() === 'ONLINE';
+    }
+
+    function onlineStatusOfUserId(userId, fallbackStatus) {
+        const store = window.CoCoCordPresence;
+        const s = store && typeof store.getStatus === 'function' ? store.getStatus(userId) : null;
+        return String(s || fallbackStatus || '').toUpperCase();
+    }
+
+    function updatePresenceDotsForUserId(userId) {
+        const id = String(userId);
+        const store = window.CoCoCordPresence;
+        const online = store && typeof store.isOnline === 'function' ? store.isOnline(id) : null;
+        if (typeof online !== 'boolean') return;
+
+        // DM sidebar dots
+        document.querySelectorAll(`.dm-row[data-user-id="${CSS.escape(id)}"] .status-dot`).forEach((dot) => {
+            dot.classList.toggle('online', online);
+        });
+
+        // Friends list dots
+        document.querySelectorAll(`.friend-row[data-user-id="${CSS.escape(id)}"] .status-dot`).forEach((dot) => {
+            dot.classList.toggle('online', online);
+        });
     }
 
     function getCallRoomId() {
@@ -586,22 +619,52 @@
     async function apiJson(url, options = {}) {
         const token = localStorage.getItem('accessToken');
         const headers = {
-            'Content-Type': 'application/json',
             ...options.headers
         };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
+        // Only set JSON content type when we send a body.
+        if (options.body && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+
         const response = await fetch(url, { ...options, headers });
+        if (!response) throw new Error('Không thể kết nối tới máy chủ');
         if (response.status === 204) return null;
+
         if (!response.ok) {
             if (response.status === 401) {
                 window.location.href = '/login';
                 return null;
             }
-            const text = await response.text().catch(() => '');
-            throw new Error(text || `Request failed: ${response.status}`);
+
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            let payload = null;
+            let text = '';
+
+            if (contentType.includes('application/json')) {
+                payload = await response.json().catch(() => null);
+            } else {
+                text = await response.text().catch(() => '');
+                payload = (() => {
+                    try { return JSON.parse(text); } catch (_) { return null; }
+                })();
+            }
+
+            const message =
+                (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
+                (typeof payload === 'string' ? payload : '') ||
+                (text && text.trim().startsWith('{') ? '' : text) ||
+                `Request failed: ${response.status}`;
+
+            throw new Error(String(message).trim() || 'Có lỗi xảy ra. Vui lòng thử lại sau.');
         }
-        return response.json();
+
+        const okContentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (okContentType.includes('application/json')) {
+            return response.json();
+        }
+        return null;
     }
 
     async function loadCurrentUser() {
@@ -703,10 +766,27 @@
         const q = state.friendsSearch.trim().toLowerCase();
         let list = (state.friends || []).slice();
 
+        // Normalize and de-dup by user id to avoid bad shapes causing empty Online tab.
+        const seen = new Set();
+        list = list.filter((f) => {
+            const id = userIdOf(f);
+            if (id == null) return false;
+            const key = String(id);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        // Never show self in friends list (defensive).
+        const me = state.currentUser?.id;
+        if (me != null) {
+            list = list.filter((f) => String(userIdOf(f)) !== String(me));
+        }
+
         if (state.activeTab === 'online') {
             // Only show friends who are ONLINE, IDLE, or DO_NOT_DISTURB (not OFFLINE or INVISIBLE)
             list = list.filter((f) => {
-                const status = String(f?.status || '').toUpperCase();
+                const status = onlineStatusOfUserId(userIdOf(f), f?.status);
                 return status === 'ONLINE' || status === 'IDLE' || status === 'DO_NOT_DISTURB';
             });
         } else if (state.activeTab === 'pending') {
@@ -739,12 +819,13 @@
             <div class="friend-group-header">${headerText} — ${list.length}</div>
             ${list
                 .map((f) => {
+                    const friendId = userIdOf(f);
                     const avatar = f.avatarUrl
                         ? `<img src="${escapeHtml(f.avatarUrl)}" alt="">`
                         : `<span>${escapeHtml(displayName(f).charAt(0).toUpperCase())}</span>`;
                     const subtitle = statusText(f) || (isOnline(f) ? 'Đang trực tuyến' : '');
                     return `
-                        <div class="friend-row" data-user-id="${escapeHtml(f.id)}">
+                        <div class="friend-row" data-user-id="${escapeHtml(friendId)}">
                             <div class="friend-left">
                                 <div class="avatar">${avatar}<span class="status-dot ${isOnline(f) ? 'online' : ''}"></span></div>
                                 <div class="friend-meta">
@@ -753,8 +834,8 @@
                                 </div>
                             </div>
                             <div class="friend-actions">
-                                <button class="icon-btn" type="button" title="Nhắn tin" data-action="chat" data-user-id="${escapeHtml(f.id)}"><i class="bi bi-chat-fill"></i></button>
-                                <button class="icon-btn" type="button" title="Thêm" data-action="more" data-user-id="${escapeHtml(f.id)}"><i class="bi bi-three-dots-vertical"></i></button>
+                                <button class="icon-btn" type="button" title="Nhắn tin" data-action="chat" data-user-id="${escapeHtml(friendId)}"><i class="bi bi-chat-fill"></i></button>
+                                <button class="icon-btn" type="button" title="Thêm" data-action="more" data-user-id="${escapeHtml(friendId)}"><i class="bi bi-three-dots-vertical"></i></button>
                             </div>
                         </div>
                     `;
@@ -774,7 +855,7 @@
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const userId = btn.getAttribute('data-user-id');
-                const friend = state.friends.find(f => String(f.id) === String(userId));
+                const friend = state.friends.find(f => String(userIdOf(f)) === String(userId));
                 if (friend) showFriendContextMenu(e, friend);
             });
         });
@@ -788,7 +869,7 @@
             row.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 const userId = row.getAttribute('data-user-id');
-                const friend = state.friends.find(f => String(f.id) === String(userId));
+                const friend = state.friends.find(f => String(userIdOf(f)) === String(userId));
                 if (friend) showFriendContextMenu(e, friend);
             });
         });
@@ -1073,6 +1154,7 @@
     async function sendFriendRequest() {
         const input = els.addFriendInput();
         const hint = els.addFriendHint();
+        const btn = els.sendFriendRequestBtn?.() || document.getElementById('sendFriendRequestBtn');
         const value = (input?.value || '').trim();
 
         if (hint) {
@@ -1083,6 +1165,10 @@
         if (!value) return;
 
         try {
+            if (btn) {
+                btn.disabled = true;
+                btn.setAttribute('aria-busy', 'true');
+            }
             const results = await apiJson(`/api/users/search?query=${encodeURIComponent(value)}`, { method: 'GET' });
             const users = Array.isArray(results) ? results : [];
             const exact =
@@ -1117,6 +1203,11 @@
             if (hint) {
                 hint.textContent = err?.message || 'Gửi lời mời thất bại';
                 hint.className = 'add-friend-hint error';
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
             }
         }
     }
@@ -1505,28 +1596,35 @@
         renderFriendsList();
     }
 
-    // Periodic refresh to update online status
-    let refreshInterval = null;
+    async function initPresence() {
+        const store = window.CoCoCordPresence;
+        if (!store || typeof store.ensureConnected !== 'function') return;
 
-    function startPeriodicRefresh() {
-        if (refreshInterval) return;
-        refreshInterval = setInterval(async () => {
-            // Only refresh if on friends tab and not in DM chat
-            if (state.activeView === 'friends' && (state.activeTab === 'online' || state.activeTab === 'all')) {
-                try {
-                    await loadFriends();
-                    renderFriendsList();
-                } catch (e) {
-                    console.warn('Failed to refresh friends:', e);
-                }
+        await store.ensureConnected();
+
+        // Subscribe first so snapshot hydration events won't be missed.
+        store.subscribe((evt) => {
+            if (!evt?.userId) return;
+            updatePresenceDotsForUserId(evt.userId);
+
+            // Online tab depends on presence filtering; re-render only when needed.
+            if (state.activeView === 'friends' && state.activeTab === 'online') {
+                renderFriendsList();
             }
-        }, 30000); // Refresh every 30 seconds
-    }
+        });
 
-    function stopPeriodicRefresh() {
-        if (refreshInterval) {
-            clearInterval(refreshInterval);
-            refreshInterval = null;
+        const ids = [];
+        (state.friends || []).forEach((f) => { if (f?.id != null) ids.push(f.id); });
+        (state.dmItems || []).forEach((d) => { if (d?.userId != null) ids.push(d.userId); });
+
+        if (typeof store.hydrateSnapshot === 'function') {
+            await store.hydrateSnapshot(ids);
+        }
+
+        // Ensure UI reflects snapshot immediately (even if no realtime change happens).
+        ids.forEach((id) => updatePresenceDotsForUserId(id));
+        if (state.activeView === 'friends' && state.activeTab === 'online') {
+            renderFriendsList();
         }
     }
 
@@ -1547,9 +1645,9 @@
         await loadCurrentUser();
         await Promise.all([loadFriends(), loadRequests(), loadBlocked(), loadDmSidebar()]);
         render();
-        
-        // Start periodic refresh for online status
-        startPeriodicRefresh();
+
+        // Presence realtime (no polling)
+        await initPresence();
 
         // Drain any buffered call events that arrived before init completed.
         if (Array.isArray(window.__cococordIncomingCallQueue) && window.__cococordIncomingCallQueue.length) {

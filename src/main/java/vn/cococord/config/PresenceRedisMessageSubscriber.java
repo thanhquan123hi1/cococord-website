@@ -24,7 +24,8 @@ import vn.cococord.service.IFriendService;
 
 /**
  * Redis Pub/Sub subscriber for presence events.
- * Receives presence changes from other server instances and broadcasts via WebSocket.
+ * Receives presence changes from other server instances and broadcasts via
+ * WebSocket.
  * 
  * Only active when Redis is enabled (spring.data.redis.enabled=true)
  */
@@ -46,13 +47,13 @@ public class PresenceRedisMessageSubscriber implements MessageListener {
         try {
             String body = new String(message.getBody());
             PresenceChangeEvent event = objectMapper.readValue(body, PresenceChangeEvent.class);
-            
-            log.debug("Received presence event from Redis: userId={}, status={}", 
+
+            log.debug("Received presence event from Redis: userId={}, status={}",
                     event.getUserId(), event.getNewStatus());
-            
+
             // Broadcast to WebSocket clients
             broadcastPresenceChange(event);
-            
+
         } catch (Exception e) {
             log.error("Failed to process presence message from Redis: {}", e.getMessage(), e);
         }
@@ -67,11 +68,7 @@ public class PresenceRedisMessageSubscriber implements MessageListener {
                 try {
                     var friends = friendService.getFriends(user.getUsername());
                     for (var friend : friends) {
-                        messagingTemplate.convertAndSendToUser(
-                            String.valueOf(friend.getId()),
-                            "/queue/presence",
-                            wsEvent
-                        );
+                        messagingTemplate.convertAndSendToUser(friend.getUsername(), "/queue/presence", wsEvent);
                     }
                 } catch (Exception e) {
                     log.error("Failed to broadcast presence to friends: {}", e.getMessage());
@@ -87,9 +84,8 @@ public class PresenceRedisMessageSubscriber implements MessageListener {
             for (ServerMember membership : memberships) {
                 Server server = membership.getServer();
                 messagingTemplate.convertAndSend(
-                    "/topic/server." + server.getId() + ".presence",
-                    wsEvent
-                );
+                        "/topic/server." + server.getId() + ".presence",
+                        wsEvent);
             }
         } catch (Exception e) {
             log.error("Failed to broadcast presence to servers: {}", e.getMessage());

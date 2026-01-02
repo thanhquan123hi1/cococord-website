@@ -143,13 +143,12 @@ public class WebSocketMessageController {
      */
     @MessageMapping("/presence.update")
     public void updatePresence(@Payload PresenceUpdate presence, Principal principal) {
-        String username = principal.getName();
-        presence.setUsername(username);
-
-        log.info("User {} presence updated to: {}", username, presence.getStatus());
-
-        // Broadcast presence to all users (or specific servers)
-        messagingTemplate.convertAndSend("/topic/presence", presence);
+        // Deprecated: presence is authoritative from STOMP connect/disconnect session
+        // tracking.
+        // Ignore client-driven updates to avoid duplicated/incorrect presence state.
+        String username = principal != null ? principal.getName() : "(unknown)";
+        log.debug("Ignoring client-driven presence.update from user={} status={}", username,
+                presence != null ? presence.getStatus() : null);
     }
 
     /**
@@ -161,7 +160,7 @@ public class WebSocketMessageController {
     public void sendDirectMessage(@Payload DirectMessagePayload payload, Principal principal) {
         try {
             String username = principal.getName();
-            log.info("[DM-WS] Received DM via WebSocket from user: {} (senderId={}) to dmGroupId={}", 
+            log.info("[DM-WS] Received DM via WebSocket from user: {} (senderId={}) to dmGroupId={}",
                     username, payload.getSenderId(), payload.getDmGroupId());
             log.info("[DM-WS] Message content: {}", payload.getContent());
 

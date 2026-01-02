@@ -274,18 +274,31 @@ const UserProfileModal = (function() {
      */
     async function addFriend(userId) {
         try {
-            const response = await fetch('/api/friends/request', {
+            const response = await fetch('/api/friends/requests', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
-                body: JSON.stringify({ receiverId: userId })
+                body: JSON.stringify({ receiverUserId: userId })
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to send friend request');
+                const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                let payload = null;
+                let text = '';
+                if (contentType.includes('application/json')) {
+                    payload = await response.json().catch(() => null);
+                } else {
+                    text = await response.text().catch(() => '');
+                    payload = (() => { try { return JSON.parse(text); } catch (_) { return null; } })();
+                }
+                const message =
+                    (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
+                    (typeof payload === 'string' ? payload : '') ||
+                    text ||
+                    'Không thể gửi lời mời kết bạn';
+                throw new Error(String(message).trim());
             }
 
             alert('Đã gửi lời mời kết bạn');

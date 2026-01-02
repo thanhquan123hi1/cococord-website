@@ -16,6 +16,7 @@
         initialized: false,
         isMuted: false,
         isDeafened: false,
+        presenceUnsub: null,
 
         // ============================================
         // SVG Icons
@@ -63,11 +64,46 @@
                 if (this.currentUser) {
                     this.render();
                     this.attachEventListeners();
+                    this.initPresenceSync();
                     this.startPresenceHeartbeat();
                     this.initialized = true;
                 }
             } catch (error) {
                 console.error('UserPanel: Failed to initialize', error);
+            }
+        },
+
+        initPresenceSync: function() {
+            const store = window.CoCoCordPresence;
+            const myId = this.currentUser?.id;
+            if (!store || !myId) return;
+
+            // Ensure only one subscription for this component
+            try { this.presenceUnsub?.(); } catch (_) { /* ignore */ }
+            this.presenceUnsub = null;
+
+            // 1) Connect websocket so backend marks us ONLINE.
+            if (typeof store.ensureConnected === 'function') {
+                store.ensureConnected().then(() => {
+                    // 2) Hydrate snapshot and apply status to UCP.
+                    if (typeof store.hydrateSnapshot === 'function') {
+                        return store.hydrateSnapshot([myId]);
+                    }
+                }).then(() => {
+                    if (typeof store.getStatus === 'function') {
+                        const s = store.getStatus(myId);
+                        if (s) this.update({ status: s });
+                    }
+                }).catch(() => { /* ignore */ });
+            }
+
+            // 3) Realtime updates for our own status (idle/dnd/offline etc.)
+            if (typeof store.subscribe === 'function') {
+                this.presenceUnsub = store.subscribe((evt) => {
+                    if (!evt?.userId) return;
+                    if (String(evt.userId) !== String(myId)) return;
+                    if (evt.status) this.update({ status: evt.status });
+                });
             }
         },
 
@@ -211,10 +247,14 @@
 
         getUserDisplayData: function() {
             const user = this.currentUser || {};
+            const store = window.CoCoCordPresence;
+            const storeStatus = store && typeof store.getStatus === 'function' && user.id != null
+                ? store.getStatus(user.id)
+                : null;
             return {
                 displayName: user.displayName || user.username || 'User',
                 username: user.username || 'user',
-                status: user.status || 'OFFLINE',
+                status: storeStatus || user.status || 'OFFLINE',
                 customStatus: user.customStatus ? 
                     (user.customStatusEmoji ? `${user.customStatusEmoji} ${user.customStatus}` : user.customStatus) : '',
                 discriminator: String((user.id || 0) % 10000).padStart(4, '0'),

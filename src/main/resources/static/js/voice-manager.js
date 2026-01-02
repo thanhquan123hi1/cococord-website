@@ -718,74 +718,170 @@
 
             grid.setAttribute('data-count', String(list.length));
 
-            grid.innerHTML = list.map((u) => {
+            const nextIds = new Set(list.map(u => String(u.userId)));
+
+            const ensureEl = (parent, selector, createFn) => {
+                const found = parent.querySelector(selector);
+                if (found) return found;
+                const el = createFn();
+                parent.appendChild(el);
+                return el;
+            };
+
+            const ensureVideo = (tile, userId) => {
+                let video = tile.querySelector('video.voice-participant-video');
+                if (video) return video;
+                video = document.createElement('video');
+                video.className = 'voice-participant-video';
+                video.id = `video-user-${userId}`;
+                video.autoplay = true;
+                video.playsInline = true;
+                tile.insertBefore(video, tile.firstChild);
+                return video;
+            };
+
+            const attachStream = (video, stream, { muted = true } = {}) => {
+                if (!video) return;
+                if (!stream) {
+                    if (video.srcObject) video.srcObject = null;
+                    return;
+                }
+                if (video.srcObject !== stream) {
+                    video.srcObject = stream;
+                }
+                video.muted = !!muted;
+                video.onloadedmetadata = () => {
+                    Promise.resolve(video.play()).catch(() => { /* ignore */ });
+                };
+            };
+
+            // Create/update tiles in stable order without nuking the grid.
+            for (const u of list) {
+                const userId = u.userId;
+                const userIdStr = String(userId);
                 const isLocal = String(u.userId) === String(this.currentUser?.id);
 
                 const name = u.displayName || u.username || 'User';
-                const avatarHtml = u.avatarUrl
-                    ? `<img class="voice-participant-avatar" src="${escapeHtml(u.avatarUrl)}" alt="${escapeHtml(name)}">`
-                    : `<div class="voice-participant-avatar-placeholder">${escapeHtml(String(name).charAt(0).toUpperCase())}</div>`;
-
                 const showMuted = !u.micOn;
                 const showCamera = !!u.camOn;
                 const showScreen = !!u.screenOn;
                 const showSpeaking = !!u.speaking && u.micOn;
+                const showVideo = showCamera || showScreen;
 
-                const videoHtml = (showCamera || showScreen)
-                    ? `<video class="voice-participant-video" id="video-user-${u.userId}" autoplay playsinline ${isLocal ? 'muted' : ''}></video>`
-                    : '';
+                let tile = document.getElementById(`voice-tile-user-${userIdStr}`);
+                if (!tile) {
+                    tile = document.createElement('div');
+                    tile.id = `voice-tile-user-${userIdStr}`;
+                    tile.className = 'voice-participant-tile';
+                    tile.setAttribute('data-user-id', userIdStr);
 
-                return `
-                    <div class="voice-participant-tile ${isLocal ? 'self' : ''} ${showSpeaking ? 'speaking' : ''} ${showCamera ? 'camera-on' : ''} ${showScreen ? 'screen-sharing' : ''}" id="voice-tile-user-${u.userId}" data-user-id="${u.userId}">
-                        ${videoHtml}
-                        <div class="voice-tile-badges">
-                            ${showScreen ? '<i class="bi bi-display"></i>' : ''}
-                            ${showCamera ? '<i class="bi bi-camera-video-fill"></i>' : ''}
-                            ${showMuted ? '<i class="bi bi-mic-mute-fill"></i>' : ''}
-                        </div>
-                        <div class="voice-avatar-wrapper" style="${(showCamera || showScreen) ? 'display:none' : ''}">
-                            ${avatarHtml}
-                        </div>
-                        <div class="voice-participant-info">
-                            <div class="voice-participant-name">${escapeHtml(name)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                    // Badges
+                    const badges = document.createElement('div');
+                    badges.className = 'voice-tile-badges';
+                    tile.appendChild(badges);
 
-            // attach video streams
-            list.forEach((u) => {
-                if (!u.camOn && !u.screenOn) return;
-                const video = document.getElementById(`video-user-${u.userId}`);
-                if (!video) return;
+                    // Avatar wrapper
+                    const avatarWrap = document.createElement('div');
+                    avatarWrap.className = 'voice-avatar-wrapper';
+                    tile.appendChild(avatarWrap);
 
-                if (String(u.userId) === String(this.currentUser?.id)) {
-                    if (u.screenOn && this.screenStream) {
-                        video.srcObject = this.screenStream;
-                        video.muted = true;
-                        video.onloadedmetadata = () => {
-                            Promise.resolve(video.play()).catch(() => { /* ignore */ });
-                        };
-                        return;
-                    }
-                    if (this.localStream) {
-                        video.srcObject = this.localStream;
-                        video.muted = true;
-                        video.onloadedmetadata = () => {
-                            Promise.resolve(video.play()).catch(() => { /* ignore */ });
-                        };
-                    }
-                    return;
+                    // Info
+                    const info = document.createElement('div');
+                    info.className = 'voice-participant-info';
+                    const nameEl = document.createElement('div');
+                    nameEl.className = 'voice-participant-name';
+                    info.appendChild(nameEl);
+                    tile.appendChild(info);
                 }
 
-                const stream = this.streams.get(u.userId);
-                if (!stream) return;
+                // Reorder to match current list order
+                grid.appendChild(tile);
 
-                video.srcObject = stream;
-                video.muted = true;
-                video.onloadedmetadata = () => {
-                    Promise.resolve(video.play()).catch(() => { /* ignore */ });
-                };
+                // Update classes
+                tile.classList.toggle('self', isLocal);
+                tile.classList.toggle('speaking', showSpeaking);
+                tile.classList.toggle('camera-on', showCamera);
+                tile.classList.toggle('screen-sharing', showScreen);
+
+                // Update name
+                const nameEl = ensureEl(tile, '.voice-participant-name', () => {
+                    const el = document.createElement('div');
+                    el.className = 'voice-participant-name';
+                    return el;
+                });
+                if (nameEl.textContent !== String(name)) nameEl.textContent = String(name);
+
+                // Update badges (small & cheap; only per-tile)
+                const badges = ensureEl(tile, '.voice-tile-badges', () => {
+                    const el = document.createElement('div');
+                    el.className = 'voice-tile-badges';
+                    return el;
+                });
+                const badgesKey = `${showScreen ? 's' : ''}${showCamera ? 'c' : ''}${showMuted ? 'm' : ''}`;
+                if (tile.dataset.badgesKey !== badgesKey) {
+                    tile.dataset.badgesKey = badgesKey;
+                    badges.innerHTML = `${showScreen ? '<i class="bi bi-display"></i>' : ''}${showCamera ? '<i class="bi bi-camera-video-fill"></i>' : ''}${showMuted ? '<i class="bi bi-mic-mute-fill"></i>' : ''}`;
+                }
+
+                // Avatar
+                const avatarWrap = ensureEl(tile, '.voice-avatar-wrapper', () => {
+                    const el = document.createElement('div');
+                    el.className = 'voice-avatar-wrapper';
+                    return el;
+                });
+
+                avatarWrap.style.display = showVideo ? 'none' : '';
+
+                const avatarKey = `${u.avatarUrl || ''}|${String(name).charAt(0).toUpperCase()}`;
+                if (tile.dataset.avatarKey !== avatarKey) {
+                    tile.dataset.avatarKey = avatarKey;
+                    avatarWrap.innerHTML = '';
+                    if (u.avatarUrl) {
+                        const img = document.createElement('img');
+                        img.className = 'voice-participant-avatar';
+                        img.src = u.avatarUrl;
+                        img.alt = String(name);
+                        avatarWrap.appendChild(img);
+                    } else {
+                        const ph = document.createElement('div');
+                        ph.className = 'voice-participant-avatar-placeholder';
+                        ph.textContent = String(name).charAt(0).toUpperCase();
+                        avatarWrap.appendChild(ph);
+                    }
+                }
+
+                // Video element (only when needed)
+                const existingVideo = tile.querySelector('video.voice-participant-video');
+                if (!showVideo) {
+                    if (existingVideo) {
+                        existingVideo.srcObject = null;
+                        existingVideo.remove();
+                    }
+                    continue;
+                }
+
+                const video = ensureVideo(tile, userIdStr);
+
+                if (isLocal) {
+                    if (showScreen && this.screenStream) {
+                        attachStream(video, this.screenStream, { muted: true });
+                    } else {
+                        attachStream(video, this.localStream, { muted: true });
+                    }
+                } else {
+                    const stream = this.streams.get(userId);
+                    const hasVideo = !!(stream && stream.getVideoTracks && stream.getVideoTracks().length);
+                    attachStream(video, hasVideo ? stream : null, { muted: true });
+                }
+            }
+
+            // Remove tiles that are no longer present
+            Array.from(grid.children).forEach((child) => {
+                const uid = child?.getAttribute?.('data-user-id');
+                if (!uid) return;
+                if (!nextIds.has(String(uid))) {
+                    child.remove();
+                }
             });
         }
 
