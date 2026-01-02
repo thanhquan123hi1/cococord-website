@@ -8,13 +8,6 @@
 
     <!-- DM Sidebar -->
     <aside class="dm-sidebar">
-        <div class="sidebar-search">
-            <button class="search-switcher-btn" onclick="QuickSwitcherModal.open()" type="button">
-                <i class="bi bi-search"></i>
-                <span>Tìm hoặc bắt đầu cuộc trò chuyện</span>
-            </button>
-        </div>
-
         <nav class="nav-menu" aria-label="Menu">
             <a class="nav-item" href="${pageContext.request.contextPath}/app"><i class="bi bi-people-fill"></i> Bạn bè</a>
         </nav>
@@ -41,7 +34,7 @@
                     <input type="text" placeholder="Tìm kiếm" id="messageSearch" />
                     <i class="bi bi-search"></i>
                 </div>
-                <button class="icon-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
+                <button class="icon-btn inbox-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
                 <button class="icon-btn" type="button" title="Trợ giúp"><i class="bi bi-question-circle"></i></button>
             </div>
         </header>

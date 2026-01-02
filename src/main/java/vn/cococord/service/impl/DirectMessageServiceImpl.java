@@ -479,6 +479,60 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         dmMemberRepository.save(member);
     }
 
+    @Override
+    @Transactional
+    public DirectMessage logCallEvent(Long dmGroupId, Long actorUserId, String callId, boolean video,
+            int durationSeconds) {
+        if (dmGroupId == null || actorUserId == null) {
+            throw new IllegalArgumentException("dmGroupId and actorUserId are required");
+        }
+        if (callId == null || callId.isBlank()) {
+            throw new IllegalArgumentException("callId is required");
+        }
+        if (durationSeconds <= 0) {
+            throw new IllegalArgumentException("durationSeconds must be > 0");
+        }
+
+        // Verify user is member of the DM group
+        if (!dmGroupRepository.isUserMemberOfGroup(dmGroupId, actorUserId)) {
+            throw new ForbiddenException("You are not a member of this DM group");
+        }
+
+        // Deduplicate by callId per DM group
+        if (directMessageRepository.existsByDmGroupIdAndCallId(dmGroupId, callId)) {
+            return null;
+        }
+
+        @SuppressWarnings("null")
+        User actor = userRepository.findById(actorUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String label = video ? "Cuộc gọi video" : "Cuộc gọi thoại";
+        String durationText;
+        int total = Math.max(0, durationSeconds);
+        int minutes = total / 60;
+        int seconds = total % 60;
+        durationText = String.format("%d:%02d", minutes, seconds);
+
+        DirectMessage msg = DirectMessage.builder()
+                .dmGroupId(dmGroupId)
+                .senderId(actorUserId)
+                .senderUsername(actor.getUsername())
+                .senderDisplayName(actor.getDisplayName())
+                .senderAvatarUrl(actor.getAvatarUrl())
+                .type(DirectMessage.MessageType.SYSTEM)
+                .systemEventType("CALL")
+                .callId(callId)
+                .callVideo(video)
+                .callDurationSeconds(durationSeconds)
+                .content(label + " • " + durationText)
+                .build();
+
+        @SuppressWarnings("null")
+        DirectMessage saved = directMessageRepository.save(msg);
+        return saved;
+    }
+
     private String extractFilename(String url) {
         int lastSlash = url.lastIndexOf('/');
         return lastSlash >= 0 ? url.substring(lastSlash + 1) : url;

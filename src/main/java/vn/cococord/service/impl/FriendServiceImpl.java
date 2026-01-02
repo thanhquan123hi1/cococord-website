@@ -3,11 +3,13 @@ package vn.cococord.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.cococord.dto.request.SendFriendRequestRequest;
 import vn.cococord.dto.response.FriendRequestResponse;
 import vn.cococord.dto.response.UserProfileResponse;
+import vn.cococord.dto.websocket.FriendRelationshipEvent;
 import vn.cococord.entity.mysql.BlockedUser;
 import vn.cococord.entity.mysql.FriendRequest;
 import vn.cococord.entity.mysql.FriendRequest.FriendRequestStatus;
@@ -37,6 +39,28 @@ public class FriendServiceImpl implements IFriendService {
     private final IBlockedUserRepository blockedUserRepository;
     private final IUserRepository userRepository;
     private final INotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private void sendFriendRealtimeEvent(Long userId, FriendRelationshipEvent event) {
+        if (userId == null || event == null)
+            return;
+        try {
+            messagingTemplate.convertAndSend("/topic/user." + userId + ".friends", event);
+        } catch (Exception e) {
+            log.warn("Failed to send friend realtime event to user {}: {}", userId, e.getMessage());
+        }
+    }
+
+    private FriendRelationshipEvent evt(String action, String relationshipStatus, User other, Long requestId) {
+        return new FriendRelationshipEvent(
+                action,
+                relationshipStatus,
+                other != null ? other.getId() : null,
+                other != null ? other.getUsername() : null,
+                other != null ? other.getDisplayName() : null,
+                other != null ? other.getAvatarUrl() : null,
+                requestId);
+    }
 
     // ===== FRIEND REQUESTS =====
 
@@ -99,6 +123,12 @@ public class FriendServiceImpl implements IFriendService {
         // Send notification to receiver
         notificationService.sendFriendRequestNotification(sender, receiver);
 
+        // Realtime: update both sender/receiver relationship state
+        sendFriendRealtimeEvent(sender.getId(),
+                evt("REQUEST_SENT", "OUTGOING_REQUEST", receiver, friendRequest.getId()));
+        sendFriendRealtimeEvent(receiver.getId(),
+                evt("REQUEST_SENT", "INCOMING_REQUEST", sender, friendRequest.getId()));
+
         return convertToResponse(friendRequest);
     }
 
@@ -124,6 +154,12 @@ public class FriendServiceImpl implements IFriendService {
         // Send notification to the sender that their request was accepted
         notificationService.sendFriendAcceptedNotification(user, request.getSender());
 
+        // Realtime: both sides become friends
+        sendFriendRealtimeEvent(request.getReceiver().getId(),
+                evt("REQUEST_ACCEPTED", "FRIEND", request.getSender(), request.getId()));
+        sendFriendRealtimeEvent(request.getSender().getId(),
+                evt("REQUEST_ACCEPTED", "FRIEND", request.getReceiver(), request.getId()));
+
         log.info("Friend request accepted: {} and {} are now friends",
                 request.getSender().getUsername(), request.getReceiver().getUsername());
     }
@@ -146,6 +182,12 @@ public class FriendServiceImpl implements IFriendService {
         request.setRespondedAt(LocalDateTime.now());
         friendRequestRepository.save(request);
 
+        // Realtime: remove pending request from both sides
+        sendFriendRealtimeEvent(request.getReceiver().getId(),
+                evt("REQUEST_DECLINED", "NONE", request.getSender(), request.getId()));
+        sendFriendRealtimeEvent(request.getSender().getId(),
+                evt("REQUEST_DECLINED", "NONE", request.getReceiver(), request.getId()));
+
         log.info("Friend request declined by {}", username);
     }
 
@@ -166,6 +208,12 @@ public class FriendServiceImpl implements IFriendService {
         request.setStatus(FriendRequestStatus.CANCELLED);
         request.setRespondedAt(LocalDateTime.now());
         friendRequestRepository.save(request);
+
+        // Realtime: remove pending request from both sides
+        sendFriendRealtimeEvent(request.getSender().getId(),
+                evt("REQUEST_CANCELLED", "NONE", request.getReceiver(), request.getId()));
+        sendFriendRealtimeEvent(request.getReceiver().getId(),
+                evt("REQUEST_CANCELLED", "NONE", request.getSender(), request.getId()));
 
         log.info("Friend request cancelled by {}", username);
     }
@@ -243,6 +291,13 @@ public class FriendServiceImpl implements IFriendService {
 
         // Delete the friendship
         friendRequestRepository.delete(friendRequest);
+
+        // Realtime: remove friend from both sides
+        User other = friendRequest.getSender().getId().equals(user.getId())
+                ? friendRequest.getReceiver()
+                : friendRequest.getSender();
+        sendFriendRealtimeEvent(user.getId(), evt("FRIEND_REMOVED", "NONE", other, null));
+        sendFriendRealtimeEvent(other.getId(), evt("FRIEND_REMOVED", "NONE", user, null));
         log.info("Friendship removed between {} and user {}", username, friendId);
     }
 
@@ -279,6 +334,10 @@ public class FriendServiceImpl implements IFriendService {
                 .build();
         blockedUserRepository.save(blockRecord);
 
+        // Realtime: blocker sees BLOCKED, blocked sees relationship removed
+        sendFriendRealtimeEvent(blocker.getId(), evt("USER_BLOCKED", "BLOCKED", blocked, null));
+        sendFriendRealtimeEvent(blocked.getId(), evt("USER_BLOCKED", "NONE", blocker, null));
+
         log.info("{} blocked user {}", username, blocked.getUsername());
     }
 
@@ -291,6 +350,13 @@ public class FriendServiceImpl implements IFriendService {
         }
 
         blockedUserRepository.deleteByUserIdAndBlockedUserId(blocker.getId(), userId);
+
+        // Realtime: blocker no longer blocked; best-effort notify other side too
+        User other = userRepository.findById(userId).orElse(null);
+        sendFriendRealtimeEvent(blocker.getId(), evt("USER_UNBLOCKED", "NONE", other, null));
+        if (other != null) {
+            sendFriendRealtimeEvent(other.getId(), evt("USER_UNBLOCKED", "NONE", blocker, null));
+        }
         log.info("{} unblocked user {}", username, userId);
     }
 

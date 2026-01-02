@@ -49,6 +49,9 @@ public class CallController {
             Map<String, Object> event = new HashMap<>();
             event.put("type", request.getType());
             event.put("roomId", request.getRoomId());
+            if (request.getCallId() != null && !request.getCallId().isBlank()) {
+                event.put("callId", request.getCallId());
+            }
             event.put("fromUserId", user.getId());
             event.put("fromUsername", user.getUsername());
 

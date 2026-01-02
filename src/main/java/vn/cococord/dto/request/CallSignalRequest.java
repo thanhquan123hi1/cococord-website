@@ -23,6 +23,11 @@ public class CallSignalRequest {
     private String roomId;
 
     /**
+     * Stable identifier for this call instance (used to dedupe call logs).
+     */
+    private String callId;
+
+    /**
      * Message type: CALL_START, OFFER, ANSWER, ICE, HANGUP
      */
     private String type;

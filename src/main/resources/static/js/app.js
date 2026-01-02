@@ -128,6 +128,81 @@ function maybeOpenJoinServerFromInviteLink() {
     }
 }
 
+// ==================== CHANNEL LIST RESIZE (Chat only) ====================
+function initChannelSidebarResize() {
+    const resizer = document.getElementById('channelResizer');
+    const sidebar = document.querySelector('.channel-sidebar');
+    if (!resizer || !sidebar) return;
+
+    const MIN_WIDTH = 180;
+    const MAX_WIDTH = 360;
+    const STORAGE_KEY = 'cococord.channelPanelWidth';
+
+    function clampWidth(w) {
+        const n = Number(w);
+        if (!Number.isFinite(n)) return null;
+        return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, n));
+    }
+
+    function getCurrentWidth() {
+        const css = getComputedStyle(document.documentElement).getPropertyValue('--channel-panel-width');
+        const fromCss = parseFloat(css);
+        if (Number.isFinite(fromCss) && fromCss > 0) return fromCss;
+        const rect = sidebar.getBoundingClientRect();
+        return rect.width;
+    }
+
+    function applyWidth(px) {
+        const w = clampWidth(px);
+        if (w == null) return;
+        document.documentElement.style.setProperty('--channel-panel-width', `${w}px`);
+        // Keep UCP aligned (it uses the same var in app.css)
+    }
+
+    // Restore saved width.
+    try {
+        const saved = clampWidth(localStorage.getItem(STORAGE_KEY));
+        if (saved != null) applyWidth(saved);
+    } catch (_) { /* ignore */ }
+
+    let dragging = false;
+    let startX = 0;
+    let startW = 0;
+
+    function onMove(e) {
+        if (!dragging) return;
+        const x = e.clientX;
+        const next = startW + (x - startX);
+        applyWidth(next);
+    }
+
+    function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+
+        try {
+            const w = clampWidth(getCurrentWidth());
+            if (w != null) localStorage.setItem(STORAGE_KEY, String(w));
+        } catch (_) { /* ignore */ }
+    }
+
+    resizer.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        dragging = true;
+        startX = e.clientX;
+        startW = getCurrentWidth();
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        e.preventDefault();
+    });
+}
+
 // Logout function
 function logout() {
     const accessToken = localStorage.getItem('accessToken');
@@ -933,6 +1008,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // If we arrived from an invite link (/invite/{code} -> /app?invite=code), open Join modal.
     maybeOpenJoinServerFromInviteLink();
+
+    // Chat-only: channel list resize.
+    initChannelSidebarResize();
     
     // Auto-refresh token before it expires (every 45 minutes)
     setInterval(() => {
@@ -952,14 +1030,78 @@ window.CoCoCordApp = {
     renderGlobalUserPanel
 };
 
+// ==================== GLOBAL REALTIME CLIENT ====================
+// Single SockJS/STOMP connection reused across presence, inbox, friends, etc.
+(function initRealtimeClient() {
+    if (window.CoCoCordRealtime) return;
+
+    let stomp = null;
+    let connectPromise = null;
+
+    async function ensureConnected() {
+        if (connectPromise) return connectPromise;
+
+        const token = localStorage.getItem('accessToken');
+        if (!token || !window.SockJS || !window.Stomp) {
+            connectPromise = Promise.resolve(null);
+            return connectPromise;
+        }
+
+        connectPromise = new Promise((resolve) => {
+            try {
+                const socket = new window.SockJS('/ws');
+                stomp = window.Stomp.over(socket);
+                stomp.debug = null;
+                stomp.connect(
+                    { Authorization: 'Bearer ' + token },
+                    () => resolve(stomp),
+                    () => resolve(null)
+                );
+            } catch (_) {
+                resolve(null);
+            }
+        });
+
+        return connectPromise;
+    }
+
+    async function subscribe(destination, onMessage) {
+        const client = await ensureConnected();
+        if (!client) return () => {};
+        try {
+            const sub = client.subscribe(destination, onMessage);
+            return () => {
+                try { sub.unsubscribe(); } catch (_) { /* ignore */ }
+            };
+        } catch (_) {
+            return () => {};
+        }
+    }
+
+    async function send(destination, headers, body) {
+        const client = await ensureConnected();
+        if (!client) return false;
+        try {
+            client.send(destination, headers || {}, body || '');
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    window.CoCoCordRealtime = {
+        ensureConnected,
+        subscribe,
+        send,
+        getClient: () => stomp
+    };
+})();
+
 // ==================== GLOBAL PRESENCE STORE ====================
 // One source of truth for ONLINE/OFFLINE across /app friends + DM sidebar.
 (function initPresenceStore() {
     const statusByUserId = new Map(); // userId(string) -> status(string)
     const listeners = new Set();
-
-    let stomp = null;
-    let connectPromise = null;
 
     function normalizeStatus(raw) {
         const s = String(raw || '').toUpperCase();
@@ -1010,42 +1152,28 @@ window.CoCoCordApp = {
         return null;
     }
 
+    let connectedOnce = false;
+
     async function ensureConnected() {
-        if (connectPromise) return connectPromise;
-        const token = localStorage.getItem('accessToken');
-        if (!token || !window.SockJS || !window.Stomp) {
-            connectPromise = Promise.resolve(false);
-            return connectPromise;
-        }
+        if (connectedOnce) return true;
+        const rt = window.CoCoCordRealtime;
+        if (!rt || typeof rt.ensureConnected !== 'function') return false;
 
-        connectPromise = new Promise((resolve) => {
-            try {
-                const socket = new window.SockJS('/ws');
-                stomp = window.Stomp.over(socket);
-                stomp.debug = null;
+        const client = await rt.ensureConnected();
+        if (!client) return false;
 
-                stomp.connect(
-                    { Authorization: 'Bearer ' + token },
-                    () => {
-                        // Global + per-user presence channels
-                        stomp.subscribe('/topic/presence', (msg) => {
-                            const evt = parsePresenceMessage(msg.body);
-                            if (evt?.userId) applyStatus(evt.userId, evt.status);
-                        });
-                        stomp.subscribe('/user/queue/presence', (msg) => {
-                            const evt = parsePresenceMessage(msg.body);
-                            if (evt?.userId) applyStatus(evt.userId, evt.status);
-                        });
-                        resolve(true);
-                    },
-                    () => resolve(false)
-                );
-            } catch (_) {
-                resolve(false);
-            }
+        // Subscribe once.
+        connectedOnce = true;
+        rt.subscribe('/topic/presence', (msg) => {
+            const evt = parsePresenceMessage(msg.body);
+            if (evt?.userId) applyStatus(evt.userId, evt.status);
+        });
+        rt.subscribe('/user/queue/presence', (msg) => {
+            const evt = parsePresenceMessage(msg.body);
+            if (evt?.userId) applyStatus(evt.userId, evt.status);
         });
 
-        return connectPromise;
+        return true;
     }
 
     async function hydrateSnapshot(userIds) {

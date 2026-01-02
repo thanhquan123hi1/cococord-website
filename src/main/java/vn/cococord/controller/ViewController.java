@@ -81,7 +81,8 @@ public class ViewController {
 
     @GetMapping("/invite/{code}")
     public String invite(@PathVariable String code) {
-        // Redirect to the main app shell; client JS will prompt to join using this code.
+        // Redirect to the main app shell; client JS will prompt to join using this
+        // code.
         return "redirect:/app?invite=" + code;
     }
 }

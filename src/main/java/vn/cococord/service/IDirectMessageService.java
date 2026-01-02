@@ -103,4 +103,9 @@ public interface IDirectMessageService {
      * Mute/unmute DM group
      */
     void toggleMute(Long dmGroupId, Long userId, boolean muted);
+
+    /**
+     * Log a call event as a SYSTEM message in the DM timeline.
+     */
+    DirectMessage logCallEvent(Long dmGroupId, Long actorUserId, String callId, boolean video, int durationSeconds);
 }

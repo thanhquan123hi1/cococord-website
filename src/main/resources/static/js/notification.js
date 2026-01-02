@@ -1,170 +1,242 @@
-// Notification Handler
-class NotificationManager {
+// Inbox (Notification Center) - Discord-like overlay, realtime via WebSocket.
+class InboxManager {
     constructor() {
+        this.userId = null;
         this.unreadCount = 0;
         this.notifications = [];
-        this.stompClient = null;
+        this.activeTab = 'for-you';
+        this.initialLoaded = false;
         this.init();
     }
 
-    init() {
-        this.connectWebSocket();
-        this.loadUnreadCount();
-        this.loadNotifications();
+    async init() {
+        this.setupUi();
         this.setupEventListeners();
+
+        // Request browser notification permission (optional)
+        if ('Notification' in window && Notification.permission === 'default') {
+            try { await Notification.requestPermission(); } catch (_) { /* ignore */ }
+        }
+
+        await this.ensureUserId();
+        await this.ensureRealtimeSubscriptions();
+
+        // Initial snapshot (no polling).
+        await Promise.all([this.loadUnreadCount(), this.loadNotifications(0, 50)]);
+        this.initialLoaded = true;
+        this.render();
+    }
+
+    setupUi() {
+        if (document.getElementById('inboxOverlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'inboxOverlay';
+        overlay.className = 'inbox-overlay';
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.innerHTML = `
+            <div class="inbox-panel" role="dialog" aria-label="Hộp thư đến">
+                <div class="inbox-header">
+                    <div class="inbox-title"><span>Hộp thư đến</span></div>
+                    <div class="inbox-actions">
+                        <button class="inbox-action-btn" type="button" id="inboxMarkAllReadBtn">Đánh dấu tất cả đã đọc</button>
+                        <button class="inbox-action-btn" type="button" id="inboxCloseBtn" aria-label="Đóng">×</button>
+                    </div>
+                </div>
+                <div class="inbox-tabs" role="tablist" aria-label="Inbox tabs">
+                    <button class="inbox-tab active" type="button" data-tab="for-you">Dành cho Bạn</button>
+                    <button class="inbox-tab" type="button" data-tab="unread">Chưa đọc</button>
+                    <button class="inbox-tab" type="button" data-tab="mentions">Đề cập</button>
+                </div>
+                <div class="inbox-list" id="inboxList"></div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
     }
 
     setupEventListeners() {
-        // Notification bell click
-        const notifBell = document.getElementById('notification-bell');
-        if (notifBell) {
-            notifBell.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.toggleNotificationDropdown();
-            });
-        }
-
-        // Mark all as read
-        const markAllBtn = document.getElementById('mark-all-read');
-        if (markAllBtn) {
-            markAllBtn.addEventListener('click', () => this.markAllAsRead());
-        }
-
-        // Close dropdown when clicking outside
+        // Single click handler (capture) so we still work if other handlers stop propagation.
+        // Prevents the "open then immediately close" bug by handling toggle + outside click together.
         document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('notification-dropdown');
-            const bell = document.getElementById('notification-bell');
-            if (dropdown && !dropdown.contains(e.target) && !bell?.contains(e.target)) {
-                dropdown.classList.remove('show');
+            const overlay = document.getElementById('inboxOverlay');
+            const panel = overlay ? overlay.querySelector('.inbox-panel') : null;
+            const inboxBtn = e.target && e.target.closest ? e.target.closest('.inbox-btn') : null;
+
+            if (inboxBtn) {
+                e.preventDefault();
+                this.toggle();
+                return;
             }
+
+            if (!overlay || !overlay.classList.contains('show')) return;
+            if (panel && !panel.contains(e.target)) this.close();
+        }, true);
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const overlay = document.getElementById('inboxOverlay');
+            if (overlay && overlay.classList.contains('show')) this.close();
+        });
+
+        // Tabs + actions (delegated)
+        document.addEventListener('click', (e) => {
+            const tab = e.target && e.target.closest ? e.target.closest('.inbox-tab') : null;
+            if (tab) {
+                this.setTab(tab.getAttribute('data-tab') || 'for-you');
+            }
+            if (e.target && e.target.id === 'inboxCloseBtn') this.close();
+            if (e.target && e.target.id === 'inboxMarkAllReadBtn') this.markAllAsRead();
         });
     }
 
-    connectWebSocket() {
-        // Wait for userId to be available (may be set by app-home.js after API call)
-        const userId = this.getCurrentUserId();
-        if (!userId) {
-            console.log('Notification WebSocket: waiting for userId...');
-            setTimeout(() => this.connectWebSocket(), 1000);
-            return;
-        }
-
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-            console.log('Notification WebSocket: waiting for accessToken...');
-            setTimeout(() => this.connectWebSocket(), 1000);
-            return;
-        }
-
-        const socket = new SockJS('/ws');
-        this.stompClient = Stomp.over(socket);
-        this.stompClient.debug = null; // Disable debug logs
-
-        this.stompClient.connect({ Authorization: 'Bearer ' + token }, () => {
-            console.log('Notification WebSocket connected for user:', userId);
-            
-            // Subscribe to user's notification channel
-            if (userId) {
-                // New notifications
-                this.stompClient.subscribe(`/topic/user.${userId}.notifications`, (message) => {
-                    const notification = JSON.parse(message.body);
-                    this.handleNewNotification(notification);
-                });
-
-                // Notification count updates
-                this.stompClient.subscribe(`/topic/user.${userId}.notifications.count`, (message) => {
-                    const count = parseInt(message.body);
-                    this.updateUnreadCount(count);
-                });
-
-                // Mention events - for instant badge/sound when mentioned
-                this.stompClient.subscribe(`/topic/user.${userId}.mention`, (message) => {
-                    const mentionEvent = JSON.parse(message.body);
-                    this.handleMentionEvent(mentionEvent);
-                });
-
-                // Incoming call events - for receiving calls anywhere on /app
-                this.stompClient.subscribe(`/topic/user.${userId}.calls`, (message) => {
-                    try {
-                        const callEvent = JSON.parse(message.body);
-                        // Buffer events in case app-home.js hasn't attached listeners yet.
-                        if (!Array.isArray(window.__cococordIncomingCallQueue)) {
-                            window.__cococordIncomingCallQueue = [];
-                        }
-                        window.__cococordIncomingCallQueue.push(callEvent);
-                        // Dispatch a custom event so app-home.js can handle it
-                        window.dispatchEvent(new CustomEvent('incomingCall', { detail: callEvent }));
-                    } catch (e) {
-                        console.error('Failed to parse call event:', e);
-                    }
-                });
-            }
-        }, (error) => {
-            console.error('Notification WebSocket error:', error);
-            // Retry connection after 5 seconds
-            setTimeout(() => this.connectWebSocket(), 5000);
-        });
+    isOpen() {
+        const overlay = document.getElementById('inboxOverlay');
+        return !!(overlay && overlay.classList.contains('show'));
     }
 
-    getCurrentUserId() {
-        // Get user ID from data attribute, localStorage user object, or userId key
-        const userIdElem = document.querySelector('[data-user-id]');
-        if (userIdElem) {
-            return userIdElem.dataset.userId;
+    toggle() {
+        if (this.isOpen()) this.close();
+        else this.open();
+    }
+
+    async ensureUserId() {
+        const cached = this.getCachedUserId();
+        if (cached) {
+            this.userId = String(cached);
+            return;
         }
-        // Try to get from cached user object (set by app-home.js)
-        const userJson = localStorage.getItem('user');
-        if (userJson) {
-            try {
-                const user = JSON.parse(userJson);
-                if (user && user.id) {
-                    return user.id;
-                }
-            } catch (_) { /* ignore */ }
-        }
+
+        // One-time fetch (no polling)
+        try {
+            const app = window.CoCoCordApp;
+            const resp = app && typeof app.apiRequest === 'function'
+                ? await app.apiRequest('/api/auth/me', { method: 'GET' })
+                : await fetch('/api/auth/me', {
+                    method: 'GET',
+                    headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+            if (!resp || !resp.ok) return;
+            const me = await resp.json();
+            if (me && me.id != null) {
+                this.userId = String(me.id);
+                try { localStorage.setItem('user', JSON.stringify(me)); } catch (_) { /* ignore */ }
+            }
+        } catch (_) { /* ignore */ }
+    }
+
+    getCachedUserId() {
+        try {
+            const u = JSON.parse(localStorage.getItem('user') || 'null');
+            if (u && u.id != null) return u.id;
+        } catch (_) { /* ignore */ }
         return localStorage.getItem('userId');
+    }
+
+    async ensureRealtimeSubscriptions() {
+        if (!this.userId) return;
+        const rt = window.CoCoCordRealtime;
+        if (!rt || typeof rt.subscribe !== 'function') return;
+
+        await rt.ensureConnected();
+
+        rt.subscribe(`/topic/user.${this.userId}.notifications`, (message) => {
+            try {
+                const notification = JSON.parse(message.body);
+                this.handleNewNotification(notification);
+            } catch (_) { /* ignore */ }
+        });
+
+        rt.subscribe(`/topic/user.${this.userId}.notifications.count`, (message) => {
+            const count = parseInt(message.body);
+            if (Number.isFinite(count)) this.updateUnreadCount(count);
+        });
+
+        rt.subscribe(`/topic/user.${this.userId}.mention`, (message) => {
+            try {
+                const mentionEvent = JSON.parse(message.body);
+                this.handleMentionEvent(mentionEvent);
+            } catch (_) { /* ignore */ }
+        });
+
+        rt.subscribe(`/topic/user.${this.userId}.calls`, (message) => {
+            try {
+                const callEvent = JSON.parse(message.body);
+                if (!Array.isArray(window.__cococordIncomingCallQueue)) window.__cococordIncomingCallQueue = [];
+                window.__cococordIncomingCallQueue.push(callEvent);
+                window.dispatchEvent(new CustomEvent('incomingCall', { detail: callEvent }));
+            } catch (e) {
+                console.error('Failed to parse call event:', e);
+            }
+        });
     }
 
     async loadUnreadCount() {
         try {
-            const response = await fetch('/api/notifications/count', {
-                headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
-                }
-            });
-            const data = await response.json();
-            this.updateUnreadCount(data.count);
-        } catch (error) {
-            console.error('Failed to load unread count:', error);
+            const app = window.CoCoCordApp;
+            const resp = app && typeof app.apiRequest === 'function'
+                ? await app.apiRequest('/api/notifications/count', { method: 'GET' })
+                : await fetch('/api/notifications/count', {
+                    method: 'GET',
+                    headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+            if (!resp || !resp.ok) return;
+            const data = await resp.json();
+            this.updateUnreadCount(Number(data && data.count));
+        } catch (_) { /* ignore */ }
+    }
+
+    async loadNotifications(page = 0, size = 50) {
+        try {
+            const app = window.CoCoCordApp;
+            const resp = app && typeof app.apiRequest === 'function'
+                ? await app.apiRequest(`/api/notifications?page=${page}&size=${size}`, { method: 'GET' })
+                : await fetch(`/api/notifications?page=${page}&size=${size}`, {
+                    method: 'GET',
+                    headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+            if (!resp || !resp.ok) return;
+            const data = await resp.json();
+            this.notifications = (data && data.content) ? data.content : [];
+        } catch (_) { /* ignore */ }
+    }
+
+    open() {
+        const overlay = document.getElementById('inboxOverlay');
+        if (!overlay) return;
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden', 'false');
+        // Lazy refresh when opened after initial load (still no polling)
+        if (this.initialLoaded) {
+            this.loadNotifications(0, 50).then(() => this.render());
         }
     }
 
-    async loadNotifications(page = 0, size = 20) {
-        try {
-            const response = await fetch(`/api/notifications?page=${page}&size=${size}`, {
-                headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
-                }
-            });
-            const data = await response.json();
-            this.notifications = data.content || [];
-            this.renderNotifications();
-        } catch (error) {
-            console.error('Failed to load notifications:', error);
-        }
+    close() {
+        const overlay = document.getElementById('inboxOverlay');
+        if (!overlay) return;
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    setTab(tab) {
+        const t = String(tab || '').trim();
+        this.activeTab = (t === 'unread' || t === 'mentions') ? t : 'for-you';
+        document.querySelectorAll('.inbox-tab').forEach((btn) => {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === this.activeTab);
+        });
+        this.render();
     }
 
     handleNewNotification(notification) {
-        // Add to notifications list
+        if (!notification) return;
         this.notifications.unshift(notification);
-        this.unreadCount++;
-        this.updateUnreadCount(this.unreadCount);
-        this.renderNotifications();
-        
-        // Show browser notification if permission granted
+        if (notification.isRead === false) {
+            this.updateUnreadCount(this.unreadCount + 1);
+        }
+        this.render();
         this.showBrowserNotification(notification);
-        
-        // Play notification sound (optional)
         this.playNotificationSound();
     }
 
@@ -196,8 +268,8 @@ class NotificationManager {
             const displayName = mentionEvent.mentionerDisplayName || mentionEvent.mentionerUsername;
             const channelName = mentionEvent.channelName || 'a channel';
             
-            new Notification('You were mentioned!', {
-                body: `${displayName} mentioned you in #${channelName}`,
+            new Notification('Bạn được nhắc đến!', {
+                body: `${displayName} đã đề cập đến bạn trong #${channelName}`,
                 icon: mentionEvent.mentionerAvatarUrl || '/static/images/logo.png',
                 tag: `mention-${mentionEvent.messageId}`,
                 requireInteraction: true // Keep notification until user interacts
@@ -255,67 +327,98 @@ class NotificationManager {
     }
 
     updateUnreadCount(count) {
-        this.unreadCount = count;
-        const badge = document.getElementById('notification-badge');
-        if (badge) {
-            if (count > 0) {
-                badge.textContent = count > 99 ? '99+' : count;
+        const n = Number(count);
+        this.unreadCount = Number.isFinite(n) && n >= 0 ? n : this.unreadCount;
+
+        // Ensure badges exist on all inbox buttons
+        document.querySelectorAll('.inbox-btn').forEach((btn) => {
+            let badge = btn.querySelector('.inbox-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'inbox-badge';
+                btn.appendChild(badge);
+            }
+            if (this.unreadCount > 0) {
+                badge.textContent = this.unreadCount > 99 ? '99+' : String(this.unreadCount);
                 badge.style.display = 'flex';
             } else {
                 badge.style.display = 'none';
             }
-        }
+        });
     }
 
-    toggleNotificationDropdown() {
-        const dropdown = document.getElementById('notification-dropdown');
-        if (dropdown) {
-            dropdown.classList.toggle('show');
-            if (dropdown.classList.contains('show')) {
-                this.loadNotifications();
-            }
+    getFilteredNotifications() {
+        const list = Array.isArray(this.notifications) ? this.notifications : [];
+        if (this.activeTab === 'unread') return list.filter((n) => n && n.isRead === false);
+        if (this.activeTab === 'mentions') {
+            return list.filter((n) => {
+                const t = String(n && n.type || '').toUpperCase();
+                return t === 'MENTION' || t === 'REPLY';
+            });
         }
+        return list;
     }
 
-    renderNotifications() {
-        const container = document.getElementById('notification-list');
+    render() {
+        const container = document.getElementById('inboxList');
         if (!container) return;
 
-        if (this.notifications.length === 0) {
-            container.innerHTML = '<div class="notification-empty">No notifications</div>';
+        const list = this.getFilteredNotifications();
+        if (!list.length) {
+            container.innerHTML = '<div class="inbox-empty">Không có thông báo</div>';
             return;
         }
 
-        container.innerHTML = this.notifications.map(notif => this.createNotificationHTML(notif)).join('');
-        
-        // Add click handlers
-        container.querySelectorAll('.notification-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const id = item.dataset.id;
-                const link = item.dataset.link;
-                this.markAsRead(id);
-                if (link) {
-                    window.location.href = link;
-                }
+        container.innerHTML = list.map((n) => this.createItemHtml(n)).join('');
+        container.querySelectorAll('.inbox-item').forEach((el) => {
+            el.addEventListener('click', () => {
+                const id = el.getAttribute('data-id');
+                const href = this.resolveNotificationHref(id);
+                this.markAsRead(id).finally(() => {
+                    this.close();
+                    if (href) window.location.href = href;
+                });
             });
         });
     }
 
-    createNotificationHTML(notif) {
-        const icon = this.getNotificationIcon(notif.type);
-        const timeAgo = this.formatTimeAgo(notif.createdAt);
-        const unreadClass = notif.isRead ? '' : 'unread';
-        
+    resolveNotificationHref(notificationId) {
+        const notif = (this.notifications || []).find((n) => String(n?.id) === String(notificationId));
+        const raw = (notif && notif.link) ? String(notif.link) : '';
+        const link = raw.trim();
+        if (!link) return '/app';
+
+        // Friends -> in-app tabs (avoid redirect to /login due to missing session cookies)
+        if (link === '/friends/requests') return '/app?friendsTab=pending';
+        if (link === '/friends') return '/app?friendsTab=all';
+
+        // DM notifications are stored as /dms/{id}, but the app shell expects /app?dmGroupId=
+        const dmMatch = link.match(/^\/dms\/([0-9]+)\/?$/);
+        if (dmMatch) return `/app?dmGroupId=${encodeURIComponent(dmMatch[1])}`;
+
+        // Mention/channel links: best-effort route into app shell
+        const chMatch = link.match(/^\/channels\/([0-9]+)\/?$/);
+        if (chMatch) return `/app?channelId=${encodeURIComponent(chMatch[1])}`;
+
+        // Invites already have a dedicated redirect view.
+        if (link.startsWith('/invite/')) return link;
+
+        // Default: keep user inside /app
+        return '/app';
+    }
+
+    createItemHtml(notif) {
+        const unreadClass = notif && notif.isRead === false ? 'unread' : '';
+        const timeAgo = this.formatTimeAgo(notif && notif.createdAt);
+        const msg = this.escapeHtml((notif && notif.message) || '');
+        const link = (notif && notif.link) ? String(notif.link) : '';
         return `
-            <div class="notification-item ${unreadClass}" data-id="${notif.id}" data-link="${notif.link || ''}">
-                <div class="notification-icon ${this.getNotificationClass(notif.type)}">
-                    <i class="${icon}"></i>
+            <div class="inbox-item ${unreadClass}" data-id="${notif && notif.id != null ? String(notif.id) : ''}" data-link="${this.escapeHtml(link)}">
+                <div class="dot"></div>
+                <div class="inbox-item-content">
+                    <div class="inbox-item-message">${msg}</div>
+                    <div class="inbox-item-time">${timeAgo}</div>
                 </div>
-                <div class="notification-content">
-                    <div class="notification-message">${this.escapeHtml(notif.message)}</div>
-                    <div class="notification-time">${timeAgo}</div>
-                </div>
-                ${!notif.isRead ? '<div class="notification-unread-dot"></div>' : ''}
             </div>
         `;
     }
@@ -349,12 +452,16 @@ class NotificationManager {
 
     async markAsRead(id) {
         try {
-            await fetch(`/api/notifications/${id}/read`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
-                }
-            });
+            if (!id) return;
+
+            const app = window.CoCoCordApp;
+            const resp = app && typeof app.apiRequest === 'function'
+                ? await app.apiRequest(`/api/notifications/${id}/read`, { method: 'POST' })
+                : await fetch(`/api/notifications/${id}/read`, {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+            if (!resp || !resp.ok) return;
             
             // Update local state
             const notif = this.notifications.find(n => n.id == id);
@@ -362,7 +469,7 @@ class NotificationManager {
                 notif.isRead = true;
                 this.unreadCount = Math.max(0, this.unreadCount - 1);
                 this.updateUnreadCount(this.unreadCount);
-                this.renderNotifications();
+                this.render();
             }
         } catch (error) {
             console.error('Failed to mark as read:', error);
@@ -371,17 +478,19 @@ class NotificationManager {
 
     async markAllAsRead() {
         try {
-            await fetch('/api/notifications/read-all', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
-                }
-            });
+            const app = window.CoCoCordApp;
+            const resp = app && typeof app.apiRequest === 'function'
+                ? await app.apiRequest('/api/notifications/read-all', { method: 'POST' })
+                : await fetch('/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+            if (!resp || !resp.ok) return;
             
             // Update local state
             this.notifications.forEach(n => n.isRead = true);
             this.updateUnreadCount(0);
-            this.renderNotifications();
+            this.render();
         } catch (error) {
             console.error('Failed to mark all as read:', error);
         }
@@ -392,11 +501,11 @@ class NotificationManager {
         const now = new Date();
         const seconds = Math.floor((now - date) / 1000);
         
-        if (seconds < 60) return 'Just now';
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-        return date.toLocaleDateString();
+        if (seconds < 60) return 'Vừa xong';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ trước`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày trước`;
+        return date.toLocaleDateString('vi-VN');
     }
 
     escapeHtml(text) {
@@ -408,11 +517,5 @@ class NotificationManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-    
-    // Initialize notification manager
-    window.notificationManager = new NotificationManager();
+    window.inboxManager = new InboxManager();
 });

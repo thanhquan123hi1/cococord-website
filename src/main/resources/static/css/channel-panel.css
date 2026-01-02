@@ -30,6 +30,18 @@
     padding-bottom: var(--user-area-height);
 }
 
+/* ===== CHANNEL LIST RESIZER (Discord-like) ===== */
+.channel-resizer {
+    width: 4px;
+    cursor: col-resize;
+    flex-shrink: 0;
+    background: transparent;
+}
+
+.channel-resizer:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 /* ===== SERVER HEADER ===== */
 .channel-header {
     height: var(--channel-header-height);

@@ -39,6 +39,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/settings-modal.css">
     <!-- Quick Switcher CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/quick-switcher.css">
+    <!-- Inbox overlay CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/inbox.css?v=20260103a">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260103a">
     

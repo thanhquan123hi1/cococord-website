@@ -41,6 +41,16 @@ public class DirectMessage {
     @Builder.Default
     private MessageType type = MessageType.TEXT;
 
+    // Optional: system event metadata (used for things like call logs)
+    private String systemEventType;
+
+    @Indexed
+    private String callId;
+
+    private Boolean callVideo;
+
+    private Integer callDurationSeconds;
+
     // For reply
     private String parentMessageId;
 

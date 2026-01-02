@@ -26,6 +26,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.CreateGroupDMRequest;
+import vn.cococord.dto.request.LogCallEventRequest;
 import vn.cococord.dto.request.SendDirectMessageRequest;
 import vn.cococord.dto.request.UpdateGroupDMRequest;
 import vn.cococord.dto.response.DMGroupMemberResponse;
@@ -268,6 +269,39 @@ public class DirectMessageController {
             log.info("[DM-REST] 📡 Successfully broadcast message to {} for real-time delivery", destination);
         } catch (Exception e) {
             log.error("[DM-REST] ❌ Failed to broadcast message to {}: {}", destination, e.getMessage(), e);
+        }
+
+        return ResponseEntity.ok(message);
+    }
+
+    /**
+     * Log a voice/video call in DM timeline as a SYSTEM message (Discord-like call
+     * log row)
+     */
+    @PostMapping("/{dmGroupId}/call-log")
+    public ResponseEntity<DirectMessage> logCallEvent(
+            @PathVariable Long dmGroupId,
+            @Valid @RequestBody LogCallEventRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getUserIdFromUsername(userDetails.getUsername());
+
+        boolean video = Boolean.TRUE.equals(request.getVideo());
+        int durationSeconds = request.getDurationSeconds() != null ? request.getDurationSeconds() : 0;
+
+        DirectMessage message = directMessageService.logCallEvent(
+                dmGroupId,
+                userId,
+                request.getCallId(),
+                video,
+                durationSeconds);
+
+        if (message != null) {
+            String destination = "/topic/dm/" + dmGroupId;
+            try {
+                messagingTemplate.convertAndSend(destination, message);
+            } catch (Exception e) {
+                log.error("[DM-CALL-LOG] Failed to broadcast call log to {}: {}", destination, e.getMessage(), e);
+            }
         }
 
         return ResponseEntity.ok(message);

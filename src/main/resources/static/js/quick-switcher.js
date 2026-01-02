@@ -29,9 +29,6 @@
                     this.toggle();
                 }
             });
-
-            // Replace existing search inputs with switcher buttons
-            this.replaceSearchInputs();
         },
 
         /**

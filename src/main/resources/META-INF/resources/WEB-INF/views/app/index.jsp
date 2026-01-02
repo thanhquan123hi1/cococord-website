@@ -5,13 +5,6 @@
 <div class="cococord-home" id="cococordHome">
     <!-- Primary Sidebar (persistent within /app) -->
     <aside class="primary-sidebar" aria-label="Primary Sidebar">
-        <div class="sidebar-search">
-            <button class="search-switcher-btn" onclick="QuickSwitcherModal.open()" type="button">
-                <i class="bi bi-search"></i>
-                <span>Tìm hoặc bắt đầu cuộc trò chuyện</span>
-            </button>
-        </div>
-
         <nav class="sidebar-nav" aria-label="Menu">
             <a class="nav-item active" href="#" data-view="friends">
                 <i class="bi bi-people-fill"></i>
@@ -58,7 +51,7 @@
                 <button class="btn-primary" type="button" id="addFriendBtn">Thêm Bạn</button>
             </div>
             <div class="top-right">
-                <button class="icon-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
+                <button class="icon-btn inbox-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
                 <button class="icon-btn" type="button" title="Trợ giúp"><i class="bi bi-question-circle"></i></button>
             </div>
         </header>
@@ -102,7 +95,7 @@
                     <input type="text" class="search-input" placeholder="Tìm kiếm" style="padding: 4px 8px; font-size: 13px;" />
                     <i class="bi bi-search" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px;"></i>
                 </div>
-                <button class="icon-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
+                <button class="icon-btn inbox-btn" type="button" title="Hộp thư"><i class="bi bi-inbox"></i></button>
                 <button class="icon-btn" type="button" title="Trợ giúp"><i class="bi bi-question-circle"></i></button>
             </div>
         </header>

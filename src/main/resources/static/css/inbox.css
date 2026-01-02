@@ -1,0 +1,166 @@
+/* ==================== INBOX (Discord-like) ==================== */
+
+/* Reuse modal overlay base styles from app.css via class composition */
+.inbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.65);
+    z-index: 1600;
+}
+
+.inbox-overlay.show {
+    display: block;
+}
+
+.inbox-panel {
+    position: absolute;
+    top: 56px;
+    right: 16px;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 80px);
+    background-color: #313338;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.inbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.inbox-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 18px;
+}
+
+.inbox-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.inbox-action-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.inbox-tabs {
+    display: flex;
+    gap: 10px;
+    padding: 0 14px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.inbox-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 6px;
+    border-bottom: 2px solid transparent;
+}
+
+.inbox-tab.active {
+    color: #8EA1E1;
+    border-bottom-color: #8EA1E1;
+}
+
+.inbox-list {
+    overflow: auto;
+    padding: 8px;
+}
+
+.inbox-empty {
+    padding: 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.inbox-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.inbox-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.inbox-item.unread {
+    background: rgba(88, 101, 242, 0.10);
+}
+
+.inbox-item .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.inbox-item.unread .dot {
+    background: var(--secondary-color);
+}
+
+.inbox-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.inbox-item-message {
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inbox-item-time {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.inbox-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ED4245;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.inbox-btn {
+    position: relative;
+}

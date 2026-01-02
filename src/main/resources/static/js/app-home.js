@@ -5,6 +5,11 @@
 
     const state = {
         currentUser: null,
+        // Single source of truth for relationships keyed by otherUserId.
+        // Shape: { [userId]: { userId, username, displayName, avatarUrl, relationshipStatus, requestId } }
+        friendsState: {},
+
+        // Initial snapshots (used only to build friendsState on first load / fallback)
         friends: [],
         requests: [],
         blocked: [],
@@ -32,6 +37,10 @@
         pc: null,
         localStream: null,
         remoteStream: null,
+
+        callId: null,
+        connectedAtMs: null,
+        loggedCall: false,
 
         incomingPending: false,
         incomingFrom: null,
@@ -118,6 +127,80 @@
 
     function userIdOf(user) {
         return user?.userId ?? user?.id ?? null;
+    }
+
+    function normalizeRelationshipStatus(raw) {
+        return String(raw || '').toUpperCase() || 'NONE';
+    }
+
+    function setRelationshipEntry(otherUserId, patch) {
+        if (otherUserId == null) return;
+        const key = String(otherUserId);
+        const prev = state.friendsState[key] || { userId: Number(otherUserId) };
+        state.friendsState[key] = {
+            ...prev,
+            ...patch,
+            userId: Number(otherUserId)
+        };
+    }
+
+    function removeRelationshipEntry(otherUserId) {
+        if (otherUserId == null) return;
+        const key = String(otherUserId);
+        if (Object.prototype.hasOwnProperty.call(state.friendsState, key)) {
+            delete state.friendsState[key];
+        }
+    }
+
+    function rebuildFriendsStateFromSnapshots() {
+        state.friendsState = {};
+
+        // Friends
+        (state.friends || []).forEach((f) => {
+            const id = userIdOf(f);
+            if (id == null) return;
+            setRelationshipEntry(id, {
+                username: f.username,
+                displayName: f.displayName,
+                avatarUrl: f.avatarUrl,
+                relationshipStatus: 'FRIEND',
+                requestId: null
+            });
+        });
+
+        // Blocked
+        (state.blocked || []).forEach((u) => {
+            const id = userIdOf(u);
+            if (id == null) return;
+            setRelationshipEntry(id, {
+                username: u.username,
+                displayName: u.displayName,
+                avatarUrl: u.avatarUrl,
+                relationshipStatus: 'BLOCKED',
+                requestId: null
+            });
+        });
+
+        // Pending requests (both directions)
+        (state.requests || []).forEach((r) => {
+            const isSentByMe = state.currentUser && r.senderUsername === state.currentUser.username;
+            const otherId = isSentByMe ? r.receiverId : r.senderId;
+            if (otherId == null) return;
+            setRelationshipEntry(otherId, {
+                username: isSentByMe ? r.receiverUsername : r.senderUsername,
+                displayName: isSentByMe ? r.receiverDisplayName : r.senderDisplayName,
+                avatarUrl: isSentByMe ? r.receiverAvatarUrl : r.senderAvatarUrl,
+                relationshipStatus: isSentByMe ? 'OUTGOING_REQUEST' : 'INCOMING_REQUEST',
+                requestId: r.id
+            });
+        });
+    }
+
+    function listRelationshipsByStatus(statuses) {
+        const wanted = new Set((statuses || []).map((s) => normalizeRelationshipStatus(s)));
+        return Object.values(state.friendsState || {})
+            .filter((e) => wanted.has(normalizeRelationshipStatus(e.relationshipStatus)))
+            .filter((e) => e && e.userId != null);
     }
 
     function isOnline(user) {
@@ -306,12 +389,56 @@
         call.incomingVideo = false;
         call.pendingOfferSdp = null;
         call.pendingCandidates = [];
+
+        call.callId = null;
+        call.connectedAtMs = null;
+        call.loggedCall = false;
+    }
+
+    function newCallId() {
+        try {
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                return crypto.randomUUID();
+            }
+        } catch (_) { /* ignore */ }
+        return 'call_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+    }
+
+    async function logCallToTimeline({ dmGroupId, callId, video, durationSeconds }) {
+        if (!dmGroupId || !callId) return;
+        if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
+        try {
+            await apiJson(`/api/direct-messages/${encodeURIComponent(dmGroupId)}/call-log`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    callId,
+                    video: !!video,
+                    durationSeconds: Math.max(1, Math.floor(durationSeconds))
+                })
+            });
+        } catch (e) {
+            // Best-effort only; do not block call teardown.
+            console.warn('Failed to log call event:', e);
+        }
     }
 
     function endCall({ sendHangup } = { sendHangup: true }) {
         if (!call.active && !call.incomingPending) {
             hideCallOverlay();
             return;
+        }
+
+        // Best-effort: write a Discord-like call log row into the DM timeline.
+        // Both sides may attempt; backend dedupes by callId.
+        if (call.active && call.callId && call.connectedAtMs && !call.loggedCall && call.roomId) {
+            call.loggedCall = true;
+            const durationSeconds = Math.round((Date.now() - call.connectedAtMs) / 1000);
+            void logCallToTimeline({
+                dmGroupId: call.roomId,
+                callId: call.callId,
+                video: call.video,
+                durationSeconds
+            });
         }
 
         if (sendHangup && call.roomId) {
@@ -397,6 +524,9 @@
         call.roomId = roomId;
         call.isCaller = true;
         call.video = !!video;
+        call.callId = newCallId();
+        call.connectedAtMs = null;
+        call.loggedCall = false;
 
         const typeLabel = call.video ? 'Video Call' : 'Voice Call';
         showCallOverlay({
@@ -411,7 +541,7 @@
         // Send invite first; only open devices after callee accepts.
         // Include targetUserId so backend can notify callee even if they haven't opened DM chat.
         const targetUserId = getActiveDmTargetUserId();
-        sendCallSignal({ roomId: call.roomId, type: 'CALL_START', video: call.video, targetUserId });
+        sendCallSignal({ roomId: call.roomId, type: 'CALL_START', video: call.video, targetUserId, callId: call.callId });
     }
 
     async function beginCallerNegotiation() {
@@ -446,6 +576,10 @@
         const answer = await call.pc.createAnswer();
         await call.pc.setLocalDescription(answer);
         sendCallSignal({ roomId: call.roomId, type: 'ANSWER', sdp: answer.sdp, video: call.video });
+
+        if (!call.connectedAtMs) {
+            call.connectedAtMs = Date.now();
+        }
 
         // Once we have SDP exchange, hide the prompt
         showCallOverlay({
@@ -489,6 +623,9 @@
         call.roomId = String(incomingRoomId);
         call.isCaller = false;
         call.video = !!evt.video;
+        call.callId = evt.callId || call.callId || newCallId();
+        call.connectedAtMs = null;
+        call.loggedCall = false;
         call.incomingPending = true;
         call.incomingFrom = evt.fromUsername || null;
         call.incomingVideo = !!evt.video;
@@ -522,6 +659,9 @@
                 call.roomId = roomId;
                 call.isCaller = false;
                 call.video = !!evt.video;
+                call.callId = evt.callId || call.callId || newCallId();
+                call.connectedAtMs = null;
+                call.loggedCall = false;
                 call.incomingPending = true;
                 call.incomingFrom = evt.fromUsername || null;
                 call.incomingVideo = !!evt.video;
@@ -583,6 +723,10 @@
             case 'ANSWER': {
                 if (!call.pc || !evt.sdp) return;
                 await call.pc.setRemoteDescription({ type: 'answer', sdp: evt.sdp });
+
+                if (!call.connectedAtMs) {
+                    call.connectedAtMs = Date.now();
+                }
                 // Once connected, hide prompt
                 showCallOverlay({
                     video: call.video,
@@ -764,18 +908,16 @@
         if (!container) return;
 
         const q = state.friendsSearch.trim().toLowerCase();
-        let list = (state.friends || []).slice();
+        if (state.activeTab === 'pending') {
+            renderPendingRequests();
+            return;
+        }
+        if (state.activeTab === 'blocked') {
+            renderBlockedUsers();
+            return;
+        }
 
-        // Normalize and de-dup by user id to avoid bad shapes causing empty Online tab.
-        const seen = new Set();
-        list = list.filter((f) => {
-            const id = userIdOf(f);
-            if (id == null) return false;
-            const key = String(id);
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
+        let list = listRelationshipsByStatus(['FRIEND']);
 
         // Never show self in friends list (defensive).
         const me = state.currentUser?.id;
@@ -784,17 +926,10 @@
         }
 
         if (state.activeTab === 'online') {
-            // Only show friends who are ONLINE, IDLE, or DO_NOT_DISTURB (not OFFLINE or INVISIBLE)
             list = list.filter((f) => {
                 const status = onlineStatusOfUserId(userIdOf(f), f?.status);
                 return status === 'ONLINE' || status === 'IDLE' || status === 'DO_NOT_DISTURB';
             });
-        } else if (state.activeTab === 'pending') {
-            renderPendingRequests();
-            return;
-        } else if (state.activeTab === 'blocked') {
-            renderBlockedUsers();
-            return;
         }
         // 'all' tab shows all friends regardless of status
 
@@ -808,7 +943,7 @@
         if (!list.length) {
             const emptyMsg = state.activeTab === 'online' 
                 ? 'Không có bạn bè nào trực tuyến' 
-                : (state.friends.length === 0 ? 'Bạn chưa có bạn bè nào' : 'Không tìm thấy bạn bè');
+                : (listRelationshipsByStatus(['FRIEND']).length === 0 ? 'Bạn chưa có bạn bè nào' : 'Không tìm thấy bạn bè');
             container.innerHTML = emptyState(emptyMsg);
             return;
         }
@@ -855,7 +990,7 @@
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const userId = btn.getAttribute('data-user-id');
-                const friend = state.friends.find(f => String(userIdOf(f)) === String(userId));
+                const friend = state.friendsState[String(userId)] || null;
                 if (friend) showFriendContextMenu(e, friend);
             });
         });
@@ -869,7 +1004,7 @@
             row.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 const userId = row.getAttribute('data-user-id');
-                const friend = state.friends.find(f => String(userIdOf(f)) === String(userId));
+                const friend = state.friendsState[String(userId)] || null;
                 if (friend) showFriendContextMenu(e, friend);
             });
         });
@@ -880,11 +1015,11 @@
         if (!container) return;
 
         const q = state.friendsSearch.trim().toLowerCase();
-        const requests = (state.requests || []).slice();
+        const requests = listRelationshipsByStatus(['INCOMING_REQUEST', 'OUTGOING_REQUEST']);
 
         const filtered = q
             ? requests.filter((r) => {
-                const key = `${r.senderUsername || ''} ${r.senderDisplayName || ''} ${r.receiverUsername || ''} ${r.receiverDisplayName || ''} ${r.status || ''}`.toLowerCase();
+                const key = `${r.username || ''} ${r.displayName || ''} ${r.relationshipStatus || ''}`.toLowerCase();
                 return key.includes(q);
             })
             : requests;
@@ -898,12 +1033,10 @@
             <div class="friend-group-header">ĐANG CHỜ — ${filtered.length}</div>
             ${filtered
                 .map((r) => {
-                    const isSentByMe = state.currentUser && r.senderUsername === state.currentUser.username;
-                    const name = isSentByMe
-                        ? (r.receiverDisplayName || r.receiverUsername || 'Unknown')
-                        : (r.senderDisplayName || r.senderUsername || 'Unknown');
+                    const isSentByMe = normalizeRelationshipStatus(r.relationshipStatus) === 'OUTGOING_REQUEST';
+                    const name = r.displayName || r.username || 'Unknown';
                     const subtitle = isSentByMe ? 'Đã gửi yêu cầu' : 'Yêu cầu kết bạn';
-                    const reqId = r.id;
+                    const reqId = r.requestId;
 
                     return `
                         <div class="friend-row" data-request-id="${escapeHtml(reqId)}">
@@ -944,12 +1077,22 @@
                     if (action === 'decline') await apiJson(`/api/friends/requests/${encodeURIComponent(reqId)}/decline`, { method: 'POST' });
                     if (action === 'cancel') await apiJson(`/api/friends/requests/${encodeURIComponent(reqId)}/cancel`, { method: 'POST' });
 
-                    await Promise.all([loadFriends(), loadRequests(), loadDmSidebar()]);
+                    // Update local state immediately (server will also broadcast realtime events).
+                    const entry = Object.values(state.friendsState).find((x) => String(x.requestId) === String(reqId));
+                    if (entry?.userId != null) {
+                        if (action === 'accept') {
+                            setRelationshipEntry(entry.userId, { relationshipStatus: 'FRIEND', requestId: null });
+                        } else {
+                            removeRelationshipEntry(entry.userId);
+                        }
+                    }
                     render();
                 } catch (err) {
                     // If request already handled, just refresh the list
                     if (err?.message?.includes('already been handled')) {
-                        await Promise.all([loadFriends(), loadRequests()]);
+                        // Best-effort: remove the pending entry so UI doesn't get stuck.
+                        const entry = Object.values(state.friendsState).find((x) => String(x.requestId) === String(reqId));
+                        if (entry?.userId != null) removeRelationshipEntry(entry.userId);
                         render();
                     } else {
                         alert(err?.message || 'Thao tác thất bại');
@@ -990,7 +1133,7 @@
         if (!container) return;
 
         const q = state.friendsSearch.trim().toLowerCase();
-        const blocked = (state.blocked || []).slice();
+        const blocked = listRelationshipsByStatus(['BLOCKED']);
 
         const filtered = q
             ? blocked.filter((u) => {
@@ -1008,11 +1151,12 @@
             <div class="friend-group-header">BỊ CHẶN — ${filtered.length}</div>
             ${filtered
                 .map((u) => {
+                    const userId = userIdOf(u);
                     const avatar = u.avatarUrl
                         ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">`
                         : `<span>${escapeHtml(displayName(u).charAt(0).toUpperCase())}</span>`;
                     return `
-                        <div class="friend-row" data-user-id="${escapeHtml(u.id)}">
+                        <div class="friend-row" data-user-id="${escapeHtml(userId)}">
                             <div class="friend-left">
                                 <div class="avatar">${avatar}</div>
                                 <div class="friend-meta">
@@ -1021,7 +1165,7 @@
                                 </div>
                             </div>
                             <div class="friend-actions">
-                                <button class="icon-btn" type="button" title="Bỏ chặn" data-action="unblock" data-user-id="${escapeHtml(u.id)}"><i class="bi bi-x-lg"></i></button>
+                                <button class="icon-btn" type="button" title="Bỏ chặn" data-action="unblock" data-user-id="${escapeHtml(userId)}"><i class="bi bi-x-lg"></i></button>
                             </div>
                         </div>
                     `;
@@ -1037,7 +1181,7 @@
                 if (!confirm('Bạn có chắc chắn muốn bỏ chặn người dùng này?')) return;
                 try {
                     await apiJson(`/api/friends/blocked/${encodeURIComponent(userId)}`, { method: 'DELETE' });
-                    await loadBlocked();
+                    removeRelationshipEntry(userId);
                     render();
                 } catch (err) {
                     alert(err?.message || 'Không thể bỏ chặn người dùng');
@@ -1048,6 +1192,10 @@
 
     function showFriendContextMenu(e, friend) {
         closeContextMenu();
+
+        const friendId = userIdOf(friend);
+        if (friendId == null) return;
+
         const menu = document.createElement('div');
         menu.className = 'friend-context-menu';
         menu.innerHTML = `
@@ -1072,16 +1220,16 @@
                 closeContextMenu();
 
                 if (action === 'dm') {
-                    openDM(friend.id);
+                    openDM(friendId);
                 } else if (action === 'profile') {
                     if (window.CoCoCordUserProfileModal?.show) {
-                        window.CoCoCordUserProfileModal.show(friend.id);
+                        window.CoCoCordUserProfileModal.show(friendId);
                     }
                 } else if (action === 'remove') {
                     if (!confirm(`Bạn có chắc chắn muốn xóa ${displayName(friend)} khỏi danh sách bạn bè?`)) return;
                     try {
-                        await apiJson(`/api/friends/${encodeURIComponent(friend.id)}`, { method: 'DELETE' });
-                        await Promise.all([loadFriends(), loadDmSidebar()]);
+                        await apiJson(`/api/friends/${encodeURIComponent(friendId)}`, { method: 'DELETE' });
+                        removeRelationshipEntry(friendId);
                         render();
                     } catch (err) {
                         alert(err?.message || 'Không thể xóa bạn bè');
@@ -1089,8 +1237,8 @@
                 } else if (action === 'block') {
                     if (!confirm(`Bạn có chắc chắn muốn chặn ${displayName(friend)}?`)) return;
                     try {
-                        await apiJson(`/api/friends/blocked/${encodeURIComponent(friend.id)}`, { method: 'POST' });
-                        await Promise.all([loadFriends(), loadBlocked(), loadDmSidebar()]);
+                        await apiJson(`/api/friends/blocked/${encodeURIComponent(friendId)}`, { method: 'POST' });
+                        setRelationshipEntry(friendId, { relationshipStatus: 'BLOCKED', requestId: null });
                         render();
                     } catch (err) {
                         alert(err?.message || 'Không thể chặn người dùng');
@@ -1184,10 +1332,21 @@
                 return;
             }
 
-            await apiJson('/api/friends/requests', {
+            const created = await apiJson('/api/friends/requests', {
                 method: 'POST',
                 body: JSON.stringify({ receiverUserId: target.id })
             });
+
+            // Update local relationship state immediately.
+            if (created?.id) {
+                setRelationshipEntry(target.id, {
+                    username: target.username,
+                    displayName: target.displayName,
+                    avatarUrl: target.avatarUrl,
+                    relationshipStatus: 'OUTGOING_REQUEST',
+                    requestId: created.id
+                });
+            }
 
             // Show success feedback briefly before switching tab
             if (hint) {
@@ -1195,7 +1354,6 @@
                 hint.className = 'add-friend-hint success';
             }
             if (input) input.value = '';
-            await loadRequests();
             
             // Wait a bit for user to see the success message, then switch tab
             setTimeout(() => setActiveTab('pending'), 1500);
@@ -1322,14 +1480,30 @@
 
         const currentUserId = state.currentUser?.id;
 
-        container.innerHTML = state.dmMessages.map((msg) => {
+        let lastDateKey = null;
+        const parts = [];
+
+        for (const msg of state.dmMessages) {
+            const createdAt = msg?.createdAt;
+            const dateKey = messageDateKey(createdAt);
+            if (dateKey && dateKey !== lastDateKey) {
+                lastDateKey = dateKey;
+                parts.push(renderDateSeparator(createdAt));
+            }
+
+            const msgType = String(msg?.type || '').toUpperCase();
+            if (msgType === 'SYSTEM') {
+                parts.push(renderSystemDmRow(msg));
+                continue;
+            }
+
             const avatar = msg.senderAvatarUrl
                 ? `<img src="${escapeHtml(msg.senderAvatarUrl)}" alt="">`
                 : `<span>${escapeHtml((msg.senderDisplayName || msg.senderUsername || 'U').charAt(0).toUpperCase())}</span>`;
-            const time = formatMessageTime(msg.createdAt);
+            const time = formatMessageTime(createdAt);
             const senderName = msg.senderDisplayName || msg.senderUsername || 'Unknown';
             const isOwn = String(msg.senderId) === String(currentUserId);
-            const isDeleted = msg.deleted === true;
+            const isDeleted = msg.deleted === true || msg.isDeleted === true;
 
             const contentHtml = isDeleted
                 ? `<div class="dm-message-body deleted"><i class="bi bi-slash-circle"></i> Tin nhắn đã bị xóa</div>`
@@ -1343,7 +1517,7 @@
                    </div>`
                 : '';
 
-            return `
+            parts.push(`
                 <div class="dm-message-row ${isDeleted ? 'deleted' : ''}" data-msg-id="${escapeHtml(msg.id)}">
                     <div class="avatar">${avatar}</div>
                     <div class="dm-message-content">
@@ -1355,8 +1529,10 @@
                     </div>
                     ${actionsHtml}
                 </div>
-            `;
-        }).join('');
+            `);
+        }
+
+        container.innerHTML = parts.join('');
 
         // Wire delete buttons
         container.querySelectorAll('.msg-action-btn[data-action="delete"]').forEach((btn) => {
@@ -1407,6 +1583,53 @@
 
         return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
             ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function messageDateKey(timestamp) {
+        if (!timestamp) return null;
+        const d = new Date(timestamp);
+        if (!Number.isFinite(d.getTime())) return null;
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function formatDateSeparatorLabel(timestamp) {
+        const d = new Date(timestamp);
+        const now = new Date();
+        if (!Number.isFinite(d.getTime())) return '';
+
+        if (d.toDateString() === now.toDateString()) return 'Hôm nay';
+
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (d.toDateString() === yesterday.toDateString()) return 'Hôm qua';
+
+        return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function renderDateSeparator(timestamp) {
+        const label = formatDateSeparatorLabel(timestamp);
+        return `
+            <div class="dm-date-separator" role="separator" aria-label="${escapeHtml(label)}">
+                <span>${escapeHtml(label)}</span>
+            </div>
+        `;
+    }
+
+    function renderSystemDmRow(msg) {
+        const eventType = String(msg?.systemEventType || '').toUpperCase();
+        let icon = 'bi-info-circle';
+        if (eventType === 'CALL') {
+            icon = msg?.callVideo ? 'bi-camera-video' : 'bi-telephone';
+        }
+        const text = msg?.content || '';
+        return `
+            <div class="dm-system-row" data-msg-id="${escapeHtml(msg?.id || '')}">
+                <div class="dm-system-message">
+                    <i class="bi ${escapeHtml(icon)}"></i>
+                    <span>${escapeHtml(text)}</span>
+                </div>
+            </div>
+        `;
     }
 
     function connectDmWebSocket() {
@@ -1614,7 +1837,7 @@
         });
 
         const ids = [];
-        (state.friends || []).forEach((f) => { if (f?.id != null) ids.push(f.id); });
+        listRelationshipsByStatus(['FRIEND']).forEach((f) => { if (f?.userId != null) ids.push(f.userId); });
         (state.dmItems || []).forEach((d) => { if (d?.userId != null) ids.push(d.userId); });
 
         if (typeof store.hydrateSnapshot === 'function') {
@@ -1626,6 +1849,48 @@
         if (state.activeView === 'friends' && state.activeTab === 'online') {
             renderFriendsList();
         }
+    }
+
+    async function initFriendsRealtime() {
+        if (window.__cococordFriendsRealtimeSubscribed) return;
+        if (!state.currentUser?.id) return;
+        const rt = window.CoCoCordRealtime;
+        if (!rt || typeof rt.subscribe !== 'function') return;
+
+        await rt.ensureConnected?.();
+
+        window.__cococordFriendsRealtimeSubscribed = true;
+        rt.subscribe(`/topic/user.${state.currentUser.id}.friends`, async (msg) => {
+            let data;
+            try { data = JSON.parse(msg.body); } catch (_) { return; }
+            if (!data || data.userId == null) return;
+
+            const otherUserId = data.userId;
+            const relationshipStatus = normalizeRelationshipStatus(data.relationshipStatus);
+
+            if (relationshipStatus === 'NONE') {
+                removeRelationshipEntry(otherUserId);
+            } else {
+                setRelationshipEntry(otherUserId, {
+                    username: data.username,
+                    displayName: data.displayName,
+                    avatarUrl: data.avatarUrl,
+                    relationshipStatus,
+                    requestId: data.requestId || null
+                });
+
+                // If we just became friends, hydrate presence snapshot for the new friend.
+                if (relationshipStatus === 'FRIEND') {
+                    const store = window.CoCoCordPresence;
+                    try { await store?.hydrateSnapshot?.([otherUserId]); } catch (_) { /* ignore */ }
+                }
+            }
+
+            // Only re-render friends UI when relevant.
+            if (state.activeView === 'friends') {
+                renderFriendsList();
+            }
+        });
     }
 
     async function init() {
@@ -1644,7 +1909,11 @@
         wireEvents();
         await loadCurrentUser();
         await Promise.all([loadFriends(), loadRequests(), loadBlocked(), loadDmSidebar()]);
+        rebuildFriendsStateFromSnapshots();
         render();
+
+        // Friends realtime updates (no polling)
+        await initFriendsRealtime();
 
         // Presence realtime (no polling)
         await initPresence();
@@ -1666,6 +1935,12 @@
         if (dmGroupId) {
             const dmItem = state.dmItems.find(it => String(it.dmGroupId) === String(dmGroupId));
             openDmChat(dmGroupId, dmItem);
+        }
+
+        // Deep-link into Friends tabs from notifications (e.g., /app?friendsTab=pending)
+        const friendsTab = urlParams.get('friendsTab');
+        if (friendsTab) {
+            setActiveTab(String(friendsTab));
         }
     }
 
@@ -1692,7 +1967,13 @@
     // ===== Expose API for Quick Switcher =====
     window.AppHome = {
         getDmItems: () => [...state.dmItems],
-        getFriends: () => [...state.friends],
+        getFriends: () => listRelationshipsByStatus(['FRIEND']).map((x) => ({
+            id: x.userId,
+            userId: x.userId,
+            username: x.username,
+            displayName: x.displayName,
+            avatarUrl: x.avatarUrl
+        })),
         getServers: () => [], // TODO: implement when servers are added
         openDmChat,
         openDmWithUser: async (userId) => {

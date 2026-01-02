@@ -68,6 +68,9 @@
         </div>
     </aside>
 
+    <!-- Draggable divider (Channel List resize) -->
+    <div class="channel-resizer" id="channelResizer" role="separator" aria-orientation="vertical" aria-label="Resize channel list"></div>
+
     <!-- Main Content -->
     <main class="main-content" aria-label="Chat">
         <!-- Text Channel View -->
@@ -95,7 +98,7 @@
                         <i class="bi bi-search"></i>
                         <input type="text" placeholder="Tìm kiếm" id="chatSearchInput" />
                     </div>
-                    <button class="header-btn" id="inboxBtn" title="Hộp thư đến">
+                    <button class="header-btn inbox-btn" id="inboxBtn" title="Hộp thư đến">
                         <i class="bi bi-inbox"></i>
                     </button>
                     <button class="header-btn" id="helpBtn" title="Trợ giúp">

@@ -58,8 +58,8 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public void sendFriendRequestNotification(User sender, User receiver) {
-        String message = String.format("%s sent you a friend request",
-                sender.getDisplayName() != null ? sender.getDisplayName() : sender.getUsername());
+        String senderName = sender.getDisplayName() != null ? sender.getDisplayName() : sender.getUsername();
+        String message = String.format("%s đã gửi lời mời kết bạn", senderName);
         String link = "/friends/requests";
         String metadata = String.format("{\"senderId\": %d, \"senderUsername\": \"%s\"}",
                 sender.getId(), sender.getUsername());
@@ -69,8 +69,8 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public void sendFriendAcceptedNotification(User accepter, User requester) {
-        String message = String.format("%s accepted your friend request",
-                accepter.getDisplayName() != null ? accepter.getDisplayName() : accepter.getUsername());
+        String accepterName = accepter.getDisplayName() != null ? accepter.getDisplayName() : accepter.getUsername();
+        String message = String.format("%s đã chấp nhận lời mời kết bạn", accepterName);
         String link = "/friends";
         String metadata = String.format("{\"userId\": %d, \"username\": \"%s\"}",
                 accepter.getId(), accepter.getUsername());
@@ -81,8 +81,8 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     public void sendNewDirectMessageNotification(User sender, User receiver, Long dmGroupId, String preview) {
         String senderName = sender.getDisplayName() != null ? sender.getDisplayName() : sender.getUsername();
-        String message = String.format("%s sent you a message: %s", senderName,
-                preview.length() > 50 ? preview.substring(0, 50) + "..." : preview);
+        String clipped = preview.length() > 50 ? preview.substring(0, 50) + "..." : preview;
+        String message = String.format("%s đã gửi cho bạn một tin nhắn: %s", senderName, clipped);
         String link = "/dms/" + dmGroupId;
         String metadata = String.format("{\"senderId\": %d, \"senderUsername\": \"%s\", \"dmGroupId\": %d}",
                 sender.getId(), sender.getUsername(), dmGroupId);
@@ -93,8 +93,8 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     public void sendAddedToGroupDMNotification(User adder, User newMember, Long dmGroupId, String groupName) {
         String adderName = adder.getDisplayName() != null ? adder.getDisplayName() : adder.getUsername();
-        String message = String.format("%s added you to group: %s", adderName,
-                groupName != null ? groupName : "Unnamed Group");
+        String message = String.format("%s đã thêm bạn vào nhóm: %s", adderName,
+                groupName != null ? groupName : "Nhóm chưa đặt tên");
         String link = "/dms/" + dmGroupId;
         String metadata = String.format("{\"adderId\": %d, \"dmGroupId\": %d, \"groupName\": \"%s\"}",
                 adder.getId(), dmGroupId, groupName);
@@ -104,8 +104,8 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public void sendRemovedFromGroupDMNotification(Long dmGroupId, String groupName, User removedUser) {
-        String message = String.format("You were removed from group: %s",
-                groupName != null ? groupName : "Unnamed Group");
+        String message = String.format("Bạn đã bị xóa khỏi nhóm: %s",
+                groupName != null ? groupName : "Nhóm chưa đặt tên");
         String link = "/dms";
         String metadata = String.format("{\"dmGroupId\": %d, \"groupName\": \"%s\"}",
                 dmGroupId, groupName);
@@ -116,7 +116,7 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     public void sendServerInviteNotification(User inviter, User invitee, String serverName, String inviteLink) {
         String inviterName = inviter.getDisplayName() != null ? inviter.getDisplayName() : inviter.getUsername();
-        String message = String.format("%s invited you to join %s", inviterName, serverName);
+        String message = String.format("%s đã mời bạn tham gia %s", inviterName, serverName);
         String link = "/invite/" + inviteLink;
         String metadata = String.format("{\"inviterId\": %d, \"serverName\": \"%s\", \"inviteCode\": \"%s\"}",
                 inviter.getId(), serverName, inviteLink);
@@ -126,9 +126,9 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public void sendMentionNotification(User mentioner, User mentioned, Long channelId, String channelName) {
-        String mentioneeName = mentioner.getDisplayName() != null ? mentioner.getDisplayName()
+        String mentionerName = mentioner.getDisplayName() != null ? mentioner.getDisplayName()
                 : mentioner.getUsername();
-        String message = String.format("%s mentioned you in #%s", mentioneeName, channelName);
+        String message = String.format("%s đã đề cập đến bạn trong #%s", mentionerName, channelName);
         String link = "/channels/" + channelId;
         String metadata = String.format("{\"mentionerId\": %d, \"channelId\": %d, \"channelName\": \"%s\"}",
                 mentioner.getId(), channelId, channelName);
@@ -138,7 +138,7 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public void sendRoleAssignedNotification(User user, String roleName, String serverName) {
-        String message = String.format("You have been assigned the role '%s' in %s", roleName, serverName);
+        String message = String.format("Bạn đã được gán vai trò '%s' trong %s", roleName, serverName);
         String link = "/servers";
         String metadata = String.format("{\"roleName\": \"%s\", \"serverName\": \"%s\"}", roleName, serverName);
 
