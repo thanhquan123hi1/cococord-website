@@ -1,4 +1,4 @@
-/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout, Peer */
+/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout, Peer, CocoCordVoiceManager */
 
 (function () {
     'use strict';
@@ -122,6 +122,10 @@
     let voiceConnections = new Map(); // peerId -> { call, stream, userId }
     let isMuted = false;
     let isDeafened = false;
+
+    // New Voice (STOMP signaling + RTCPeerConnection mesh)
+    const USE_NEW_VOICE = true;
+    let voiceManager = null;
 
     // ==================== UTILITIES ====================
     function getQueryParams() {
@@ -326,6 +330,102 @@
                         selectChannel(channelId);
                     }
                 });
+            }
+
+            // If this is the active voice channel, render nested voice users (Discord-like)
+            if (isVoice && String(channelId) === String(activeVoiceChannelId)) {
+                const fragment = document.createDocumentFragment();
+                fragment.appendChild(item);
+
+                const usersContainer = document.createElement('div');
+                usersContainer.className = 'voice-users';
+
+                const voiceUsers = [];
+                if (USE_NEW_VOICE && voiceManager && currentUser) {
+                    try {
+                        const users = voiceManager.getUsers ? voiceManager.getUsers() : [];
+                        users.forEach((u) => {
+                            if (!u || u.userId == null) return;
+                            const isLocal = String(u.userId) === String(currentUser.id);
+                            voiceUsers.push({
+                                userId: u.userId,
+                                username: u.displayName || u.username || 'User',
+                                avatarUrl: u.avatarUrl,
+                                isMuted: !u.micOn,
+                                isDeafened: isLocal ? isDeafened : false,
+                                isCameraOn: !!u.camOn,
+                                isScreenSharing: !!u.screenOn,
+                                isSpeaking: !!u.speaking,
+                                isLocal
+                            });
+                        });
+                    } catch (e) { /* ignore */ }
+                } else {
+                    if (peer?.id && currentUser) {
+                        voiceUsers.push({
+                            peerId: peer.id,
+                            userId: currentUser.id,
+                            username: currentUser.displayName || currentUser.username || 'Bạn',
+                            avatarUrl: currentUser.avatarUrl,
+                            isMuted,
+                            isDeafened,
+                            isCameraOn,
+                            isScreenSharing,
+                            isSpeaking: isSpeakingLocal,
+                            isLocal: true
+                        });
+                    }
+                    try {
+                        if (voiceParticipantsMap?.size) {
+                            voiceParticipantsMap.forEach((p) => {
+                                if (p) voiceUsers.push(p);
+                            });
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+
+                voiceUsers
+                    .filter(u => u && (u.peerId || u.userId))
+                    .sort((a, b) => {
+                        if (!!a.isLocal !== !!b.isLocal) return a.isLocal ? -1 : 1;
+                        return String(a.username || '').localeCompare(String(b.username || ''));
+                    })
+                    .forEach((u) => {
+                        const row = document.createElement('div');
+                        row.className = 'voice-user' + (u.isSpeaking && !u.isMuted ? ' speaking' : '');
+
+                        const avatarHtml = u.avatarUrl
+                            ? `<img class="voice-user-avatar" src="${escapeHtml(u.avatarUrl)}" alt=""/>`
+                            : `<div class="voice-user-avatar"></div>`;
+
+                        row.innerHTML = `
+                            ${avatarHtml}
+                            <span class="voice-user-name">${escapeHtml(u.username || 'User')}</span>
+                            <span class="voice-user-icons">
+                                ${u.isScreenSharing ? '<i class="bi bi-display"></i>' : ''}
+                                ${u.isCameraOn ? '<i class="bi bi-camera-video-fill"></i>' : ''}
+                                ${u.isDeafened ? '<i class="bi bi-volume-mute-fill"></i>' : ''}
+                                ${u.isMuted ? '<i class="bi bi-mic-mute-fill"></i>' : ''}
+                            </span>
+                        `;
+
+                        row.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            if (u.userId != null) {
+                                focusVoiceParticipantByUserId(u.userId);
+                            } else if (u.peerId) {
+                                focusVoiceTile(u.peerId);
+                            }
+                        });
+
+                        usersContainer.appendChild(row);
+                    });
+
+                if (usersContainer.childElementCount) {
+                    fragment.appendChild(usersContainer);
+                }
+
+                return fragment;
             }
 
             return item;
@@ -1723,7 +1823,112 @@
     }
 
     // ==================== VOICE CHANNEL (PeerJS/WebRTC) ====================
+    let isSpeakingLocal = false;
+    let voiceAudioContext = null;
+    let voiceAnalyser = null;
+    let voiceAnalyserSource = null;
+    let voiceSpeakingIntervalId = null;
+    let channelListRerenderScheduled = false;
+
+    function scheduleRenderChannelList() {
+        if (channelListRerenderScheduled) return;
+        channelListRerenderScheduled = true;
+        requestAnimationFrame(() => {
+            channelListRerenderScheduled = false;
+            try { renderChannelList(); } catch (e) { /* ignore */ }
+        });
+    }
+
+    function stopSpeakingDetection() {
+        if (voiceSpeakingIntervalId) {
+            clearInterval(voiceSpeakingIntervalId);
+            voiceSpeakingIntervalId = null;
+        }
+        if (voiceAnalyserSource) {
+            try { voiceAnalyserSource.disconnect(); } catch (e) { /* ignore */ }
+            voiceAnalyserSource = null;
+        }
+        if (voiceAudioContext) {
+            try { voiceAudioContext.close(); } catch (e) { /* ignore */ }
+            voiceAudioContext = null;
+        }
+        voiceAnalyser = null;
+        isSpeakingLocal = false;
+    }
+
+    function setLocalSpeaking(isSpeaking) {
+        const next = !!isSpeaking;
+        if (next === isSpeakingLocal) return;
+        isSpeakingLocal = next;
+
+        renderVoiceParticipantsFromMap();
+        scheduleRenderChannelList();
+
+        if (stompClient?.connected && activeVoiceChannelId) {
+            try {
+                stompClient.send('/app/voice.speaking', {}, JSON.stringify({
+                    channelId: activeVoiceChannelId,
+                    isSpeaking: next
+                }));
+            } catch (e) { /* ignore */ }
+        }
+    }
+
+    function startSpeakingDetection() {
+        if (!localStream || voiceSpeakingIntervalId || !activeVoiceChannelId) return;
+
+        try {
+            voiceAudioContext = voiceAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+            voiceAnalyser = voiceAudioContext.createAnalyser();
+            voiceAnalyser.fftSize = 512;
+            voiceAnalyser.smoothingTimeConstant = 0.85;
+
+            voiceAnalyserSource = voiceAudioContext.createMediaStreamSource(localStream);
+            voiceAnalyserSource.connect(voiceAnalyser);
+
+            const buffer = new Uint8Array(voiceAnalyser.fftSize);
+            let speaking = false;
+            const startThreshold = 0.04;
+            const stopThreshold = 0.02;
+
+            voiceSpeakingIntervalId = setInterval(() => {
+                if (!voiceAnalyser) return;
+
+                const audioTracks = localStream?.getAudioTracks?.() || [];
+                const hasEnabledTrack = audioTracks.some(t => t && t.enabled);
+                if (isMuted || !hasEnabledTrack) {
+                    if (speaking) {
+                        speaking = false;
+                        setLocalSpeaking(false);
+                    }
+                    return;
+                }
+
+                voiceAnalyser.getByteTimeDomainData(buffer);
+                let sum = 0;
+                for (let i = 0; i < buffer.length; i++) {
+                    const v = (buffer[i] - 128) / 128;
+                    sum += v * v;
+                }
+                const rms = Math.sqrt(sum / buffer.length);
+
+                if (!speaking && rms >= startThreshold) {
+                    speaking = true;
+                    setLocalSpeaking(true);
+                } else if (speaking && rms <= stopThreshold) {
+                    speaking = false;
+                    setLocalSpeaking(false);
+                }
+            }, 200);
+        } catch (e) {
+            stopSpeakingDetection();
+        }
+    }
+
     function initPeer() {
+        if (USE_NEW_VOICE) {
+            return Promise.resolve(null);
+        }
         if (peer) return Promise.resolve(peer);
         
         return new Promise((resolve, reject) => {
@@ -1768,20 +1973,50 @@
         }
         
         try {
-            // Request microphone permission
-            localStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                },
-                video: false
-            });
-            
-            // Initialize PeerJS
-            await initPeer();
-            
-            activeVoiceChannelId = channelId;
+            await ensureStompConnected();
+
+            if (USE_NEW_VOICE) {
+                if (!voiceManager) {
+                    if (!window.CocoCordVoiceManager) {
+                        throw new Error('VoiceManager script missing');
+                    }
+                    voiceManager = new window.CocoCordVoiceManager({
+                        onStateChange: (s) => {
+                            isMuted = !(s?.micOn ?? true);
+                            isCameraOn = !!s?.camOn;
+                            isScreenSharing = !!s?.screenOn;
+                            updateVoiceButtonStates();
+                            updateVoiceViewButtons();
+                            scheduleRenderChannelList();
+                        }
+                    });
+                }
+
+                voiceManager.bindStompClient(stompClient);
+                voiceManager.setCurrentUser({
+                    id: currentUser?.id,
+                    username: currentUser?.username,
+                    displayName: currentUser?.displayName,
+                    avatarUrl: currentUser?.avatarUrl
+                });
+
+                activeVoiceChannelId = channelId;
+            } else {
+                // Request microphone permission
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
+
+                // Initialize PeerJS
+                await initPeer();
+
+                activeVoiceChannelId = channelId;
+            }
             
             // Re-render channel list to show active state
             renderChannelList();
@@ -1813,27 +2048,39 @@
                 textView.style.display = 'none';
             }
             
-            // Render self in participants grid
-            renderVoiceParticipants([{
-                peerId: peer?.id,
-                username: currentUser?.displayName || currentUser?.username || 'Bạn',
-                avatarUrl: currentUser?.avatarUrl,
-                isMuted: isMuted,
-                isDeafened: isDeafened,
-                isCameraOn: false,
-                isLocal: true
-            }]);
-            
-            // Subscribe to voice channel via WebSocket
-            await subscribeToVoiceChannel(channelId);
-            
-            // Notify server that we joined
-            if (stompClient?.connected) {
-                stompClient.send('/app/voice.join', {}, JSON.stringify({
-                    channelId: channelId,
-                    serverId: activeServerId,
-                    peerId: peer.id
-                }));
+            if (USE_NEW_VOICE) {
+                await voiceManager.join(channelId);
+                isMuted = !voiceManager.micOn;
+                isCameraOn = !!voiceManager.camOn;
+                isScreenSharing = !!voiceManager.screenOn;
+            } else {
+                // Render self in participants grid
+                renderVoiceParticipants([{
+                    peerId: peer?.id,
+                    userId: currentUser?.id,
+                    username: currentUser?.displayName || currentUser?.username || 'Bạn',
+                    avatarUrl: currentUser?.avatarUrl,
+                    isMuted: isMuted,
+                    isDeafened: isDeafened,
+                    isSpeaking: isSpeakingLocal,
+                    isCameraOn: false,
+                    isLocal: true
+                }]);
+
+                // Subscribe to voice channel via WebSocket
+                await subscribeToVoiceChannel(channelId);
+
+                // Notify server that we joined
+                if (stompClient?.connected) {
+                    stompClient.send('/app/voice.join', {}, JSON.stringify({
+                        channelId: channelId,
+                        serverId: activeServerId,
+                        peerId: peer.id
+                    }));
+                }
+
+                // Start speaking detection after join
+                startSpeakingDetection();
             }
             
             // Update mic/deafen button states
@@ -1867,6 +2114,13 @@
     function renderVoiceParticipants(participants) {
         const grid = document.getElementById('voiceParticipantsGrid');
         if (!grid) return;
+
+        // Activity panel: only show when someone is streaming (screen share)
+        const activityPanel = document.getElementById('voiceActivityPanel');
+        const shouldShowActivity = !!participants?.some(p => p && (p.isScreenSharing));
+        if (activityPanel) {
+            activityPanel.classList.toggle('hidden', !shouldShowActivity);
+        }
         
         grid.setAttribute('data-count', participants.length);
         grid.innerHTML = participants.map(p => {
@@ -1878,16 +2132,27 @@
             const videoHtml = p.isCameraOn || p.isScreenSharing
                 ? `<video class="voice-participant-video" id="video-${p.peerId}" autoplay playsinline ${p.isLocal ? 'muted' : ''}></video>`
                 : '';
+
+            const showMuted = !!p.isMuted;
+            const showDeafened = !!p.isDeafened;
+            const showCamera = !!p.isCameraOn;
+            const showScreen = !!p.isScreenSharing;
+            const showSpeaking = !!p.isSpeaking && !showMuted;
             
             return `
-                <div class="voice-participant-tile ${p.isLocal ? 'self' : ''} ${p.isCameraOn ? 'camera-on' : ''} ${p.isScreenSharing ? 'screen-sharing' : ''}" id="voice-tile-${p.peerId}">
+                <div class="voice-participant-tile ${p.isLocal ? 'self' : ''} ${showSpeaking ? 'speaking' : ''} ${showCamera ? 'camera-on' : ''} ${showScreen ? 'screen-sharing' : ''}" id="voice-tile-${p.peerId}" data-user-id="${p.userId || ''}">
                     ${videoHtml}
+                    <div class="voice-tile-badges">
+                        ${showScreen ? '<i class="bi bi-display"></i>' : ''}
+                        ${showCamera ? '<i class="bi bi-camera-video-fill"></i>' : ''}
+                        ${showDeafened ? '<i class="bi bi-volume-mute-fill"></i>' : ''}
+                        ${showMuted ? '<i class="bi bi-mic-mute-fill"></i>' : ''}
+                    </div>
                     <div class="voice-avatar-wrapper" style="${p.isCameraOn || p.isScreenSharing ? 'display:none' : ''}">
                         ${avatarHtml}
                     </div>
                     <div class="voice-participant-info">
                         <div class="voice-participant-name">
-                            ${p.isMuted ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 11c0 1.19-.34 2.3-.9 3.28l-1.23-1.23c.27-.62.43-1.3.43-2.05V9.5c0-.28.22-.5.5-.5s.5.22.5.5V11zm-5.5 4.28l-1.23-1.23V15c0 .55-.45 1-1 1H9.27l-2 2h4c1.66 0 3-1.34 3-3v-.72zm3.13 3.13L4.41 6.41 3 7.82l3.03 3.03C6.01 11.23 6 11.61 6 12v3c0 1.66 1.34 3 3 3h2v2h2v-2h.17l3.31 3.31 1.15-1.15zM12 3c-1.66 0-3 1.34-3 3v2.17l6 6V6c0-1.66-1.34-3-3-3z"/></svg>' : ''}
                             ${escapeHtml(p.username)}
                         </div>
                         ${!p.isCameraOn && !p.isScreenSharing ? `
@@ -1925,10 +2190,16 @@
     }
     
     async function leaveVoiceChannel() {
-        // Stop local stream
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localStream = null;
+        if (USE_NEW_VOICE) {
+            try { await voiceManager?.leave(); } catch (e) { /* ignore */ }
+        } else {
+            stopSpeakingDetection();
+            setLocalSpeaking(false);
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
         }
 
         // Stop local video stream (camera/screen share)
@@ -1941,24 +2212,26 @@
         isCameraOn = false;
         isScreenSharing = false;
         
-        // Close all peer connections
-        voiceConnections.forEach(({ call }) => {
-            try { call.close(); } catch (e) { /* ignore */ }
-        });
-        voiceConnections.clear();
-        
-        // Notify server
-        if (stompClient?.connected && activeVoiceChannelId) {
-            stompClient.send('/app/voice.leave', {}, JSON.stringify({
-                channelId: activeVoiceChannelId,
-                peerId: peer?.id
-            }));
-        }
-        
-        // Unsubscribe from voice channel
-        if (voiceSubscription) {
-            try { voiceSubscription.unsubscribe(); } catch (e) { /* ignore */ }
-            voiceSubscription = null;
+        if (!USE_NEW_VOICE) {
+            // Close all peer connections
+            voiceConnections.forEach(({ call }) => {
+                try { call.close(); } catch (e) { /* ignore */ }
+            });
+            voiceConnections.clear();
+
+            // Notify server
+            if (stompClient?.connected && activeVoiceChannelId) {
+                stompClient.send('/app/voice.leave', {}, JSON.stringify({
+                    channelId: activeVoiceChannelId,
+                    peerId: peer?.id
+                }));
+            }
+
+            // Unsubscribe from voice channel
+            if (voiceSubscription) {
+                try { voiceSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+                voiceSubscription = null;
+            }
         }
         
         activeVoiceChannelId = null;
@@ -1981,10 +2254,11 @@
         }
         
         // Remove all audio elements
-        document.querySelectorAll('[id^="audio-"]').forEach(el => el.remove());
+        document.querySelectorAll('[id^="audio-"], [id^="audio-user-"]').forEach(el => el.remove());
     }
     
     async function subscribeToVoiceChannel(channelId) {
+        if (USE_NEW_VOICE) return;
         await ensureStompConnected();
         
         if (voiceSubscription) {
@@ -2000,32 +2274,43 @@
     }
     
     function handleVoiceEvent(payload) {
+        if (USE_NEW_VOICE) return;
         const { type, peerId, userId, username, avatarUrl, isMuted: peerMuted, isDeafened: peerDeafened, isCameraOn: peerCameraOn } = payload;
-        
+
+        function findPeerIdByUserId(uid) {
+            if (!uid) return null;
+            for (const [pid, p] of voiceParticipantsMap.entries()) {
+                if (p && p.userId != null && String(p.userId) === String(uid)) {
+                    return pid;
+                }
+            }
+            return null;
+        }
+
         switch (type) {
             case 'USER_JOINED':
-                // Someone joined, call them
                 if (peerId && peerId !== peer?.id) {
                     console.log('User joined voice, calling:', username);
                     callPeer(peerId, userId, username);
-                    
-                    // Add to participants and re-render
+
                     voiceParticipantsMap.set(peerId, {
                         peerId,
                         userId,
-                        username,
+                        username: payload.displayName || username,
                         avatarUrl,
                         isMuted: peerMuted || false,
                         isDeafened: peerDeafened || false,
+                        isSpeaking: !!payload.isSpeaking,
                         isCameraOn: peerCameraOn || false,
+                        isScreenSharing: !!payload.isScreenSharing,
                         isLocal: false
                     });
                     renderVoiceParticipantsFromMap();
+                    scheduleRenderChannelList();
                 }
                 break;
-                
+
             case 'USER_LEFT':
-                // Someone left, close their connection
                 if (peerId) {
                     const conn = voiceConnections.get(peerId);
                     if (conn) {
@@ -2034,64 +2319,94 @@
                     }
                     voiceParticipantsMap.delete(peerId);
                     renderVoiceParticipantsFromMap();
-                    
-                    // Remove their audio
+                    scheduleRenderChannelList();
+
                     const audio = document.getElementById(`audio-${peerId}`);
                     if (audio) audio.remove();
                 }
                 break;
-                
+
             case 'PARTICIPANTS_UPDATE':
-                // Update participants list UI
                 if (payload.participants) {
                     updateVoiceParticipants(payload.participants);
+                    scheduleRenderChannelList();
                 }
                 break;
-                
-            case 'MUTE_CHANGE':
-                // Update participant's mute state
-                if (peerId) {
-                    const participant = voiceParticipantsMap.get(peerId);
+
+            case 'USER_MUTE':
+            case 'MUTE_CHANGE': {
+                const pid = peerId || payload.peerId || findPeerIdByUserId(userId);
+                if (pid) {
+                    const participant = voiceParticipantsMap.get(pid);
                     if (participant) {
-                        participant.isMuted = payload.isMuted;
+                        participant.isMuted = !!payload.isMuted;
+                        if (participant.isMuted) participant.isSpeaking = false;
                         renderVoiceParticipantsFromMap();
+                        scheduleRenderChannelList();
                     }
                 }
                 break;
-                
-            case 'DEAFEN_CHANGE':
-                // Update participant's deafen state
-                if (peerId) {
-                    const participant = voiceParticipantsMap.get(peerId);
+            }
+
+            case 'USER_DEAFEN':
+            case 'DEAFEN_CHANGE': {
+                const pid = peerId || payload.peerId || findPeerIdByUserId(userId);
+                if (pid) {
+                    const participant = voiceParticipantsMap.get(pid);
                     if (participant) {
-                        participant.isDeafened = payload.isDeafened;
-                        participant.isMuted = payload.isMuted || participant.isMuted;
+                        participant.isDeafened = !!payload.isDeafened;
+                        if (payload.isMuted != null) participant.isMuted = !!payload.isMuted;
+                        if (participant.isMuted) participant.isSpeaking = false;
                         renderVoiceParticipantsFromMap();
+                        scheduleRenderChannelList();
                     }
                 }
                 break;
-                
-            case 'CAMERA_CHANGE':
-                // Update participant's camera state
-                if (peerId) {
-                    const participant = voiceParticipantsMap.get(peerId);
+            }
+
+            case 'USER_CAMERA':
+            case 'CAMERA_CHANGE': {
+                const pid = peerId || payload.peerId || findPeerIdByUserId(userId);
+                if (pid) {
+                    const participant = voiceParticipantsMap.get(pid);
                     if (participant) {
-                        participant.isCameraOn = payload.isCameraOn;
+                        participant.isCameraOn = !!payload.isCameraOn;
                         renderVoiceParticipantsFromMap();
+                        scheduleRenderChannelList();
                     }
                 }
                 break;
-                
-            case 'SCREEN_CHANGE':
-                // Update participant's screen share state
-                if (peerId) {
-                    const participant = voiceParticipantsMap.get(peerId);
+            }
+
+            case 'USER_SCREEN':
+            case 'SCREEN_CHANGE': {
+                const pid = peerId || payload.peerId || findPeerIdByUserId(userId);
+                if (pid) {
+                    const participant = voiceParticipantsMap.get(pid);
                     if (participant) {
-                        participant.isScreenSharing = payload.isScreenSharing;
+                        participant.isScreenSharing = !!payload.isScreenSharing;
                         renderVoiceParticipantsFromMap();
+                        scheduleRenderChannelList();
                     }
                 }
                 break;
+            }
+
+            case 'USER_SPEAKING': {
+                if (currentUser?.id && userId && String(userId) === String(currentUser.id)) {
+                    break;
+                }
+                const pid = peerId || payload.peerId || findPeerIdByUserId(userId);
+                if (pid) {
+                    const participant = voiceParticipantsMap.get(pid);
+                    if (participant) {
+                        participant.isSpeaking = !!payload.isSpeaking && !participant.isMuted;
+                        renderVoiceParticipantsFromMap();
+                        scheduleRenderChannelList();
+                    }
+                }
+                break;
+            }
         }
     }
     
@@ -2099,16 +2414,19 @@
     const voiceParticipantsMap = new Map();
     
     function renderVoiceParticipantsFromMap() {
+        if (USE_NEW_VOICE) return;
         const participants = [];
         
         // Add self first
         if (peer?.id) {
             participants.push({
                 peerId: peer.id,
+                userId: currentUser?.id,
                 username: currentUser?.displayName || currentUser?.username || 'Bạn',
                 avatarUrl: currentUser?.avatarUrl,
                 isMuted: isMuted,
                 isDeafened: isDeafened,
+                isSpeaking: isSpeakingLocal,
                 isCameraOn: isCameraOn,
                 isScreenSharing: isScreenSharing,
                 isLocal: true
@@ -2197,6 +2515,14 @@
     }
     
     function toggleMute() {
+        if (USE_NEW_VOICE && activeVoiceChannelId && voiceManager) {
+            voiceManager.toggleMic();
+            isMuted = !voiceManager.micOn;
+            updateVoiceButtonStates();
+            updateVoiceViewButtons();
+            scheduleRenderChannelList();
+            return;
+        }
         isMuted = !isMuted;
         
         if (localStream) {
@@ -2212,11 +2538,33 @@
                 isMuted: isMuted
             }));
         }
+
+        if (isMuted) {
+            setLocalSpeaking(false);
+        }
         
         updateVoiceButtonStates();
+        renderVoiceParticipantsFromMap();
+        scheduleRenderChannelList();
     }
     
     function toggleDeafen() {
+        if (USE_NEW_VOICE && activeVoiceChannelId && voiceManager) {
+            isDeafened = !isDeafened;
+
+            if (isDeafened && !isMuted) {
+                if (voiceManager.micOn) voiceManager.toggleMic();
+                isMuted = true;
+            } else {
+                isMuted = !voiceManager.micOn;
+            }
+
+            voiceManager.setDeafen(isDeafened);
+            updateVoiceButtonStates();
+            updateVoiceViewButtons();
+            scheduleRenderChannelList();
+            return;
+        }
         isDeafened = !isDeafened;
         
         // If deafening, also mute
@@ -2230,7 +2578,7 @@
         }
         
         // Mute/unmute all remote streams
-        document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
+        document.querySelectorAll('audio[id^="audio-"], audio[id^="audio-user-"]').forEach(audio => {
             audio.muted = isDeafened;
         });
         
@@ -2242,8 +2590,14 @@
                 isMuted: isMuted
             }));
         }
+
+        if (isMuted) {
+            setLocalSpeaking(false);
+        }
         
         updateVoiceButtonStates();
+        renderVoiceParticipantsFromMap();
+        scheduleRenderChannelList();
     }
     
     function updateVoiceButtonStates() {
@@ -2296,10 +2650,11 @@
             voiceParticipantsMap.set(normalizedPeerId, {
                 peerId: normalizedPeerId,
                 userId: normalizedUserId,
-                username: p.username,
+                username: p.displayName || p.username,
                 avatarUrl: p.avatarUrl,
                 isMuted: !!p.isMuted,
                 isDeafened: !!p.isDeafened,
+                isSpeaking: !!p.isSpeaking,
                 isCameraOn: !!p.isCameraOn,
                 isScreenSharing: !!p.isScreenSharing,
                 isLocal: false
@@ -2314,6 +2669,7 @@
         });
 
         renderVoiceParticipantsFromMap();
+        scheduleRenderChannelList();
     }
     
     // ==================== CAMERA/SCREENSHARE ====================
@@ -2330,6 +2686,14 @@
     }
     
     async function toggleCamera() {
+        if (USE_NEW_VOICE && activeVoiceChannelId && voiceManager) {
+            voiceManager.toggleCamera();
+            isCameraOn = !!voiceManager.camOn;
+            isScreenSharing = !!voiceManager.screenOn;
+            updateVoiceViewButtons();
+            scheduleRenderChannelList();
+            return;
+        }
         // Always stop any existing video stream first to avoid leaked/stale tracks
         if (localVideoStream) {
             stopLocalVideoStream();
@@ -2399,9 +2763,19 @@
         
         updateVoiceViewButtons();
         updateSelfVideoTile();
+        renderVoiceParticipantsFromMap();
+        scheduleRenderChannelList();
     }
     
     async function toggleScreenShare() {
+        if (USE_NEW_VOICE && activeVoiceChannelId && voiceManager) {
+            await voiceManager.toggleScreenShare();
+            isScreenSharing = !!voiceManager.screenOn;
+            isCameraOn = !!voiceManager.camOn;
+            updateVoiceViewButtons();
+            scheduleRenderChannelList();
+            return;
+        }
         if (isScreenSharing) {
             // Stop screen share
             stopLocalVideoStream();
@@ -2439,6 +2813,8 @@
                     localVideoStream = null;
                     updateVoiceViewButtons();
                     updateSelfVideoTile();
+                    renderVoiceParticipantsFromMap();
+                    scheduleRenderChannelList();
                 };
                 
             } catch (err) {
@@ -2460,6 +2836,8 @@
         
         updateVoiceViewButtons();
         updateSelfVideoTile();
+        renderVoiceParticipantsFromMap();
+        scheduleRenderChannelList();
     }
     
     function updateVoiceViewButtons() {
@@ -2564,6 +2942,38 @@
         if (indicator) {
             indicator.style.display = hasVideo ? 'none' : '';
         }
+    }
+
+    function focusVoiceTile(peerId) {
+        if (!peerId) return;
+        const grid = document.getElementById('voiceParticipantsGrid');
+        if (!grid) return;
+
+        grid.querySelectorAll('.voice-participant-tile.focused').forEach((t) => t.classList.remove('focused'));
+        const tile = document.getElementById(`voice-tile-${peerId}`);
+        if (!tile) return;
+        tile.classList.add('focused');
+        tile.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    }
+
+    function focusVoiceParticipantByUserId(userId) {
+        if (userId == null) return;
+        const tile = document.querySelector(`.voice-participant-tile[data-user-id="${String(userId)}"]`);
+        if (tile && tile.id && tile.id.startsWith('voice-tile-')) {
+            const pid = tile.id.replace('voice-tile-', '');
+            focusVoiceTile(pid);
+            return;
+        }
+
+        // Fallback: try map lookup
+        try {
+            for (const [pid, p] of voiceParticipantsMap.entries()) {
+                if (p && p.userId != null && String(p.userId) === String(userId)) {
+                    focusVoiceTile(pid);
+                    return;
+                }
+            }
+        } catch (e) { /* ignore */ }
     }
 
     // ==================== DROPDOWNS ====================

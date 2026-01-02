@@ -14,7 +14,10 @@ import org.springframework.stereotype.Controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.VoiceJoinRequest;
+import vn.cococord.dto.request.VoiceCameraRequest;
 import vn.cococord.dto.request.VoiceMuteRequest;
+import vn.cococord.dto.request.VoiceScreenRequest;
+import vn.cococord.dto.request.VoiceSpeakingRequest;
 import vn.cococord.entity.mongodb.VoiceSession;
 import vn.cococord.entity.mysql.User;
 import vn.cococord.repository.IUserRepository;
@@ -69,6 +72,8 @@ public class VoiceController {
                     .isMuted(false)
                     .isDeafened(false)
                     .isSpeaking(false)
+                    .isCameraOn(false)
+                    .isScreenSharing(false)
                     .joinedAt(LocalDateTime.now())
                     .build();
 
@@ -182,19 +187,24 @@ public class VoiceController {
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
-                
-                session.getParticipants().stream()
-                        .filter(p -> p.getUserId().equals(user.getId()))
-                        .findFirst()
-                        .ifPresent(p -> p.setIsMuted(request.getIsMuted()));
 
-                voiceSessionRepository.save(session);
-
-                // Broadcast mute status
-                Map<String, Object> muteEvent = new HashMap<>();
+                final Map<String, Object> muteEvent = new HashMap<>();
                 muteEvent.put("type", "USER_MUTE");
                 muteEvent.put("userId", user.getId());
                 muteEvent.put("isMuted", request.getIsMuted());
+
+                session.getParticipants().stream()
+                        .filter(p -> p.getUserId().equals(user.getId()))
+                        .findFirst()
+                        .ifPresent(p -> {
+                            p.setIsMuted(request.getIsMuted());
+                            if (Boolean.TRUE.equals(request.getIsMuted())) {
+                                p.setIsSpeaking(false);
+                            }
+                            muteEvent.put("peerId", p.getConnectionId());
+                        });
+
+                voiceSessionRepository.save(session);
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
@@ -221,7 +231,13 @@ public class VoiceController {
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
-                
+
+                final Map<String, Object> deafenEvent = new HashMap<>();
+                deafenEvent.put("type", "USER_DEAFEN");
+                deafenEvent.put("userId", user.getId());
+                deafenEvent.put("isDeafened", request.getIsDeafened());
+                deafenEvent.put("isMuted", request.getIsMuted());
+
                 session.getParticipants().stream()
                         .filter(p -> p.getUserId().equals(user.getId()))
                         .findFirst()
@@ -230,16 +246,13 @@ public class VoiceController {
                             if (request.getIsMuted() != null) {
                                 p.setIsMuted(request.getIsMuted());
                             }
+                            if (Boolean.TRUE.equals(request.getIsMuted())) {
+                                p.setIsSpeaking(false);
+                            }
+                            deafenEvent.put("peerId", p.getConnectionId());
                         });
 
                 voiceSessionRepository.save(session);
-
-                // Broadcast deafen status
-                Map<String, Object> deafenEvent = new HashMap<>();
-                deafenEvent.put("type", "USER_DEAFEN");
-                deafenEvent.put("userId", user.getId());
-                deafenEvent.put("isDeafened", request.getIsDeafened());
-                deafenEvent.put("isMuted", request.getIsMuted());
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
@@ -247,6 +260,149 @@ public class VoiceController {
             }
         } catch (Exception e) {
             log.error("Error toggling deafen: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Toggle camera
+     * Client sends to: /app/voice.camera
+     */
+    @MessageMapping("/voice.camera")
+    public void toggleCamera(@Payload VoiceCameraRequest request, Principal principal) {
+        try {
+            String username = principal.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Optional<VoiceSession> sessionOpt = voiceSessionRepository
+                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+
+            if (sessionOpt.isPresent()) {
+                VoiceSession session = sessionOpt.get();
+
+                final Map<String, Object> cameraEvent = new HashMap<>();
+                cameraEvent.put("type", "USER_CAMERA");
+                cameraEvent.put("userId", user.getId());
+                cameraEvent.put("isCameraOn", request.getIsCameraOn());
+
+                session.getParticipants().stream()
+                        .filter(p -> p.getUserId().equals(user.getId()))
+                        .findFirst()
+                        .ifPresent(p -> {
+                            p.setIsCameraOn(Boolean.TRUE.equals(request.getIsCameraOn()));
+                            cameraEvent.put("peerId", p.getConnectionId());
+                        });
+
+                voiceSessionRepository.save(session);
+
+                messagingTemplate.convertAndSend(
+                        "/topic/voice/" + request.getChannelId(),
+                        cameraEvent);
+
+                Map<String, Object> participantsUpdate = new HashMap<>();
+                participantsUpdate.put("type", "PARTICIPANTS_UPDATE");
+                participantsUpdate.put("participants", session.getParticipants());
+
+                messagingTemplate.convertAndSend(
+                        "/topic/voice/" + request.getChannelId(),
+                        participantsUpdate);
+            }
+        } catch (Exception e) {
+            log.error("Error toggling camera: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Toggle screen sharing
+     * Client sends to: /app/voice.screen
+     */
+    @MessageMapping("/voice.screen")
+    public void toggleScreen(@Payload VoiceScreenRequest request, Principal principal) {
+        try {
+            String username = principal.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Optional<VoiceSession> sessionOpt = voiceSessionRepository
+                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+
+            if (sessionOpt.isPresent()) {
+                VoiceSession session = sessionOpt.get();
+
+                final Map<String, Object> screenEvent = new HashMap<>();
+                screenEvent.put("type", "USER_SCREEN");
+                screenEvent.put("userId", user.getId());
+                screenEvent.put("isScreenSharing", request.getIsScreenSharing());
+
+                session.getParticipants().stream()
+                        .filter(p -> p.getUserId().equals(user.getId()))
+                        .findFirst()
+                        .ifPresent(p -> {
+                            p.setIsScreenSharing(Boolean.TRUE.equals(request.getIsScreenSharing()));
+                            screenEvent.put("peerId", p.getConnectionId());
+                        });
+
+                voiceSessionRepository.save(session);
+
+                messagingTemplate.convertAndSend(
+                        "/topic/voice/" + request.getChannelId(),
+                        screenEvent);
+
+                Map<String, Object> participantsUpdate = new HashMap<>();
+                participantsUpdate.put("type", "PARTICIPANTS_UPDATE");
+                participantsUpdate.put("participants", session.getParticipants());
+
+                messagingTemplate.convertAndSend(
+                        "/topic/voice/" + request.getChannelId(),
+                        participantsUpdate);
+            }
+        } catch (Exception e) {
+            log.error("Error toggling screen share: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Speaking state updates (voice activity)
+     * Client sends to: /app/voice.speaking
+     */
+    @MessageMapping("/voice.speaking")
+    public void updateSpeaking(@Payload VoiceSpeakingRequest request, Principal principal) {
+        try {
+            String username = principal.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Optional<VoiceSession> sessionOpt = voiceSessionRepository
+                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+
+            if (sessionOpt.isPresent()) {
+                VoiceSession session = sessionOpt.get();
+
+                final Map<String, Object> speakingEvent = new HashMap<>();
+                speakingEvent.put("type", "USER_SPEAKING");
+                speakingEvent.put("userId", user.getId());
+                speakingEvent.put("isSpeaking", Boolean.TRUE.equals(request.getIsSpeaking()));
+
+                session.getParticipants().stream()
+                        .filter(p -> p.getUserId().equals(user.getId()))
+                        .findFirst()
+                        .ifPresent(p -> {
+                            boolean isSpeaking = Boolean.TRUE.equals(request.getIsSpeaking());
+                            if (Boolean.TRUE.equals(p.getIsMuted())) {
+                                isSpeaking = false;
+                            }
+                            p.setIsSpeaking(isSpeaking);
+                            speakingEvent.put("peerId", p.getConnectionId());
+                        });
+
+                voiceSessionRepository.save(session);
+
+                messagingTemplate.convertAndSend(
+                        "/topic/voice/" + request.getChannelId(),
+                        speakingEvent);
+            }
+        } catch (Exception e) {
+            log.debug("Error updating speaking: {}", e.getMessage(), e);
         }
     }
 }

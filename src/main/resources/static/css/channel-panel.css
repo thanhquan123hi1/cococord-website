@@ -400,6 +400,18 @@
     color: var(--channel-text-color);
 }
 
+.voice-user-icons {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.9;
+}
+
+.voice-user.speaking .voice-user-name {
+    color: var(--text-normal);
+}
+
 .voice-user:hover {
     background-color: var(--bg-channel-hover);
     color: var(--text-normal);

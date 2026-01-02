@@ -53,6 +53,10 @@ public class VoiceSession {
         @Builder.Default
         private Boolean isSpeaking = false;
         @Builder.Default
+        private Boolean isCameraOn = false;
+        @Builder.Default
+        private Boolean isScreenSharing = false;
+        @Builder.Default
         private LocalDateTime joinedAt = LocalDateTime.now();
         private LocalDateTime leftAt;
         private String connectionId; // WebRTC connection ID

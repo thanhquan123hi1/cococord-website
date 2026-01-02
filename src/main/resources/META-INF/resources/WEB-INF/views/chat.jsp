@@ -390,4 +390,5 @@
 <!-- PeerJS for WebRTC Voice Chat -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101"></script>
-<script src="${pageContext.request.contextPath}/js/chat.js?v=20260101"></script>
+<script src="${pageContext.request.contextPath}/js/voice-manager.js?v=20260102b"></script>
+<script src="${pageContext.request.contextPath}/js/chat.js?v=20260102b"></script>

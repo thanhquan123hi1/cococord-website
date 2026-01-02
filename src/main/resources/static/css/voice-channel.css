@@ -224,6 +224,54 @@
     box-shadow: 0 0 0 3px #23a559;
 }
 
+.voice-participant-tile {
+    position: relative;
+}
+
+.voice-participant-tile.speaking::after {
+    content: '';
+    position: absolute;
+    inset: 10px;
+    border-radius: 16px;
+    border: 2px solid rgba(35, 165, 89, 0.55);
+    pointer-events: none;
+    animation: cococord-voice-speaking-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cococord-voice-speaking-pulse {
+    0% { opacity: 0.25; transform: scale(0.995); }
+    50% { opacity: 0.7; transform: scale(1.01); }
+    100% { opacity: 0.25; transform: scale(0.995); }
+}
+
+.voice-participant-tile.focused {
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.8);
+}
+
+.voice-tile-badges {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-end;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.35);
+    padding: 4px 6px;
+    border-radius: 999px;
+    z-index: 5;
+}
+
+.voice-tile-badges i {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.voice-activity-panel.hidden {
+    display: none;
+}
+
 .voice-participant-tile.self {
     background: var(--background-tertiary, #1e1f22);
 }
