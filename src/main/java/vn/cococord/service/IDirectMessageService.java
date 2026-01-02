@@ -13,6 +13,11 @@ import java.util.List;
 public interface IDirectMessageService {
 
     /**
+     * Find other user IDs in a 1-1 DM group.
+     */
+    List<Long> findOtherUserIds(Long dmGroupId, Long userId);
+
+    /**
      * Create or get existing 1-1 DM between two users
      */
     DirectMessageGroup createOrGetOneToOneDM(Long userId1, Long userId2);

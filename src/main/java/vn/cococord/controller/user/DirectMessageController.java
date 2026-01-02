@@ -34,9 +34,8 @@ import vn.cococord.dto.response.DirectMessageSidebarItemResponse;
 import vn.cococord.entity.mongodb.DirectMessage;
 import vn.cococord.entity.mysql.DirectMessageGroup;
 import vn.cococord.entity.mysql.User;
-import vn.cococord.repository.IDirectMessageMemberRepository;
-import vn.cococord.repository.IUserRepository;
 import vn.cococord.service.IDirectMessageService;
+import vn.cococord.service.IUserService;
 
 @RestController
 @RequestMapping("/api/direct-messages")
@@ -44,14 +43,23 @@ import vn.cococord.service.IDirectMessageService;
 @Slf4j
 public class DirectMessageController {
 
-    private final IUserRepository userRepository;
-    private final IDirectMessageMemberRepository dmMemberRepository;
+    private final IUserService userService;
     private final SimpMessagingTemplate messagingTemplate;
 
     private Long getUserIdFromUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return user.getId();
+        return userService.getUserByUsername(username).getId();
+    }
+
+    private User findUserByIdOrNull(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        try {
+            return userService.getUserById(userId);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private final IDirectMessageService directMessageService;
@@ -94,11 +102,9 @@ public class DirectMessageController {
                 .filter(g -> g.getIsGroup() != null && !g.getIsGroup())
                 .limit(50)
                 .map(g -> {
-                    Long otherUserId = dmMemberRepository.findOtherUserIds(g.getId(), userId).stream().findFirst()
+                    Long otherUserId = directMessageService.findOtherUserIds(g.getId(), userId).stream().findFirst()
                             .orElse(null);
-                    User other = otherUserId != null
-                            ? userRepository.findById(otherUserId).orElse(null)
-                            : null;
+                    User other = findUserByIdOrNull(otherUserId);
 
                     long unread = 0;
                     try {
@@ -246,15 +252,15 @@ public class DirectMessageController {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
         log.info("[DM-REST] 📨 User {} sending message to dmGroupId={}", userId, dmGroupId);
         log.info("[DM-REST] Message content: {}", request.getContent());
-        
+
         DirectMessage message = directMessageService.sendDirectMessageWithAttachments(
                 dmGroupId,
                 userId,
                 request.getContent(),
                 request.getAttachmentUrls());
-        
+
         log.info("[DM-REST] ✅ Message saved with id={}", message.getId());
-        
+
         // Broadcast to WebSocket topic for real-time delivery to ALL participants
         String destination = "/topic/dm/" + dmGroupId;
         try {
@@ -263,7 +269,7 @@ public class DirectMessageController {
         } catch (Exception e) {
             log.error("[DM-REST] ❌ Failed to broadcast message to {}: {}", destination, e.getMessage(), e);
         }
-        
+
         return ResponseEntity.ok(message);
     }
 
@@ -293,12 +299,12 @@ public class DirectMessageController {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
         log.info("[DM] User {} editing message id={}", userId, messageId);
-        
+
         DirectMessage updated = directMessageService.editDirectMessage(
                 messageId,
                 userId,
                 payload.get("content"));
-        
+
         // Broadcast edited message to WebSocket topic for real-time update
         if (updated.getDmGroupId() != null) {
             String destination = "/topic/dm/" + updated.getDmGroupId();
@@ -309,7 +315,7 @@ public class DirectMessageController {
                 log.error("[DM] Failed to broadcast edited message to {}: {}", destination, e.getMessage(), e);
             }
         }
-        
+
         return ResponseEntity.ok(updated);
     }
 

@@ -13,8 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.CallSignalRequest;
 import vn.cococord.entity.mysql.User;
-import vn.cococord.repository.IDirectMessageMemberRepository;
-import vn.cococord.repository.IUserRepository;
+import vn.cococord.service.IDirectMessageService;
+import vn.cococord.service.IUserService;
 
 /**
  * WebSocket signaling controller for 1:1 voice/video calls.
@@ -29,8 +29,8 @@ import vn.cococord.repository.IUserRepository;
 public class CallController {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final IUserRepository userRepository;
-    private final IDirectMessageMemberRepository dmMemberRepository;
+    private final IUserService userService;
+    private final IDirectMessageService directMessageService;
 
     /**
      * Client sends to: /app/call.signal
@@ -44,8 +44,7 @@ public class CallController {
 
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
             Map<String, Object> event = new HashMap<>();
             event.put("type", request.getType());
@@ -82,7 +81,7 @@ public class CallController {
                     // cannot resolve targetUserId.
                     try {
                         Long dmGroupId = Long.valueOf(request.getRoomId());
-                        var recipients = dmMemberRepository.findOtherUserIds(dmGroupId, user.getId());
+                        var recipients = directMessageService.findOtherUserIds(dmGroupId, user.getId());
                         log.info("[CALL] CALL_START roomId={} fromUserId={} recipients={} (derived)",
                                 request.getRoomId(), user.getId(), recipients);
                         for (Long recipientId : recipients) {

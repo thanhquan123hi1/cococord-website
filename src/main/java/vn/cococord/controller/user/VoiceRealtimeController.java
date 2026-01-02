@@ -21,7 +21,7 @@ import vn.cococord.dto.request.VoiceSignalOfferRequest;
 import vn.cococord.dto.request.VoiceStateUpdateRequest;
 import vn.cococord.entity.voice.VoiceMemberState;
 import vn.cococord.entity.mysql.User;
-import vn.cococord.repository.IUserRepository;
+import vn.cococord.service.IUserService;
 import vn.cococord.service.IVoiceRoomRegistry;
 
 @Controller
@@ -31,7 +31,7 @@ import vn.cococord.service.IVoiceRoomRegistry;
 public class VoiceRealtimeController {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final IUserRepository userRepository;
+    private final IUserService userService;
     private final IVoiceRoomRegistry voiceRoomRegistry;
 
     private static String topic(long channelId) {
@@ -57,8 +57,7 @@ public class VoiceRealtimeController {
 
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
             VoiceMemberState member = VoiceMemberState.builder()
                     .userId(user.getId())
@@ -103,8 +102,7 @@ public class VoiceRealtimeController {
 
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
             List<VoiceMemberState> users = voiceRoomRegistry.leave(channelId, user.getId());
 
@@ -138,8 +136,7 @@ public class VoiceRealtimeController {
 
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
             voiceRoomRegistry.updateState(channelId, user.getId(), request.getMicOn(), request.getCamOn(),
                     request.getScreenOn(), request.getSpeaking());

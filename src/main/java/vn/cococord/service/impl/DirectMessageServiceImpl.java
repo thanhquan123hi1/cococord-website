@@ -42,6 +42,12 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     private final INotificationService notificationService;
 
     @Override
+    @Transactional(readOnly = true)
+    public List<Long> findOtherUserIds(Long dmGroupId, Long userId) {
+        return dmMemberRepository.findOtherUserIds(dmGroupId, userId);
+    }
+
+    @Override
     @Transactional
     public DirectMessageGroup createOrGetOneToOneDM(Long userId1, Long userId2) {
         if (userId1.equals(userId2)) {

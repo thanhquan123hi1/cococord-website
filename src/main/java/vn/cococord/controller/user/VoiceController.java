@@ -20,8 +20,8 @@ import vn.cococord.dto.request.VoiceScreenRequest;
 import vn.cococord.dto.request.VoiceSpeakingRequest;
 import vn.cococord.entity.mongodb.VoiceSession;
 import vn.cococord.entity.mysql.User;
-import vn.cococord.repository.IUserRepository;
-import vn.cococord.repository.IVoiceSessionRepository;
+import vn.cococord.service.IUserService;
+import vn.cococord.service.IVoiceSessionService;
 
 /**
  * WebSocket Controller for Voice Channel functionality
@@ -34,8 +34,8 @@ import vn.cococord.repository.IVoiceSessionRepository;
 public class VoiceController {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final IVoiceSessionRepository voiceSessionRepository;
-    private final IUserRepository userRepository;
+    private final IVoiceSessionService voiceSessionService;
+    private final IUserService userService;
 
     /**
      * Join voice channel
@@ -48,16 +48,12 @@ public class VoiceController {
             String username = principal.getName();
             log.info("User {} joining voice channel {}", username, request.getChannelId());
 
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
             // Find or create voice session for this channel
-            VoiceSession session = voiceSessionRepository.findByChannelIdAndIsActiveTrue(request.getChannelId())
-                    .orElseGet(() -> VoiceSession.builder()
-                            .channelId(request.getChannelId())
-                            .serverId(request.getServerId())
-                            .isActive(true)
-                            .build());
+            VoiceSession session = voiceSessionService.getOrCreateActiveSession(
+                    request.getChannelId(),
+                    request.getServerId());
 
             // Remove user if already in (reconnecting)
             session.getParticipants().removeIf(p -> p.getUserId().equals(user.getId()));
@@ -78,7 +74,7 @@ public class VoiceController {
                     .build();
 
             session.getParticipants().add(participant);
-            voiceSessionRepository.save(session);
+            voiceSessionService.save(session);
 
             // Broadcast user joined
             Map<String, Object> joinEvent = new HashMap<>();
@@ -118,11 +114,9 @@ public class VoiceController {
             String username = principal.getName();
             log.info("User {} leaving voice channel {}", username, request.getChannelId());
 
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
-            Optional<VoiceSession> sessionOpt = voiceSessionRepository
-                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+            Optional<VoiceSession> sessionOpt = voiceSessionService.findActiveSession(request.getChannelId());
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
@@ -142,7 +136,7 @@ public class VoiceController {
                     session.setEndedAt(LocalDateTime.now());
                 }
 
-                voiceSessionRepository.save(session);
+                voiceSessionService.save(session);
 
                 // Broadcast user left
                 Map<String, Object> leaveEvent = new HashMap<>();
@@ -179,11 +173,9 @@ public class VoiceController {
     public void toggleMute(@Payload VoiceMuteRequest request, Principal principal) {
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
-            Optional<VoiceSession> sessionOpt = voiceSessionRepository
-                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+            Optional<VoiceSession> sessionOpt = voiceSessionService.findActiveSession(request.getChannelId());
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
@@ -204,7 +196,7 @@ public class VoiceController {
                             muteEvent.put("peerId", p.getConnectionId());
                         });
 
-                voiceSessionRepository.save(session);
+                voiceSessionService.save(session);
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
@@ -223,11 +215,9 @@ public class VoiceController {
     public void toggleDeafen(@Payload VoiceMuteRequest request, Principal principal) {
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
-            Optional<VoiceSession> sessionOpt = voiceSessionRepository
-                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+            Optional<VoiceSession> sessionOpt = voiceSessionService.findActiveSession(request.getChannelId());
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
@@ -252,7 +242,7 @@ public class VoiceController {
                             deafenEvent.put("peerId", p.getConnectionId());
                         });
 
-                voiceSessionRepository.save(session);
+                voiceSessionService.save(session);
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
@@ -271,11 +261,9 @@ public class VoiceController {
     public void toggleCamera(@Payload VoiceCameraRequest request, Principal principal) {
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
-            Optional<VoiceSession> sessionOpt = voiceSessionRepository
-                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+            Optional<VoiceSession> sessionOpt = voiceSessionService.findActiveSession(request.getChannelId());
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
@@ -293,7 +281,7 @@ public class VoiceController {
                             cameraEvent.put("peerId", p.getConnectionId());
                         });
 
-                voiceSessionRepository.save(session);
+                voiceSessionService.save(session);
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
@@ -320,11 +308,9 @@ public class VoiceController {
     public void toggleScreen(@Payload VoiceScreenRequest request, Principal principal) {
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
-            Optional<VoiceSession> sessionOpt = voiceSessionRepository
-                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+            Optional<VoiceSession> sessionOpt = voiceSessionService.findActiveSession(request.getChannelId());
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
@@ -342,7 +328,7 @@ public class VoiceController {
                             screenEvent.put("peerId", p.getConnectionId());
                         });
 
-                voiceSessionRepository.save(session);
+                voiceSessionService.save(session);
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
@@ -369,11 +355,9 @@ public class VoiceController {
     public void updateSpeaking(@Payload VoiceSpeakingRequest request, Principal principal) {
         try {
             String username = principal.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.getUserByUsername(username);
 
-            Optional<VoiceSession> sessionOpt = voiceSessionRepository
-                    .findByChannelIdAndIsActiveTrue(request.getChannelId());
+            Optional<VoiceSession> sessionOpt = voiceSessionService.findActiveSession(request.getChannelId());
 
             if (sessionOpt.isPresent()) {
                 VoiceSession session = sessionOpt.get();
@@ -395,7 +379,7 @@ public class VoiceController {
                             speakingEvent.put("peerId", p.getConnectionId());
                         });
 
-                voiceSessionRepository.save(session);
+                voiceSessionService.save(session);
 
                 messagingTemplate.convertAndSend(
                         "/topic/voice/" + request.getChannelId(),
