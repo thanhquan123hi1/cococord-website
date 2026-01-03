@@ -5,10 +5,10 @@
 
 /* CSS Variables for theming */
 :root {
-  --background-primary: #313338;
-  --background-secondary: #2b2d31;
+  --background-primary: #1a1a1e;
+  --background-secondary: #1d1d1e;
   --background-secondary-alt: #232428;
-  --background-tertiary: #1e1f22;
+  --background-tertiary: #121214;
   --background-floating: #111214;
   --background-modifier-hover: rgba(79, 84, 92, 0.4);
   --background-modifier-active: rgba(79, 84, 92, 0.6);

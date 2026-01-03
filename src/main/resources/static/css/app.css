@@ -75,7 +75,8 @@ body.app-layout {
 .server-bar,
 .server-sidebar {
   width: 72px;
-  background-color: #1e1f22;
+  background-color: #121214;
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -116,7 +117,7 @@ body.app-layout {
   position: relative;
   width: 48px;
   height: 48px;
-  background-color: #313338;
+  background-color: #1a1a1e;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -136,7 +137,7 @@ body.app-layout {
 }
 
 .server-item.home-btn {
-  background-color: #313338;
+  background-color: #1a1a1e;
   color: #dbdee1;
 }
 
@@ -224,7 +225,7 @@ body.app-layout {
 .channel-sidebar {
   width: var(--channel-panel-width, 240px);
   min-width: 180px;
-  background-color: var(--dark-bg);
+  background-color: #121214;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -483,7 +484,7 @@ body.app-layout {
 }
 
 .modal-overlay .modal-content {
-  background-color: #313338;
+  background-color: #1a1a1e;
   border-radius: 8px;
   width: 440px;
   max-width: 90vw;
@@ -554,7 +555,7 @@ body.app-layout {
 .modal-overlay .discord-input {
   width: 100%;
   padding: 10px 12px;
-  background-color: #1e1f22;
+  background-color: #121214;
   border: none;
   border-radius: 4px;
   color: #dbdee1;
@@ -572,7 +573,7 @@ body.app-layout {
 
 .modal-overlay .modal-footer {
   padding: 16px;
-  background-color: #2b2d31;
+  background-color: #1d1d1e;
   border-radius: 0 0 8px 8px;
   display: flex;
   justify-content: flex-end;
@@ -670,7 +671,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden; /* Quan trọng: Ẩn thanh cuộn của trình duyệt */
-  background-color: #313338; /* Màu nền Discord */
+  background-color: #1a1a1e; /* Màu nền Discord */
   overscroll-behavior: none; /* Ngăn bounce scroll */
 }
 
@@ -683,7 +684,7 @@ html {
   display: flex; /* Xếp Sidebar và Content nằm ngang */
   width: 100vw; /* Full chiều rộng màn hình */
   height: 100vh; /* Full chiều cao màn hình */
-  background-color: #313338;
+  background-color: #1a1a1e;
   position: fixed; /* Fix layout để tránh scroll jump */
   top: 0;
   left: 0;
@@ -699,7 +700,7 @@ html {
   width: 72px;
   height: 100%;
   flex-shrink: 0; /* Không cho phép bị co lại */
-  background-color: #1e1f22;
+  background-color: #121214;
   overflow-y: auto; /* Cuộn nếu danh sách server dài */
   display: flex;
   flex-direction: column;

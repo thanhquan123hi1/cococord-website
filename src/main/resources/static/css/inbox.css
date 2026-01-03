@@ -20,7 +20,7 @@
     width: 420px;
     max-width: calc(100vw - 32px);
     max-height: calc(100vh - 80px);
-    background-color: #313338;
+    background-color: #1a1a1e;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);

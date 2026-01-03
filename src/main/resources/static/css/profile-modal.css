@@ -257,7 +257,7 @@
 /* Profile Details */
 .profile-details {
     padding: 16px;
-    background: #2b2d31;
+    background: #1d1d1e;
 }
 
 .profile-section {
@@ -349,8 +349,8 @@
     width: 100%;
     min-height: 80px;
     padding: 12px;
-    background: #1e1f22;
-    border: 1px solid #1e1f22;
+    background: #121214;
+    border: 1px solid #121214;
     border-radius: 4px;
     color: #dbdee1;
     font-size: 14px;
@@ -412,11 +412,11 @@
 }
 
 .profile-modal-content::-webkit-scrollbar-track {
-    background: #2b2d31;
+    background: #1d1d1e;
 }
 
 .profile-modal-content::-webkit-scrollbar-thumb {
-    background: #1e1f22;
+    background: #121214;
     border-radius: 4px;
 }
 

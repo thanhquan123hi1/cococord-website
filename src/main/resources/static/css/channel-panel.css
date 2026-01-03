@@ -8,7 +8,7 @@
   --user-area-height: 52px;
 
   /* Colors */
-  --bg-channel-panel: #2b2d31;
+  --bg-channel-panel: #121214;
   --bg-channel-hover: rgba(79, 84, 92, 0.32);
   --bg-channel-active: rgba(79, 84, 92, 0.6);
   --channel-text-color: #949ba4;
@@ -133,6 +133,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--space-2);
+  background: #121214;
 }
 
 .channel-list-wrapper::-webkit-scrollbar {

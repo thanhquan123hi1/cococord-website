@@ -8,9 +8,9 @@
   --discord-fuchsia: #eb459e;
   --discord-red: #ed4245;
 
-  --bg-primary: #313338;
-  --bg-secondary: #2b2d31;
-  --bg-tertiary: #1e1f22;
+  --bg-primary: #1a1a1e;
+  --bg-secondary: #1d1d1e;
+  --bg-tertiary: #121214;
   --bg-modifier-hover: rgba(79, 84, 92, 0.4);
   --bg-modifier-selected: rgba(79, 84, 92, 0.6);
 
@@ -67,6 +67,7 @@ body {
 #chatApp .server-sidebar {
   width: 72px;
   background-color: var(--bg-tertiary);
+  border-right: 1px solid var(--bg-modifier-hover);
   display: flex;
   flex-direction: column;
   align-items: center;

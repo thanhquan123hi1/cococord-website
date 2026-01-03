@@ -12,7 +12,7 @@
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background-color: #1e1f22;
+    background-color: #121214;
     border: none;
     border-radius: 4px;
     color: var(--text-muted, #949ba4);
@@ -112,7 +112,7 @@
 .quick-switcher-input-wrapper {
     position: relative;
     padding: 0;
-    background-color: #1e1f22;
+    background-color: #121214;
 }
 
 .quick-switcher-input {

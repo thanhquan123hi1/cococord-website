@@ -17,8 +17,8 @@
   --server-icon-hover-radius: 16px;
 
   /* Colors */
-  --bg-server-sidebar: #1e1f22;
-  --server-icon-bg: #313338;
+  --bg-server-sidebar: #121214;
+  --server-icon-bg: #1a1a1e;
   --server-icon-active-bg: #5865f2;
   --server-pill-bg: #ffffff;
   --server-divider-bg: #35363c;
@@ -34,6 +34,7 @@
   min-width: var(--server-sidebar-width);
   height: 100vh;
   background-color: var(--bg-server-sidebar);
+  border-right: 1px solid var(--server-divider-bg);
   display: flex;
   flex-direction: column;
   align-items: center;

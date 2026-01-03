@@ -4,10 +4,10 @@
 :root {
   --primary-color: #5865f2;
   --secondary-color: #57f287;
-  --dark-bg: #2b2d31;
-  --darker-bg: #1e1f22;
-  --darkest-bg: #1e1f22;
-  --light-bg: #313338;
+  --dark-bg: #1d1d1e;
+  --darker-bg: #121214;
+  --darkest-bg: #121214;
+  --light-bg: #1a1a1e;
   --text-primary: #f2f3f5;
   --text-secondary: #b5bac1;
   --text-muted: #949ba4;
@@ -28,7 +28,7 @@
 /* Primary Sidebar */
 .primary-sidebar {
   width: var(--primary-sidebar-width, 240px);
-  background: var(--dark-bg);
+  background: #121214;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -228,7 +228,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #313338;
+  background: #1a1a1e;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -452,7 +452,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #313338;
+  background: #1a1a1e;
   display: inline-flex;
   align-items: center;
   justify-content: center;

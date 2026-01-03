@@ -104,7 +104,7 @@
     justify-content: center;
     gap: 6px;
     padding: 8px;
-    background: var(--background-secondary, #2b2d31);
+    background: var(--background-secondary, #1d1d1e);
     border: none;
     border-radius: 4px;
     color: var(--interactive-normal, #b5bac1);
@@ -134,7 +134,7 @@
     display: none;
     flex-direction: column;
     height: 100%;
-    background: var(--background-tertiary, #1e1f22);
+    background: var(--background-tertiary, #121214);
 }
 
 .voice-channel-view.active {
@@ -146,8 +146,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: var(--background-secondary, #2b2d31);
-    border-bottom: 1px solid var(--background-tertiary, #1e1f22);
+    background: var(--background-secondary, #1d1d1e);
+    border-bottom: 1px solid var(--background-tertiary, #121214);
 }
 
 .voice-channel-title {
@@ -195,7 +195,7 @@
 .voice-participant-tile {
     position: relative;
     aspect-ratio: 16/9;
-    background: var(--background-secondary, #2b2d31);
+    background: var(--background-secondary, #1d1d1e);
     border-radius: 8px;
     overflow: hidden;
     display: flex;
@@ -253,7 +253,7 @@
 }
 
 .voice-participant-tile.self {
-    background: var(--background-tertiary, #1e1f22);
+    background: var(--background-tertiary, #121214);
 }
 
 .voice-participant-tile.camera-on,
@@ -390,8 +390,8 @@
     justify-content: center;
     gap: 8px;
     padding: 16px;
-    background: var(--background-secondary, #2b2d31);
-    border-top: 1px solid var(--background-tertiary, #1e1f22);
+    background: var(--background-secondary, #1d1d1e);
+    border-top: 1px solid var(--background-tertiary, #121214);
     position: sticky;
     bottom: 0;
     z-index: 10;
