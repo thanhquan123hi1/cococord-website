@@ -137,6 +137,15 @@
   padding-left: 1% !important;
 }
 
+/* Prevent global `.user-info:hover` rules (from other CSS files) from
+   applying inside the user panel. Only `.user-panel-left:hover` should
+   control the hover highlight. */
+.user-panel .user-info,
+.user-panel .user-info:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 .user-name {
   font-size: 14px;
   font-weight: 600;
