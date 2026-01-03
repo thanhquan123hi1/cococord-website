@@ -2,145 +2,154 @@
  * Settings Modal Component
  * Discord-style full-screen settings overlay
  */
-(function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    const SettingsModal = {
-        currentUser: null,
-        activeSection: 'my-account',
-        modalElement: null,
-        isOpen: false,
+  const SettingsModal = {
+    currentUser: null,
+    activeSection: "my-account",
+    modalElement: null,
+    isOpen: false,
 
-        /**
-         * Navigation items configuration
-         */
-        navConfig: [
-            {
-                header: 'USER SETTINGS',
-                items: [
-                    { id: 'my-account', label: 'My Account', icon: 'user' },
-                    { id: 'profiles', label: 'Profiles', icon: 'id-card' },
-                    { id: 'privacy-safety', label: 'Privacy & Safety', icon: 'shield' }
-                ]
-            },
-            {
-                header: 'APP SETTINGS',
-                items: [
-                    { id: 'appearance', label: 'Appearance', icon: 'palette' },
-                    { id: 'accessibility', label: 'Accessibility', icon: 'universal-access' },
-                    { id: 'voice-video', label: 'Voice & Video', icon: 'microphone' },
-                    { id: 'keybinds', label: 'Keybinds', icon: 'keyboard' },
-                    { id: 'language', label: 'Language', icon: 'globe' }
-                ]
-            },
-            {
-                divider: true
-            },
-            {
-                items: [
-                    { id: 'logout', label: 'Log Out', icon: 'sign-out-alt', isLogout: true }
-                ]
-            }
+    /**
+     * Navigation items configuration
+     */
+    navConfig: [
+      {
+        header: "USER SETTINGS",
+        items: [
+          { id: "my-account", label: "My Account", icon: "user" },
+          { id: "profiles", label: "Profiles", icon: "id-card" },
+          { id: "privacy-safety", label: "Privacy & Safety", icon: "shield" },
         ],
+      },
+      {
+        header: "APP SETTINGS",
+        items: [
+          { id: "appearance", label: "Appearance", icon: "palette" },
+          {
+            id: "accessibility",
+            label: "Accessibility",
+            icon: "universal-access",
+          },
+          { id: "voice-video", label: "Voice & Video", icon: "microphone" },
+          { id: "keybinds", label: "Keybinds", icon: "keyboard" },
+          { id: "language", label: "Language", icon: "globe" },
+        ],
+      },
+      {
+        divider: true,
+      },
+      {
+        items: [
+          {
+            id: "logout",
+            label: "Log Out",
+            icon: "sign-out-alt",
+            isLogout: true,
+          },
+        ],
+      },
+    ],
 
-        /**
-         * Initialize the settings modal
-         */
-        init: function() {
-            // Create modal element if not exists
-            if (!document.getElementById('settingsModalOverlay')) {
-                this.createModalElement();
-            }
-            this.attachGlobalListeners();
-        },
+    /**
+     * Initialize the settings modal
+     */
+    init: function () {
+      // Create modal element if not exists
+      if (!document.getElementById("settingsModalOverlay")) {
+        this.createModalElement();
+      }
+      this.attachGlobalListeners();
+    },
 
-        /**
-         * Create the modal DOM element
-         */
-        createModalElement: function() {
-            const modal = document.createElement('div');
-            modal.id = 'settingsModalOverlay';
-            modal.className = 'settings-modal-overlay';
-            modal.style.display = 'none';
-            document.body.appendChild(modal);
-            this.modalElement = modal;
-        },
+    /**
+     * Create the modal DOM element
+     */
+    createModalElement: function () {
+      const modal = document.createElement("div");
+      modal.id = "settingsModalOverlay";
+      modal.className = "settings-modal-overlay";
+      modal.style.display = "none";
+      document.body.appendChild(modal);
+      this.modalElement = modal;
+    },
 
-        /**
-         * Attach global event listeners
-         */
-        attachGlobalListeners: function() {
-            // ESC key to close
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isOpen) {
-                    this.close();
-                }
-            });
-        },
+    /**
+     * Attach global event listeners
+     */
+    attachGlobalListeners: function () {
+      // ESC key to close
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && this.isOpen) {
+          this.close();
+        }
+      });
+    },
 
-        /**
-         * Open the settings modal
-         */
-        open: async function(section = 'my-account') {
-            if (!this.modalElement) {
-                this.createModalElement();
-            }
+    /**
+     * Open the settings modal
+     */
+    open: async function (section = "my-account") {
+      if (!this.modalElement) {
+        this.createModalElement();
+      }
 
-            // Load current user data
-            await this.loadCurrentUser();
-            
-            this.activeSection = section;
-            this.render();
-            this.modalElement.style.display = 'flex';
-            this.isOpen = true;
-            document.body.style.overflow = 'hidden';
-            
-            // Focus trap
-            this.modalElement.focus();
-        },
+      // Load current user data
+      await this.loadCurrentUser();
 
-        /**
-         * Close the settings modal
-         */
-        close: function() {
-            if (this.modalElement) {
-                this.modalElement.style.display = 'none';
-            }
-            this.isOpen = false;
-            document.body.style.overflow = '';
-        },
+      this.activeSection = section;
+      this.render();
+      this.modalElement.style.display = "flex";
+      this.isOpen = true;
+      document.body.style.overflow = "hidden";
 
-        /**
-         * Load current user data
-         */
-        loadCurrentUser: async function() {
-            try {
-                const token = localStorage.getItem('accessToken');
-                if (!token) return null;
+      // Focus trap
+      this.modalElement.focus();
+    },
 
-                const response = await fetch('/api/users/me/profile', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+    /**
+     * Close the settings modal
+     */
+    close: function () {
+      if (this.modalElement) {
+        this.modalElement.style.display = "none";
+      }
+      this.isOpen = false;
+      document.body.style.overflow = "";
+    },
 
-                if (response.ok) {
-                    this.currentUser = await response.json();
-                    return this.currentUser;
-                }
-            } catch (error) {
-                console.error('SettingsModal: Failed to load user profile:', error);
-            }
-            return null;
-        },
+    /**
+     * Load current user data
+     */
+    loadCurrentUser: async function () {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return null;
 
-        /**
-         * Render the complete modal
-         */
-        render: function() {
-            if (!this.modalElement) return;
+        const response = await fetch("/api/users/me/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-            this.modalElement.innerHTML = `
+        if (response.ok) {
+          this.currentUser = await response.json();
+          return this.currentUser;
+        }
+      } catch (error) {
+        console.error("SettingsModal: Failed to load user profile:", error);
+      }
+      return null;
+    },
+
+    /**
+     * Render the complete modal
+     */
+    render: function () {
+      if (!this.modalElement) return;
+
+      this.modalElement.innerHTML = `
                 <div class="settings-modal-container">
                     <!-- Left Sidebar -->
                     <div class="settings-sidebar-wrapper">
@@ -173,95 +182,96 @@
                 </div>
             `;
 
-            this.attachEventListeners();
-        },
+      this.attachEventListeners();
+    },
 
-        /**
-         * Render the search bar
-         */
-        renderSearchBar: function() {
-            return `
+    /**
+     * Render the search bar
+     */
+    renderSearchBar: function () {
+      return `
                 <div class="settings-search-container">
                     <input type="text" class="settings-search-input" placeholder="Search" id="settingsSearch">
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render the navigation sidebar
-         */
-        renderNavigation: function() {
-            let html = '';
+    /**
+     * Render the navigation sidebar
+     */
+    renderNavigation: function () {
+      let html = "";
 
-            this.navConfig.forEach(group => {
-                if (group.divider) {
-                    html += '<div class="settings-nav-divider"></div>';
-                    return;
-                }
+      this.navConfig.forEach((group) => {
+        if (group.divider) {
+          html += '<div class="settings-nav-divider"></div>';
+          return;
+        }
 
-                html += '<div class="settings-nav-group">';
-                
-                if (group.header) {
-                    html += `<div class="settings-nav-header">${group.header}</div>`;
-                }
+        html += '<div class="settings-nav-group">';
 
-                group.items.forEach(item => {
-                    const isActive = this.activeSection === item.id ? 'active' : '';
-                    const isLogout = item.isLogout ? 'logout-item' : '';
-                    
-                    html += `
+        if (group.header) {
+          html += `<div class="settings-nav-header">${group.header}</div>`;
+        }
+
+        group.items.forEach((item) => {
+          const isActive = this.activeSection === item.id ? "active" : "";
+          const isLogout = item.isLogout ? "logout-item" : "";
+
+          html += `
                         <button class="settings-nav-item ${isActive} ${isLogout}" 
                                 data-section="${item.id}">
                             <span>${item.label}</span>
                         </button>
                     `;
-                });
+        });
 
-                html += '</div>';
-            });
+        html += "</div>";
+      });
 
-            return html;
-        },
+      return html;
+    },
 
-        /**
-         * Render the content area based on active section
-         */
-        renderContent: function() {
-            switch (this.activeSection) {
-                case 'my-account':
-                    return this.renderMyAccount();
-                case 'profiles':
-                    return this.renderProfiles();
-                case 'privacy-safety':
-                    return this.renderPrivacySafety();
-                case 'appearance':
-                    return this.renderAppearance();
-                case 'accessibility':
-                    return this.renderAccessibility();
-                case 'voice-video':
-                    return this.renderVoiceVideo();
-                case 'keybinds':
-                    return this.renderKeybinds();
-                case 'language':
-                    return this.renderLanguage();
-                default:
-                    return this.renderMyAccount();
-            }
-        },
+    /**
+     * Render the content area based on active section
+     */
+    renderContent: function () {
+      switch (this.activeSection) {
+        case "my-account":
+          return this.renderMyAccount();
+        case "profiles":
+          return this.renderProfiles();
+        case "privacy-safety":
+          return this.renderPrivacySafety();
+        case "appearance":
+          return this.renderAppearance();
+        case "accessibility":
+          return this.renderAccessibility();
+        case "voice-video":
+          return this.renderVoiceVideo();
+        case "keybinds":
+          return this.renderKeybinds();
+        case "language":
+          return this.renderLanguage();
+        default:
+          return this.renderMyAccount();
+      }
+    },
 
-        /**
-         * Render My Account section
-         */
-        renderMyAccount: function() {
-            const user = this.currentUser || {};
-            const displayName = user.displayName || user.username || 'User';
-            const username = user.username || 'username';
-            const email = user.email || 'email@example.com';
-            const maskedEmail = this.maskEmail(email);
-            const status = (user.status || 'online').toLowerCase();
-            const bannerColor = user.bannerColor || 'linear-gradient(135deg, #5865f2 0%, #eb459e 100%)';
+    /**
+     * Render My Account section
+     */
+    renderMyAccount: function () {
+      const user = this.currentUser || {};
+      const displayName = user.displayName || user.username || "User";
+      const username = user.username || "username";
+      const email = user.email || "email@example.com";
+      const maskedEmail = this.maskEmail(email);
+      const status = (user.status || "online").toLowerCase();
+      const bannerColor =
+        user.bannerColor || "linear-gradient(135deg, #5865f2 0%, #eb459e 100%)";
 
-            return `
+      return `
                 <div class="settings-header">
                     <h1>My Account</h1>
                 </div>
@@ -269,19 +279,32 @@
                 <!-- Profile Card -->
                 <div class="settings-profile-card">
                     <div class="settings-profile-banner" 
-                         style="${user.bannerUrl ? `background-image: url('${this.escapeHtml(user.bannerUrl)}')` : `background: ${bannerColor}`}">
+                         style="${
+                           user.bannerUrl
+                             ? `background-image: url('${this.escapeHtml(
+                                 user.bannerUrl
+                               )}')`
+                             : `background: ${bannerColor}`
+                         }">
                     </div>
                     <div class="settings-profile-info">
                         <div class="settings-profile-avatar-wrapper">
-                            ${user.avatarUrl 
-                                ? `<img src="${this.escapeHtml(user.avatarUrl)}" alt="Avatar" class="settings-profile-avatar">`
-                                : `<div class="settings-profile-avatar-placeholder">${displayName.charAt(0).toUpperCase()}</div>`
+                            ${
+                              user.avatarUrl
+                                ? `<img src="${this.escapeHtml(
+                                    user.avatarUrl
+                                  )}" alt="Avatar" class="settings-profile-avatar">`
+                                : `<div class="settings-profile-avatar-placeholder">${displayName
+                                    .charAt(0)
+                                    .toUpperCase()}</div>`
                             }
                             <div class="settings-profile-avatar-status status-${status}"></div>
                         </div>
                         <div class="settings-profile-details">
                             <div class="settings-profile-name-section">
-                                <span class="settings-profile-displayname">${this.escapeHtml(displayName)}</span>
+                                <span class="settings-profile-displayname">${this.escapeHtml(
+                                  displayName
+                                )}</span>
                                 <span class="settings-profile-badge">User</span>
                             </div>
                             <button class="settings-edit-profile-btn" id="editUserProfileBtn">
@@ -296,14 +319,18 @@
                     <div class="settings-field-row">
                         <div class="settings-field-info">
                             <div class="settings-field-label">DISPLAY NAME</div>
-                            <div class="settings-field-value">${this.escapeHtml(displayName)}</div>
+                            <div class="settings-field-value">${this.escapeHtml(
+                              displayName
+                            )}</div>
                         </div>
                         <button class="settings-field-btn" data-action="edit-displayname">Edit</button>
                     </div>
                     <div class="settings-field-row">
                         <div class="settings-field-info">
                             <div class="settings-field-label">USERNAME</div>
-                            <div class="settings-field-value">${this.escapeHtml(username)}</div>
+                            <div class="settings-field-value">${this.escapeHtml(
+                              username
+                            )}</div>
                         </div>
                         <button class="settings-field-btn" data-action="edit-username">Edit</button>
                     </div>
@@ -317,9 +344,15 @@
                     <div class="settings-field-row">
                         <div class="settings-field-info">
                             <div class="settings-field-label">PHONE NUMBER</div>
-                            <div class="settings-field-value">${user.phone ? this.escapeHtml(user.phone) : 'Not added yet'}</div>
+                            <div class="settings-field-value">${
+                              user.phone
+                                ? this.escapeHtml(user.phone)
+                                : "Not added yet"
+                            }</div>
                         </div>
-                        <button class="settings-field-btn" data-action="add-phone">${user.phone ? 'Edit' : 'Add'}</button>
+                        <button class="settings-field-btn" data-action="add-phone">${
+                          user.phone ? "Edit" : "Add"
+                        }</button>
                     </div>
                 </div>
 
@@ -370,18 +403,18 @@
                     </div>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Profiles section
-         */
-        renderProfiles: function() {
-            const user = this.currentUser || {};
-            const displayName = user.displayName || user.username || 'User';
-            const bio = user.bio || '';
-            const status = (user.status || 'online').toLowerCase();
+    /**
+     * Render Profiles section
+     */
+    renderProfiles: function () {
+      const user = this.currentUser || {};
+      const displayName = user.displayName || user.username || "User";
+      const bio = user.bio || "";
+      const status = (user.status || "online").toLowerCase();
 
-            return `
+      return `
                 <div class="settings-header">
                     <h1>Profiles</h1>
                 </div>
@@ -391,15 +424,22 @@
                     <div class="settings-profile-editor">
                         <div class="settings-form-group">
                             <label class="settings-form-label">DISPLAY NAME</label>
-                            <input type="text" class="settings-form-input" value="${this.escapeHtml(displayName)}" id="profileDisplayName">
+                            <input type="text" class="settings-form-input" value="${this.escapeHtml(
+                              displayName
+                            )}" id="profileDisplayName">
                         </div>
 
                         <div class="settings-form-group">
                             <label class="settings-form-label">AVATAR</label>
                             <div class="settings-avatar-upload">
-                                ${user.avatarUrl 
-                                    ? `<img src="${this.escapeHtml(user.avatarUrl)}" alt="Avatar" class="settings-avatar-preview">`
-                                    : `<div class="settings-avatar-preview-placeholder">${displayName.charAt(0).toUpperCase()}</div>`
+                                ${
+                                  user.avatarUrl
+                                    ? `<img src="${this.escapeHtml(
+                                        user.avatarUrl
+                                      )}" alt="Avatar" class="settings-avatar-preview">`
+                                    : `<div class="settings-avatar-preview-placeholder">${displayName
+                                        .charAt(0)
+                                        .toUpperCase()}</div>`
                                 }
                                 <div class="settings-avatar-actions">
                                     <button class="settings-avatar-change-btn" id="changeAvatarBtn">Change Avatar</button>
@@ -415,40 +455,55 @@
 
                         <div class="settings-form-group">
                             <label class="settings-form-label">ABOUT ME</label>
-                            <textarea class="settings-form-textarea" placeholder="Tell everyone a little about yourself" id="profileBio">${this.escapeHtml(bio)}</textarea>
+                            <textarea class="settings-form-textarea" placeholder="Tell everyone a little about yourself" id="profileBio">${this.escapeHtml(
+                              bio
+                            )}</textarea>
                         </div>
                     </div>
 
                     <!-- Preview Card -->
                     <div class="settings-profile-preview-card">
                         <div class="settings-profile-banner" 
-                             style="${user.bannerUrl ? `background-image: url('${this.escapeHtml(user.bannerUrl)}')` : 'background: linear-gradient(135deg, #5865f2 0%, #eb459e 100%)'}; height: 60px;">
+                             style="${
+                               user.bannerUrl
+                                 ? `background-image: url('${this.escapeHtml(
+                                     user.bannerUrl
+                                   )}')`
+                                 : "background: linear-gradient(135deg, #5865f2 0%, #eb459e 100%)"
+                             }; height: 60px;">
                         </div>
                         <div class="settings-profile-info" style="padding: 12px 12px 12px 80px;">
                             <div class="settings-profile-avatar-wrapper" style="top: -24px;">
-                                ${user.avatarUrl 
-                                    ? `<img src="${this.escapeHtml(user.avatarUrl)}" alt="Avatar" class="settings-profile-avatar" style="width: 56px; height: 56px; border-width: 4px;">`
-                                    : `<div class="settings-profile-avatar-placeholder" style="width: 56px; height: 56px; font-size: 24px; border-width: 4px;">${displayName.charAt(0).toUpperCase()}</div>`
+                                ${
+                                  user.avatarUrl
+                                    ? `<img src="${this.escapeHtml(
+                                        user.avatarUrl
+                                      )}" alt="Avatar" class="settings-profile-avatar" style="width: 56px; height: 56px; border-width: 4px;">`
+                                    : `<div class="settings-profile-avatar-placeholder" style="width: 56px; height: 56px; font-size: 24px; border-width: 4px;">${displayName
+                                        .charAt(0)
+                                        .toUpperCase()}</div>`
                                 }
                                 <div class="settings-profile-avatar-status status-${status}" style="width: 16px; height: 16px; border-width: 3px;"></div>
                             </div>
                             <div class="settings-profile-name-section">
-                                <span class="settings-profile-displayname" style="font-size: 16px;">${this.escapeHtml(displayName)}</span>
+                                <span class="settings-profile-displayname" style="font-size: 16px;">${this.escapeHtml(
+                                  displayName
+                                )}</span>
                             </div>
                         </div>
                         <div style="padding: 0 12px 12px; font-size: 13px; color: #b5bac1;">
-                            ${bio ? this.escapeHtml(bio) : 'No bio yet.'}
+                            ${bio ? this.escapeHtml(bio) : "No bio yet."}
                         </div>
                     </div>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Privacy & Safety section
-         */
-        renderPrivacySafety: function() {
-            return `
+    /**
+     * Render Privacy & Safety section
+     */
+    renderPrivacySafety: function () {
+      return `
                 <div class="settings-header">
                     <h1>Privacy & Safety</h1>
                 </div>
@@ -522,13 +577,13 @@
                     </label>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Appearance section
-         */
-        renderAppearance: function() {
-            return `
+    /**
+     * Render Appearance section
+     */
+    renderAppearance: function () {
+      return `
                 <div class="settings-header">
                     <h1>Appearance</h1>
                 </div>
@@ -602,13 +657,13 @@
                     </label>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Accessibility section
-         */
-        renderAccessibility: function() {
-            return `
+    /**
+     * Render Accessibility section
+     */
+    renderAccessibility: function () {
+      return `
                 <div class="settings-header">
                     <h1>Accessibility</h1>
                 </div>
@@ -670,13 +725,13 @@
                     </select>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Voice & Video section
-         */
-        renderVoiceVideo: function() {
-            return `
+    /**
+     * Render Voice & Video section
+     */
+    renderVoiceVideo: function () {
+      return `
                 <div class="settings-header">
                     <h1>Voice & Video</h1>
                 </div>
@@ -773,13 +828,13 @@
                     </label>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Keybinds section
-         */
-        renderKeybinds: function() {
-            return `
+    /**
+     * Render Keybinds section
+     */
+    renderKeybinds: function () {
+      return `
                 <div class="settings-header">
                     <h1>Keybinds</h1>
                 </div>
@@ -856,13 +911,13 @@
                     <span class="settings-keybind-key">Escape</span>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Render Language section
-         */
-        renderLanguage: function() {
-            return `
+    /**
+     * Render Language section
+     */
+    renderLanguage: function () {
+      return `
                 <div class="settings-header">
                     <h1>Language</h1>
                 </div>
@@ -890,142 +945,144 @@
                     </select>
                 </div>
             `;
-        },
+    },
 
-        /**
-         * Attach event listeners after render
-         */
-        attachEventListeners: function() {
-            // Close button
-            const closeBtn = document.getElementById('settingsCloseBtn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => this.close());
-            }
+    /**
+     * Attach event listeners after render
+     */
+    attachEventListeners: function () {
+      // Close button
+      const closeBtn = document.getElementById("settingsCloseBtn");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", () => this.close());
+      }
 
-            // Navigation items
-            const navItems = this.modalElement.querySelectorAll('.settings-nav-item');
-            navItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    const section = item.dataset.section;
-                    
-                    if (section === 'logout') {
-                        this.handleLogout();
-                        return;
-                    }
+      // Navigation items
+      const navItems = this.modalElement.querySelectorAll(".settings-nav-item");
+      navItems.forEach((item) => {
+        item.addEventListener("click", () => {
+          const section = item.dataset.section;
 
-                    // Update active state
-                    navItems.forEach(nav => nav.classList.remove('active'));
-                    item.classList.add('active');
+          if (section === "logout") {
+            this.handleLogout();
+            return;
+          }
 
-                    // Update content
-                    this.activeSection = section;
-                    const contentArea = document.getElementById('settingsContentArea');
-                    if (contentArea) {
-                        contentArea.innerHTML = this.renderContent();
-                        this.attachContentListeners();
-                    }
-                });
-            });
+          // Update active state
+          navItems.forEach((nav) => nav.classList.remove("active"));
+          item.classList.add("active");
 
-            // Attach content-specific listeners
+          // Update content
+          this.activeSection = section;
+          const contentArea = document.getElementById("settingsContentArea");
+          if (contentArea) {
+            contentArea.innerHTML = this.renderContent();
             this.attachContentListeners();
-        },
+          }
+        });
+      });
 
-        /**
-         * Attach content-specific event listeners
-         */
-        attachContentListeners: function() {
-            // Edit User Profile button
-            const editProfileBtn = document.getElementById('editUserProfileBtn');
-            if (editProfileBtn) {
-                editProfileBtn.addEventListener('click', () => {
-                    this.switchToSection('profiles');
-                });
-            }
+      // Attach content-specific listeners
+      this.attachContentListeners();
+    },
 
-            // Change Password button
-            const changePasswordBtn = document.getElementById('changePasswordBtn');
-            if (changePasswordBtn) {
-                changePasswordBtn.addEventListener('click', () => {
-                    window.location.href = '/change-password';
-                });
-            }
+    /**
+     * Attach content-specific event listeners
+     */
+    attachContentListeners: function () {
+      // Edit User Profile button
+      const editProfileBtn = document.getElementById("editUserProfileBtn");
+      if (editProfileBtn) {
+        editProfileBtn.addEventListener("click", () => {
+          this.switchToSection("profiles");
+        });
+      }
 
-            // Disable Account button
-            const disableAccountBtn = document.getElementById('disableAccountBtn');
-            if (disableAccountBtn) {
-                disableAccountBtn.addEventListener('click', () => {
-                    this.showConfirmDialog(
-                        'Disable Account',
-                        'Are you sure you want to disable your account? You can re-enable it at any time.',
-                        () => this.disableAccount()
-                    );
-                });
-            }
+      // Change Password button
+      const changePasswordBtn = document.getElementById("changePasswordBtn");
+      if (changePasswordBtn) {
+        changePasswordBtn.addEventListener("click", () => {
+          window.location.href = "/change-password";
+        });
+      }
 
-            // Delete Account button
-            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-            if (deleteAccountBtn) {
-                deleteAccountBtn.addEventListener('click', () => {
-                    this.showConfirmDialog(
-                        'Delete Account',
-                        'Are you sure you want to delete your account? This action cannot be undone.',
-                        () => this.deleteAccount(),
-                        true
-                    );
-                });
-            }
+      // Disable Account button
+      const disableAccountBtn = document.getElementById("disableAccountBtn");
+      if (disableAccountBtn) {
+        disableAccountBtn.addEventListener("click", () => {
+          this.showConfirmDialog(
+            "Disable Account",
+            "Are you sure you want to disable your account? You can re-enable it at any time.",
+            () => this.disableAccount()
+          );
+        });
+      }
 
-            // Field edit buttons
-            const fieldBtns = this.modalElement.querySelectorAll('[data-action]');
-            fieldBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const action = btn.dataset.action;
-                    this.handleFieldAction(action);
-                });
-            });
-        },
+      // Delete Account button
+      const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+      if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener("click", () => {
+          this.showConfirmDialog(
+            "Delete Account",
+            "Are you sure you want to delete your account? This action cannot be undone.",
+            () => this.deleteAccount(),
+            true
+          );
+        });
+      }
 
-        /**
-         * Switch to a specific section
-         */
-        switchToSection: function(sectionId) {
-            const navItem = this.modalElement.querySelector(`[data-section="${sectionId}"]`);
-            if (navItem) {
-                navItem.click();
-            }
-        },
+      // Field edit buttons
+      const fieldBtns = this.modalElement.querySelectorAll("[data-action]");
+      fieldBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const action = btn.dataset.action;
+          this.handleFieldAction(action);
+        });
+      });
+    },
 
-        /**
-         * Handle field edit actions
-         */
-        handleFieldAction: function(action) {
-            switch (action) {
-                case 'edit-displayname':
-                    this.showEditDisplayNamePopup();
-                    break;
-                case 'edit-username':
-                    this.showEditUsernamePopup();
-                    break;
-                case 'edit-email':
-                    this.showEditEmailPopup();
-                    break;
-                case 'add-phone':
-                    this.showEditPhonePopup();
-                    break;
-                default:
-                    console.log('Unknown action:', action);
-            }
-        },
+    /**
+     * Switch to a specific section
+     */
+    switchToSection: function (sectionId) {
+      const navItem = this.modalElement.querySelector(
+        `[data-section="${sectionId}"]`
+      );
+      if (navItem) {
+        navItem.click();
+      }
+    },
 
-        /**
-         * Show Edit Display Name Popup
-         */
-        showEditDisplayNamePopup: function() {
-            const user = this.currentUser || {};
-            const currentDisplayName = user.displayName || user.username || '';
+    /**
+     * Handle field edit actions
+     */
+    handleFieldAction: function (action) {
+      switch (action) {
+        case "edit-displayname":
+          this.showEditDisplayNamePopup();
+          break;
+        case "edit-username":
+          this.showEditUsernamePopup();
+          break;
+        case "edit-email":
+          this.showEditEmailPopup();
+          break;
+        case "add-phone":
+          this.showEditPhonePopup();
+          break;
+        default:
+          console.log("Unknown action:", action);
+      }
+    },
 
-            const popupHtml = `
+    /**
+     * Show Edit Display Name Popup
+     */
+    showEditDisplayNamePopup: function () {
+      const user = this.currentUser || {};
+      const currentDisplayName = user.displayName || user.username || "";
+
+      const popupHtml = `
                 <div class="settings-edit-popup-overlay" id="settingsEditPopup">
                     <div class="settings-edit-popup">
                         <div class="settings-edit-popup-header">
@@ -1038,10 +1095,14 @@
                                 <input type="text" 
                                        class="settings-edit-popup-input" 
                                        id="editDisplayNameInput" 
-                                       value="${this.escapeHtml(currentDisplayName)}"
+                                       value="${this.escapeHtml(
+                                         currentDisplayName
+                                       )}"
                                        maxlength="50"
                                        placeholder="Enter display name">
-                                <div class="settings-edit-popup-counter" id="displayNameCounter">${currentDisplayName.length}/50</div>
+                                <div class="settings-edit-popup-counter" id="displayNameCounter">${
+                                  currentDisplayName.length
+                                }/50</div>
                                 <div class="settings-edit-popup-error" id="displayNameError"></div>
                             </div>
                         </div>
@@ -1053,20 +1114,20 @@
                 </div>
             `;
 
-            document.body.insertAdjacentHTML('beforeend', popupHtml);
-            this.attachEditPopupListeners('displayName');
-            document.getElementById('editDisplayNameInput').focus();
-            document.getElementById('editDisplayNameInput').select();
-        },
+      document.body.insertAdjacentHTML("beforeend", popupHtml);
+      this.attachEditPopupListeners("displayName");
+      document.getElementById("editDisplayNameInput").focus();
+      document.getElementById("editDisplayNameInput").select();
+    },
 
-        /**
-         * Show Edit Username Popup
-         */
-        showEditUsernamePopup: function() {
-            const user = this.currentUser || {};
-            const currentUsername = user.username || '';
+    /**
+     * Show Edit Username Popup
+     */
+    showEditUsernamePopup: function () {
+      const user = this.currentUser || {};
+      const currentUsername = user.username || "";
 
-            const popupHtml = `
+      const popupHtml = `
                 <div class="settings-edit-popup-overlay" id="settingsEditPopup">
                     <div class="settings-edit-popup">
                         <div class="settings-edit-popup-header">
@@ -1079,10 +1140,14 @@
                                 <input type="text" 
                                        class="settings-edit-popup-input" 
                                        id="editUsernameInput" 
-                                       value="${this.escapeHtml(currentUsername)}"
+                                       value="${this.escapeHtml(
+                                         currentUsername
+                                       )}"
                                        maxlength="32"
                                        placeholder="Enter username">
-                                <div class="settings-edit-popup-counter" id="usernameCounter">${currentUsername.length}/32</div>
+                                <div class="settings-edit-popup-counter" id="usernameCounter">${
+                                  currentUsername.length
+                                }/32</div>
                                 <div class="settings-edit-popup-hint">Username can only contain letters, numbers, and underscores (3-32 characters).</div>
                                 <div class="settings-edit-popup-error" id="usernameError"></div>
                             </div>
@@ -1095,20 +1160,20 @@
                 </div>
             `;
 
-            document.body.insertAdjacentHTML('beforeend', popupHtml);
-            this.attachEditPopupListeners('username');
-            document.getElementById('editUsernameInput').focus();
-            document.getElementById('editUsernameInput').select();
-        },
+      document.body.insertAdjacentHTML("beforeend", popupHtml);
+      this.attachEditPopupListeners("username");
+      document.getElementById("editUsernameInput").focus();
+      document.getElementById("editUsernameInput").select();
+    },
 
-        /**
-         * Show Edit Email Popup
-         */
-        showEditEmailPopup: function() {
-            const user = this.currentUser || {};
-            const currentEmail = user.email || '';
+    /**
+     * Show Edit Email Popup
+     */
+    showEditEmailPopup: function () {
+      const user = this.currentUser || {};
+      const currentEmail = user.email || "";
 
-            const popupHtml = `
+      const popupHtml = `
                 <div class="settings-edit-popup-overlay" id="settingsEditPopup">
                     <div class="settings-edit-popup">
                         <div class="settings-edit-popup-header">
@@ -1135,24 +1200,28 @@
                 </div>
             `;
 
-            document.body.insertAdjacentHTML('beforeend', popupHtml);
-            this.attachEditPopupListeners('email');
-            document.getElementById('editEmailInput').focus();
-            document.getElementById('editEmailInput').select();
-        },
+      document.body.insertAdjacentHTML("beforeend", popupHtml);
+      this.attachEditPopupListeners("email");
+      document.getElementById("editEmailInput").focus();
+      document.getElementById("editEmailInput").select();
+    },
 
-        /**
-         * Show Edit Phone Popup
-         */
-        showEditPhonePopup: function() {
-            const user = this.currentUser || {};
-            const currentPhone = user.phone || '';
+    /**
+     * Show Edit Phone Popup
+     */
+    showEditPhonePopup: function () {
+      const user = this.currentUser || {};
+      const currentPhone = user.phone || "";
 
-            const popupHtml = `
+      const popupHtml = `
                 <div class="settings-edit-popup-overlay" id="settingsEditPopup">
                     <div class="settings-edit-popup">
                         <div class="settings-edit-popup-header">
-                            <h2 class="settings-edit-popup-title">${currentPhone ? 'Change your phone number' : 'Add phone number'}</h2>
+                            <h2 class="settings-edit-popup-title">${
+                              currentPhone
+                                ? "Change your phone number"
+                                : "Add phone number"
+                            }</h2>
                             <p class="settings-edit-popup-subtitle">Enter your phone number for additional account security.</p>
                         </div>
                         <div class="settings-edit-popup-body">
@@ -1175,381 +1244,428 @@
                 </div>
             `;
 
-            document.body.insertAdjacentHTML('beforeend', popupHtml);
-            this.attachEditPopupListeners('phone');
-            document.getElementById('editPhoneInput').focus();
-        },
+      document.body.insertAdjacentHTML("beforeend", popupHtml);
+      this.attachEditPopupListeners("phone");
+      document.getElementById("editPhoneInput").focus();
+    },
 
-        /**
-         * Attach event listeners for edit popup
-         */
-        attachEditPopupListeners: function(fieldType) {
-            const popup = document.getElementById('settingsEditPopup');
-            const cancelBtn = document.getElementById('editPopupCancel');
-            const saveBtn = document.getElementById('editPopupSave');
-            const togglePassword = document.getElementById('togglePassword');
+    /**
+     * Attach event listeners for edit popup
+     */
+    attachEditPopupListeners: function (fieldType) {
+      const popup = document.getElementById("settingsEditPopup");
+      const cancelBtn = document.getElementById("editPopupCancel");
+      const saveBtn = document.getElementById("editPopupSave");
+      const togglePassword = document.getElementById("togglePassword");
 
-            // Close on overlay click
-            popup.addEventListener('click', (e) => {
-                if (e.target === popup) {
-                    this.closeEditPopup();
-                }
-            });
+      // Close on overlay click
+      popup.addEventListener("click", (e) => {
+        if (e.target === popup) {
+          this.closeEditPopup();
+        }
+      });
 
-            // Cancel button
-            cancelBtn.addEventListener('click', () => {
-                this.closeEditPopup();
-            });
+      // Cancel button
+      cancelBtn.addEventListener("click", () => {
+        this.closeEditPopup();
+      });
 
-            // ESC key to close
-            const escHandler = (e) => {
-                if (e.key === 'Escape') {
-                    this.closeEditPopup();
-                    document.removeEventListener('keydown', escHandler);
-                }
-            };
-            document.addEventListener('keydown', escHandler);
+      // ESC key to close
+      const escHandler = (e) => {
+        if (e.key === "Escape") {
+          this.closeEditPopup();
+          document.removeEventListener("keydown", escHandler);
+        }
+      };
+      document.addEventListener("keydown", escHandler);
 
-            // Toggle password visibility
-            if (togglePassword) {
-                togglePassword.addEventListener('click', () => {
-                    const passwordInput = document.getElementById('editCurrentPassword');
-                    const type = passwordInput.type === 'password' ? 'text' : 'password';
-                    passwordInput.type = type;
-                    
-                    // Update icon
-                    togglePassword.innerHTML = type === 'password' 
-                        ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'
-                        : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>';
-                });
+      // Toggle password visibility
+      if (togglePassword) {
+        togglePassword.addEventListener("click", () => {
+          const passwordInput = document.getElementById("editCurrentPassword");
+          const type = passwordInput.type === "password" ? "text" : "password";
+          passwordInput.type = type;
+
+          // Update icon
+          togglePassword.innerHTML =
+            type === "password"
+              ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'
+              : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>';
+        });
+      }
+
+      // Character counter for display name
+      if (fieldType === "displayName") {
+        const input = document.getElementById("editDisplayNameInput");
+        const counter = document.getElementById("displayNameCounter");
+        input.addEventListener("input", () => {
+          const len = input.value.length;
+          counter.textContent = `${len}/50`;
+          counter.className =
+            "settings-edit-popup-counter" +
+            (len > 45 ? " warning" : "") +
+            (len >= 50 ? " error" : "");
+        });
+      }
+
+      // Character counter for username
+      if (fieldType === "username") {
+        const input = document.getElementById("editUsernameInput");
+        const counter = document.getElementById("usernameCounter");
+        input.addEventListener("input", () => {
+          const len = input.value.length;
+          counter.textContent = `${len}/32`;
+          counter.className =
+            "settings-edit-popup-counter" +
+            (len > 28 ? " warning" : "") +
+            (len >= 32 ? " error" : "");
+        });
+      }
+
+      // Save button
+      saveBtn.addEventListener("click", () => {
+        this.saveFieldEdit(fieldType);
+      });
+
+      // Enter key to save
+      const inputs = popup.querySelectorAll(".settings-edit-popup-input");
+      inputs.forEach((input) => {
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            this.saveFieldEdit(fieldType);
+          }
+        });
+      });
+    },
+
+    /**
+     * Close edit popup
+     */
+    closeEditPopup: function () {
+      const popup = document.getElementById("settingsEditPopup");
+      if (popup) {
+        popup.remove();
+      }
+    },
+
+    /**
+     * Save field edit
+     */
+    saveFieldEdit: async function (fieldType) {
+      const saveBtn = document.getElementById("editPopupSave");
+
+      // Show loading state
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner"></span>Saving...';
+
+      try {
+        let requestBody = {};
+        let isValid = true;
+
+        switch (fieldType) {
+          case "displayName":
+            const displayName = document
+              .getElementById("editDisplayNameInput")
+              .value.trim();
+            if (!displayName) {
+              this.showFieldError(
+                "displayNameError",
+                "Display name cannot be empty"
+              );
+              isValid = false;
+            } else if (displayName.length > 50) {
+              this.showFieldError(
+                "displayNameError",
+                "Display name cannot exceed 50 characters"
+              );
+              isValid = false;
+            }
+            requestBody.displayName = displayName;
+            break;
+
+          case "username":
+            const username = document
+              .getElementById("editUsernameInput")
+              .value.trim();
+
+            if (!username) {
+              this.showFieldError("usernameError", "Username cannot be empty");
+              isValid = false;
+            } else if (username.length < 3) {
+              this.showFieldError(
+                "usernameError",
+                "Username must be at least 3 characters"
+              );
+              isValid = false;
+            } else if (username.length > 32) {
+              this.showFieldError(
+                "usernameError",
+                "Username cannot exceed 32 characters"
+              );
+              isValid = false;
+            } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+              this.showFieldError(
+                "usernameError",
+                "Username can only contain letters, numbers, and underscores"
+              );
+              isValid = false;
             }
 
-            // Character counter for display name
-            if (fieldType === 'displayName') {
-                const input = document.getElementById('editDisplayNameInput');
-                const counter = document.getElementById('displayNameCounter');
-                input.addEventListener('input', () => {
-                    const len = input.value.length;
-                    counter.textContent = `${len}/50`;
-                    counter.className = 'settings-edit-popup-counter' + (len > 45 ? ' warning' : '') + (len >= 50 ? ' error' : '');
-                });
+            requestBody.username = username;
+            break;
+
+          case "email":
+            const email = document
+              .getElementById("editEmailInput")
+              .value.trim();
+
+            if (!email) {
+              this.showFieldError("emailError", "Email cannot be empty");
+              isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              this.showFieldError(
+                "emailError",
+                "Please enter a valid email address"
+              );
+              isValid = false;
             }
 
-            // Character counter for username
-            if (fieldType === 'username') {
-                const input = document.getElementById('editUsernameInput');
-                const counter = document.getElementById('usernameCounter');
-                input.addEventListener('input', () => {
-                    const len = input.value.length;
-                    counter.textContent = `${len}/32`;
-                    counter.className = 'settings-edit-popup-counter' + (len > 28 ? ' warning' : '') + (len >= 32 ? ' error' : '');
-                });
+            requestBody.email = email;
+            break;
+
+          case "phone":
+            const phone = document
+              .getElementById("editPhoneInput")
+              .value.trim();
+            if (phone && !/^\+?[0-9\s-]{8,20}$/.test(phone)) {
+              this.showFieldError(
+                "phoneError",
+                "Please enter a valid phone number"
+              );
+              isValid = false;
             }
+            requestBody.phone = phone || null;
+            break;
+        }
 
-            // Save button
-            saveBtn.addEventListener('click', () => {
-                this.saveFieldEdit(fieldType);
-            });
+        if (!isValid) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = "Done";
+          return;
+        }
 
-            // Enter key to save
-            const inputs = popup.querySelectorAll('.settings-edit-popup-input');
-            inputs.forEach(input => {
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        this.saveFieldEdit(fieldType);
-                    }
-                });
-            });
-        },
+        // Make API call
+        const token = localStorage.getItem("accessToken");
+        const response = await fetch("/api/users/me/settings", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        });
 
-        /**
-         * Close edit popup
-         */
-        closeEditPopup: function() {
-            const popup = document.getElementById('settingsEditPopup');
-            if (popup) {
-                popup.remove();
-            }
-        },
+        if (response.ok) {
+          const updatedProfile = await response.json();
+          this.currentUser = updatedProfile;
+          this.closeEditPopup();
+          this.showToast("Settings saved successfully!");
 
-        /**
-         * Save field edit
-         */
-        saveFieldEdit: async function(fieldType) {
-            const saveBtn = document.getElementById('editPopupSave');
-            
-            // Show loading state
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="spinner"></span>Saving...';
+          // Refresh the content area
+          const contentArea = document.getElementById("settingsContentArea");
+          if (contentArea) {
+            contentArea.innerHTML = this.renderContent();
+            this.attachContentListeners();
+          }
+        } else {
+          const errorData = await response.json();
+          let errorMessage = errorData.message || "Failed to save changes";
 
-            try {
-                let requestBody = {};
-                let isValid = true;
+          // Handle specific error cases
+          if (errorMessage.toLowerCase().includes("username")) {
+            this.showFieldError("usernameError", errorMessage);
+          } else if (errorMessage.toLowerCase().includes("email")) {
+            this.showFieldError("emailError", errorMessage);
+          } else if (errorMessage.toLowerCase().includes("password")) {
+            this.showFieldError("passwordError", errorMessage);
+          } else {
+            this.showToast(errorMessage, true);
+          }
 
-                switch (fieldType) {
-                    case 'displayName':
-                        const displayName = document.getElementById('editDisplayNameInput').value.trim();
-                        if (!displayName) {
-                            this.showFieldError('displayNameError', 'Display name cannot be empty');
-                            isValid = false;
-                        } else if (displayName.length > 50) {
-                            this.showFieldError('displayNameError', 'Display name cannot exceed 50 characters');
-                            isValid = false;
-                        }
-                        requestBody.displayName = displayName;
-                        break;
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = "Done";
+        }
+      } catch (error) {
+        console.error("Failed to save settings:", error);
+        this.showToast("An error occurred. Please try again.", true);
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = "Done";
+      }
+    },
 
-                    case 'username':
-                        const username = document.getElementById('editUsernameInput').value.trim();
-                        
-                        if (!username) {
-                            this.showFieldError('usernameError', 'Username cannot be empty');
-                            isValid = false;
-                        } else if (username.length < 3) {
-                            this.showFieldError('usernameError', 'Username must be at least 3 characters');
-                            isValid = false;
-                        } else if (username.length > 32) {
-                            this.showFieldError('usernameError', 'Username cannot exceed 32 characters');
-                            isValid = false;
-                        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-                            this.showFieldError('usernameError', 'Username can only contain letters, numbers, and underscores');
-                            isValid = false;
-                        }
-                        
-                        requestBody.username = username;
-                        break;
+    /**
+     * Show field error
+     */
+    showFieldError: function (errorId, message) {
+      const errorEl = document.getElementById(errorId);
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.add("visible");
+      }
 
-                    case 'email':
-                        const email = document.getElementById('editEmailInput').value.trim();
-                        
-                        if (!email) {
-                            this.showFieldError('emailError', 'Email cannot be empty');
-                            isValid = false;
-                        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                            this.showFieldError('emailError', 'Please enter a valid email address');
-                            isValid = false;
-                        }
-                        
-                        requestBody.email = email;
-                        break;
+      // Add error class to corresponding input
+      const labelId = errorId.replace("Error", "Label");
+      const label = document.getElementById(labelId);
+      if (label) {
+        label.classList.add("error");
+      }
+    },
 
-                    case 'phone':
-                        const phone = document.getElementById('editPhoneInput').value.trim();
-                        if (phone && !/^\+?[0-9\s-]{8,20}$/.test(phone)) {
-                            this.showFieldError('phoneError', 'Please enter a valid phone number');
-                            isValid = false;
-                        }
-                        requestBody.phone = phone || null;
-                        break;
-                }
+    /**
+     * Show toast notification
+     */
+    showToast: function (message, isError = false) {
+      // Remove existing toast
+      const existingToast = document.querySelector(".settings-toast");
+      if (existingToast) {
+        existingToast.remove();
+      }
 
-                if (!isValid) {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = 'Done';
-                    return;
-                }
+      const toast = document.createElement("div");
+      toast.className = `settings-toast${isError ? " error" : ""}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
 
-                // Make API call
-                const token = localStorage.getItem('accessToken');
-                const response = await fetch('/api/users/me/settings', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    },
 
-                if (response.ok) {
-                    const updatedProfile = await response.json();
-                    this.currentUser = updatedProfile;
-                    this.closeEditPopup();
-                    this.showToast('Settings saved successfully!');
-                    
-                    // Refresh the content area
-                    const contentArea = document.getElementById('settingsContentArea');
-                    if (contentArea) {
-                        contentArea.innerHTML = this.renderContent();
-                        this.attachContentListeners();
-                    }
-                } else {
-                    const errorData = await response.json();
-                    let errorMessage = errorData.message || 'Failed to save changes';
-                    
-                    // Handle specific error cases
-                    if (errorMessage.toLowerCase().includes('username')) {
-                        this.showFieldError('usernameError', errorMessage);
-                    } else if (errorMessage.toLowerCase().includes('email')) {
-                        this.showFieldError('emailError', errorMessage);
-                    } else if (errorMessage.toLowerCase().includes('password')) {
-                        this.showFieldError('passwordError', errorMessage);
-                    } else {
-                        this.showToast(errorMessage, true);
-                    }
-                    
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = 'Done';
-                }
-            } catch (error) {
-                console.error('Failed to save settings:', error);
-                this.showToast('An error occurred. Please try again.', true);
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = 'Done';
-            }
-        },
-
-        /**
-         * Show field error
-         */
-        showFieldError: function(errorId, message) {
-            const errorEl = document.getElementById(errorId);
-            if (errorEl) {
-                errorEl.textContent = message;
-                errorEl.classList.add('visible');
-            }
-
-            // Add error class to corresponding input
-            const labelId = errorId.replace('Error', 'Label');
-            const label = document.getElementById(labelId);
-            if (label) {
-                label.classList.add('error');
-            }
-        },
-
-        /**
-         * Show toast notification
-         */
-        showToast: function(message, isError = false) {
-            // Remove existing toast
-            const existingToast = document.querySelector('.settings-toast');
-            if (existingToast) {
-                existingToast.remove();
-            }
-
-            const toast = document.createElement('div');
-            toast.className = `settings-toast${isError ? ' error' : ''}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            // Auto remove after 3 seconds
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        },
-
-        /**
-         * Show confirmation dialog
-         */
-        showConfirmDialog: function(title, message, onConfirm, isDanger = false) {
-            const popupHtml = `
+    /**
+     * Show confirmation dialog
+     */
+    showConfirmDialog: function (title, message, onConfirm, isDanger = false) {
+      const popupHtml = `
                 <div class="settings-edit-popup-overlay" id="settingsConfirmPopup">
                     <div class="settings-edit-popup confirm">
                         <div class="settings-edit-popup-header">
-                            <h2 class="settings-edit-popup-title">${this.escapeHtml(title)}</h2>
-                            <p class="settings-edit-popup-subtitle">${this.escapeHtml(message)}</p>
+                            <h2 class="settings-edit-popup-title">${this.escapeHtml(
+                              title
+                            )}</h2>
+                            <p class="settings-edit-popup-subtitle">${this.escapeHtml(
+                              message
+                            )}</p>
                         </div>
                         <div class="settings-edit-popup-footer">
                             <button class="settings-edit-popup-btn cancel" id="confirmPopupCancel">Cancel</button>
-                            <button class="settings-edit-popup-btn ${isDanger ? 'danger' : 'save'}" id="confirmPopupConfirm">${isDanger ? 'Delete' : 'Confirm'}</button>
+                            <button class="settings-edit-popup-btn ${
+                              isDanger ? "danger" : "save"
+                            }" id="confirmPopupConfirm">${
+        isDanger ? "Delete" : "Confirm"
+      }</button>
                         </div>
                     </div>
                 </div>
             `;
 
-            document.body.insertAdjacentHTML('beforeend', popupHtml);
+      document.body.insertAdjacentHTML("beforeend", popupHtml);
 
-            const popup = document.getElementById('settingsConfirmPopup');
-            const cancelBtn = document.getElementById('confirmPopupCancel');
-            const confirmBtn = document.getElementById('confirmPopupConfirm');
+      const popup = document.getElementById("settingsConfirmPopup");
+      const cancelBtn = document.getElementById("confirmPopupCancel");
+      const confirmBtn = document.getElementById("confirmPopupConfirm");
 
-            // Close on overlay click
-            popup.addEventListener('click', (e) => {
-                if (e.target === popup) {
-                    popup.remove();
-                }
-            });
-
-            // Cancel button
-            cancelBtn.addEventListener('click', () => {
-                popup.remove();
-            });
-
-            // Confirm button
-            confirmBtn.addEventListener('click', () => {
-                popup.remove();
-                onConfirm();
-            });
-
-            // ESC key to close
-            const escHandler = (e) => {
-                if (e.key === 'Escape') {
-                    popup.remove();
-                    document.removeEventListener('keydown', escHandler);
-                }
-            };
-            document.addEventListener('keydown', escHandler);
-        },
-
-        /**
-         * Handle logout
-         */
-        handleLogout: function() {
-            this.showConfirmDialog(
-                'Log Out',
-                'Are you sure you want to log out?',
-                () => {
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    window.location.href = '/login';
-                }
-            );
-        },
-
-        /**
-         * Disable account
-         */
-        disableAccount: async function() {
-            // TODO: Implement account disable API
-            alert('Account disable feature coming soon!');
-        },
-
-        /**
-         * Delete account
-         */
-        deleteAccount: async function() {
-            // TODO: Implement account delete API
-            alert('Account delete feature coming soon!');
-        },
-
-        /**
-         * Mask email for display
-         */
-        maskEmail: function(email) {
-            if (!email) return '******@***';
-            const [name, domain] = email.split('@');
-            if (!domain) return '******@***';
-            const maskedName = name.charAt(0) + '*'.repeat(Math.max(name.length - 2, 2)) + name.charAt(name.length - 1);
-            return maskedName + '@' + domain;
-        },
-
-        /**
-         * Escape HTML characters
-         */
-        escapeHtml: function(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+      // Close on overlay click
+      popup.addEventListener("click", (e) => {
+        if (e.target === popup) {
+          popup.remove();
         }
-    };
+      });
 
-    // Export to window
-    window.SettingsModal = SettingsModal;
+      // Cancel button
+      cancelBtn.addEventListener("click", () => {
+        popup.remove();
+      });
 
-    // Initialize on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => SettingsModal.init());
-    } else {
-        SettingsModal.init();
-    }
+      // Confirm button
+      confirmBtn.addEventListener("click", () => {
+        popup.remove();
+        onConfirm();
+      });
+
+      // ESC key to close
+      const escHandler = (e) => {
+        if (e.key === "Escape") {
+          popup.remove();
+          document.removeEventListener("keydown", escHandler);
+        }
+      };
+      document.addEventListener("keydown", escHandler);
+    },
+
+    /**
+     * Handle logout
+     */
+    handleLogout: function () {
+      this.showConfirmDialog(
+        "Log Out",
+        "Are you sure you want to log out?",
+        () => {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          window.location.href = "/login";
+        }
+      );
+    },
+
+    /**
+     * Disable account
+     */
+    disableAccount: async function () {
+      // TODO: Implement account disable API
+      alert("Account disable feature coming soon!");
+    },
+
+    /**
+     * Delete account
+     */
+    deleteAccount: async function () {
+      // TODO: Implement account delete API
+      alert("Account delete feature coming soon!");
+    },
+
+    /**
+     * Mask email for display
+     */
+    maskEmail: function (email) {
+      if (!email) return "******@***";
+      const [name, domain] = email.split("@");
+      if (!domain) return "******@***";
+      const maskedName =
+        name.charAt(0) +
+        "*".repeat(Math.max(name.length - 2, 2)) +
+        name.charAt(name.length - 1);
+      return maskedName + "@" + domain;
+    },
+
+    /**
+     * Escape HTML characters
+     */
+    escapeHtml: function (text) {
+      if (!text) return "";
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    },
+  };
+
+  // Export to window
+  window.SettingsModal = SettingsModal;
+
+  // Initialize on DOM ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => SettingsModal.init());
+  } else {
+    SettingsModal.init();
+  }
 })();

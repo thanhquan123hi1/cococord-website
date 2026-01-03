@@ -2,2109 +2,2117 @@
 /* Discord-like Chat UI - Dark Theme */
 
 :root {
-    --discord-primary: #5865F2;
-    --discord-green: #57F287;
-    --discord-yellow: #FEE75C;
-    --discord-fuchsia: #EB459E;
-    --discord-red: #ED4245;
-    
-    --bg-primary: #313338;
-    --bg-secondary: #2B2D31;
-    --bg-tertiary: #1E1F22;
-    --bg-modifier-hover: rgba(79, 84, 92, 0.4);
-    --bg-modifier-selected: rgba(79, 84, 92, 0.6);
-    
-    --text-normal: #DBDEE1;
-    --text-muted: #949BA4;
-    --text-link: #00A8FC;
-    --text-positive: #23A55A;
-    
-    --channel-icon: #80848E;
-    --interactive-normal: #B5BAC1;
-    --interactive-hover: #DBDEE1;
-    --interactive-active: #FFFFFF;
-    
-    --status-online: #23A55A;
-    --status-idle: #F0B232;
-    --status-dnd: #F23F43;
-    --status-offline: #80848E;
+  --discord-primary: #5865f2;
+  --discord-green: #57f287;
+  --discord-yellow: #fee75c;
+  --discord-fuchsia: #eb459e;
+  --discord-red: #ed4245;
+
+  --bg-primary: #313338;
+  --bg-secondary: #2b2d31;
+  --bg-tertiary: #1e1f22;
+  --bg-modifier-hover: rgba(79, 84, 92, 0.4);
+  --bg-modifier-selected: rgba(79, 84, 92, 0.6);
+
+  --text-normal: #dbdee1;
+  --text-muted: #949ba4;
+  --text-link: #00a8fc;
+  --text-positive: #23a55a;
+
+  --channel-icon: #80848e;
+  --interactive-normal: #b5bac1;
+  --interactive-hover: #dbdee1;
+  --interactive-active: #ffffff;
+
+  --status-online: #23a55a;
+  --status-idle: #f0b232;
+  --status-dnd: #f23f43;
+  --status-offline: #80848e;
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    font-family: 'gg sans', 'Noto Sans', 'Inter', sans-serif;
-    background-color: var(--bg-primary);
-    color: var(--text-normal);
-    overflow: hidden;
+  font-family: "gg sans", "Noto Sans", "Inter", sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-normal);
+  overflow: hidden;
 }
 
 /* ==================== CHAT PAGE CONTAINER ==================== */
 /* Khi được wrap bởi app.jsp decorator, chat page nằm trong .page-content-area */
 .chat-page-container {
-    display: flex;
-    flex-direction: row;
-    height: 100vh;
-    width: 100%;
-    overflow: hidden;
-    background-color: var(--bg-primary);
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
 }
 
 /* Legacy support: #chatApp.app-container (for backwards compatibility) */
 #chatApp.app-container {
-    display: flex;
-    flex-direction: row;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* ==================== SERVER SIDEBAR ==================== */
 #chatApp .server-sidebar {
-    width: 72px;
-    background-color: var(--bg-tertiary);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 12px;
-    flex-shrink: 0;
-    overflow: hidden;
+  width: 72px;
+  background-color: var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 /* Scrollable wrapper for server list */
 #chatApp .server-list-wrapper {
-    flex: 1;
-    width: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 
 #chatApp .server-list-wrapper::-webkit-scrollbar {
-    width: 0;
-    display: none;
+  width: 0;
+  display: none;
 }
 
 #chatApp .server-list {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 0 0 8px 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 8px 0;
 }
 
 /* Fixed actions at bottom of server sidebar */
 #chatApp .server-actions-fixed {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 0 0 12px 0;
-    flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 12px 0;
+  flex-shrink: 0;
 }
 
 #chatApp .server-item {
-    position: relative;
-    width: 48px;
-    height: 48px;
-    background-color: var(--bg-primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s ease-out;
-    color: var(--discord-green);
-    font-size: 20px;
-    text-decoration: none;
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background-color: var(--bg-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  color: var(--discord-green);
+  font-size: 20px;
+  text-decoration: none;
 }
 
 #chatApp .server-item:hover,
 #chatApp .server-item.active {
-    background-color: var(--discord-primary);
-    border-radius: 16px;
-    color: white;
+  background-color: var(--discord-primary);
+  border-radius: 16px;
+  color: white;
 }
 
 #chatApp .server-item.home-btn {
-    background-color: var(--bg-primary);
-    color: var(--text-normal);
+  background-color: var(--bg-primary);
+  color: var(--text-normal);
 }
 
 #chatApp .server-item.home-btn:hover {
-    background-color: var(--discord-primary);
-    color: white;
+  background-color: var(--discord-primary);
+  color: white;
 }
 
 #chatApp .server-item img {
-    width: 100%;
-    height: 100%;
-    border-radius: inherit;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 #chatApp .server-item .server-initial {
-    font-weight: 600;
-    font-size: 18px;
-    color: var(--text-normal);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text-normal);
 }
 
 #chatApp .server-item:hover .server-initial,
 #chatApp .server-item.active .server-initial {
-    color: white;
+  color: white;
 }
 
 #chatApp .server-divider {
-    width: 32px;
-    height: 2px;
-    background-color: var(--bg-modifier-hover);
-    margin: 4px 0;
-    border-radius: 1px;
-    flex-shrink: 0;
+  width: 32px;
+  height: 2px;
+  background-color: var(--bg-modifier-hover);
+  margin: 4px 0;
+  border-radius: 1px;
+  flex-shrink: 0;
 }
 
 #chatApp .server-actions {
-    display: none; /* Hidden - using server-actions-fixed instead */
+  display: none; /* Hidden - using server-actions-fixed instead */
 }
 
 #chatApp .add-server-btn {
-    color: var(--discord-green);
+  color: var(--discord-green);
 }
 
 #chatApp .add-server-btn:hover {
-    background-color: var(--discord-green);
-    color: white;
+  background-color: var(--discord-green);
+  color: white;
 }
 
 #chatApp .discover-btn {
-    color: var(--discord-green);
+  color: var(--discord-green);
 }
 
 #chatApp .discover-btn:hover {
-    background-color: var(--discord-green);
-    color: white;
+  background-color: var(--discord-green);
+  color: white;
 }
 
 /* Server pill indicator */
 #chatApp .server-item::before {
-    content: '';
-    position: absolute;
-    left: -16px;
-    width: 8px;
-    height: 0;
-    background-color: white;
-    border-radius: 0 4px 4px 0;
-    transition: height 0.15s ease-out;
+  content: "";
+  position: absolute;
+  left: -16px;
+  width: 8px;
+  height: 0;
+  background-color: white;
+  border-radius: 0 4px 4px 0;
+  transition: height 0.15s ease-out;
 }
 
 #chatApp .server-item:hover::before {
-    height: 20px;
+  height: 20px;
 }
 
 #chatApp .server-item.active::before {
-    height: 40px;
+  height: 40px;
 }
 
 /* ==================== CHANNEL SIDEBAR ==================== */
 #chatApp .channel-sidebar {
-    width: 240px;
-    background-color: var(--bg-secondary);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    position: relative;
+  width: var(--channel-panel-width, 240px);
+  min-width: 180px;
+  background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: relative;
 }
 
 /* Scrollable Channel List Wrapper */
 #chatApp .channel-list-wrapper {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 #chatApp .channel-list-wrapper::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 #chatApp .channel-list-wrapper::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 #chatApp .channel-list-wrapper::-webkit-scrollbar-thumb {
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
 }
 
 #chatApp .channel-header {
-    height: 48px;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: background-color 0.1s;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 #chatApp .channel-header:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 #chatApp .channel-header h5 {
-    color: var(--text-normal);
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  color: var(--text-normal);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #chatApp .channel-header i {
-    color: var(--text-muted);
-    font-size: 12px;
-    transition: transform 0.2s;
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: transform 0.2s;
 }
 
 /* Server Dropdown Menu */
 #chatApp .server-dropdown {
-    position: absolute;
-    top: 48px;
-    left: 72px;
-    width: 220px;
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
-    padding: 6px 8px;
-    z-index: 1000;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+  position: absolute;
+  top: 48px;
+  left: 72px;
+  width: 220px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 6px 8px;
+  z-index: 1000;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
 }
 
 #chatApp .server-dropdown .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 3px;
-    color: var(--interactive-normal);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  color: var(--interactive-normal);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
 }
 
 #chatApp .server-dropdown .dropdown-item:hover {
-    background-color: var(--discord-primary);
-    color: white;
+  background-color: var(--discord-primary);
+  color: white;
 }
 
 #chatApp .server-dropdown .dropdown-item.text-danger:hover {
-    background-color: var(--discord-red);
+  background-color: var(--discord-red);
 }
 
 #chatApp .server-dropdown .dropdown-divider {
-    height: 1px;
-    background-color: var(--bg-modifier-hover);
-    margin: 4px 0;
+  height: 1px;
+  background-color: var(--bg-modifier-hover);
+  margin: 4px 0;
 }
 
 /* Channel List */
 #chatApp .channel-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 8px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px;
 }
 
 #chatApp .channel-list::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 #chatApp .channel-list::-webkit-scrollbar-thumb {
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
 }
 
 #chatApp .channel-category {
-    margin-top: 16px;
+  margin-top: 16px;
 }
 
 #chatApp .category-header {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 8px 6px 2px;
-    color: var(--channel-icon);
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    cursor: pointer;
-    letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 2px;
+  color: var(--channel-icon);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 0.02em;
 }
 
 #chatApp .category-header:hover {
-    color: var(--interactive-hover);
+  color: var(--interactive-hover);
 }
 
 #chatApp .category-header i {
-    font-size: 10px;
-    transition: transform 0.1s;
+  font-size: 10px;
+  transition: transform 0.1s;
 }
 
 #chatApp .channel-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    margin: 1px 0;
-    border-radius: 4px;
-    color: var(--channel-icon);
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  margin: 1px 0;
+  border-radius: 4px;
+  color: var(--channel-icon);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.1s;
 }
 
 #chatApp .channel-item:hover {
-    background-color: var(--bg-modifier-hover);
-    color: var(--interactive-hover);
+  background-color: var(--bg-modifier-hover);
+  color: var(--interactive-hover);
 }
 
 #chatApp .channel-item.active {
-    background-color: var(--bg-modifier-selected);
-    color: var(--interactive-active);
+  background-color: var(--bg-modifier-selected);
+  color: var(--interactive-active);
 }
 
 #chatApp .channel-item .hash {
-    color: var(--channel-icon);
-    font-weight: 500;
-    font-size: 20px;
-    width: 20px;
-    text-align: center;
+  color: var(--channel-icon);
+  font-weight: 500;
+  font-size: 20px;
+  width: 20px;
+  text-align: center;
 }
 
 #chatApp .channel-item.active .hash {
-    color: var(--text-normal);
+  color: var(--text-normal);
 }
 
 #chatApp .channel-item.voice-channel .hash {
-    font-size: 16px;
+  font-size: 16px;
 }
 
 #chatApp .channel-item.voice-active {
-    background-color: rgba(59, 165, 93, 0.15);
-    color: var(--status-online);
+  background-color: rgba(59, 165, 93, 0.15);
+  color: var(--status-online);
 }
 
 #chatApp .channel-item.voice-active .hash {
-    color: var(--status-online);
+  color: var(--status-online);
 }
 
 #chatApp .channel-item .channel-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ==================== USER AREA (Fixed at Bottom of Channel Sidebar) ==================== */
 #chatApp .user-area {
-    height: 52px;
-    background-color: #232428;
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 10;
+  height: 52px;
+  background-color: #232428;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 
 #chatApp .user-area .user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px;
-    border-radius: 4px;
-    cursor: pointer;
-    flex: 1;
-    min-width: 0;
-    max-width: 160px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  max-width: 160px;
 }
 
 #chatApp .user-area .user-info:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 #chatApp .user-area .user-avatar {
-    position: relative;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: var(--discord-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    flex-shrink: 0;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--discord-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 #chatApp .user-area .user-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 #chatApp .user-area .status-indicator {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 3px solid #232428;
-    background-color: var(--status-offline);
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #232428;
+  background-color: var(--status-offline);
 }
 
 #chatApp .user-area .status-indicator.online {
-    background-color: var(--status-online);
+  background-color: var(--status-online);
 }
 
 #chatApp .user-area .status-indicator.idle {
-    background-color: var(--status-idle);
+  background-color: var(--status-idle);
 }
 
 #chatApp .user-area .status-indicator.dnd {
-    background-color: var(--status-dnd);
+  background-color: var(--status-dnd);
 }
 
 #chatApp .user-area .user-details {
-    min-width: 0;
-    flex: 1;
+  min-width: 0;
+  flex: 1;
 }
 
 #chatApp .user-area .user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: 1.2;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 #chatApp .user-area .user-status {
-    font-size: 12px;
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: 1.2;
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 #chatApp .user-area .user-controls {
-    display: flex;
-    gap: 4px;
+  display: flex;
+  gap: 4px;
 }
 
 #chatApp .user-area .control-btn {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: transparent;
-    border-radius: 4px;
-    color: var(--interactive-normal);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.1s;
-    font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--interactive-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.1s;
+  font-size: 18px;
 }
 
 #chatApp .user-area .control-btn:hover {
-    background-color: var(--bg-modifier-hover);
-    color: var(--interactive-hover);
+  background-color: var(--bg-modifier-hover);
+  color: var(--interactive-hover);
 }
 
 #chatApp .user-area .control-btn.muted {
-    color: var(--discord-red);
+  color: var(--discord-red);
 }
 
 #chatApp .user-area .control-btn.deafened {
-    color: var(--discord-red);
+  color: var(--discord-red);
 }
 
 /* User Dropdown (appears above user area) */
 #chatApp .user-area .user-dropdown {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    right: 0;
-    width: 100%;
-    background-color: #111214;
-    border-radius: 4px;
-    padding: 6px 8px;
-    margin-bottom: 8px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.24);
-    z-index: 1000;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background-color: #111214;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+  z-index: 1000;
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 3px;
-    color: var(--interactive-normal);
-    font-size: 14px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  color: var(--interactive-normal);
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.1s;
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item:hover {
-    background-color: var(--discord-primary);
-    color: white;
+  background-color: var(--discord-primary);
+  color: white;
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item.text-danger:hover {
-    background-color: var(--discord-red);
+  background-color: var(--discord-red);
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item i {
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item .online {
-    color: var(--status-online);
+  color: var(--status-online);
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item .idle {
-    color: var(--status-idle);
+  color: var(--status-idle);
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item .dnd {
-    color: var(--status-dnd);
+  color: var(--status-dnd);
 }
 
 #chatApp .user-area .user-dropdown .dropdown-item .offline {
-    color: var(--status-offline);
+  color: var(--status-offline);
 }
 
 #chatApp .user-area .user-dropdown .dropdown-divider {
-    height: 1px;
-    background-color: var(--bg-modifier-hover);
-    margin: 4px 0;
+  height: 1px;
+  background-color: var(--bg-modifier-hover);
+  margin: 4px 0;
 }
 
 /* ==================== INVITE FRIENDS MODAL ==================== */
 .modal-invite-friends {
-    width: 440px;
-    max-width: 90vw;
-    padding: 0;
-    overflow: hidden;
+  width: 440px;
+  max-width: 90vw;
+  padding: 0;
+  overflow: hidden;
 }
 
 .modal-invite-friends .modal-header-left {
-    padding: 16px 16px 0;
-    text-align: left;
+  padding: 16px 16px 0;
+  text-align: left;
 }
 
 .modal-invite-friends .modal-header-left h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--header-primary);
-    margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--header-primary);
+  margin: 0;
 }
 
 .modal-invite-friends .modal-header-left h2 span {
-    color: var(--header-primary);
+  color: var(--header-primary);
 }
 
 .modal-invite-friends .modal-body {
-    padding: 16px;
+  padding: 16px;
 }
 
 /* Search Bar */
 .invite-search-wrapper {
-    display: flex;
-    align-items: center;
-    background: var(--bg-tertiary);
-    border-radius: 4px;
-    padding: 0 12px;
-    margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 0 12px;
+  margin-bottom: 16px;
 }
 
 .invite-search-wrapper i {
-    color: var(--text-muted);
-    font-size: 16px;
-    margin-right: 8px;
+  color: var(--text-muted);
+  font-size: 16px;
+  margin-right: 8px;
 }
 
 .invite-search-wrapper input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    padding: 10px 0;
-    color: var(--text-normal);
-    font-size: 14px;
-    outline: none;
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  color: var(--text-normal);
+  font-size: 14px;
+  outline: none;
 }
 
 .invite-search-wrapper input::placeholder {
-    color: var(--text-muted);
+  color: var(--text-muted);
 }
 
 /* Friends List */
 .invite-friends-list {
-    max-height: 200px;
-    overflow-y: auto;
-    margin-bottom: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 16px;
 }
 
 .invite-friends-list::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 .invite-friends-list::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thin-thumb);
-    border-radius: 4px;
+  background: var(--scrollbar-thin-thumb);
+  border-radius: 4px;
 }
 
 .invite-friends-list::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 .invite-friend-row {
-    display: flex;
-    align-items: center;
-    padding: 8px 4px;
-    border-radius: 4px;
-    transition: background 0.1s;
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  border-radius: 4px;
+  transition: background 0.1s;
 }
 
 .invite-friend-row:hover {
-    background: var(--bg-modifier-hover);
+  background: var(--bg-modifier-hover);
 }
 
 .invite-friend-avatar {
-    position: relative;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--discord-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-right: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--discord-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
 }
 
 .invite-friend-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .invite-friend-avatar .status-dot {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--bg-secondary);
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--bg-secondary);
 }
 
 .invite-friend-name {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-normal);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-invite {
-    padding: 6px 16px;
-    background: transparent;
-    border: 1px solid var(--discord-green);
-    border-radius: 3px;
-    color: var(--discord-green);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid var(--discord-green);
+  border-radius: 3px;
+  color: var(--discord-green);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
 .btn-invite:hover:not(:disabled) {
-    background: var(--discord-green);
-    color: white;
+  background: var(--discord-green);
+  color: white;
 }
 
 .btn-invite:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-invite.invited {
-    background: transparent;
-    border-color: var(--text-muted);
-    color: var(--text-muted);
-    cursor: default;
+  background: transparent;
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+  cursor: default;
 }
 
 .invite-empty {
-    text-align: center;
-    padding: 20px;
-    color: var(--text-muted);
-    font-size: 14px;
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 /* Invite Link Section */
 .invite-link-section {
-    border-top: 1px solid var(--bg-modifier-hover);
-    padding-top: 16px;
+  border-top: 1px solid var(--bg-modifier-hover);
+  padding-top: 16px;
 }
 
 .invite-link-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--header-secondary);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    letter-spacing: 0.02em;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--header-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
 }
 
 .invite-link-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .invite-link-wrapper input {
-    flex: 1;
-    background: var(--bg-tertiary);
-    border: none;
-    border-radius: 4px;
-    padding: 10px 12px;
-    color: var(--text-normal);
-    font-size: 14px;
-    outline: none;
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: var(--text-normal);
+  font-size: 14px;
+  outline: none;
 }
 
 .btn-copy {
-    padding: 10px 16px;
-    background: var(--discord-primary);
-    border: none;
-    border-radius: 4px;
-    color: white;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
+  padding: 10px 16px;
+  background: var(--discord-primary);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
 }
 
 .btn-copy:hover {
-    background: var(--discord-primary-hover);
+  background: var(--discord-primary-hover);
 }
 
 .btn-copy.copied {
-    background: var(--discord-green);
+  background: var(--discord-green);
 }
 
 .edit-invite-link {
-    display: inline-block;
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--text-link);
-    text-decoration: none;
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-link);
+  text-decoration: none;
 }
 
 .edit-invite-link:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 /* ==================== MAIN CONTENT ==================== */
 #chatApp .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-primary);
-    min-width: 0;
-    position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  min-width: 0;
+  position: relative;
 }
 
 /* Text Channel View */
 #chatApp .text-channel-view {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
 }
 
 #chatApp .text-channel-view .content-body {
-    flex: 1;
-    overflow-y: auto;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* Voice Channel View (hidden by default, shown when in voice channel) */
 #chatApp .voice-channel-view {
-    display: none;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-    background: var(--bg-tertiary);
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-tertiary);
 }
 
 #chatApp .voice-channel-view.active {
-    display: flex;
+  display: flex;
 }
 
 /* When voice view is active, hide text view */
 #chatApp .main-content:has(.voice-channel-view.active) .text-channel-view {
-    display: none;
+  display: none;
 }
 
 #chatApp .content-header {
-    height: 48px;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
-    flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 #chatApp .channel-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 #chatApp .channel-icon {
-    color: var(--channel-icon);
-    font-size: 22px;
+  color: var(--channel-icon);
+  font-size: 22px;
 }
 
 #chatApp .channel-info span {
-    color: var(--text-normal);
-    font-weight: 600;
-    font-size: 16px;
+  color: var(--text-normal);
+  font-weight: 600;
+  font-size: 16px;
 }
 
 #chatApp .channel-topic {
-    color: var(--text-muted);
-    font-weight: 400;
-    font-size: 14px;
-    margin-left: 8px;
-    padding-left: 16px;
-    border-left: 1px solid var(--bg-modifier-hover);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 14px;
+  margin-left: 8px;
+  padding-left: 16px;
+  border-left: 1px solid var(--bg-modifier-hover);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #chatApp .header-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #chatApp .header-btn {
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--interactive-normal);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    transition: color 0.1s;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--interactive-normal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: color 0.1s;
 }
 
 #chatApp .header-btn:hover {
-    color: var(--interactive-hover);
+  color: var(--interactive-hover);
 }
 
 #chatApp .header-btn.active {
-    color: var(--interactive-active);
+  color: var(--interactive-active);
 }
 
 #chatApp .header-search {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
-    padding: 0 6px;
-    height: 24px;
-    width: 144px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 0 6px;
+  height: 24px;
+  width: 144px;
 }
 
 #chatApp .header-search i {
-    color: var(--text-muted);
-    font-size: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 #chatApp .header-search input {
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text-normal);
-    font-size: 14px;
-    width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-normal);
+  font-size: 14px;
+  width: 100%;
 }
 
 #chatApp .header-search input::placeholder {
-    color: var(--text-muted);
+  color: var(--text-muted);
 }
 
 /* ==================== MESSAGE LIST ==================== */
 #chatApp .content-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 0;
-    display: flex;
-    flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
 }
 
 #chatApp .content-body::-webkit-scrollbar {
-    width: 16px;
+  width: 16px;
 }
 
 #chatApp .content-body::-webkit-scrollbar-track {
-    background-color: var(--bg-secondary);
-    border-radius: 8px;
-    border: 4px solid var(--bg-primary);
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  border: 4px solid var(--bg-primary);
 }
 
 #chatApp .content-body::-webkit-scrollbar-thumb {
-    background-color: var(--bg-tertiary);
-    border-radius: 8px;
-    border: 4px solid var(--bg-primary);
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 4px solid var(--bg-primary);
 }
 
 /* Welcome Message */
 #chatApp .welcome-message {
-    padding: 16px;
-    text-align: left;
-    margin: auto 0 0 0;
-    padding-bottom: 16px;
+  padding: 16px;
+  text-align: left;
+  margin: auto 0 0 0;
+  padding-bottom: 16px;
 }
 
 #chatApp .welcome-icon {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    background-color: var(--bg-modifier-hover);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 8px;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background-color: var(--bg-modifier-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
 }
 
 #chatApp .welcome-icon i {
-    font-size: 42px;
-    color: var(--text-normal);
+  font-size: 42px;
+  color: var(--text-normal);
 }
 
 #chatApp .welcome-message h2 {
-    color: var(--text-normal);
-    font-weight: 700;
-    font-size: 32px;
-    margin-bottom: 8px;
+  color: var(--text-normal);
+  font-weight: 700;
+  font-size: 32px;
+  margin-bottom: 8px;
 }
 
 #chatApp .welcome-message p {
-    color: var(--text-muted);
-    font-size: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 /* Server onboarding (new server empty state) */
 #chatApp .server-onboarding {
-    width: 100%;
-    max-width: 560px;
-    margin: auto;
-    padding: 24px 16px;
-    text-align: center;
+  width: 100%;
+  max-width: 560px;
+  margin: auto;
+  padding: 24px 16px;
+  text-align: center;
 }
 
 #chatApp .server-onboarding-title {
-    color: var(--text-normal);
-    font-weight: 700;
-    font-size: 32px;
-    line-height: 1.1;
-    margin: 0 0 12px 0;
+  color: var(--text-normal);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.1;
+  margin: 0 0 12px 0;
 }
 
 #chatApp .server-onboarding-subtitle {
-    color: var(--text-muted);
-    font-size: 13px;
-    margin: 0 0 18px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0 0 18px 0;
 }
 
 #chatApp .server-onboarding-link {
-    color: var(--text-link);
-    text-decoration: none;
+  color: var(--text-link);
+  text-decoration: none;
 }
 
 #chatApp .server-onboarding-link:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 #chatApp .server-onboarding-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 #chatApp .server-onboarding-action {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--bg-modifier-hover);
-    border-radius: 8px;
-    padding: 14px 16px;
-    color: var(--text-normal);
-    cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--bg-modifier-hover);
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: var(--text-normal);
+  cursor: pointer;
 }
 
 #chatApp .server-onboarding-action:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 #chatApp .server-onboarding-action[aria-disabled="true"] {
-    cursor: default;
-    opacity: 0.9;
+  cursor: default;
+  opacity: 0.9;
 }
 
 #chatApp .server-onboarding-action[aria-disabled="true"]:hover {
-    background-color: var(--bg-secondary);
+  background-color: var(--bg-secondary);
 }
 
 #chatApp .server-onboarding-action .action-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 #chatApp .server-onboarding-action .action-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background-color: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 #chatApp .server-onboarding-action .action-icon i {
-    font-size: 18px;
-    color: var(--text-normal);
+  font-size: 18px;
+  color: var(--text-normal);
 }
 
 #chatApp .server-onboarding-action .action-text {
-    text-align: left;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-normal);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-normal);
 }
 
 #chatApp .server-onboarding-action i.bi-check-circle-fill {
-    color: var(--status-online);
+  color: var(--status-online);
 }
 
 /* Message Row */
 #chatApp .message-row {
-    display: flex;
-    padding: 2px 48px 2px 72px;
-    position: relative;
-    margin-top: 17px;
+  display: flex;
+  padding: 2px 48px 2px 72px;
+  position: relative;
+  margin-top: 17px;
 }
 
 #chatApp .message-row:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 #chatApp .message-row.continued {
-    margin-top: 0;
+  margin-top: 0;
 }
 
 #chatApp .message-row.continued .message-avatar {
-    display: none;
+  display: none;
 }
 
 #chatApp .message-row.continued .message-time-hover {
-    display: none;
+  display: none;
 }
 
 #chatApp .message-row:hover .message-time-hover {
-    display: block;
+  display: block;
 }
 
 #chatApp .message-avatar {
-    position: absolute;
-    left: 16px;
-    top: 2px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--discord-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
+  position: absolute;
+  left: 16px;
+  top: 2px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--discord-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 #chatApp .message-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 #chatApp .message-body {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 #chatApp .message-header {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 #chatApp .message-author {
-    color: var(--text-normal);
-    font-weight: 500;
-    font-size: 16px;
-    cursor: pointer;
+  color: var(--text-normal);
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 #chatApp .message-author:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 #chatApp .message-timestamp {
-    color: var(--text-muted);
-    font-size: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 #chatApp .message-time-hover {
-    position: absolute;
-    left: 16px;
-    top: 4px;
-    color: var(--text-muted);
-    font-size: 11px;
-    display: none;
+  position: absolute;
+  left: 16px;
+  top: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  display: none;
 }
 
 #chatApp .message-content {
-    color: var(--text-normal);
-    font-size: 16px;
-    line-height: 1.375;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+  color: var(--text-normal);
+  font-size: 16px;
+  line-height: 1.375;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 /* ==================== CHAT COMPOSER ==================== */
 #chatApp .chat-composer {
-    padding: 0 16px 24px;
-    flex-shrink: 0;
+  padding: 0 16px 24px;
+  flex-shrink: 0;
 }
 
 #chatApp .composer-attachments {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 #chatApp .composer-box {
-    display: flex;
-    align-items: center;
-    background-color: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 0 16px;
-    position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 0 16px;
+  position: relative;
 }
 
 #chatApp .composer-btn {
-    width: 32px;
-    height: 44px;
-    border: none;
-    background: transparent;
-    color: var(--interactive-normal);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    transition: color 0.1s;
+  width: 32px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--interactive-normal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: color 0.1s;
 }
 
 #chatApp .composer-btn:hover {
-    color: var(--interactive-hover);
+  color: var(--interactive-hover);
 }
 
 #chatApp .composer-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text-normal);
-    font-size: 16px;
-    padding: 11px 0;
-    margin: 0 8px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-normal);
+  font-size: 16px;
+  padding: 11px 0;
+  margin: 0 8px;
 }
 
 #chatApp .composer-input::placeholder {
-    color: var(--text-muted);
+  color: var(--text-muted);
 }
 
 #chatApp .composer-tools {
-    display: flex;
-    gap: 4px;
+  display: flex;
+  gap: 4px;
 }
 
 /* ==================== MEMBERS SIDEBAR ==================== */
 #chatApp .members-sidebar {
-    width: 240px;
-    background-color: var(--bg-secondary);
-    overflow-y: auto;
-    flex-shrink: 0;
-    padding: 0 8px;
+  width: 240px;
+  background-color: var(--bg-secondary);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 0 8px;
 }
 
 #chatApp .members-sidebar::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 #chatApp .members-sidebar::-webkit-scrollbar-thumb {
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
 }
 
 #chatApp .members-section {
-    padding: 16px 0;
+  padding: 16px 0;
 }
 
 #chatApp .members-category {
-    margin-bottom: 8px;
+  margin-bottom: 8px;
 }
 
 #chatApp .category-title {
-    display: block;
-    padding: 24px 8px 4px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--channel-icon);
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
+  display: block;
+  padding: 24px 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--channel-icon);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 #chatApp .members-list {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 #chatApp .member-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s;
 }
 
 #chatApp .member-item:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 #chatApp .member-avatar {
-    position: relative;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: var(--discord-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    flex-shrink: 0;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--discord-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 #chatApp .member-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 #chatApp .member-avatar .status-dot {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid var(--bg-secondary);
-    background-color: var(--status-offline);
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+  background-color: var(--status-offline);
 }
 
 #chatApp .member-avatar .status-dot.online {
-    background-color: var(--status-online);
+  background-color: var(--status-online);
 }
 
 #chatApp .member-name {
-    color: var(--channel-icon);
-    font-size: 14px;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  color: var(--channel-icon);
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #chatApp .member-item.online .member-name {
-    color: var(--text-normal);
+  color: var(--text-normal);
 }
 
 /* ==================== MODALS ==================== */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
 }
 
 .modal-content {
-    background-color: var(--bg-primary);
-    border-radius: 8px;
-    width: 440px;
-    max-width: 90vw;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.2);
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
-    padding: 24px 24px 0;
-    text-align: center;
-    position: relative;
+  padding: 24px 24px 0;
+  text-align: center;
+  position: relative;
 }
 
 .modal-header h3 {
-    color: var(--text-normal);
-    font-size: 24px;
-    font-weight: 700;
-    margin: 0;
+  color: var(--text-normal);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
 }
 
 .modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: transparent;
-    color: var(--interactive-normal);
-    font-size: 28px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--interactive-normal);
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
 }
 
 .modal-close:hover {
-    color: var(--interactive-hover);
+  color: var(--interactive-hover);
 }
 
 .modal-body {
-    padding: 16px 24px;
+  padding: 16px 24px;
 }
 
 .modal-desc {
-    color: var(--text-muted);
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 20px;
-    line-height: 1.5;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.5;
 }
 
 .form-group {
-    margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .form-group label {
-    display: block;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    letter-spacing: 0.02em;
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
 }
 
 .discord-input {
-    width: 100%;
-    background-color: var(--bg-tertiary);
-    border: none;
-    border-radius: 4px;
-    padding: 10px 12px;
-    color: var(--text-normal);
-    font-size: 16px;
-    outline: none;
+  width: 100%;
+  background-color: var(--bg-tertiary);
+  border: none;
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: var(--text-normal);
+  font-size: 16px;
+  outline: none;
 }
 
 .discord-input:focus {
-    outline: 2px solid var(--discord-primary);
+  outline: 2px solid var(--discord-primary);
 }
 
 .discord-input::placeholder {
-    color: var(--text-muted);
+  color: var(--text-muted);
 }
 
 .modal-footer {
-    padding: 16px 24px 24px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background-color: var(--bg-secondary);
-    border-radius: 0 0 8px 8px;
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 0 0 8px 8px;
 }
 
 .btn-primary {
-    background-color: var(--discord-primary);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 10px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.1s;
+  background-color: var(--discord-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.1s;
 }
 
 .btn-primary:hover {
-    background-color: #4752C4;
+  background-color: #4752c4;
 }
 
 .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
-    background: transparent;
-    color: var(--text-normal);
-    border: none;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
+  background: transparent;
+  color: var(--text-normal);
+  border: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .btn-secondary:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 /* Channel Type Selector */
 .channel-type-selector {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .channel-type-option {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background-color: var(--bg-secondary);
-    border-radius: 4px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.1s;
 }
 
 .channel-type-option:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 .channel-type-option.active {
-    border-color: var(--discord-primary);
-    background-color: var(--bg-modifier-hover);
+  border-color: var(--discord-primary);
+  background-color: var(--bg-modifier-hover);
 }
 
 .channel-type-option i {
-    font-size: 24px;
-    color: var(--text-muted);
+  font-size: 24px;
+  color: var(--text-muted);
 }
 
 .channel-type-option div {
-    flex: 1;
+  flex: 1;
 }
 
 .channel-type-option strong {
-    display: block;
-    color: var(--text-normal);
-    font-size: 14px;
-    margin-bottom: 2px;
+  display: block;
+  color: var(--text-normal);
+  font-size: 14px;
+  margin-bottom: 2px;
 }
 
 .channel-type-option span {
-    color: var(--text-muted);
-    font-size: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .channel-name-input {
-    display: flex;
-    align-items: center;
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .channel-name-input .channel-prefix {
-    padding: 10px 0 10px 12px;
-    color: var(--text-muted);
-    font-size: 16px;
+  padding: 10px 0 10px 12px;
+  color: var(--text-muted);
+  font-size: 16px;
 }
 
 .channel-name-input .discord-input {
-    border-radius: 0;
+  border-radius: 0;
 }
 
 /* ==================== USER SETTINGS DROPDOWN ==================== */
 .user-settings-dropdown {
-    position: fixed;
-    bottom: 60px;
-    left: 80px;
-    width: 200px;
-    background-color: var(--bg-tertiary);
-    border-radius: 4px;
-    padding: 6px 8px;
-    z-index: 1000;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.24);
+  position: fixed;
+  bottom: 60px;
+  left: 80px;
+  width: 200px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 6px 8px;
+  z-index: 1000;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
 }
 
 .user-settings-dropdown .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 3px;
-    color: var(--interactive-normal);
-    font-size: 14px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  color: var(--interactive-normal);
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.1s;
 }
 
 .user-settings-dropdown .dropdown-item:hover {
-    background-color: var(--discord-primary);
-    color: white;
+  background-color: var(--discord-primary);
+  color: white;
 }
 
 .user-settings-dropdown .dropdown-item.text-danger:hover {
-    background-color: var(--discord-red);
+  background-color: var(--discord-red);
 }
 
 .user-settings-dropdown .dropdown-divider {
-    height: 1px;
-    background-color: var(--bg-modifier-hover);
-    margin: 4px 0;
+  height: 1px;
+  background-color: var(--bg-modifier-hover);
+  margin: 4px 0;
 }
 
 /* ==================== TYPING INDICATOR ==================== */
 .typing-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background-color: var(--bg-primary);
-    border-top: 1px solid var(--bg-tertiary);
-    font-size: 13px;
-    color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--bg-tertiary);
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .typing-avatars {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .typing-avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-normal);
-    margin-left: -8px;
-    border: 2px solid var(--bg-primary);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-left: -8px;
+  border: 2px solid var(--bg-primary);
 }
 
 .typing-avatar:first-child {
-    margin-left: 0;
+  margin-left: 0;
 }
 
 .typing-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .typing-dots {
-    display: flex;
-    align-items: center;
-    gap: 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .typing-dots span {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--text-muted);
-    animation: typingBounce 1.4s infinite ease-in-out both;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+  animation: typingBounce 1.4s infinite ease-in-out both;
 }
 
 .typing-dots span:nth-child(1) {
-    animation-delay: -0.32s;
+  animation-delay: -0.32s;
 }
 
 .typing-dots span:nth-child(2) {
-    animation-delay: -0.16s;
+  animation-delay: -0.16s;
 }
 
 @keyframes typingBounce {
-    0%, 80%, 100% {
-        transform: scale(0);
-    }
-    40% {
-        transform: scale(1);
-    }
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
 }
 
 .typing-text {
-    flex: 1;
+  flex: 1;
 }
 
 .typing-text strong {
-    color: var(--text-normal);
+  color: var(--text-normal);
 }
 
 /* ==================== NEW MESSAGES BANNER ==================== */
 .new-messages-banner {
-    position: absolute;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background-color: var(--discord-primary);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background-color: var(--discord-primary);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .new-messages-banner.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .new-messages-banner:hover {
-    background-color: #4752C4;
+  background-color: #4752c4;
 }
 
 /* ==================== HISTORY LOADING SPINNER ==================== */
 .history-spinner {
-    display: flex;
-    justify-content: center;
-    padding: 16px;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
 }
 
 .history-spinner .spinner {
-    width: 24px;
-    height: 24px;
-    border: 3px solid var(--bg-tertiary);
-    border-top-color: var(--discord-primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--bg-tertiary);
+  border-top-color: var(--discord-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==================== CONTEXT MENU ==================== */
 .context-menu {
-    position: fixed;
-    background-color: #111214;
-    border-radius: 4px;
-    padding: 6px 8px;
-    min-width: 180px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
-    z-index: 1000;
-    display: none;
+  position: fixed;
+  background-color: #111214;
+  border-radius: 4px;
+  padding: 6px 8px;
+  min-width: 180px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+  z-index: 1000;
+  display: none;
 }
 
 .context-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 2px;
-    color: var(--interactive-normal);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 2px;
+  color: var(--interactive-normal);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s ease;
 }
 
 .context-menu-item:hover {
-    background-color: var(--discord-primary);
-    color: white;
+  background-color: var(--discord-primary);
+  color: white;
 }
 
 .context-menu-item.danger:hover {
-    background-color: var(--discord-red);
-    color: white;
+  background-color: var(--discord-red);
+  color: white;
 }
 
 .context-menu-item i {
-    font-size: 16px;
-    width: 18px;
-    text-align: center;
+  font-size: 16px;
+  width: 18px;
+  text-align: center;
 }
 
 .context-menu-divider {
-    height: 1px;
-    background-color: var(--bg-modifier-hover);
-    margin: 4px 0;
+  height: 1px;
+  background-color: var(--bg-modifier-hover);
+  margin: 4px 0;
 }
 
 /* ==================== MESSAGE EDIT ==================== */
 .edit-message-input {
-    width: 100%;
-    padding: 8px 10px;
-    background-color: var(--bg-tertiary);
-    border: none;
-    border-radius: 4px;
-    color: var(--text-normal);
-    font-size: 14px;
-    outline: none;
+  width: 100%;
+  padding: 8px 10px;
+  background-color: var(--bg-tertiary);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-normal);
+  font-size: 14px;
+  outline: none;
 }
 
 .edit-message-input:focus {
-    box-shadow: 0 0 0 2px var(--discord-primary);
+  box-shadow: 0 0 0 2px var(--discord-primary);
 }
 
 .edit-message-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
 }
 
 .message-edited {
-    font-size: 10px;
-    color: var(--text-muted);
-    margin-left: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 4px;
 }
 
 /* Message deletion animation */
 .message-row.message-deleted {
-    opacity: 0;
-    transform: translateX(-20px);
-    transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.3s ease;
 }
 
 /* ==================== REPLY PREVIEW ==================== */
 .reply-preview {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background-color: var(--bg-tertiary);
-    border-radius: 8px 8px 0 0;
-    border-bottom: 2px solid var(--discord-primary);
-    font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--bg-tertiary);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid var(--discord-primary);
+  font-size: 13px;
 }
 
 .reply-preview-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-muted);
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  overflow: hidden;
 }
 
 .reply-preview-content i {
-    color: var(--discord-primary);
+  color: var(--discord-primary);
 }
 
 .reply-preview-content span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .reply-preview-content strong {
-    color: var(--text-normal);
+  color: var(--text-normal);
 }
 
 .reply-cancel {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .reply-cancel:hover {
-    color: var(--text-normal);
+  color: var(--text-normal);
 }
 
 /* ==================== TOAST NOTIFICATION ==================== */
 .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background-color: #18191C;
-    color: var(--text-normal);
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    z-index: 1001;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background-color: #18191c;
+  color: var(--text-normal);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1001;
 }
 
 .toast.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ==================== VOICE CONNECTED BAR ==================== */
 .voice-connected-bar {
-    background-color: #1A1A1D;
-    padding: 8px;
-    border-bottom: 1px solid var(--bg-tertiary);
-    display: none;
+  background-color: #1a1a1d;
+  padding: 8px;
+  border-bottom: 1px solid var(--bg-tertiary);
+  display: none;
 }
 
 .voice-connected-bar.show {
-    display: block;
+  display: block;
 }
 
 .voice-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
 }
 
 .voice-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .voice-icon {
-    color: var(--status-online);
-    font-size: 14px;
-    animation: voicePulse 2s ease-in-out infinite;
+  color: var(--status-online);
+  font-size: 14px;
+  animation: voicePulse 2s ease-in-out infinite;
 }
 
 @keyframes voicePulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .voice-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--status-online);
-    text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--status-online);
+  text-transform: uppercase;
 }
 
 .voice-channel-name {
-    font-size: 12px;
-    color: var(--text-muted);
-    padding-left: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-left: 20px;
 }
 
 .voice-controls {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }
 
 .voice-control-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    border: none;
-    background-color: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: none;
+  background-color: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
 .voice-control-btn:hover {
-    background-color: var(--bg-modifier-hover);
-    color: var(--discord-red);
+  background-color: var(--bg-modifier-hover);
+  color: var(--discord-red);
 }
 
 /* ==================== VOICE PARTICIPANTS IN CHANNEL ==================== */
 .voice-participants {
-    padding: 4px 8px;
+  padding: 4px 8px;
 }
 
 .voice-participant {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .voice-participant:hover {
-    background-color: var(--bg-modifier-hover);
+  background-color: var(--bg-modifier-hover);
 }
 
 .voice-participant-avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: var(--bg-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: var(--text-normal);
-    position: relative;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-normal);
+  position: relative;
 }
 
 .voice-participant-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .voice-participant-avatar.speaking {
-    box-shadow: 0 0 0 2px var(--status-online);
+  box-shadow: 0 0 0 2px var(--status-online);
 }
 
 .voice-participant-name {
-    font-size: 13px;
-    color: var(--text-normal);
-    flex: 1;
+  font-size: 13px;
+  color: var(--text-normal);
+  flex: 1;
 }
 
 .voice-participant-icons {
-    display: flex;
-    gap: 4px;
+  display: flex;
+  gap: 4px;
 }
 
 .voice-participant-icons i {
-    font-size: 12px;
-    color: var(--text-muted);
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .voice-participant-icons i.muted {
-    color: var(--discord-red);
+  color: var(--discord-red);
 }
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1200px) {
-    #chatApp .members-sidebar {
-        display: none;
-    }
-    
-    #chatApp .members-sidebar.show {
-        display: block;
-        position: fixed;
-        right: 0;
-        top: 0;
-        height: 100vh;
-        z-index: 100;
-    }
+  #chatApp .members-sidebar {
+    display: none;
+  }
+
+  #chatApp .members-sidebar.show {
+    display: block;
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+  }
 }
 
 @media (max-width: 768px) {
-    #chatApp .channel-sidebar {
-        display: none;
-    }
-    
-    #chatApp .channel-sidebar.show {
-        display: flex;
-        position: fixed;
-        left: 72px;
-        top: 0;
-        height: 100vh;
-        z-index: 100;
-    }
+  #chatApp .channel-sidebar {
+    display: none;
+  }
+
+  #chatApp .channel-sidebar.show {
+    display: flex;
+    position: fixed;
+    left: 72px;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+  }
 }

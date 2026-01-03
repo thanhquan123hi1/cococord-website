@@ -2,686 +2,715 @@
 /* Styling cho Dashboard, Chat, Friends và các trang authenticated */
 
 :root {
-    --primary-color: #5865F2;
-    --secondary-color: #57F287;
-    --dark-bg: #2C2F33;
-    --darker-bg: #23272A;
-    --darkest-bg: #1E2124;
-    --light-bg: #36393F;
-    --text-primary: #DCDDDE;
-    --text-secondary: #B9BBBE;
-    --text-muted: #72767D;
-    --online-color: #43B581;
-    --border-color: #202225;
+  --primary-color: #5865f2;
+  --secondary-color: #57f287;
+  --dark-bg: #2c2f33;
+  --darker-bg: #23272a;
+  --darkest-bg: #1e2124;
+  --light-bg: #36393f;
+  --text-primary: #dcddde;
+  --text-secondary: #b9bbbe;
+  --text-muted: #72767d;
+  --online-color: #43b581;
+  --border-color: #202225;
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body.app-layout {
-    font-family: 'Inter', sans-serif;
-    background-color: var(--light-bg);
-    color: var(--text-primary);
-    overflow: hidden;
-    height: 100vh;
-    margin: 0;
+  font-family: "Inter", sans-serif;
+  background-color: var(--light-bg);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
 }
 
 /* ==================== GLOBAL APP LAYOUT WRAPPER ==================== */
 .app-layout-wrapper {
-    display: flex;
-    flex-direction: row;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 /* Page Content Area (right of server sidebar) */
 .page-content-area {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
-    min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  min-width: 0;
 }
 
 /* ==================== GLOBAL USER CONTROL PANEL ==================== */
 /* Fixed bottom-left panel, aligned to the right of the server sidebar */
+/* Width follows primary-sidebar (on /app) or channel-sidebar (on /chat) */
 .global-user-control-panel {
-    position: fixed;
-    left: 72px;
-    bottom: 0;
-    width: var(--channel-panel-width, 232px);
-    z-index: 2000;
+  position: fixed;
+  left: 72px;
+  bottom: 0;
+  /* Default to primary-sidebar-width if set, fallback to channel-panel-width, then 232px */
+  width: var(--active-sidebar-width, var(--channel-panel-width, 232px));
+  z-index: 2000;
 }
 
 .global-user-control-panel .user-area {
-    width: 100%;
+  width: 100%;
 }
 
 /* ==================== SERVER SIDEBAR (Global - in Decorator) ==================== */
 .server-bar,
 .server-sidebar {
-    width: 72px;
-    background-color: #1E1F22;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 12px;
-    flex-shrink: 0;
-    overflow: hidden;
+  width: 72px;
+  background-color: #1e1f22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .server-list-wrapper {
-    flex: 1;
-    width: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: none;
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 
 .server-list-wrapper::-webkit-scrollbar {
-    width: 0;
-    display: none;
+  width: 0;
+  display: none;
 }
 
 .server-list {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 0 0 8px 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 8px 0;
 }
 
-.server-actions-fixed {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 0 0 12px 0;
-    flex-shrink: 0;
+.server-actions-fixed,
+.server-actions-bottom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 12px 0;
+  flex-shrink: 0;
 }
 
 .server-item {
-    position: relative;
-    width: 48px;
-    height: 48px;
-    background-color: #313338;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s ease-out;
-    color: #57F287;
-    font-size: 20px;
-    text-decoration: none;
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background-color: #313338;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  color: #57f287;
+  font-size: 20px;
+  text-decoration: none;
 }
 
 .server-item:hover,
 .server-item.active {
-    background-color: #5865F2;
-    border-radius: 16px;
-    color: white;
+  background-color: #5865f2;
+  border-radius: 16px;
+  color: white;
 }
 
 .server-item.home-btn {
-    background-color: #313338;
-    color: #DBDEE1;
+  background-color: #313338;
+  color: #dbdee1;
 }
 
 .server-item.home-btn:hover,
 .server-item.home-btn.active {
-    background-color: #5865F2;
-    color: white;
+  background-color: #5865f2;
+  color: white;
 }
 
 .server-item.add-server-btn {
-    color: #57F287;
+  color: #57f287;
 }
 
 .server-item.add-server-btn:hover {
-    background-color: #57F287;
-    color: white;
+  background-color: #57f287;
+  color: white;
 }
 
 .server-item.discover-btn {
-    color: #57F287;
+  color: #57f287;
 }
 
 .server-item.discover-btn:hover {
-    background-color: #57F287;
-    color: white;
+  background-color: #57f287;
+  color: white;
 }
 
 .server-item img {
-    width: 100%;
-    height: 100%;
-    border-radius: inherit;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .server-item .server-initial {
-    font-weight: 600;
-    font-size: 18px;
-    color: #DBDEE1;
+  font-weight: 600;
+  font-size: 18px;
+  color: #dbdee1;
 }
 
 .server-item:hover .server-initial,
 .server-item.active .server-initial {
-    color: white;
+  color: white;
 }
 
 /* Server pill indicator */
 .server-item::before {
-    content: '';
-    position: absolute;
-    left: -16px;
-    width: 8px;
-    height: 0;
-    background-color: white;
-    border-radius: 0 4px 4px 0;
-    transition: height 0.15s ease-out;
+  content: "";
+  position: absolute;
+  left: -16px;
+  width: 8px;
+  height: 0;
+  background-color: white;
+  border-radius: 0 4px 4px 0;
+  transition: height 0.15s ease-out;
 }
 
 .server-item:hover::before {
-    height: 20px;
+  height: 20px;
 }
 
 .server-item.active::before {
-    height: 40px;
+  height: 40px;
 }
 
 .server-divider {
-    width: 32px;
-    height: 2px;
-    background-color: #35363C;
-    margin: 4px 0;
-    border-radius: 1px;
-    flex-shrink: 0;
+  width: 32px;
+  height: 2px;
+  background-color: #35363c;
+  margin: 4px 0;
+  border-radius: 1px;
+  flex-shrink: 0;
 }
 
 /* App Container (used by individual pages) */
 .app-container {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    height: 100%;
-    overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Channel Sidebar */
 .channel-sidebar {
-    width: 240px;
-    background-color: var(--dark-bg);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
+  width: var(--channel-panel-width, 240px);
+  min-width: 180px;
+  background-color: var(--dark-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
 }
 
 .channel-header {
-    height: 48px;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .channel-header:hover {
-    background-color: var(--darkest-bg);
+  background-color: var(--darkest-bg);
 }
 
 .channel-header h5 {
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
 }
 
 .channel-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 8px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 8px;
 }
 
 .channel-category {
-    margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .category-header {
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 .channel-item {
-    padding: 6px 8px;
-    margin: 2px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-secondary);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
+  padding: 6px 8px;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .channel-item:hover {
-    background-color: var(--darkest-bg);
-    color: var(--text-primary);
+  background-color: var(--darkest-bg);
+  color: var(--text-primary);
 }
 
 .channel-item.active {
-    background-color: var(--darkest-bg);
-    color: white;
+  background-color: var(--darkest-bg);
+  color: white;
 }
 
 /* User Panel */
 .user-panel {
-    height: 52px;
-    background-color: var(--darker-bg);
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-top: 1px solid var(--border-color);
+  height: 52px;
+  background-color: var(--darker-bg);
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-color);
 }
 
 .user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
 }
 
 .user-details {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
 }
 
 .user-status {
-    font-size: 12px;
-    color: var(--text-muted);
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .user-controls {
-    display: flex;
-    gap: 8px;
-    color: var(--text-secondary);
+  display: flex;
+  gap: 8px;
+  color: var(--text-secondary);
 }
 
 .user-controls i {
-    cursor: pointer;
-    transition: color 0.2s;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
 .user-controls i:hover {
-    color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 /* Main Content */
 .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--light-bg);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--light-bg);
 }
 
 .content-header {
-    height: 48px;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .channel-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: white;
-    font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-weight: 700;
 }
 
 .header-controls {
-    display: flex;
-    gap: 16px;
-    color: var(--text-secondary);
-    font-size: 20px;
+  display: flex;
+  gap: 16px;
+  color: var(--text-secondary);
+  font-size: 20px;
 }
 
 .header-controls i {
-    cursor: pointer;
-    transition: color 0.2s;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
 .header-controls i:hover {
-    color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 .content-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 /* Members Sidebar */
 .members-sidebar {
-    width: 240px;
-    background-color: var(--dark-bg);
-    overflow-y: auto;
-    flex-shrink: 0;
+  width: 240px;
+  background-color: var(--dark-bg);
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .members-header {
-    padding: 24px 16px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
+  padding: 24px 16px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
 }
 
 .members-list {
-    padding: 0 8px;
+  padding: 0 8px;
 }
 
 .member-category {
-    margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .category-title {
-    padding: 4px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
 }
 
 /* Welcome Message */
 .welcome-message {
-    color: white;
+  color: white;
 }
 
 .welcome-message h2 {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 .welcome-message .btn {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
-    border-radius: 4px;
+  background-color: var(--border-color);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--text-muted);
+  background-color: var(--text-muted);
 }
 
 /* ==================== GLOBAL MODALS ==================== */
 .modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .modal-overlay .modal-content {
-    background-color: #313338;
-    border-radius: 8px;
-    width: 440px;
-    max-width: 90vw;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background-color: #313338;
+  border-radius: 8px;
+  width: 440px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .modal-overlay .modal-header {
-    padding: 16px 16px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  padding: 16px 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .modal-overlay .modal-header h3 {
-    color: #F2F3F5;
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
+  color: #f2f3f5;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
 }
 
 .modal-overlay .modal-close {
-    background: none;
-    border: none;
-    color: #B5BAC1;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 4px;
-    line-height: 1;
+  background: none;
+  border: none;
+  color: #b5bac1;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
 }
 
 .modal-overlay .modal-close:hover {
-    color: white;
+  color: white;
 }
 
 .modal-overlay .modal-body {
-    padding: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-overlay .modal-desc {
-    color: #B5BAC1;
-    font-size: 14px;
-    margin-bottom: 16px;
-    line-height: 1.4;
+  color: #b5bac1;
+  font-size: 14px;
+  margin-bottom: 16px;
+  line-height: 1.4;
 }
 
 .modal-overlay .form-group {
-    margin-bottom: 16px;
+  margin-bottom: 16px;
 }
 
 .modal-overlay .form-group label {
-    display: block;
-    color: #B5BAC1;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    letter-spacing: 0.02em;
+  display: block;
+  color: #b5bac1;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
 }
 
 .modal-overlay .discord-input {
-    width: 100%;
-    padding: 10px 12px;
-    background-color: #1E1F22;
-    border: none;
-    border-radius: 4px;
-    color: #DBDEE1;
-    font-size: 16px;
-    outline: none;
+  width: 100%;
+  padding: 10px 12px;
+  background-color: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  color: #dbdee1;
+  font-size: 16px;
+  outline: none;
 }
 
 .modal-overlay .discord-input:focus {
-    box-shadow: 0 0 0 2px #5865F2;
+  box-shadow: 0 0 0 2px #5865f2;
 }
 
 .modal-overlay .discord-input::placeholder {
-    color: #72767D;
+  color: #72767d;
 }
 
 .modal-overlay .modal-footer {
-    padding: 16px;
-    background-color: #2B2D31;
-    border-radius: 0 0 8px 8px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+  padding: 16px;
+  background-color: #2b2d31;
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .modal-overlay .btn-secondary {
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    background: none;
-    color: #DBDEE1;
+  padding: 0 16px;
+  height: 38px;
+  min-width: 60px;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #dbdee1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.17s ease, color 0.17s ease;
 }
 
 .modal-overlay .btn-secondary:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+  color: #ffffff;
 }
 
 .modal-overlay .btn-primary {
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    background-color: #5865F2;
-    color: white;
+  padding: 0 16px;
+  height: 38px;
+  min-width: 96px;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: #5865f2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.17s ease;
 }
 
 .modal-overlay .btn-primary:hover {
-    background-color: #4752C4;
+  background-color: #4752c4;
+}
+
+.modal-overlay .btn-primary:active {
+  background-color: #3c45a5;
 }
 
 .modal-overlay .btn-primary:disabled {
-    background-color: #5865F2;
-    opacity: 0.5;
-    cursor: not-allowed;
+  background-color: #5865f2;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .members-sidebar {
-        display: none;
-    }
+  .members-sidebar {
+    display: none;
+  }
 
-    .channel-sidebar {
-        width: 200px;
-    }
+  .channel-sidebar {
+    width: 200px;
+  }
 }
 
 @media (max-width: 576px) {
-    .server-sidebar {
-        width: 60px;
-    }
+  .server-sidebar {
+    width: 60px;
+  }
 
-    .channel-sidebar {
-        position: absolute;
-        left: -240px;
-        z-index: 100;
-        transition: left 0.3s;
-    }
+  .channel-sidebar {
+    position: absolute;
+    left: -240px;
+    z-index: 100;
+    transition: left 0.3s;
+  }
 
-    .channel-sidebar.show {
-        left: 60px;
-    }
+  .channel-sidebar.show {
+    left: 60px;
+  }
 }
 
 /* ==================== APP LAYOUT FIX ==================== */
 
 /* 1. Reset Body để không bị cuộn trang thừa */
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden; /* Quan trọng: Ẩn thanh cuộn của trình duyệt */
-    background-color: #313338; /* Màu nền Discord */
-    overscroll-behavior: none; /* Ngăn bounce scroll */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Quan trọng: Ẩn thanh cuộn của trình duyệt */
+  background-color: #313338; /* Màu nền Discord */
+  overscroll-behavior: none; /* Ngăn bounce scroll */
 }
 
 html {
-    scroll-behavior: auto; /* Tắt smooth scroll để tránh animation */
+  scroll-behavior: auto; /* Tắt smooth scroll để tránh animation */
 }
 
 /* 2. Biến khung bao ngoài thành Flex container (Ngang) */
 .app-layout-wrapper {
-    display: flex;          /* Xếp Sidebar và Content nằm ngang */
-    width: 100vw;           /* Full chiều rộng màn hình */
-    height: 100vh;          /* Full chiều cao màn hình */
-    background-color: #313338;
-    position: fixed;        /* Fix layout để tránh scroll jump */
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+  display: flex; /* Xếp Sidebar và Content nằm ngang */
+  width: 100vw; /* Full chiều rộng màn hình */
+  height: 100vh; /* Full chiều cao màn hình */
+  background-color: #313338;
+  position: fixed; /* Fix layout để tránh scroll jump */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* 3. Cố định chiều rộng cột Server (Sidebar trái cùng) */
 /* Lưu ý: Nếu bạn đã sửa class trong app.jsp thành 'server-bar' thì friends.css sẽ lo phần này. 
    Nếu chưa, hãy dùng đoạn dưới: */
-.server-bar, .server-sidebar {
-    width: 72px;
-    height: 100%;
-    flex-shrink: 0;         /* Không cho phép bị co lại */
-    background-color: #1E1F22;
-    overflow-y: auto;       /* Cuộn nếu danh sách server dài */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 12px;
+.server-bar,
+.server-sidebar {
+  width: 72px;
+  height: 100%;
+  flex-shrink: 0; /* Không cho phép bị co lại */
+  background-color: #1e1f22;
+  overflow-y: auto; /* Cuộn nếu danh sách server dài */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
 }
 
 /* 4. Vùng nội dung chính (Chứa friends.jsp) */
 .page-content-area {
-    flex: 1;                /* Chiếm toàn bộ không gian còn lại */
-    height: 100%;
-    overflow: hidden;       /* Để nội dung con tự quản lý cuộn */
-    display: flex;
-    flex-direction: column;
-    position: relative;
+  flex: 1; /* Chiếm toàn bộ không gian còn lại */
+  height: 100%;
+  overflow: hidden; /* Để nội dung con tự quản lý cuộn */
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
