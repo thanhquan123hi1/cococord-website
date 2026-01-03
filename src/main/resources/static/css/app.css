@@ -49,14 +49,14 @@ body.app-layout {
 }
 
 /* ==================== GLOBAL USER CONTROL PANEL ==================== */
-/* Fixed bottom-left panel, aligned to the right of the server sidebar */
-/* Width follows primary-sidebar (on /app) or channel-sidebar (on /chat) */
+/* Fixed bottom-left panel, overlays both server-bar and sidebar */
+/* Width = server-bar (72px) + active sidebar width */
 .global-user-control-panel {
   position: fixed;
-  left: 72px;
+  left: 0;
   bottom: 0;
-  /* Default to primary-sidebar-width if set, fallback to channel-panel-width, then 232px */
-  width: var(--active-sidebar-width, var(--channel-panel-width, 232px));
+  /* Total width = server-bar + sidebar */
+  width: calc(72px + var(--active-sidebar-width, var(--channel-panel-width, 232px)));
   z-index: 2000;
 }
 
@@ -96,18 +96,13 @@ body.app-layout {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 0 0 8px 0;
+  padding: 0 0 70px 0; /* Extra padding for user-panel overlay */
 }
 
+/* Server actions now inside .server-list, no longer fixed */
 .server-actions-fixed,
 .server-actions-bottom {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 0 0 12px 0;
-  flex-shrink: 0;
+  display: contents; /* Let children flow naturally in parent flex */
 }
 
 .server-item {

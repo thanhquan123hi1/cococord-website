@@ -81,17 +81,15 @@
                             </c:choose>
                         </a>
                     </c:forEach>
-                </div>
-            </div>
-            
-            <!-- Server Actions at End of List -->
-            <div class="server-actions-bottom">
-                <div class="server-divider"></div>
-                <div class="server-item add-server-btn" role="button" tabindex="0" title="Tạo Server" id="globalAddServerBtn">
-                    <i class="bi bi-plus-lg"></i>
-                </div>
-                <div class="server-item discover-btn" role="button" tabindex="0" title="Khám phá Server" id="globalDiscoverBtn">
-                    <i class="bi bi-compass"></i>
+                    
+                    <!-- Server Actions - Inside scrollable list like Discord -->
+                    <div class="server-divider" data-action-divider="true"></div>
+                    <div class="server-item add-server-btn" role="button" tabindex="0" title="Tạo Server" id="globalAddServerBtn" data-action-btn="add">
+                        <i class="bi bi-plus-lg"></i>
+                    </div>
+                    <div class="server-item discover-btn" role="button" tabindex="0" title="Khám phá Server" id="globalDiscoverBtn" data-action-btn="discover">
+                        <i class="bi bi-compass"></i>
+                    </div>
                 </div>
             </div>
         </aside>

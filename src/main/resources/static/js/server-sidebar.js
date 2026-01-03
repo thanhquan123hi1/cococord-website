@@ -142,9 +142,9 @@
       return;
     }
 
-    // CHỈ xóa các server items được tạo dynamically (không có data-server-id từ JSP)
+    // CHỈ xóa các server items được tạo dynamically (không có data-server-id và không phải action buttons)
     const existingServers = el.serverList.querySelectorAll(
-      ".server-item:not([data-server-id])"
+      ".server-item:not([data-server-id]):not([data-action-btn])"
     );
     existingServers.forEach((item) => item.remove());
 
@@ -169,7 +169,7 @@
 
       // Insert BEFORE the action buttons (divider + add + discover) at the end
       const actionDivider = el.serverList.querySelector(
-        ".server-divider:last-of-type"
+        ".server-divider[data-action-divider]"
       );
       if (actionDivider) {
         el.serverList.insertBefore(serverItem, actionDivider);

@@ -517,7 +517,17 @@ async function loadGlobalServers() {
     if (!response.ok) throw new Error("Failed to load servers");
 
     const servers = await response.json();
-    serverList.innerHTML = "";
+    
+    // Remove only server items, keep action buttons (divider + add + discover)
+    const existingServerItems = serverList.querySelectorAll(
+      ".server-item[data-server-id]"
+    );
+    existingServerItems.forEach((item) => item.remove());
+    
+    // Find the action divider to insert servers before it
+    const actionDivider = serverList.querySelector(
+      ".server-divider[data-action-divider]"
+    );
 
     servers.forEach((server) => {
       const serverItem = document.createElement("a");
@@ -559,7 +569,12 @@ async function loadGlobalServers() {
         }
       });
 
-      serverList.appendChild(serverItem);
+      // Insert before action divider, or append if not found
+      if (actionDivider) {
+        serverList.insertBefore(serverItem, actionDivider);
+      } else {
+        serverList.appendChild(serverItem);
+      }
     });
 
     // Highlight current server if on chat page
