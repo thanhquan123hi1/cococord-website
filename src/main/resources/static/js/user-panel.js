@@ -4,225 +4,262 @@
  * Features a Discord-style User Popout (Mini Profile) when clicking avatar/name
  */
 
-(function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    const UserPanel = {
-        // ============================================
-        // State
-        // ============================================
-        currentUser: null,
-        isPopoutVisible: false,
-        initialized: false,
-        isMuted: false,
-        isDeafened: false,
-        presenceUnsub: null,
+  const UserPanel = {
+    // ============================================
+    // State
+    // ============================================
+    currentUser: null,
+    isPopoutVisible: false,
+    initialized: false,
+    isMuted: false,
+    isDeafened: false,
+    presenceUnsub: null,
 
-        // ============================================
-        // SVG Icons
-        // ============================================
-        icons: {
-            micOn: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    // ============================================
+    // SVG Icons
+    // ============================================
+    icons: {
+      micOn: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2a3.5 3.5 0 0 0-3.5 3.5v5a3.5 3.5 0 0 0 7 0v-5A3.5 3.5 0 0 0 12 2z"/>
                 <path d="M19 10.5a.5.5 0 0 0-1 0 6 6 0 0 1-12 0 .5.5 0 0 0-1 0 7 7 0 0 0 6.5 6.98V20H8.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1H12.5v-2.52A7 7 0 0 0 19 10.5z"/>
             </svg>`,
-            micOff: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      micOff: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2a3.5 3.5 0 0 0-3.5 3.5v5a3.5 3.5 0 0 0 7 0v-5A3.5 3.5 0 0 0 12 2z"/>
                 <path d="M19 10.5a.5.5 0 0 0-1 0 6 6 0 0 1-12 0 .5.5 0 0 0-1 0 7 7 0 0 0 6.5 6.98V20H8.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1H12.5v-2.52A7 7 0 0 0 19 10.5z"/>
                 <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>`,
-            headphoneOn: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      headphoneOn: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12v8c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-2c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-8c0-5.52-4.48-10-10-10z"/>
             </svg>`,
-            headphoneOff: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      headphoneOff: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12v8c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-2c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-8c0-5.52-4.48-10-10-10z"/>
                 <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>`,
-            settings: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      settings: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-            </svg>`
-        },
+            </svg>`,
+    },
 
-        // ============================================
-        // Initialization
-        // ============================================
-        init: async function() {
-            if (this.initialized) return;
-            
-            const container = document.getElementById('userPanel');
-            if (!container) {
-                console.warn('UserPanel: #userPanel container not found');
-                return;
+    // ============================================
+    // Initialization
+    // ============================================
+    init: async function () {
+      if (this.initialized) return;
+
+      const container = document.getElementById("userPanel");
+      if (!container) {
+        console.warn("UserPanel: #userPanel container not found");
+        return;
+      }
+
+      // Load saved audio states from localStorage
+      this.isMuted = localStorage.getItem("userPanel_muted") === "true";
+      this.isDeafened = localStorage.getItem("userPanel_deafened") === "true";
+
+      try {
+        await this.loadCurrentUser();
+        if (this.currentUser) {
+          this.render();
+          this.attachEventListeners();
+          this.initPresenceSync();
+          this.startPresenceHeartbeat();
+          this.initialized = true;
+        }
+      } catch (error) {
+        console.error("UserPanel: Failed to initialize", error);
+      }
+    },
+
+    initPresenceSync: function () {
+      const store = window.CoCoCordPresence;
+      const myId = this.currentUser?.id;
+      if (!store || !myId) return;
+
+      // Ensure only one subscription for this component
+      try {
+        this.presenceUnsub?.();
+      } catch (_) {
+        /* ignore */
+      }
+      this.presenceUnsub = null;
+
+      // 1) Connect websocket so backend marks us ONLINE.
+      if (typeof store.ensureConnected === "function") {
+        store
+          .ensureConnected()
+          .then(() => {
+            // 2) Hydrate snapshot and apply status to UCP.
+            if (typeof store.hydrateSnapshot === "function") {
+              return store.hydrateSnapshot([myId]);
             }
-
-            // Load saved audio states from localStorage
-            this.isMuted = localStorage.getItem('userPanel_muted') === 'true';
-            this.isDeafened = localStorage.getItem('userPanel_deafened') === 'true';
-
-            try {
-                await this.loadCurrentUser();
-                if (this.currentUser) {
-                    this.render();
-                    this.attachEventListeners();
-                    this.initPresenceSync();
-                    this.startPresenceHeartbeat();
-                    this.initialized = true;
-                }
-            } catch (error) {
-                console.error('UserPanel: Failed to initialize', error);
+          })
+          .then(() => {
+            if (typeof store.getStatus === "function") {
+              const s = store.getStatus(myId);
+              if (s) this.update({ status: s });
             }
-        },
+          })
+          .catch(() => {
+            /* ignore */
+          });
+      }
 
-        initPresenceSync: function() {
-            const store = window.CoCoCordPresence;
-            const myId = this.currentUser?.id;
-            if (!store || !myId) return;
+      // 3) Realtime updates for our own status (idle/dnd/offline etc.)
+      if (typeof store.subscribe === "function") {
+        this.presenceUnsub = store.subscribe((evt) => {
+          if (!evt?.userId) return;
+          if (String(evt.userId) !== String(myId)) return;
+          if (evt.status) this.update({ status: evt.status });
+        });
+      }
+    },
 
-            // Ensure only one subscription for this component
-            try { this.presenceUnsub?.(); } catch (_) { /* ignore */ }
-            this.presenceUnsub = null;
+    // ============================================
+    // Data Loading
+    // ============================================
+    loadCurrentUser: async function () {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return null;
 
-            // 1) Connect websocket so backend marks us ONLINE.
-            if (typeof store.ensureConnected === 'function') {
-                store.ensureConnected().then(() => {
-                    // 2) Hydrate snapshot and apply status to UCP.
-                    if (typeof store.hydrateSnapshot === 'function') {
-                        return store.hydrateSnapshot([myId]);
-                    }
-                }).then(() => {
-                    if (typeof store.getStatus === 'function') {
-                        const s = store.getStatus(myId);
-                        if (s) this.update({ status: s });
-                    }
-                }).catch(() => { /* ignore */ });
-            }
+        const response = await fetch("/api/users/me/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-            // 3) Realtime updates for our own status (idle/dnd/offline etc.)
-            if (typeof store.subscribe === 'function') {
-                this.presenceUnsub = store.subscribe((evt) => {
-                    if (!evt?.userId) return;
-                    if (String(evt.userId) !== String(myId)) return;
-                    if (evt.status) this.update({ status: evt.status });
-                });
-            }
-        },
+        if (response.ok) {
+          this.currentUser = await response.json();
+          return this.currentUser;
+        }
+      } catch (error) {
+        console.error("UserPanel: Failed to load user profile:", error);
+      }
+      return null;
+    },
 
-        // ============================================
-        // Data Loading
-        // ============================================
-        loadCurrentUser: async function() {
-            try {
-                const token = localStorage.getItem('accessToken');
-                if (!token) return null;
+    // ============================================
+    // Audio Controls
+    // ============================================
+    toggleMute: function () {
+      this.isMuted = !this.isMuted;
+      localStorage.setItem("userPanel_muted", this.isMuted);
 
-                const response = await fetch('/api/users/me/profile', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+      // Notify other components (chat.js voice)
+      if (window.CoCoCordChat?.toggleMute) {
+        window.CoCoCordChat.toggleMute();
+      }
 
-                if (response.ok) {
-                    this.currentUser = await response.json();
-                    return this.currentUser;
-                }
-            } catch (error) {
-                console.error('UserPanel: Failed to load user profile:', error);
-            }
-            return null;
-        },
+      // Update UI
+      this.updateAudioButtons();
 
-        // ============================================
-        // Audio Controls
-        // ============================================
-        toggleMute: function() {
-            this.isMuted = !this.isMuted;
-            localStorage.setItem('userPanel_muted', this.isMuted);
-            
-            // Notify other components (chat.js voice)
-            if (window.CoCoCordChat?.toggleMute) {
-                window.CoCoCordChat.toggleMute();
-            }
-            
-            // Update UI
-            this.updateAudioButtons();
-            
-            // Dispatch event for other listeners
-            document.dispatchEvent(new CustomEvent('userPanel:muteToggle', { 
-                detail: { isMuted: this.isMuted } 
-            }));
-        },
+      // Dispatch event for other listeners
+      document.dispatchEvent(
+        new CustomEvent("userPanel:muteToggle", {
+          detail: { isMuted: this.isMuted },
+        })
+      );
+    },
 
-        toggleDeafen: function() {
-            this.isDeafened = !this.isDeafened;
-            localStorage.setItem('userPanel_deafened', this.isDeafened);
-            
-            // If deafening, also mute
-            if (this.isDeafened && !this.isMuted) {
-                this.isMuted = true;
-                localStorage.setItem('userPanel_muted', this.isMuted);
-            }
-            
-            // Notify other components (chat.js voice)
-            if (window.CoCoCordChat?.toggleDeafen) {
-                window.CoCoCordChat.toggleDeafen();
-            }
-            
-            // Update UI
-            this.updateAudioButtons();
-            
-            // Dispatch event for other listeners
-            document.dispatchEvent(new CustomEvent('userPanel:deafenToggle', { 
-                detail: { isDeafened: this.isDeafened, isMuted: this.isMuted } 
-            }));
-        },
+    toggleDeafen: function () {
+      this.isDeafened = !this.isDeafened;
+      localStorage.setItem("userPanel_deafened", this.isDeafened);
 
-        updateAudioButtons: function() {
-            const micBtn = document.getElementById('userPanelMicBtn');
-            const deafenBtn = document.getElementById('userPanelDeafenBtn');
-            
-            if (micBtn) {
-                micBtn.classList.toggle('active', this.isMuted);
-                micBtn.innerHTML = this.isMuted ? this.icons.micOff : this.icons.micOn;
-                micBtn.title = this.isMuted ? 'Bật tiếng' : 'Tắt tiếng';
-            }
-            
-            if (deafenBtn) {
-                deafenBtn.classList.toggle('active', this.isDeafened);
-                deafenBtn.innerHTML = this.isDeafened ? this.icons.headphoneOff : this.icons.headphoneOn;
-                deafenBtn.title = this.isDeafened ? 'Bật âm thanh' : 'Tắt âm thanh';
-            }
-        },
+      // If deafening, also mute
+      if (this.isDeafened && !this.isMuted) {
+        this.isMuted = true;
+        localStorage.setItem("userPanel_muted", this.isMuted);
+      }
 
-        // ============================================
-        // Main Panel Rendering
-        // ============================================
-        render: function() {
-            if (!this.currentUser) return;
+      // Notify other components (chat.js voice)
+      if (window.CoCoCordChat?.toggleDeafen) {
+        window.CoCoCordChat.toggleDeafen();
+      }
 
-            const container = document.getElementById('userPanel');
-            if (!container) return;
+      // Update UI
+      this.updateAudioButtons();
 
-            const { displayName, username, status, customStatus } = this.getUserDisplayData();
+      // Dispatch event for other listeners
+      document.dispatchEvent(
+        new CustomEvent("userPanel:deafenToggle", {
+          detail: { isDeafened: this.isDeafened, isMuted: this.isMuted },
+        })
+      );
+    },
 
-            container.innerHTML = `
+    updateAudioButtons: function () {
+      const micBtn = document.getElementById("userPanelMicBtn");
+      const deafenBtn = document.getElementById("userPanelDeafenBtn");
+
+      if (micBtn) {
+        micBtn.classList.toggle("active", this.isMuted);
+        micBtn.innerHTML = this.isMuted ? this.icons.micOff : this.icons.micOn;
+        micBtn.title = this.isMuted ? "Bật tiếng" : "Tắt tiếng";
+      }
+
+      if (deafenBtn) {
+        deafenBtn.classList.toggle("active", this.isDeafened);
+        deafenBtn.innerHTML = this.isDeafened
+          ? this.icons.headphoneOff
+          : this.icons.headphoneOn;
+        deafenBtn.title = this.isDeafened ? "Bật âm thanh" : "Tắt âm thanh";
+      }
+    },
+
+    // ============================================
+    // Main Panel Rendering
+    // ============================================
+    render: function () {
+      if (!this.currentUser) return;
+
+      const container = document.getElementById("userPanel");
+      if (!container) return;
+
+      const { displayName, username, status, customStatus } =
+        this.getUserDisplayData();
+
+      container.innerHTML = `
                 <div class="user-panel-content">
                     <!-- Left: Avatar + Info -->
                     <div class="user-panel-left" id="userPanelTrigger">
                         <div class="user-avatar-wrapper">
-                            ${this.renderAvatar(32)}
+                            ${this.renderAvatar(35)}
                             <span class="status-indicator status-${status.toLowerCase()}"></span>
                         </div>
                         <div class="user-info">
-                            <div class="user-name">${this.escapeHtml(displayName)}</div>
-                            <div class="user-status-text">${customStatus || this.getStatusLabel(status)}</div>
+                            <div class="user-name">${this.escapeHtml(
+                              displayName
+                            )}</div>
+                            <div class="user-status-text">${
+                              customStatus || this.getStatusLabel(status)
+                            }</div>
                         </div>
                     </div>
                     
                     <!-- Right: Control Buttons -->
                     <div class="panel-buttons">
-                        <button class="panel-btn ${this.isMuted ? 'active' : ''}" id="userPanelMicBtn" title="${this.isMuted ? 'Bật tiếng' : 'Tắt tiếng'}">
-                            ${this.isMuted ? this.icons.micOff : this.icons.micOn}
+                        <button class="panel-btn ${
+                          this.isMuted ? "active" : ""
+                        }" id="userPanelMicBtn" title="${
+        this.isMuted ? "Bật tiếng" : "Tắt tiếng"
+      }">
+                            ${
+                              this.isMuted
+                                ? this.icons.micOff
+                                : this.icons.micOn
+                            }
                         </button>
-                        <button class="panel-btn ${this.isDeafened ? 'active' : ''}" id="userPanelDeafenBtn" title="${this.isDeafened ? 'Bật âm thanh' : 'Tắt âm thanh'}">
-                            ${this.isDeafened ? this.icons.headphoneOff : this.icons.headphoneOn}
+                        <button class="panel-btn ${
+                          this.isDeafened ? "active" : ""
+                        }" id="userPanelDeafenBtn" title="${
+        this.isDeafened ? "Bật âm thanh" : "Tắt âm thanh"
+      }">
+                            ${
+                              this.isDeafened
+                                ? this.icons.headphoneOff
+                                : this.icons.headphoneOn
+                            }
                         </button>
                         <button class="panel-btn" id="userPanelSettingsBtn" title="Cài đặt người dùng">
                             ${this.icons.settings}
@@ -231,201 +268,236 @@
                 </div>
             `;
 
-            // Re-attach event listeners after render
-            this.attachEventListeners();
-        },
+      // Re-attach event listeners after render
+      this.attachEventListeners();
+    },
 
-        renderAvatar: function(size = 32) {
-            const displayName = this.currentUser?.displayName || this.currentUser?.username || 'U';
-            const avatarUrl = this.currentUser?.avatarUrl;
-            
-            if (avatarUrl) {
-                return `<img src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(displayName)}" class="user-avatar" style="width:${size}px;height:${size}px;">`;
+    renderAvatar: function (size = 32) {
+      const displayName =
+        this.currentUser?.displayName || this.currentUser?.username || "U";
+      const avatarUrl = this.currentUser?.avatarUrl;
+
+      if (avatarUrl) {
+        return `<img src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(
+          displayName
+        )}" class="user-avatar" style="width:${size}px;height:${size}px;">`;
+      }
+      return `<div class="user-avatar-placeholder" style="width:${size}px;height:${size}px;font-size:${
+        size * 0.5
+      }px;">${displayName.charAt(0).toUpperCase()}</div>`;
+    },
+
+    getUserDisplayData: function () {
+      const user = this.currentUser || {};
+      const store = window.CoCoCordPresence;
+      const storeStatus =
+        store && typeof store.getStatus === "function" && user.id != null
+          ? store.getStatus(user.id)
+          : null;
+      return {
+        displayName: user.displayName || user.username || "User",
+        username: user.username || "user",
+        status: storeStatus || user.status || "OFFLINE",
+        customStatus: user.customStatus
+          ? user.customStatusEmoji
+            ? `${user.customStatusEmoji} ${user.customStatus}`
+            : user.customStatus
+          : "",
+        discriminator: String((user.id || 0) % 10000).padStart(4, "0"),
+        bannerColor: user.bannerColor || "#5865f2",
+      };
+    },
+
+    getStatusLabel: function (status) {
+      const labels = {
+        ONLINE: "Trực tuyến",
+        IDLE: "Vắng mặt",
+        DO_NOT_DISTURB: "Không làm phiền",
+        OFFLINE: "Ngoại tuyến",
+        INVISIBLE: "Ẩn",
+      };
+      return labels[status] || "Ngoại tuyến";
+    },
+
+    // ============================================
+    // Event Listeners
+    // ============================================
+    attachEventListeners: function () {
+      // Avatar/Info trigger - toggle popout
+      const panelLeft = document.getElementById("userPanelTrigger");
+      if (panelLeft) {
+        panelLeft.onclick = (e) => {
+          e.stopPropagation();
+          this.togglePopout();
+        };
+      }
+
+      // Mic button
+      const micBtn = document.getElementById("userPanelMicBtn");
+      if (micBtn) {
+        micBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.toggleMute();
+        };
+      }
+
+      // Deafen button
+      const deafenBtn = document.getElementById("userPanelDeafenBtn");
+      if (deafenBtn) {
+        deafenBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.toggleDeafen();
+        };
+      }
+
+      // Settings button
+      const settingsBtn = document.getElementById("userPanelSettingsBtn");
+      if (settingsBtn) {
+        settingsBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (window.SettingsModal?.open) {
+            window.SettingsModal.open("my-account", this.currentUser);
+          } else {
+            window.location.href = "/settings";
+          }
+        };
+      }
+
+      // Global click to close popout
+      if (!this._documentListenerAttached) {
+        document.addEventListener("click", (e) => {
+          if (this.isPopoutVisible) {
+            const popout = document.getElementById("userPopout");
+            if (popout && !popout.contains(e.target)) {
+              this.hidePopout();
             }
-            return `<div class="user-avatar-placeholder" style="width:${size}px;height:${size}px;font-size:${size * 0.5}px;">${displayName.charAt(0).toUpperCase()}</div>`;
-        },
+          }
+        });
+        this._documentListenerAttached = true;
+      }
+    },
 
-        getUserDisplayData: function() {
-            const user = this.currentUser || {};
-            const store = window.CoCoCordPresence;
-            const storeStatus = store && typeof store.getStatus === 'function' && user.id != null
-                ? store.getStatus(user.id)
-                : null;
-            return {
-                displayName: user.displayName || user.username || 'User',
-                username: user.username || 'user',
-                status: storeStatus || user.status || 'OFFLINE',
-                customStatus: user.customStatus ? 
-                    (user.customStatusEmoji ? `${user.customStatusEmoji} ${user.customStatus}` : user.customStatus) : '',
-                discriminator: String((user.id || 0) % 10000).padStart(4, '0'),
-                bannerColor: user.bannerColor || '#5865f2'
-            };
-        },
+    // ============================================
+    // Popout Logic
+    // ============================================
+    togglePopout: function () {
+      if (this.isPopoutVisible) {
+        this.hidePopout();
+      } else {
+        this.showPopout();
+      }
+    },
 
-        getStatusLabel: function(status) {
-            const labels = {
-                'ONLINE': 'Trực tuyến',
-                'IDLE': 'Vắng mặt', 
-                'DO_NOT_DISTURB': 'Không làm phiền',
-                'OFFLINE': 'Ngoại tuyến',
-                'INVISIBLE': 'Ẩn'
-            };
-            return labels[status] || 'Ngoại tuyến';
-        },
+    showPopout: function () {
+      // Remove any existing popout
+      const existing = document.getElementById("userPopout");
+      if (existing) existing.remove();
 
-        // ============================================
-        // Event Listeners
-        // ============================================
-        attachEventListeners: function() {
-            // Avatar/Info trigger - toggle popout
-            const panelLeft = document.getElementById('userPanelTrigger');
-            if (panelLeft) {
-                panelLeft.onclick = (e) => {
-                    e.stopPropagation();
-                    this.togglePopout();
-                };
-            }
+      if (!this.currentUser) return;
 
-            // Mic button
-            const micBtn = document.getElementById('userPanelMicBtn');
-            if (micBtn) {
-                micBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    this.toggleMute();
-                };
-            }
+      // Create popout element
+      const popout = document.createElement("div");
+      popout.id = "userPopout";
+      popout.className = "user-popout";
+      popout.innerHTML = this.renderPopout();
 
-            // Deafen button
-            const deafenBtn = document.getElementById('userPanelDeafenBtn');
-            if (deafenBtn) {
-                deafenBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    this.toggleDeafen();
-                };
-            }
+      // Position above user panel
+      const userPanel = document.getElementById("userPanel");
+      if (userPanel) {
+        const rect = userPanel.getBoundingClientRect();
+        popout.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+        popout.style.left = `${rect.left}px`;
+      }
 
-            // Settings button
-            const settingsBtn = document.getElementById('userPanelSettingsBtn');
-            if (settingsBtn) {
-                settingsBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (window.SettingsModal?.open) {
-                        window.SettingsModal.open('my-account', this.currentUser);
-                    } else {
-                        window.location.href = '/settings';
-                    }
-                };
-            }
+      document.body.appendChild(popout);
 
-            // Global click to close popout
-            if (!this._documentListenerAttached) {
-                document.addEventListener('click', (e) => {
-                    if (this.isPopoutVisible) {
-                        const popout = document.getElementById('userPopout');
-                        if (popout && !popout.contains(e.target)) {
-                            this.hidePopout();
-                        }
-                    }
-                });
-                this._documentListenerAttached = true;
-            }
-        },
+      this.isPopoutVisible = true;
 
-        // ============================================
-        // Popout Logic
-        // ============================================
-        togglePopout: function() {
-            if (this.isPopoutVisible) {
-                this.hidePopout();
-            } else {
-                this.showPopout();
-            }
-        },
+      // Prevent clicks inside popout from closing it
+      popout.addEventListener("click", (e) => e.stopPropagation());
 
-        showPopout: function() {
-            // Remove any existing popout
-            const existing = document.getElementById('userPopout');
-            if (existing) existing.remove();
+      // Attach popout menu listeners
+      this.attachPopoutListeners();
+    },
 
-            if (!this.currentUser) return;
+    hidePopout: function () {
+      const popout = document.getElementById("userPopout");
+      if (popout) {
+        popout.classList.add("closing");
+        setTimeout(() => popout.remove(), 150);
+      }
+      this.isPopoutVisible = false;
+    },
 
-            // Create popout element
-            const popout = document.createElement('div');
-            popout.id = 'userPopout';
-            popout.className = 'user-popout';
-            popout.innerHTML = this.renderPopout();
+    // ============================================
+    // Popout Rendering - Discord Mini Profile Style
+    // ============================================
+    renderPopout: function () {
+      const user = this.currentUser;
+      if (!user) return "";
 
-            // Position above user panel
-            const userPanel = document.getElementById('userPanel');
-            if (userPanel) {
-                const rect = userPanel.getBoundingClientRect();
-                popout.style.bottom = `${window.innerHeight - rect.top + 8}px`;
-                popout.style.left = `${rect.left}px`;
-            }
+      const {
+        displayName,
+        username,
+        status,
+        customStatus,
+        discriminator,
+        bannerColor,
+      } = this.getUserDisplayData();
+      const avatarUrl = user.avatarUrl;
+      const bannerUrl = user.bannerUrl;
 
-            document.body.appendChild(popout);
+      // Banner style
+      const bannerStyle = bannerUrl
+        ? `background: url('${this.escapeHtml(
+            bannerUrl
+          )}') center/cover no-repeat;`
+        : `background: ${bannerColor};`;
 
-            this.isPopoutVisible = true;
+      // Avatar HTML with cutout effect
+      const avatarHtml = avatarUrl
+        ? `<img src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(
+            displayName
+          )}" class="popout-avatar">`
+        : `<div class="popout-avatar popout-avatar-placeholder">${displayName
+            .charAt(0)
+            .toUpperCase()}</div>`;
 
-            // Prevent clicks inside popout from closing it
-            popout.addEventListener('click', (e) => e.stopPropagation());
+      // Badges (if any)
+      const badgesHtml = user.badges?.length
+        ? `<div class="popout-badges">${user.badges
+            .map(
+              (b) =>
+                `<span class="popout-badge" title="${this.escapeHtml(
+                  b.name || b
+                )}">${b.icon || "🏅"}</span>`
+            )
+            .join("")}</div>`
+        : "";
 
-            // Attach popout menu listeners
-            this.attachPopoutListeners();
-        },
-
-        hidePopout: function() {
-            const popout = document.getElementById('userPopout');
-            if (popout) {
-                popout.classList.add('closing');
-                setTimeout(() => popout.remove(), 150);
-            }
-            this.isPopoutVisible = false;
-        },
-
-        // ============================================
-        // Popout Rendering - Discord Mini Profile Style
-        // ============================================
-        renderPopout: function() {
-            const user = this.currentUser;
-            if (!user) return '';
-
-            const { displayName, username, status, customStatus, discriminator, bannerColor } = this.getUserDisplayData();
-            const avatarUrl = user.avatarUrl;
-            const bannerUrl = user.bannerUrl;
-
-            // Banner style
-            const bannerStyle = bannerUrl 
-                ? `background: url('${this.escapeHtml(bannerUrl)}') center/cover no-repeat;`
-                : `background: ${bannerColor};`;
-
-            // Avatar HTML with cutout effect
-            const avatarHtml = avatarUrl
-                ? `<img src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(displayName)}" class="popout-avatar">`
-                : `<div class="popout-avatar popout-avatar-placeholder">${displayName.charAt(0).toUpperCase()}</div>`;
-
-            // Badges (if any)
-            const badgesHtml = user.badges?.length 
-                ? `<div class="popout-badges">${user.badges.map(b => 
-                    `<span class="popout-badge" title="${this.escapeHtml(b.name || b)}">${b.icon || '🏅'}</span>`
-                  ).join('')}</div>` 
-                : '';
-
-            // Custom status (emoji + text)
-            const hasCustomStatus = user.customStatus || user.customStatusEmoji;
-            const customStatusHtml = hasCustomStatus ? `
+      // Custom status (emoji + text)
+      const hasCustomStatus = user.customStatus || user.customStatusEmoji;
+      const customStatusHtml = hasCustomStatus
+        ? `
                 <div class="popout-custom-status-box">
-                    ${user.customStatusEmoji ? `<span class="popout-emoji">${user.customStatusEmoji}</span>` : ''}
-                    <span class="popout-custom-text">${this.escapeHtml(user.customStatus || '')}</span>
+                    ${
+                      user.customStatusEmoji
+                        ? `<span class="popout-emoji">${user.customStatusEmoji}</span>`
+                        : ""
+                    }
+                    <span class="popout-custom-text">${this.escapeHtml(
+                      user.customStatus || ""
+                    )}</span>
                 </div>
-            ` : `
+            `
+        : `
                 <div class="popout-custom-status-box popout-custom-status-placeholder" id="popoutSetStatusBtn">
                     <span class="popout-emoji">😊</span>
                     <span class="popout-custom-text">Cơ chế trực tuyến nào thấy được nhất?</span>
                 </div>
             `;
 
-            return `
+      return `
                 <!-- Banner -->
                 <div class="popout-banner" style="${bannerStyle}"></div>
                 
@@ -442,10 +514,14 @@
                     <!-- Identity -->
                     <div class="popout-identity">
                         <div class="popout-display-name">
-                            <span class="popout-name">${this.escapeHtml(displayName)}</span>
+                            <span class="popout-name">${this.escapeHtml(
+                              displayName
+                            )}</span>
                             ${badgesHtml}
                         </div>
-                        <div class="popout-username">${this.escapeHtml(username)}#${discriminator}</div>
+                        <div class="popout-username">${this.escapeHtml(
+                          username
+                        )}#${discriminator}</div>
                     </div>
 
                     <!-- Custom Status -->
@@ -490,147 +566,147 @@
                     </div>
                 </div>
             `;
-        },
+    },
 
-        attachPopoutListeners: function() {
-            const popout = document.getElementById('userPopout');
-            if (!popout) return;
+    attachPopoutListeners: function () {
+      const popout = document.getElementById("userPopout");
+      if (!popout) return;
 
-            // Menu item actions
-            popout.querySelectorAll('.popout-menu-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.handlePopoutAction(item.dataset.action);
-                });
-            });
+      // Menu item actions
+      popout.querySelectorAll(".popout-menu-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.handlePopoutAction(item.dataset.action);
+        });
+      });
 
-            // Custom status placeholder click
-            const setStatusBtn = popout.querySelector('#popoutSetStatusBtn');
-            if (setStatusBtn) {
-                setStatusBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.hidePopout();
-                    this.openStatusPicker();
-                });
-            }
-        },
+      // Custom status placeholder click
+      const setStatusBtn = popout.querySelector("#popoutSetStatusBtn");
+      if (setStatusBtn) {
+        setStatusBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.hidePopout();
+          this.openStatusPicker();
+        });
+      }
+    },
 
-        openStatusPicker: function() {
-            if (window.StatusPicker?.show) {
-                window.StatusPicker.show(this.currentUser, (updatedUser) => {
-                    this.currentUser = updatedUser;
-                    this.render();
-                });
-            } else if (window.SettingsModal?.open) {
-                window.SettingsModal.open('profiles', this.currentUser);
-            }
-        },
+    openStatusPicker: function () {
+      if (window.StatusPicker?.show) {
+        window.StatusPicker.show(this.currentUser, (updatedUser) => {
+          this.currentUser = updatedUser;
+          this.render();
+        });
+      } else if (window.SettingsModal?.open) {
+        window.SettingsModal.open("profiles", this.currentUser);
+      }
+    },
 
-        handlePopoutAction: function(action) {
-            this.hidePopout();
+    handlePopoutAction: function (action) {
+      this.hidePopout();
 
-            switch (action) {
-                case 'edit-profile':
-                    if (window.SettingsModal?.open) {
-                        window.SettingsModal.open('profiles', this.currentUser);
-                    } else {
-                        window.location.href = '/settings/profile';
-                    }
-                    break;
+      switch (action) {
+        case "edit-profile":
+          if (window.SettingsModal?.open) {
+            window.SettingsModal.open("profiles", this.currentUser);
+          } else {
+            window.location.href = "/settings/profile";
+          }
+          break;
 
-                case 'set-status':
-                    this.openStatusPicker();
-                    break;
+        case "set-status":
+          this.openStatusPicker();
+          break;
 
-                case 'switch-account':
-                    if (confirm('Đổi sang tài khoản khác? Bạn sẽ bị đăng xuất.')) {
-                        this.performLogout();
-                    }
-                    break;
+        case "switch-account":
+          if (confirm("Đổi sang tài khoản khác? Bạn sẽ bị đăng xuất.")) {
+            this.performLogout();
+          }
+          break;
 
-                case 'logout':
-                    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-                        this.performLogout();
-                    }
-                    break;
-            }
-        },
+        case "logout":
+          if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+            this.performLogout();
+          }
+          break;
+      }
+    },
 
-        performLogout: async function() {
-            try {
-                const token = localStorage.getItem('accessToken');
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-            } catch (e) {
-                // Ignore logout errors
-            }
-            
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userPanel_muted');
-            localStorage.removeItem('userPanel_deafened');
-            window.location.href = '/login';
-        },
+    performLogout: async function () {
+      try {
+        const token = localStorage.getItem("accessToken");
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (e) {
+        // Ignore logout errors
+      }
 
-        // ============================================
-        // Presence Heartbeat
-        // ============================================
-        startPresenceHeartbeat: function() {
-            // Send presence heartbeat every 30 seconds
-            setInterval(() => this.sendHeartbeat(), 30000);
-        },
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userPanel_muted");
+      localStorage.removeItem("userPanel_deafened");
+      window.location.href = "/login";
+    },
 
-        sendHeartbeat: async function() {
-            try {
-                const token = localStorage.getItem('accessToken');
-                if (!token) return;
+    // ============================================
+    // Presence Heartbeat
+    // ============================================
+    startPresenceHeartbeat: function () {
+      // Send presence heartbeat every 30 seconds
+      setInterval(() => this.sendHeartbeat(), 30000);
+    },
 
-                await fetch('/api/users/heartbeat', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-            } catch (error) {
-                console.error('UserPanel: Heartbeat failed', error);
-            }
-        },
+    sendHeartbeat: async function () {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
 
-        // ============================================
-        // Public API
-        // ============================================
-        update: function(userData) {
-            if (userData) {
-                this.currentUser = { ...this.currentUser, ...userData };
-                this.render();
-            }
-        },
+        await fetch("/api/users/heartbeat", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (error) {
+        console.error("UserPanel: Heartbeat failed", error);
+      }
+    },
 
-        // Sync mute/deafen state from external source (e.g., voice channel)
-        syncAudioState: function(isMuted, isDeafened) {
-            this.isMuted = isMuted;
-            this.isDeafened = isDeafened;
-            this.updateAudioButtons();
-        },
+    // ============================================
+    // Public API
+    // ============================================
+    update: function (userData) {
+      if (userData) {
+        this.currentUser = { ...this.currentUser, ...userData };
+        this.render();
+      }
+    },
 
-        // ============================================
-        // Utilities
-        // ============================================
-        escapeHtml: function(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    };
+    // Sync mute/deafen state from external source (e.g., voice channel)
+    syncAudioState: function (isMuted, isDeafened) {
+      this.isMuted = isMuted;
+      this.isDeafened = isDeafened;
+      this.updateAudioButtons();
+    },
 
-    // Export to window
-    window.UserPanel = UserPanel;
+    // ============================================
+    // Utilities
+    // ============================================
+    escapeHtml: function (text) {
+      if (!text) return "";
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    },
+  };
 
-    // Auto-initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => UserPanel.init());
-    } else {
-        setTimeout(() => UserPanel.init(), 100);
-    }
+  // Export to window
+  window.UserPanel = UserPanel;
+
+  // Auto-initialize
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => UserPanel.init());
+  } else {
+    setTimeout(() => UserPanel.init(), 100);
+  }
 })();

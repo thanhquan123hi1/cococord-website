@@ -56,12 +56,19 @@ body.app-layout {
   left: 0;
   bottom: 0;
   /* Total width = server-bar + sidebar */
-  width: calc(72px + var(--active-sidebar-width, var(--channel-panel-width, 232px)));
+  width: calc(
+    72px + var(--active-sidebar-width, var(--channel-panel-width, 232px))
+  );
   z-index: 2000;
+  padding: 0 8px 8px 8px;
+  box-sizing: border-box;
 }
 
 .global-user-control-panel .user-area {
   width: 100%;
+  background: #232428;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 /* ==================== SERVER SIDEBAR (Global - in Decorator) ==================== */

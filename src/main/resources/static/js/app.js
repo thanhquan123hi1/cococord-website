@@ -517,13 +517,13 @@ async function loadGlobalServers() {
     if (!response.ok) throw new Error("Failed to load servers");
 
     const servers = await response.json();
-    
+
     // Remove only server items, keep action buttons (divider + add + discover)
     const existingServerItems = serverList.querySelectorAll(
       ".server-item[data-server-id]"
     );
     existingServerItems.forEach((item) => item.remove());
-    
+
     // Find the action divider to insert servers before it
     const actionDivider = serverList.querySelector(
       ".server-divider[data-action-divider]"
