@@ -177,18 +177,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
   position: relative;
 }
 
 .panel-btn:hover {
   background: var(--background-modifier-hover);
-  color: var(--interactive-hover);
 }
 
 .panel-btn:active {
   background: var(--background-modifier-active);
-  color: var(--interactive-active);
 }
 
 /* Active state for mute/deafen (red color) */
@@ -199,7 +197,6 @@
 
 .panel-btn.active:hover {
   background: rgba(242, 63, 67, 0.15);
-  color: var(--danger);
 }
 
 .panel-btn svg {
@@ -528,53 +525,4 @@
   }
 }
 
-/* ============================================
-   Tooltip for buttons
-   ============================================ */
-.panel-btn[title] {
-  position: relative;
-}
-
-.panel-btn::before {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 12px;
-  background: var(--background-floating);
-  color: var(--text-normal);
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  border-radius: 4px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.1s ease, visibility 0.1s ease;
-  pointer-events: none;
-  margin-bottom: 8px;
-  z-index: 10001;
-}
-
-.panel-btn::after {
-  content: "";
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: var(--background-floating);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.1s ease, visibility 0.1s ease;
-  pointer-events: none;
-  margin-bottom: -2px;
-  z-index: 10001;
-}
-
-.panel-btn:hover::before,
-.panel-btn:hover::after {
-  opacity: 1;
-  visibility: visible;
-}
+/* Tooltip intentionally disabled: hover should only brighten background. */
