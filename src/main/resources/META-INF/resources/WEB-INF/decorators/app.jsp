@@ -81,17 +81,15 @@
                             </c:choose>
                         </a>
                     </c:forEach>
-                </div>
-            </div>
-            
-            <!-- Fixed Server Actions at Bottom -->
-            <div class="server-actions-fixed">
-                <div class="server-divider"></div>
-                <div class="server-item add-server-btn" role="button" tabindex="0" title="Tạo Server" id="globalAddServerBtn">
-                    <i class="bi bi-plus-lg"></i>
-                </div>
-                <div class="server-item discover-btn" role="button" tabindex="0" title="Khám phá Server" id="globalDiscoverBtn">
-                    <i class="bi bi-compass"></i>
+                    
+                    <!-- Server Actions (Add & Discover) -->
+                    <div class="server-divider"></div>
+                    <div class="server-item add-server-btn" role="button" tabindex="0" title="Tạo Server" id="globalAddServerBtn">
+                        <i class="bi bi-plus-lg"></i>
+                    </div>
+                    <div class="server-item discover-btn" role="button" tabindex="0" title="Khám phá Server" id="globalDiscoverBtn">
+                        <i class="bi bi-compass"></i>
+                    </div>
                 </div>
             </div>
         </aside>
