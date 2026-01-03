@@ -133,7 +133,14 @@
             
             // Render server mới (được tạo dynamically)
             const serverItem = createServerItem(server);
-            el.serverList.appendChild(serverItem);
+            
+            // Insert BEFORE the action buttons (divider + add + discover) at the end
+            const actionDivider = el.serverList.querySelector('.server-divider:last-of-type');
+            if (actionDivider) {
+                el.serverList.insertBefore(serverItem, actionDivider);
+            } else {
+                el.serverList.appendChild(serverItem);
+            }
         });
 
         updateActiveServer();
