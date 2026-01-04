@@ -1,4 +1,4 @@
-/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout, Peer, CocoCordVoiceManager */
+/* global SockJS, Stomp, fetchWithAuth, getAccessToken, logout, Peer, CocoCordVoiceManager, CocoCordMarkdown, VirtualScroller */
 
 (function () {
     'use strict';
@@ -126,6 +126,19 @@
     // New Voice (STOMP signaling + RTCPeerConnection mesh)
     const USE_NEW_VOICE = true;
     let voiceManager = null;
+
+    // Virtual Scrolling
+    let virtualScroller = null;
+    let messages = []; // Store all messages for virtual scrolling
+
+    // Chat Input Manager (file attachments, emoji/gif/sticker picker)
+    let chatInputManager = null;
+
+    // Header Toolbar (member list toggle, threads, pins, notifications, help)
+    let headerToolbar = null;
+
+    // Server Settings Modal
+    let serverSettingsManager = null;
 
     // ==================== UTILITIES ====================
     function getQueryParams() {
@@ -269,6 +282,471 @@
             const serverNameEl = document.getElementById('welcomeServerName');
             if (serverNameEl) serverNameEl.textContent = serverName;
         }
+    }
+
+    // ==================== VIRTUAL SCROLLING ====================
+    
+    /**
+     * Initialize Virtual Scroller for message list
+     */
+    function initVirtualScroller() {
+        // Destroy existing scroller if any
+        if (virtualScroller) {
+            virtualScroller.destroy();
+        }
+
+        // Check if VirtualScroller is available
+        if (typeof VirtualScroller === 'undefined') {
+            console.warn('[Chat] VirtualScroller not loaded, using fallback');
+            return;
+        }
+
+        virtualScroller = new VirtualScroller({
+            container: el.messageList,
+            estimatedItemHeight: 80,
+            bufferSize: 10,
+            renderItem: renderMessageItem,
+            onScrollTop: () => {
+                // Load older messages when scrolling to top
+                if (!isLoadingHistory && hasMoreMessages) {
+                    loadMoreHistory();
+                }
+            }
+        });
+
+        console.log('[Chat] VirtualScroller initialized');
+    }
+
+    /**
+     * Initialize Chat Input Manager (file attachments, emoji/gif/sticker picker)
+     */
+    function initChatInputManager() {
+        // Destroy existing manager if any
+        if (chatInputManager) {
+            chatInputManager.destroy();
+        }
+
+        // Check if ChatInputManager is available
+        if (typeof ChatInputManager === 'undefined') {
+            console.warn('[Chat] ChatInputManager not loaded, using fallback');
+            return;
+        }
+
+        chatInputManager = new ChatInputManager({
+            composerSelector: '#chatComposer',
+            inputSelector: '#chatInput',
+            attachBtnSelector: '#attachBtn',
+            emojiBtnSelector: '#emojiBtn',
+            gifBtnSelector: '#gifBtn',
+            stickerBtnSelector: '#stickerBtn',
+            
+            // Callback when files are ready to send with message
+            onSendMessage: async (text, files) => {
+                if (!activeChannelId) return;
+                
+                // If there are files, upload them first
+                if (files && files.length > 0) {
+                    await uploadAndSendFiles(files, text);
+                } else if (text.trim()) {
+                    // Just send text message via WebSocket
+                    sendTextMessage(text);
+                }
+            },
+            
+            // Callback when GIF is selected
+            onSendGif: async (gifUrl, gifData) => {
+                if (!activeChannelId) return;
+                await sendGifMessage(gifUrl, gifData);
+            },
+            
+            // Callback when sticker is selected
+            onSendSticker: async (stickerId, stickerUrl) => {
+                if (!activeChannelId) return;
+                await sendStickerMessage(stickerId, stickerUrl);
+            }
+        });
+
+        console.log('[Chat] ChatInputManager initialized');
+    }
+
+    /**
+     * Send text-only message via WebSocket
+     */
+    function sendTextMessage(text) {
+        if (!stompClient || !stompClient.connected) {
+            console.warn('[Chat] WebSocket not connected');
+            return;
+        }
+        
+        cancelReply();
+        
+        stompClient.send(
+            '/app/chat.sendMessage',
+            {},
+            JSON.stringify({ channelId: activeChannelId, content: text })
+        );
+        
+        el.chatInput.value = '';
+    }
+
+    /**
+     * Upload files and send message with attachments
+     */
+    async function uploadAndSendFiles(files, text) {
+        try {
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('channelId', activeChannelId);
+            if (text) formData.append('content', text);
+            
+            files.forEach((file, index) => {
+                formData.append('files', file);
+            });
+
+            // Upload files to server
+            const response = await fetchWithAuth(`/api/messages/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.message || 'Upload failed');
+            }
+
+            // Clear input after successful upload
+            el.chatInput.value = '';
+            if (chatInputManager) {
+                chatInputManager.clearAttachments();
+            }
+            
+            cancelReply();
+            
+            console.log('[Chat] Files uploaded successfully');
+        } catch (error) {
+            console.error('[Chat] File upload failed:', error);
+            showToast('Không thể tải file lên: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Send GIF message
+     */
+    async function sendGifMessage(gifUrl, gifData) {
+        if (!stompClient || !stompClient.connected) {
+            console.warn('[Chat] WebSocket not connected');
+            return;
+        }
+        
+        // Send GIF as a special message type
+        stompClient.send(
+            '/app/chat.sendMessage',
+            {},
+            JSON.stringify({
+                channelId: activeChannelId,
+                content: gifUrl,
+                type: 'GIF',
+                metadata: gifData ? JSON.stringify(gifData) : null
+            })
+        );
+    }
+
+    /**
+     * Send sticker message
+     */
+    async function sendStickerMessage(stickerId, stickerUrl) {
+        if (!stompClient || !stompClient.connected) {
+            console.warn('[Chat] WebSocket not connected');
+            return;
+        }
+        
+        // Send sticker as a special message type
+        stompClient.send(
+            '/app/chat.sendMessage',
+            {},
+            JSON.stringify({
+                channelId: activeChannelId,
+                content: stickerUrl,
+                type: 'STICKER',
+                metadata: JSON.stringify({ stickerId })
+            })
+        );
+    }
+
+    /**
+     * Show toast notification
+     */
+    function showToast(message, type = 'info') {
+        // Remove existing toast
+        const existingToast = document.querySelector('.chat-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = `chat-toast chat-toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Show toast
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+        
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    /**
+     * Initialize Header Toolbar (member list toggle, threads, pins, notifications, help)
+     */
+    function initHeaderToolbar() {
+        // Destroy existing toolbar if any
+        if (headerToolbar) {
+            headerToolbar.destroy();
+        }
+
+        // Check if HeaderToolbar is available
+        if (typeof HeaderToolbar === 'undefined') {
+            console.warn('[Chat] HeaderToolbar not loaded, using fallback');
+            return;
+        }
+
+        headerToolbar = new HeaderToolbar({
+            // Load threads for current channel
+            onLoadThreads: async () => {
+                if (!activeChannelId) return [];
+                try {
+                    const response = await fetchWithAuth(`/api/channels/${activeChannelId}/threads`);
+                    if (!response.ok) return [];
+                    return await response.json();
+                } catch (e) {
+                    console.error('[Chat] Failed to load threads:', e);
+                    return [];
+                }
+            },
+            
+            // Load pinned messages for current channel
+            onLoadPinnedMessages: async () => {
+                if (!activeChannelId) return [];
+                try {
+                    const response = await fetchWithAuth(`/api/channels/${activeChannelId}/pins`);
+                    if (!response.ok) return [];
+                    return await response.json();
+                } catch (e) {
+                    console.error('[Chat] Failed to load pinned messages:', e);
+                    return [];
+                }
+            },
+            
+            // Handle mute toggle
+            onToggleMute: async (isMuted) => {
+                if (!activeChannelId) return;
+                try {
+                    await fetchWithAuth(`/api/channels/${activeChannelId}/mute`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ muted: isMuted })
+                    });
+                } catch (e) {
+                    console.error('[Chat] Failed to toggle mute:', e);
+                }
+            },
+            
+            // Handle create category
+            onCreateCategory: () => {
+                // Category creation is handled by the existing modal
+                console.log('[Chat] Create category triggered');
+            }
+        });
+
+        console.log('[Chat] HeaderToolbar initialized');
+    }
+
+    /**
+     * Initialize Server Settings Manager
+     */
+    function initServerSettings() {
+        // Destroy existing manager if any
+        if (serverSettingsManager) {
+            serverSettingsManager.destroy();
+        }
+
+        // Check if ServerSettingsManager is available
+        if (typeof ServerSettingsManager === 'undefined') {
+            console.warn('[Chat] ServerSettingsManager not loaded');
+            return;
+        }
+
+        serverSettingsManager = new ServerSettingsManager({
+            // On settings saved callback
+            onSave: (data) => {
+                console.log('[Chat] Server settings saved:', data);
+                // Reload server data after save
+                if (activeServerId) {
+                    loadServerData(activeServerId);
+                }
+            },
+            
+            // On server deleted callback
+            onDeleteServer: () => {
+                console.log('[Chat] Server deleted');
+                // Clear active server and redirect to home
+                activeServerId = null;
+                activeChannelId = null;
+                setQueryParams({ serverId: null, channelId: null });
+                // Reload server list
+                loadServers().then(() => {
+                    if (servers.length > 0) {
+                        selectServer(servers[0].id);
+                    } else {
+                        // No servers left, show empty state
+                        el.serverName.textContent = 'Chọn một server';
+                        el.channelList.innerHTML = '';
+                        el.messageList.innerHTML = '';
+                    }
+                });
+            },
+            
+            // On error callback
+            onError: (error) => {
+                console.error('[Chat] Server settings error:', error);
+                showToast(error, 'error');
+            }
+        });
+
+        console.log('[Chat] ServerSettingsManager initialized');
+    }
+
+    /**
+     * Render a single message item (for VirtualScroller)
+     */
+    function renderMessageItem(msg, index) {
+        const displayName = msg.displayName || msg.username || 'User';
+        const initial = displayName.trim().charAt(0).toUpperCase();
+        
+        // Render markdown content
+        const rawContent = msg.content || '';
+        const htmlContent = window.CocoCordMarkdown 
+            ? window.CocoCordMarkdown.render(rawContent)
+            : escapeHtml(rawContent);
+
+        return `
+            <div class="message-row" data-message-id="${msg.id}" data-user-id="${msg.userId || msg.senderId || ''}" data-username="${msg.username || ''}">
+                <div class="message-avatar">
+                    ${msg.avatarUrl ? `<img src="${escapeHtml(msg.avatarUrl)}" alt="${escapeHtml(displayName)}">` : initial}
+                </div>
+                <div class="message-body">
+                    <div class="message-header">
+                        <span class="message-author" title="${escapeHtml(msg.username || 'user')}#${discriminatorFromId(msg.userId || msg.senderId)}">${escapeHtml(displayName)}</span>
+                        <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
+                        ${msg.editedAt ? '<span class="message-edited">(đã chỉnh sửa)</span>' : ''}
+                    </div>
+                    <div class="message-content markdown-content">${htmlContent}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==================== MOBILE RESPONSIVENESS ====================
+    
+    /**
+     * Initialize mobile hamburger menu and sidebar toggles
+     */
+    function initMobileSidebarToggle() {
+        // Create hamburger buttons if not exist
+        let hamburgerLeft = document.getElementById('hamburgerLeft');
+        let hamburgerRight = document.getElementById('hamburgerRight');
+        let mobileOverlay = document.getElementById('mobileOverlay');
+
+        if (!hamburgerLeft) {
+            hamburgerLeft = document.createElement('button');
+            hamburgerLeft.id = 'hamburgerLeft';
+            hamburgerLeft.className = 'hamburger-menu-btn hamburger-left';
+            hamburgerLeft.innerHTML = '<i class="bi bi-list"></i>';
+            hamburgerLeft.setAttribute('aria-label', 'Toggle sidebar');
+            document.body.appendChild(hamburgerLeft);
+        }
+
+        if (!hamburgerRight) {
+            hamburgerRight = document.createElement('button');
+            hamburgerRight.id = 'hamburgerRight';
+            hamburgerRight.className = 'hamburger-menu-btn hamburger-right';
+            hamburgerRight.innerHTML = '<i class="bi bi-people"></i>';
+            hamburgerRight.setAttribute('aria-label', 'Toggle members');
+            document.body.appendChild(hamburgerRight);
+        }
+
+        if (!mobileOverlay) {
+            mobileOverlay = document.createElement('div');
+            mobileOverlay.id = 'mobileOverlay';
+            mobileOverlay.className = 'mobile-overlay';
+            document.body.appendChild(mobileOverlay);
+        }
+
+        // Get sidebar elements
+        const serverSidebar = document.getElementById('globalServerSidebar') || document.querySelector('.server-sidebar');
+        const channelSidebar = document.getElementById('channelSidebar') || document.querySelector('.channel-sidebar');
+        const membersSidebar = el.membersSidebar;
+
+        // Left hamburger - toggle server + channel sidebars
+        hamburgerLeft.addEventListener('click', () => {
+            const isOpen = channelSidebar?.classList.contains('show') || serverSidebar?.classList.contains('show');
+            
+            if (isOpen) {
+                // Close sidebars
+                if (serverSidebar) serverSidebar.classList.remove('show');
+                if (channelSidebar) channelSidebar.classList.remove('show');
+                mobileOverlay.classList.remove('show');
+            } else {
+                // Open sidebars
+                if (serverSidebar) serverSidebar.classList.add('show');
+                if (channelSidebar) channelSidebar.classList.add('show');
+                mobileOverlay.classList.add('show');
+                // Close members sidebar if open
+                if (membersSidebar) membersSidebar.classList.remove('show');
+            }
+        });
+
+        // Right hamburger - toggle members sidebar
+        hamburgerRight.addEventListener('click', () => {
+            if (!membersSidebar) return;
+            
+            const isOpen = membersSidebar.classList.contains('show');
+            
+            if (isOpen) {
+                membersSidebar.classList.remove('show');
+                mobileOverlay.classList.remove('show');
+            } else {
+                membersSidebar.classList.add('show');
+                mobileOverlay.classList.add('show');
+                // Close left sidebars if open
+                if (serverSidebar) serverSidebar.classList.remove('show');
+                if (channelSidebar) channelSidebar.classList.remove('show');
+            }
+        });
+
+        // Overlay click - close all sidebars
+        mobileOverlay.addEventListener('click', () => {
+            if (serverSidebar) serverSidebar.classList.remove('show');
+            if (channelSidebar) channelSidebar.classList.remove('show');
+            if (membersSidebar) membersSidebar.classList.remove('show');
+            mobileOverlay.classList.remove('show');
+        });
+
+        // Close sidebars when selecting a channel (mobile)
+        // This will be called from selectChannel function
+        window.closeMobileSidebars = () => {
+            if (serverSidebar) serverSidebar.classList.remove('show');
+            if (channelSidebar) channelSidebar.classList.remove('show');
+            if (membersSidebar) membersSidebar.classList.remove('show');
+            if (mobileOverlay) mobileOverlay.classList.remove('show');
+        };
+
+        console.log('[Chat] Mobile sidebar toggle initialized');
     }
 
     // ==================== RENDER FUNCTIONS ====================
@@ -591,6 +1069,19 @@
     function appendMessage(msg, prepend = false) {
         el.chatEmpty.style.display = 'none';
 
+        // If using virtual scroller, add to messages array
+        if (virtualScroller) {
+            if (prepend) {
+                messages.unshift(msg);
+                virtualScroller.prependItems([msg]);
+            } else {
+                messages.push(msg);
+                virtualScroller.appendItems([msg], true);
+            }
+            return;
+        }
+
+        // Fallback: Direct DOM manipulation (legacy mode)
         const row = document.createElement('div');
         row.className = 'message-row';
         row.dataset.messageId = msg.id;
@@ -599,6 +1090,12 @@
 
         const displayName = msg.displayName || msg.username || 'User';
         const initial = displayName.trim().charAt(0).toUpperCase();
+
+        // Render markdown content với CocoCordMarkdown
+        const rawContent = msg.content || '';
+        const htmlContent = window.CocoCordMarkdown 
+            ? window.CocoCordMarkdown.render(rawContent)
+            : escapeHtml(rawContent);
 
         row.innerHTML = `
             <div class="message-avatar">
@@ -610,7 +1107,7 @@
                     <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
                     ${msg.editedAt ? '<span class="message-edited">(đã chỉnh sửa)</span>' : ''}
                 </div>
-                <div class="message-content">${escapeHtml(msg.content || '')}</div>
+                <div class="message-content markdown-content">${htmlContent}</div>
             </div>
         `;
 
@@ -829,19 +1326,29 @@
 
             if (!append) {
                 // Initial load
-                const emptyState = el.chatEmpty;
-                el.messageList.innerHTML = '';
-                if (items.length) {
-                    for (const m of items) appendMessage(m);
-                    if (emptyState) emptyState.style.display = 'none';
+                messages = items; // Store in messages array
+                
+                if (virtualScroller) {
+                    // Use virtual scroller
+                    virtualScroller.setItems(messages, { scrollTo: 'bottom' });
+                    el.chatEmpty.style.display = items.length === 0 ? 'block' : 'none';
                 } else {
-                    const channel = channels.find(c => String(c.id) === String(channelId));
-                    renderChatEmptyState(channel);
-                    if (emptyState) emptyState.style.display = 'block';
+                    // Fallback: Direct DOM
+                    const emptyState = el.chatEmpty;
+                    el.messageList.innerHTML = '';
+                    if (items.length) {
+                        for (const m of items) appendMessage(m);
+                        if (emptyState) emptyState.style.display = 'none';
+                    } else {
+                        const channel = channels.find(c => String(c.id) === String(channelId));
+                        renderChatEmptyState(channel);
+                        if (emptyState) emptyState.style.display = 'block';
+                    }
+                    if (emptyState) el.messageList.appendChild(emptyState);
+                    scrollToBottom();
                 }
-                if (emptyState) el.messageList.appendChild(emptyState);
+                
                 el.chatComposer.style.display = '';
-                scrollToBottom();
                 
                 // Track oldest message for pagination
                 if (items.length > 0) {
@@ -850,18 +1357,24 @@
             } else {
                 // Prepending older messages (infinite scroll)
                 if (items.length > 0) {
-                    // Save scroll position
-                    const scrollHeightBefore = el.messageList.scrollHeight;
-                    const scrollTopBefore = el.messageList.scrollTop;
-                    
-                    // Prepend messages in reverse order (oldest first)
-                    for (let i = items.length - 1; i >= 0; i--) {
-                        appendMessage(items[i], true);
+                    if (virtualScroller) {
+                        // Use virtual scroller
+                        messages.unshift(...items);
+                        virtualScroller.prependItems(items);
+                    } else {
+                        // Fallback: Direct DOM
+                        const scrollHeightBefore = el.messageList.scrollHeight;
+                        const scrollTopBefore = el.messageList.scrollTop;
+                        
+                        // Prepend messages in reverse order (oldest first)
+                        for (let i = items.length - 1; i >= 0; i--) {
+                            appendMessage(items[i], true);
+                        }
+                        
+                        // Restore scroll position (keep user at same visual position)
+                        const scrollHeightAfter = el.messageList.scrollHeight;
+                        el.messageList.scrollTop = scrollTopBefore + (scrollHeightAfter - scrollHeightBefore);
                     }
-                    
-                    // Restore scroll position (keep user at same visual position)
-                    const scrollHeightAfter = el.messageList.scrollHeight;
-                    el.messageList.scrollTop = scrollTopBefore + (scrollHeightAfter - scrollHeightBefore);
                     
                     oldestMessageId = items[0].id;
                 }
@@ -1168,7 +1681,13 @@
         currentPage = 0;
         hasMoreMessages = true;
         oldestMessageId = null;
+        messages = []; // Clear messages array
         clearAllTyping();
+
+        // Close mobile sidebars when selecting channel
+        if (window.closeMobileSidebars) {
+            window.closeMobileSidebars();
+        }
 
         const channel = channels.find(c => String(c.id) === String(channelId));
         const channelName = channel ? (channel.name || 'channel') : 'channel';
@@ -1183,6 +1702,9 @@
         } else {
             el.channelTopic.style.display = 'none';
         }
+
+        // Initialize virtual scroller for this channel
+        initVirtualScroller();
 
         renderChannelList();
         await subscribeToChannel(channelId);
@@ -1551,8 +2073,17 @@
 
     // ==================== SERVER SETTINGS & LEAVE ====================
     function showServerSettingsModal() {
-        // TODO: Implement server settings modal
-        alert('Chức năng Cài đặt Server đang được phát triển');
+        if (!activeServerId) {
+            showToast('Vui lòng chọn một server trước', 'error');
+            return;
+        }
+
+        if (serverSettingsManager) {
+            serverSettingsManager.open(activeServerId);
+        } else {
+            console.warn('[Chat] ServerSettingsManager not initialized');
+            showToast('Chức năng cài đặt server chưa sẵn sàng', 'error');
+        }
     }
 
     async function leaveCurrentServer() {
@@ -3013,10 +3544,8 @@
     // REMOVED: toggleUserSettings(), toggleUserDropdown()
     // Now handled by UserPanel popout component (user-panel.js)
 
-    function toggleMembersSidebar() {
-        el.membersSidebar.classList.toggle('show');
-        el.membersToggleBtn.classList.toggle('active');
-    }
+    // REMOVED: toggleMembersSidebar()
+    // Now handled by HeaderToolbar component (header-toolbar.js)
     
     function doLogout() {
         if (typeof logout === 'function') {
@@ -3158,27 +3687,28 @@
         // el.userInfoBtn?.addEventListener('click', ...);
         // el.logoutBtnUser?.addEventListener('click', doLogout);
         
-        // Members toggle
-        el.membersToggleBtn?.addEventListener('click', toggleMembersSidebar);
+        // Members toggle - now handled by HeaderToolbar (header-toolbar.js)
+        // el.membersToggleBtn?.addEventListener('click', toggleMembersSidebar);
         
-        // Chat composer
-        el.chatComposer?.addEventListener('submit', (e) => {
+        // Chat composer - handle submit with ChatInputManager for file attachments
+        el.chatComposer?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = (el.chatInput.value || '').trim();
-            if (!text || !activeChannelId) return;
+            
+            // Check for file attachments from ChatInputManager
+            const hasFiles = chatInputManager && chatInputManager.hasAttachments();
+            const files = hasFiles ? chatInputManager.getAttachedFiles() : [];
+            
+            if (!text && !hasFiles) return;
+            if (!activeChannelId) return;
 
-            if (!stompClient || !stompClient.connected) return;
-
-            // Cancel reply if active
-            cancelReply();
-
-            stompClient.send(
-                '/app/chat.sendMessage',
-                {},
-                JSON.stringify({ channelId: activeChannelId, content: text })
-            );
-
-            el.chatInput.value = '';
+            // If we have files, use the upload flow
+            if (hasFiles) {
+                await uploadAndSendFiles(files, text);
+            } else if (text) {
+                // Just send text message
+                sendTextMessage(text);
+            }
         });
         
         // Typing indicator - send when user types
@@ -3264,6 +3794,10 @@
     // ==================== INITIALIZATION ====================
     async function init() {
         wireEvents();
+        
+        // Initialize mobile sidebar toggle
+        initMobileSidebarToggle();
+        
         await loadMe();
 
         const qp = getQueryParams();
@@ -3307,6 +3841,18 @@
         el.welcomeChannelName.textContent = '#' + channelName;
         el.chatInput.placeholder = `Nhắn #${channelName}`;
         el.chatComposer.style.display = '';
+
+        // Initialize virtual scroller
+        initVirtualScroller();
+
+        // Initialize Chat Input Manager (file attachments, emoji/gif/sticker picker)
+        initChatInputManager();
+
+        // Initialize Header Toolbar (member list toggle, threads, pins, notifications, help)
+        initHeaderToolbar();
+
+        // Initialize Server Settings Manager
+        initServerSettings();
 
         // Subscribe to channel updates and load history (don't block on WebSocket errors)
         try {

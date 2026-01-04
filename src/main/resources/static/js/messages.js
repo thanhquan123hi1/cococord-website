@@ -1,3 +1,4 @@
+/* global CocoCordMarkdown */
 /* Direct Messages Page - Discord-like Dark Theme */
 
 (() => {
@@ -483,7 +484,13 @@
             const avatar = m.senderAvatarUrl 
                 ? `<img src="${escapeHtml(m.senderAvatarUrl)}" alt="">` 
                 : escapeHtml(name.charAt(0).toUpperCase());
-            const content = escapeHtml(m.content || '');
+            
+            // Render markdown content
+            const rawContent = m.content || '';
+            const content = window.CocoCordMarkdown 
+                ? window.CocoCordMarkdown.render(rawContent)
+                : escapeHtml(rawContent);
+            
             const timeStr = formatTimestamp(m.createdAt || m.timestamp);
 
             if (showHeader) {
@@ -495,7 +502,7 @@
                                 <span class="message-author">${escapeHtml(name)}</span>
                                 <span class="message-timestamp">${escapeHtml(timeStr)}</span>
                             </div>
-                            <div class="message-content">${content}</div>
+                            <div class="message-content markdown-content">${content}</div>
                         </div>
                     </div>
                 `;
@@ -504,7 +511,7 @@
                     <div class="message-row">
                         <div class="message-avatar-spacer"></div>
                         <div class="message-body">
-                            <div class="message-content">${content}</div>
+                            <div class="message-content markdown-content">${content}</div>
                         </div>
                     </div>
                 `;

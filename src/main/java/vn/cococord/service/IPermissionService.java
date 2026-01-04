@@ -2,10 +2,16 @@ package vn.cococord.service;
 
 import java.util.Set;
 
+import vn.cococord.dto.permission.ChannelPermissionDTO;
+import vn.cococord.dto.permission.ComputedPermissionsDTO;
+import vn.cococord.entity.mysql.PermissionBit;
+
 /**
- * Service interface for checking user permissions in servers
+ * Service interface for checking user permissions in servers and channels
  */
 public interface IPermissionService {
+    
+    // ===== SERVER-LEVEL PERMISSIONS =====
     
     /**
      * Check if user has a specific permission in a server
@@ -66,7 +72,123 @@ public interface IPermissionService {
      */
     boolean isMember(Long userId, Long serverId);
     
-    // Convenience methods for common permission checks
+    // ===== CHANNEL-LEVEL PERMISSIONS (NEW) =====
+    
+    /**
+     * Tính toán permissions của User trong một Channel cụ thể
+     * Logic: Base Server Permissions -> Channel Deny (Roles) -> Channel Allow (Roles) 
+     *        -> Channel Deny (User) -> Channel Allow (User)
+     * 
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @return ComputedPermissionsDTO chứa final bitmask và các boolean flags
+     */
+    ComputedPermissionsDTO computeChannelPermissions(Long userId, Long channelId);
+    
+    /**
+     * Kiểm tra xem User có permission cụ thể trong Channel không
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @param permissionBit PermissionBit cần kiểm tra
+     * @return true nếu user có permission
+     */
+    boolean hasChannelPermission(Long userId, Long channelId, PermissionBit permissionBit);
+    
+    /**
+     * Kiểm tra xem User có permission cụ thể trong Channel không (by name)
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @param permissionName Tên permission (e.g., "SEND_MESSAGES")
+     * @return true nếu user có permission
+     */
+    boolean hasChannelPermission(Long userId, Long channelId, String permissionName);
+    
+    /**
+     * Kiểm tra xem User có thể xem Channel không
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @return true nếu user có thể xem channel
+     */
+    boolean canViewChannel(Long userId, Long channelId);
+    
+    /**
+     * Kiểm tra xem User có thể gửi tin nhắn trong Channel không
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @return true nếu user có thể gửi tin nhắn
+     */
+    boolean canSendMessagesInChannel(Long userId, Long channelId);
+    
+    /**
+     * Kiểm tra xem User có thể quản lý tin nhắn trong Channel không
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @return true nếu user có thể quản lý tin nhắn
+     */
+    boolean canManageMessagesInChannel(Long userId, Long channelId);
+    
+    /**
+     * Kiểm tra xem User có thể connect vào Voice Channel không
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @return true nếu user có thể connect
+     */
+    boolean canConnectToVoiceChannel(Long userId, Long channelId);
+    
+    /**
+     * Kiểm tra xem User có thể nói trong Voice Channel không
+     * @param userId User ID
+     * @param channelId Channel ID
+     * @return true nếu user có thể nói
+     */
+    boolean canSpeakInVoiceChannel(Long userId, Long channelId);
+    
+    /**
+     * Lấy tất cả permission overrides của một Channel
+     * @param channelId Channel ID
+     * @return Danh sách ChannelPermissionDTO
+     */
+    java.util.List<ChannelPermissionDTO> getChannelPermissionOverrides(Long channelId);
+    
+    /**
+     * Tạo hoặc cập nhật permission override cho User trong Channel
+     * @param channelId Channel ID
+     * @param userId User ID
+     * @param allowedPermissions Set các permission được allow
+     * @param deniedPermissions Set các permission bị deny
+     * @return ChannelPermissionDTO đã được tạo/cập nhật
+     */
+    ChannelPermissionDTO setUserChannelPermissions(Long channelId, Long userId, 
+                                                    Set<String> allowedPermissions, 
+                                                    Set<String> deniedPermissions);
+    
+    /**
+     * Tạo hoặc cập nhật permission override cho Role trong Channel
+     * @param channelId Channel ID
+     * @param roleId Role ID
+     * @param allowedPermissions Set các permission được allow
+     * @param deniedPermissions Set các permission bị deny
+     * @return ChannelPermissionDTO đã được tạo/cập nhật
+     */
+    ChannelPermissionDTO setRoleChannelPermissions(Long channelId, Long roleId, 
+                                                    Set<String> allowedPermissions, 
+                                                    Set<String> deniedPermissions);
+    
+    /**
+     * Xóa permission override của User trong Channel
+     * @param channelId Channel ID
+     * @param userId User ID
+     */
+    void removeUserChannelPermissions(Long channelId, Long userId);
+    
+    /**
+     * Xóa permission override của Role trong Channel
+     * @param channelId Channel ID
+     * @param roleId Role ID
+     */
+    void removeRoleChannelPermissions(Long channelId, Long roleId);
+    
+    // ===== CONVENIENCE METHODS (SERVER-LEVEL) =====
     
     boolean canManageMessages(Long userId, Long serverId);
     
@@ -80,3 +202,4 @@ public interface IPermissionService {
     
     boolean canManageServer(Long userId, Long serverId);
 }
+

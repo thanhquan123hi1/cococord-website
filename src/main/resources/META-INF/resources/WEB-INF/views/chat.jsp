@@ -18,6 +18,31 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
     href="${pageContext.request.contextPath}/css/voice-channel.css"
     data-cococord-page-style="1"
   />
+  <link
+    rel="stylesheet"
+    href="${pageContext.request.contextPath}/css/markdown.css"
+    data-cococord-page-style="1"
+  />
+  <link
+    rel="stylesheet"
+    href="${pageContext.request.contextPath}/css/mobile-responsive.css"
+    data-cococord-page-style="1"
+  />
+  <link
+    rel="stylesheet"
+    href="${pageContext.request.contextPath}/css/chat-input.css"
+    data-cococord-page-style="1"
+  />
+  <link
+    rel="stylesheet"
+    href="${pageContext.request.contextPath}/css/header-toolbar.css"
+    data-cococord-page-style="1"
+  />
+  <link
+    rel="stylesheet"
+    href="${pageContext.request.contextPath}/css/server-settings.css"
+    data-cococord-page-style="1"
+  />
 </head>
 
 <div class="chat-page-container" id="chatApp">
@@ -594,6 +619,18 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 
 <!-- PeerJS for WebRTC Voice Chat -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<!-- Markdown & Syntax Highlighting Libraries -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css" integrity="sha512-IHD9jLLUjCx53TLIPc/t0vCJJH/FH8SFzUxjUJv/+R+qEd8WTF/OXI0yfnkQa0OgFQY9bJQIYqHuN0o9W1/5Ng==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.2.0/marked.min.js" integrity="sha512-eUxlZzJK5H7MjNWdmLRZR2YqzEoJPjNnYfSCW+r7L7R2FYvZ0nZjGDr0JdGX2+BxQZ6k7xzJxT4ZBaHnmNIQzg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-H8S3B7t4vTnfg1IXSvWXGMxvYlSLXr7IzaSwG3Prd/aCQjqnPxCYXWP5KgRpMW/JFY48Gn3S1X1vR2UkuB+kJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- CocoCord Scripts -->
 <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101"></script>
+<script src="${pageContext.request.contextPath}/js/virtual-scroll.js?v=20260104"></script>
+<script src="${pageContext.request.contextPath}/js/markdown-renderer.js?v=20260104"></script>
 <script src="${pageContext.request.contextPath}/js/voice-manager.js?v=20260102b"></script>
-<script src="${pageContext.request.contextPath}/js/chat.js?v=20260103a"></script>
+<script src="${pageContext.request.contextPath}/js/chat-input-manager.js?v=20260105"></script>
+<script src="${pageContext.request.contextPath}/js/header-toolbar.js?v=20260105"></script>
+<script src="${pageContext.request.contextPath}/js/server-settings.js?v=20260105"></script>
+<script src="${pageContext.request.contextPath}/js/chat.js?v=20260105"></script>

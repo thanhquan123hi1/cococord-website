@@ -2117,3 +2117,20 @@ body {
     z-index: 100;
   }
 }
+
+/* ==================== MESSAGE HIGHLIGHT (Jump to message) ==================== */
+#chatApp .message-row.highlight {
+    animation: messageHighlight 2s ease;
+}
+
+@keyframes messageHighlight {
+    0%, 100% {
+        background: transparent;
+    }
+    25% {
+        background: rgba(88, 101, 242, 0.2);
+    }
+    75% {
+        background: rgba(88, 101, 242, 0.1);
+    }
+}

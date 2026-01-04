@@ -1,0 +1,594 @@
+/**
+ * Header Toolbar & Panel Overlays
+ * - Member list toggle
+ * - Threads sidebar
+ * - Pinned messages popup
+ * - Help modal
+ */
+
+/* ==================== MEMBER LIST TOGGLE ==================== */
+
+/* When members-hidden class is applied, hide member sidebar */
+#chatApp.members-hidden .members-sidebar {
+    display: none;
+}
+
+/* Main content expands when member sidebar is hidden */
+#chatApp.members-hidden .main-content {
+    flex: 1;
+}
+
+/* Transition for smooth hide/show */
+#chatApp .members-sidebar {
+    transition: width 0.2s ease, opacity 0.2s ease;
+}
+
+/* ==================== THREADS SIDEBAR (Slide from Right) ==================== */
+
+.threads-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    max-width: 100%;
+    background: var(--bg-secondary, #2f3136);
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.threads-overlay.show {
+    transform: translateX(0);
+}
+
+.threads-overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1199;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.threads-overlay-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.threads-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--bg-tertiary, #202225);
+    flex-shrink: 0;
+}
+
+.threads-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.threads-header h3 i {
+    color: var(--text-muted, #72767d);
+}
+
+.threads-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--interactive-normal, #b9bbbe);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.threads-close-btn:hover {
+    color: var(--interactive-hover, #dcddde);
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.threads-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.threads-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted, #72767d);
+}
+
+.threads-empty i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.threads-empty h4 {
+    margin: 0 0 8px;
+    color: var(--text-normal, #dcddde);
+    font-size: 18px;
+}
+
+.threads-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.thread-item {
+    padding: 12px;
+    background: var(--bg-tertiary, #202225);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.thread-item:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.thread-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.thread-item-title {
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+    font-size: 14px;
+}
+
+.thread-item-count {
+    font-size: 12px;
+    color: var(--text-muted, #72767d);
+    margin-left: auto;
+}
+
+.thread-item-preview {
+    font-size: 13px;
+    color: var(--text-muted, #72767d);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ==================== PINNED MESSAGES POPUP ==================== */
+
+.pinned-popup {
+    position: absolute;
+    top: 48px;
+    right: 200px;
+    width: 420px;
+    max-height: 500px;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    animation: pinPopupFadeIn 0.15s ease;
+}
+
+@keyframes pinPopupFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pinned-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--bg-tertiary, #202225);
+    flex-shrink: 0;
+}
+
+.pinned-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pinned-header h3 i {
+    color: var(--discord-yellow, #faa61a);
+}
+
+.pinned-close-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--interactive-normal, #b9bbbe);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: color 0.15s;
+}
+
+.pinned-close-btn:hover {
+    color: var(--interactive-hover, #dcddde);
+}
+
+.pinned-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    max-height: 400px;
+}
+
+.pinned-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted, #72767d);
+}
+
+.pinned-empty i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.pinned-empty h4 {
+    margin: 0 0 8px;
+    color: var(--text-normal, #dcddde);
+    font-size: 16px;
+}
+
+.pinned-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.pinned-message {
+    padding: 12px;
+    background: var(--bg-tertiary, #202225);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.pinned-message:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.pinned-message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.pinned-message-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--discord-primary, #5865f2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.pinned-message-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.pinned-message-author {
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+    font-size: 13px;
+}
+
+.pinned-message-time {
+    font-size: 11px;
+    color: var(--text-muted, #72767d);
+    margin-left: auto;
+}
+
+.pinned-message-content {
+    font-size: 14px;
+    color: var(--text-normal, #dcddde);
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.pinned-message-jump {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-link, #00aff4);
+    cursor: pointer;
+}
+
+.pinned-message-jump:hover {
+    text-decoration: underline;
+}
+
+/* ==================== NOTIFICATION TOGGLE ==================== */
+
+#chatApp .header-btn.muted i {
+    color: var(--text-muted, #72767d);
+}
+
+#chatApp .header-btn.muted::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: var(--discord-red, #ed4245);
+    transform: rotate(45deg);
+    top: 2px;
+    left: 11px;
+}
+
+#notifyBtn {
+    position: relative;
+}
+
+/* ==================== HELP MODAL ==================== */
+
+.help-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.help-modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.help-modal {
+    width: 440px;
+    max-width: 90%;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    animation: helpModalFadeIn 0.2s ease;
+}
+
+@keyframes helpModalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.help-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--bg-tertiary, #202225);
+}
+
+.help-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-modal-header h3 i {
+    color: var(--discord-primary, #5865f2);
+}
+
+.help-modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--interactive-normal, #b9bbbe);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+}
+
+.help-modal-close:hover {
+    color: var(--interactive-hover, #dcddde);
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.help-modal-body {
+    padding: 20px;
+}
+
+.help-modal-body p {
+    margin: 0 0 16px;
+    color: var(--text-normal, #dcddde);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.help-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.help-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-tertiary, #202225);
+    border-radius: 8px;
+    color: var(--text-normal, #dcddde);
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.help-link:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.help-link i {
+    font-size: 20px;
+    color: var(--discord-primary, #5865f2);
+}
+
+.help-link span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.help-modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--bg-tertiary, #202225);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.help-modal-footer .btn-primary {
+    padding: 10px 20px;
+    background: var(--discord-primary, #5865f2);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.help-modal-footer .btn-primary:hover {
+    background: var(--discord-primary-hover, #4752c4);
+}
+
+/* ==================== CHANNEL SIDEBAR CONTEXT MENU ==================== */
+
+.channel-context-menu {
+    position: fixed;
+    min-width: 180px;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 4px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    z-index: 1400;
+    padding: 6px 8px;
+    animation: contextMenuFadeIn 0.1s ease;
+}
+
+@keyframes contextMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.channel-context-menu .context-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 2px;
+    color: var(--interactive-normal, #b9bbbe);
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.1s, color 0.1s;
+}
+
+.channel-context-menu .context-item:hover {
+    background: var(--discord-primary, #5865f2);
+    color: white;
+}
+
+.channel-context-menu .context-item i {
+    font-size: 16px;
+    width: 18px;
+    text-align: center;
+}
+
+.channel-context-menu .context-divider {
+    height: 1px;
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    margin: 4px 0;
+}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .threads-overlay {
+        width: 100%;
+    }
+
+    .pinned-popup {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-height: 60vh;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .help-modal {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+        height: 100%;
+        max-height: 100%;
+    }
+}

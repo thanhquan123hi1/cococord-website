@@ -1,0 +1,535 @@
+/**
+ * Mobile Responsive Styles for CoCoCord Chat
+ * 
+ * Layout Strategy:
+ * - Desktop (>768px): Show server sidebar + channel sidebar + chat + members sidebar
+ * - Mobile (<=768px): Hide sidebars by default, show only chat area (100% width)
+ * - Toggle sidebars via hamburger menu buttons
+ */
+
+/* ==================== HAMBURGER MENU BUTTONS ==================== */
+
+.hamburger-menu-btn {
+    display: none; /* Hidden on desktop */
+    position: fixed;
+    top: 16px;
+    z-index: 1050;
+    background-color: var(--bg-secondary, #2c2f33);
+    border: 1px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--interactive-normal, #b5bac1);
+    font-size: 20px;
+}
+
+.hamburger-menu-btn:hover {
+    background-color: var(--bg-modifier-hover);
+    color: var(--interactive-hover, #dbdee1);
+}
+
+.hamburger-menu-btn:active {
+    transform: scale(0.95);
+}
+
+/* Left hamburger (server + channel sidebar toggle) */
+.hamburger-left {
+    left: 16px;
+}
+
+/* Right hamburger (members sidebar toggle) */
+.hamburger-right {
+    right: 16px;
+}
+
+/* ==================== MOBILE LAYOUT (768px and below) ==================== */
+
+@media (max-width: 768px) {
+    /* Show hamburger buttons */
+    .hamburger-menu-btn {
+        display: flex;
+    }
+
+    /* ==================== CHAT PAGE CONTAINER ==================== */
+    .chat-page-container,
+    #chatApp.app-container {
+        flex-direction: column;
+    }
+
+    /* ==================== SERVER SIDEBAR (LEFT) ==================== */
+    #chatApp .server-sidebar,
+    .server-sidebar,
+    #globalServerSidebar {
+        position: fixed;
+        left: -100%; /* Hidden off-screen by default */
+        top: 0;
+        bottom: 0;
+        width: 80%;
+        max-width: 300px;
+        z-index: 1040;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #chatApp .server-sidebar.show,
+    .server-sidebar.show,
+    #globalServerSidebar.show {
+        left: 0; /* Slide in from left */
+    }
+
+    /* ==================== CHANNEL SIDEBAR ==================== */
+    #chatApp .channel-sidebar,
+    .channel-sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        bottom: 0;
+        width: 85%;
+        max-width: 320px;
+        z-index: 1030;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #chatApp .channel-sidebar.show,
+    .channel-sidebar.show {
+        left: 0;
+    }
+
+    /* ==================== MAIN CHAT CONTENT ==================== */
+    #chatApp .main-content,
+    .main-content {
+        flex: 1;
+        width: 100%;
+        margin-left: 0 !important;
+    }
+
+    /* Message list container */
+    #chatApp .message-container,
+    .message-container {
+        padding-top: 70px; /* Space for hamburger buttons */
+    }
+
+    /* Chat input */
+    #chatApp .chat-composer,
+    .chat-composer,
+    #chatComposer {
+        padding: 12px 16px;
+    }
+
+    #chatApp .chat-input,
+    .chat-input,
+    #chatInput {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 10px 14px;
+    }
+
+    /* ==================== MEMBERS SIDEBAR (RIGHT) ==================== */
+    #chatApp .members-sidebar,
+    .members-sidebar,
+    #membersSidebar {
+        position: fixed;
+        right: -100%; /* Hidden off-screen by default */
+        top: 0;
+        bottom: 0;
+        width: 80%;
+        max-width: 280px;
+        z-index: 1040;
+        transition: right 0.3s ease;
+        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #chatApp .members-sidebar.show,
+    .members-sidebar.show,
+    #membersSidebar.show {
+        right: 0; /* Slide in from right */
+    }
+
+    /* Members toggle button (desktop version) - hide on mobile */
+    #chatApp .members-toggle,
+    .members-toggle,
+    #membersToggleBtn {
+        display: none !important;
+    }
+
+    /* ==================== OVERLAY (BACKDROP) ==================== */
+    .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 1020;
+        backdrop-filter: blur(2px);
+    }
+
+    .mobile-overlay.show {
+        display: block;
+    }
+
+    /* ==================== CHANNEL HEADER ==================== */
+    #chatApp .channel-header,
+    .channel-header {
+        padding: 12px 70px 12px 70px; /* Space for hamburger buttons */
+    }
+
+    #chatApp .channel-name,
+    .channel-name,
+    #channelName {
+        font-size: 16px;
+    }
+
+    /* ==================== MESSAGE LIST ==================== */
+    #chatApp .message-row,
+    .message-row {
+        padding: 10px 12px;
+    }
+
+    #chatApp .message-avatar,
+    .message-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    #chatApp .message-avatar img,
+    .message-avatar img {
+        width: 36px;
+        height: 36px;
+    }
+
+    #chatApp .message-author,
+    .message-author {
+        font-size: 15px;
+    }
+
+    #chatApp .message-timestamp,
+    .message-timestamp {
+        font-size: 11px;
+    }
+
+    #chatApp .message-content,
+    .message-content {
+        font-size: 15px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    /* Code blocks in messages */
+    #chatApp .message-content pre,
+    .message-content pre {
+        max-width: calc(100vw - 100px);
+        overflow-x: auto;
+    }
+
+    /* ==================== SERVER LIST ==================== */
+    #chatApp .server-list,
+    .server-list,
+    #globalServerList {
+        padding: 8px 0;
+    }
+
+    #chatApp .server-item,
+    .server-item {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 8px;
+    }
+
+    /* Home button */
+    #chatApp .server-home,
+    .server-home,
+    #homeBtn {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 12px;
+    }
+
+    /* ==================== CHANNEL LIST ==================== */
+    #chatApp .channel-item,
+    .channel-item {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    #chatApp .category-header,
+    .category-header {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    /* ==================== USER PANEL ==================== */
+    #chatApp .user-panel,
+    .user-panel,
+    #userPanel {
+        padding: 10px;
+    }
+
+    #chatApp .user-panel .user-info,
+    .user-panel .user-info {
+        font-size: 14px;
+    }
+
+    /* ==================== MODALS ==================== */
+    .modal-dialog {
+        margin: 16px;
+        max-width: calc(100% - 32px);
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    /* ==================== VOICE CONNECTED BAR ==================== */
+    #chatApp .voice-connected-bar,
+    .voice-connected-bar,
+    #voiceConnectedBar {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    /* ==================== TYPING INDICATOR ==================== */
+    #chatApp .typing-indicator,
+    .typing-indicator,
+    #typingIndicator {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    /* ==================== NEW MESSAGES BANNER ==================== */
+    #chatApp .new-messages-banner,
+    .new-messages-banner,
+    #newMessagesBanner {
+        padding: 10px 16px;
+        font-size: 14px;
+        bottom: 80px;
+    }
+
+    /* ==================== SCROLLBARS ==================== */
+    /* Hide scrollbars on mobile for cleaner look (content still scrollable) */
+    #chatApp .message-list::-webkit-scrollbar,
+    .message-list::-webkit-scrollbar,
+    #messageList::-webkit-scrollbar,
+    #chatApp .channel-list::-webkit-scrollbar,
+    .channel-list::-webkit-scrollbar,
+    #channelList::-webkit-scrollbar,
+    #chatApp .members-list::-webkit-scrollbar,
+    .members-list::-webkit-scrollbar {
+        width: 0;
+        display: none;
+    }
+}
+
+/* ==================== SMALL MOBILE (480px and below) ==================== */
+
+@media (max-width: 480px) {
+    /* Narrower hamburger buttons */
+    .hamburger-menu-btn {
+        top: 12px;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .hamburger-left {
+        left: 12px;
+    }
+
+    .hamburger-right {
+        right: 12px;
+    }
+
+    /* Sidebars take full width on small screens */
+    #chatApp .server-sidebar,
+    .server-sidebar,
+    #globalServerSidebar,
+    #chatApp .channel-sidebar,
+    .channel-sidebar,
+    #chatApp .members-sidebar,
+    .members-sidebar,
+    #membersSidebar {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Channel header */
+    #chatApp .channel-header,
+    .channel-header {
+        padding: 10px 60px;
+    }
+
+    /* Messages */
+    #chatApp .message-container,
+    .message-container {
+        padding-top: 60px;
+    }
+
+    #chatApp .message-row,
+    .message-row {
+        padding: 8px 10px;
+    }
+
+    #chatApp .message-avatar,
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    #chatApp .message-avatar img,
+    .message-avatar img {
+        width: 32px;
+        height: 32px;
+    }
+
+    #chatApp .message-author,
+    .message-author {
+        font-size: 14px;
+    }
+
+    #chatApp .message-content,
+    .message-content {
+        font-size: 14px;
+    }
+
+    /* Code blocks */
+    #chatApp .message-content pre,
+    .message-content pre {
+        max-width: calc(100vw - 80px);
+        font-size: 12px;
+    }
+
+    /* Chat input */
+    #chatApp .chat-composer,
+    .chat-composer,
+    #chatComposer {
+        padding: 10px 12px;
+    }
+
+    #chatApp .chat-input,
+    .chat-input,
+    #chatInput {
+        font-size: 16px; /* Keep 16px to prevent iOS zoom */
+        padding: 9px 12px;
+    }
+
+    /* Modals */
+    .modal-dialog {
+        margin: 12px;
+        max-width: calc(100% - 24px);
+    }
+}
+
+/* ==================== LANDSCAPE MOBILE (Horizontal orientation) ==================== */
+
+@media (max-width: 896px) and (orientation: landscape) {
+    /* Reduce vertical padding in landscape */
+    #chatApp .message-container,
+    .message-container {
+        padding-top: 55px;
+    }
+
+    #chatApp .channel-header,
+    .channel-header {
+        padding: 8px 65px;
+    }
+
+    #chatApp .chat-composer,
+    .chat-composer,
+    #chatComposer {
+        padding: 8px 12px;
+    }
+
+    .hamburger-menu-btn {
+        top: 10px;
+        width: 38px;
+        height: 38px;
+        font-size: 17px;
+    }
+
+    .hamburger-left {
+        left: 10px;
+    }
+
+    .hamburger-right {
+        right: 10px;
+    }
+}
+
+/* ==================== TABLET (769px - 1024px) ==================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Keep default layout but adjust sizes */
+    #chatApp .server-sidebar,
+    .server-sidebar,
+    #globalServerSidebar {
+        width: 60px;
+    }
+
+    #chatApp .channel-sidebar,
+    .channel-sidebar {
+        width: 220px;
+    }
+
+    #chatApp .members-sidebar,
+    .members-sidebar,
+    #membersSidebar {
+        width: 220px;
+    }
+
+    /* Smaller server icons */
+    #chatApp .server-item,
+    .server-item {
+        width: 44px;
+        height: 44px;
+    }
+
+    #chatApp .server-home,
+    .server-home,
+    #homeBtn {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* Focus states for keyboard navigation */
+@media (max-width: 768px) {
+    .hamburger-menu-btn:focus {
+        outline: 2px solid var(--discord-primary, #5865f2);
+        outline-offset: 2px;
+    }
+
+    /* Ensure touch targets are at least 44x44px (WCAG AA) */
+    #chatApp .channel-item,
+    .channel-item,
+    #chatApp .server-item,
+    .server-item {
+        min-height: 44px;
+    }
+}
+
+/* ==================== REDUCED MOTION ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .hamburger-menu-btn,
+    #chatApp .server-sidebar,
+    .server-sidebar,
+    #globalServerSidebar,
+    #chatApp .channel-sidebar,
+    .channel-sidebar,
+    #chatApp .members-sidebar,
+    .members-sidebar,
+    #membersSidebar,
+    .mobile-overlay {
+        transition: none !important;
+    }
+}
