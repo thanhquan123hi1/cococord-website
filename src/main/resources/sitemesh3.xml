@@ -4,6 +4,7 @@
     <!-- Decorator definitions -->
     <decorator name="public" page="/WEB-INF/decorators/public.jsp" />
     <decorator name="app" page="/WEB-INF/decorators/app.jsp" />
+    <decorator name="admin" page="/WEB-INF/decorators/admin.jsp" />
 
     <!-- Public pages (no sidebar, public layout) -->
     <mapping path="/" decorator="public" />
@@ -28,6 +29,10 @@
     <mapping path="/sessions" decorator="app" />
     <mapping path="/change-password" decorator="app" />
 
+    <!-- Admin pages -->
+    <mapping path="/admin" decorator="admin" />
+    <mapping path="/admin/**" decorator="admin" />
+
     <!-- Exclude static resources and API endpoints -->
     <excludes>
         <pattern>/api/**</pattern>
@@ -36,6 +41,10 @@
         <pattern>/css/**</pattern>
         <pattern>/js/**</pattern>
         <pattern>/images/**</pattern>
+        <pattern>/admin/css/**</pattern>
+        <pattern>/admin/js/**</pattern>
+        <pattern>/admin/images/**</pattern>
+        <pattern>/admin/fragment/**</pattern>
         <pattern>/webjars/**</pattern>
         <pattern>/static/**</pattern>
         <pattern>/favicon.ico</pattern>

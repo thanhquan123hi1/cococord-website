@@ -67,13 +67,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
 
+                        // Admin endpoints
+                        .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                         // View pages (allow access, auth handled by JavaScript)
                         .requestMatchers("/login", "/register", "/forgot-password", "/reset-password").permitAll()
                         .requestMatchers("/invite", "/invite/**").permitAll()
                         .requestMatchers("/app", "/app/**").permitAll()
                         .requestMatchers("/profile", "/sessions", "/change-password", "/chat", "/messages")
                         .permitAll()
-                        .requestMatchers("/admin", "/admin/**").permitAll()
 
                         // Swagger/API docs (if needed)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -98,6 +101,17 @@ public class SecurityConfig {
                             } else {
                                 // For HTML pages, redirect to login
                                 response.sendRedirect("/login");
+                            }
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            String requestUri = request.getRequestURI();
+                            if (requestUri.startsWith("/api/")) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.getWriter()
+                                        .write("{\"error\": \"Forbidden\", \"message\": \"Access denied\"}");
+                            } else {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             }
                         }))
                 .authenticationProvider(authenticationProvider())

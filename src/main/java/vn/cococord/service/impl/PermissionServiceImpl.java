@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,10 +18,8 @@ import vn.cococord.dto.permission.ComputedPermissionsDTO;
 import vn.cococord.entity.mysql.Channel;
 import vn.cococord.entity.mysql.ChannelPermission;
 import vn.cococord.entity.mysql.PermissionBit;
-import vn.cococord.entity.mysql.Role;
 import vn.cococord.entity.mysql.Server;
 import vn.cococord.entity.mysql.ServerMember;
-import vn.cococord.entity.mysql.User;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.repository.IChannelPermissionRepository;
 import vn.cococord.repository.IChannelRepository;
@@ -38,7 +35,7 @@ import vn.cococord.service.IPermissionService;
 @Slf4j
 @Transactional(readOnly = true)
 public class PermissionServiceImpl implements IPermissionService {
-    
+
     private final IRolePermissionRepository rolePermissionRepository;
     private final IServerMemberRepository serverMemberRepository;
     private final IServerRepository serverRepository;
@@ -46,50 +43,51 @@ public class PermissionServiceImpl implements IPermissionService {
     private final IChannelPermissionRepository channelPermissionRepository;
     private final IRoleRepository roleRepository;
     private final IUserRepository userRepository;
-    
+
     // Special permissions
     private static final String ADMINISTRATOR = "ADMINISTRATOR";
-    
+
     @Override
     public boolean hasPermission(Long userId, Long serverId, String permissionName) {
         if (userId == null || serverId == null || permissionName == null) {
             return false;
         }
-        
+
         // Server owner has all permissions
         if (isServerOwner(userId, serverId)) {
             log.debug("User {} is owner of server {}, granting permission {}", userId, serverId, permissionName);
             return true;
         }
-        
+
         // Check if user is administrator
         if (isAdministrator(userId, serverId)) {
-            log.debug("User {} is administrator in server {}, granting permission {}", userId, serverId, permissionName);
+            log.debug("User {} is administrator in server {}, granting permission {}", userId, serverId,
+                    permissionName);
             return true;
         }
-        
+
         // Check specific permission
         boolean hasPermission = rolePermissionRepository.hasPermission(userId, serverId, permissionName);
         log.debug("User {} has permission {} in server {}: {}", userId, permissionName, serverId, hasPermission);
         return hasPermission;
     }
-    
+
     @Override
     public boolean hasAnyPermission(Long userId, Long serverId, String... permissionNames) {
         if (userId == null || serverId == null || permissionNames == null || permissionNames.length == 0) {
             return false;
         }
-        
+
         // Server owner has all permissions
         if (isServerOwner(userId, serverId)) {
             return true;
         }
-        
+
         // Check if user is administrator
         if (isAdministrator(userId, serverId)) {
             return true;
         }
-        
+
         // Get user's permissions and check if any match
         Set<String> userPermissions = getUserPermissions(userId, serverId);
         for (String permissionName : permissionNames) {
@@ -99,75 +97,75 @@ public class PermissionServiceImpl implements IPermissionService {
         }
         return false;
     }
-    
+
     @Override
     public boolean hasAllPermissions(Long userId, Long serverId, String... permissionNames) {
         if (userId == null || serverId == null || permissionNames == null || permissionNames.length == 0) {
             return false;
         }
-        
+
         // Server owner has all permissions
         if (isServerOwner(userId, serverId)) {
             return true;
         }
-        
+
         // Check if user is administrator
         if (isAdministrator(userId, serverId)) {
             return true;
         }
-        
+
         // Get user's permissions and check if all match
         Set<String> userPermissions = getUserPermissions(userId, serverId);
         Set<String> requiredPermissions = new HashSet<>(Arrays.asList(permissionNames));
         return userPermissions.containsAll(requiredPermissions);
     }
-    
+
     @Override
     public Set<String> getUserPermissions(Long userId, Long serverId) {
         if (userId == null || serverId == null) {
             return Collections.emptySet();
         }
-        
+
         // Server owner has all permissions - return a special set
         if (isServerOwner(userId, serverId)) {
             Set<String> allPermissions = new HashSet<>();
             allPermissions.add("ALL_PERMISSIONS"); // Special marker
             return allPermissions;
         }
-        
+
         return rolePermissionRepository.findPermissionNamesByUserIdAndServerId(userId, serverId);
     }
-    
+
     @Override
     public boolean isServerOwner(Long userId, Long serverId) {
         if (userId == null || serverId == null) {
             return false;
         }
-        
+
         Optional<Server> serverOpt = serverRepository.findById(serverId);
         if (serverOpt.isEmpty()) {
             return false;
         }
-        
+
         Server server = serverOpt.get();
         return server.getOwner() != null && userId.equals(server.getOwner().getId());
     }
-    
+
     @Override
     public boolean isAdministrator(Long userId, Long serverId) {
         if (userId == null || serverId == null) {
             return false;
         }
-        
+
         // Server owner is always administrator
         if (isServerOwner(userId, serverId)) {
             return true;
         }
-        
+
         // Check for ADMINISTRATOR permission
         return rolePermissionRepository.hasPermission(userId, serverId, ADMINISTRATOR);
     }
-    
+
     @Override
     public boolean isMember(Long userId, Long serverId) {
         if (userId == null || serverId == null) {
@@ -175,181 +173,183 @@ public class PermissionServiceImpl implements IPermissionService {
         }
         return serverMemberRepository.existsByServerIdAndUserId(serverId, userId);
     }
-    
+
     @Override
     public boolean canManageMessages(Long userId, Long serverId) {
         return hasPermission(userId, serverId, "MANAGE_MESSAGES");
     }
-    
+
     @Override
     public boolean canKickMembers(Long userId, Long serverId) {
         return hasPermission(userId, serverId, "KICK_MEMBERS");
     }
-    
+
     @Override
     public boolean canBanMembers(Long userId, Long serverId) {
         return hasPermission(userId, serverId, "BAN_MEMBERS");
     }
-    
+
     @Override
     public boolean canManageChannels(Long userId, Long serverId) {
         return hasPermission(userId, serverId, "MANAGE_CHANNELS");
     }
-    
+
     @Override
     public boolean canManageRoles(Long userId, Long serverId) {
         return hasPermission(userId, serverId, "MANAGE_ROLES");
     }
-    
+
     @Override
     public boolean canManageServer(Long userId, Long serverId) {
         return hasPermission(userId, serverId, "MANAGE_SERVER");
     }
-    
+
     // ===== CHANNEL-LEVEL PERMISSIONS (NEW IMPLEMENTATION) =====
-    
+
     @Override
     public ComputedPermissionsDTO computeChannelPermissions(Long userId, Long channelId) {
         log.debug("Computing channel permissions for user {} in channel {}", userId, channelId);
-        
+
         // Validate inputs
         if (userId == null || channelId == null) {
             log.warn("Invalid inputs: userId={}, channelId={}", userId, channelId);
             return ComputedPermissionsDTO.builder()
-                .userId(userId)
-                .channelId(channelId)
-                .finalBitmask(0L)
-                .build();
+                    .userId(userId)
+                    .channelId(channelId)
+                    .finalBitmask(0L)
+                    .build();
         }
-        
+
         // Get channel and server
         Channel channel = channelRepository.findById(channelId)
-            .orElseThrow(() -> new ResourceNotFoundException("Channel not found: " + channelId));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Channel not found: " + channelId));
+
         Server server = channel.getServer();
         Long serverId = server.getId();
-        
+
         // Check if user is server owner - bypass all permissions
         boolean isOwner = isServerOwner(userId, serverId);
         if (isOwner) {
             log.debug("User {} is server owner, granting all permissions", userId);
             ComputedPermissionsDTO result = ComputedPermissionsDTO.builder()
-                .userId(userId)
-                .channelId(channelId)
-                .finalBitmask(PermissionBit.getAllPermissions())
-                .isServerOwner(true)
-                .isAdministrator(true)
-                .build();
+                    .userId(userId)
+                    .channelId(channelId)
+                    .finalBitmask(PermissionBit.getAllPermissions())
+                    .isServerOwner(true)
+                    .isAdministrator(true)
+                    .build();
             result.populateFromBitmask();
             return result;
         }
-        
+
         // Check if user is member
         if (!isMember(userId, serverId)) {
             log.debug("User {} is not a member of server {}", userId, serverId);
             return ComputedPermissionsDTO.builder()
-                .userId(userId)
-                .channelId(channelId)
-                .finalBitmask(0L)
-                .build();
+                    .userId(userId)
+                    .channelId(channelId)
+                    .finalBitmask(0L)
+                    .build();
         }
-        
+
         // Get user's roles in the server
-        List<ServerMember> memberships = serverMemberRepository.findByServerIdAndUserId(serverId, userId);
+        List<ServerMember> memberships = serverMemberRepository.findByServerIdAndUserId(serverId, userId)
+                .map(List::of)
+                .orElse(Collections.emptyList());
         List<Long> roleIds = memberships.stream()
-            .filter(m -> m.getRole() != null)
-            .map(m -> m.getRole().getId())
-            .collect(Collectors.toList());
-        
+                .filter(m -> m.getRole() != null)
+                .map(m -> m.getRole().getId())
+                .collect(Collectors.toList());
+
         log.debug("User {} has roles {} in server {}", userId, roleIds, serverId);
-        
+
         // STEP 1: Get base permissions from server roles
         long baseBitmask = getBaseServerPermissions(userId, serverId);
         log.debug("Base server permissions bitmask for user {}: {}", userId, Long.toBinaryString(baseBitmask));
-        
+
         // If user has ADMINISTRATOR permission at server level, grant all permissions
         if (PermissionBit.ADMINISTRATOR.isSet(baseBitmask)) {
             log.debug("User {} has ADMINISTRATOR permission, granting all permissions", userId);
             ComputedPermissionsDTO result = ComputedPermissionsDTO.builder()
-                .userId(userId)
-                .channelId(channelId)
-                .finalBitmask(PermissionBit.getAllPermissions())
-                .isAdministrator(true)
-                .build();
+                    .userId(userId)
+                    .channelId(channelId)
+                    .finalBitmask(PermissionBit.getAllPermissions())
+                    .isAdministrator(true)
+                    .build();
             result.populateFromBitmask();
             return result;
         }
-        
+
         // STEP 2: Get channel permission overrides
         List<ChannelPermission> overrides = channelPermissionRepository
-            .findByChannelIdAndUserIdOrRoleIds(channelId, userId, roleIds.isEmpty() ? List.of(-1L) : roleIds);
-        
+                .findByChannelIdAndUserIdOrRoleIds(channelId, userId, roleIds.isEmpty() ? List.of(-1L) : roleIds);
+
         log.debug("Found {} permission overrides for channel {}", overrides.size(), channelId);
-        
+
         // Separate role and user overrides
         List<ChannelPermission> roleOverrides = overrides.stream()
-            .filter(ChannelPermission::isRoleOverride)
-            .collect(Collectors.toList());
-        
+                .filter(ChannelPermission::isRoleOverride)
+                .collect(Collectors.toList());
+
         Optional<ChannelPermission> userOverride = overrides.stream()
-            .filter(ChannelPermission::isUserOverride)
-            .findFirst();
-        
+                .filter(ChannelPermission::isUserOverride)
+                .findFirst();
+
         // STEP 3: Apply role-based overrides (Deny first, then Allow)
         long currentBitmask = baseBitmask;
-        
+
         // Apply role DENY overrides
         for (ChannelPermission roleOverride : roleOverrides) {
             currentBitmask &= ~roleOverride.getDenyBitmask();
-            log.debug("Applied role {} deny override: {}", roleOverride.getTargetId(), 
-                      Long.toBinaryString(roleOverride.getDenyBitmask()));
+            log.debug("Applied role {} deny override: {}", roleOverride.getTargetId(),
+                    Long.toBinaryString(roleOverride.getDenyBitmask()));
         }
-        
+
         // Apply role ALLOW overrides
         for (ChannelPermission roleOverride : roleOverrides) {
             currentBitmask |= roleOverride.getAllowBitmask();
-            log.debug("Applied role {} allow override: {}", roleOverride.getTargetId(), 
-                      Long.toBinaryString(roleOverride.getAllowBitmask()));
+            log.debug("Applied role {} allow override: {}", roleOverride.getTargetId(),
+                    Long.toBinaryString(roleOverride.getAllowBitmask()));
         }
-        
+
         // STEP 4: Apply user-specific overrides (highest priority)
         if (userOverride.isPresent()) {
             ChannelPermission userPerm = userOverride.get();
-            
+
             // User DENY overrides everything
             currentBitmask &= ~userPerm.getDenyBitmask();
-            log.debug("Applied user {} deny override: {}", userId, 
-                      Long.toBinaryString(userPerm.getDenyBitmask()));
-            
+            log.debug("Applied user {} deny override: {}", userId,
+                    Long.toBinaryString(userPerm.getDenyBitmask()));
+
             // User ALLOW overrides everything
             currentBitmask |= userPerm.getAllowBitmask();
-            log.debug("Applied user {} allow override: {}", userId, 
-                      Long.toBinaryString(userPerm.getAllowBitmask()));
+            log.debug("Applied user {} allow override: {}", userId,
+                    Long.toBinaryString(userPerm.getAllowBitmask()));
         }
-        
-        log.debug("Final permissions bitmask for user {} in channel {}: {}", 
-                  userId, channelId, Long.toBinaryString(currentBitmask));
-        
+
+        log.debug("Final permissions bitmask for user {} in channel {}: {}",
+                userId, channelId, Long.toBinaryString(currentBitmask));
+
         // Build result DTO
         ComputedPermissionsDTO result = ComputedPermissionsDTO.builder()
-            .userId(userId)
-            .channelId(channelId)
-            .finalBitmask(currentBitmask)
-            .isServerOwner(false)
-            .isAdministrator(false)
-            .build();
-        
+                .userId(userId)
+                .channelId(channelId)
+                .finalBitmask(currentBitmask)
+                .isServerOwner(false)
+                .isAdministrator(false)
+                .build();
+
         result.populateFromBitmask();
         return result;
     }
-    
+
     /**
      * Helper: Get base server permissions from user's roles
      */
     private long getBaseServerPermissions(Long userId, Long serverId) {
         // Get all permission names from server roles
         Set<String> permissionNames = getUserPermissions(userId, serverId);
-        
+
         // Convert to bitmask
         long bitmask = 0L;
         for (String permName : permissionNames) {
@@ -358,16 +358,16 @@ public class PermissionServiceImpl implements IPermissionService {
                 bitmask |= bit.getValue();
             }
         }
-        
+
         return bitmask;
     }
-    
+
     @Override
     public boolean hasChannelPermission(Long userId, Long channelId, PermissionBit permissionBit) {
         ComputedPermissionsDTO permissions = computeChannelPermissions(userId, channelId);
         return permissionBit.isSet(permissions.getFinalBitmask());
     }
-    
+
     @Override
     public boolean hasChannelPermission(Long userId, Long channelId, String permissionName) {
         PermissionBit bit = PermissionBit.fromName(permissionName);
@@ -377,143 +377,143 @@ public class PermissionServiceImpl implements IPermissionService {
         }
         return hasChannelPermission(userId, channelId, bit);
     }
-    
+
     @Override
     public boolean canViewChannel(Long userId, Long channelId) {
         return hasChannelPermission(userId, channelId, PermissionBit.VIEW_CHANNEL);
     }
-    
+
     @Override
     public boolean canSendMessagesInChannel(Long userId, Long channelId) {
         return hasChannelPermission(userId, channelId, PermissionBit.SEND_MESSAGES);
     }
-    
+
     @Override
     public boolean canManageMessagesInChannel(Long userId, Long channelId) {
         return hasChannelPermission(userId, channelId, PermissionBit.MANAGE_MESSAGES);
     }
-    
+
     @Override
     public boolean canConnectToVoiceChannel(Long userId, Long channelId) {
         return hasChannelPermission(userId, channelId, PermissionBit.CONNECT);
     }
-    
+
     @Override
     public boolean canSpeakInVoiceChannel(Long userId, Long channelId) {
         return hasChannelPermission(userId, channelId, PermissionBit.SPEAK);
     }
-    
+
     @Override
     public List<ChannelPermissionDTO> getChannelPermissionOverrides(Long channelId) {
         List<ChannelPermission> overrides = channelPermissionRepository.findByChannelId(channelId);
-        
+
         return overrides.stream()
-            .map(this::convertToDTO)
-            .collect(Collectors.toList());
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
-    
+
     @Override
     @Transactional
     public ChannelPermissionDTO setUserChannelPermissions(Long channelId, Long userId,
-                                                          Set<String> allowedPermissions,
-                                                          Set<String> deniedPermissions) {
-        log.debug("Setting user {} permissions in channel {}: allow={}, deny={}", 
-                  userId, channelId, allowedPermissions, deniedPermissions);
-        
+            Set<String> allowedPermissions,
+            Set<String> deniedPermissions) {
+        log.debug("Setting user {} permissions in channel {}: allow={}, deny={}",
+                userId, channelId, allowedPermissions, deniedPermissions);
+
         // Validate channel exists
         Channel channel = channelRepository.findById(channelId)
-            .orElseThrow(() -> new ResourceNotFoundException("Channel not found: " + channelId));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Channel not found: " + channelId));
+
         // Validate user exists
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
-        
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
         // Get or create permission override
         ChannelPermission permission = channelPermissionRepository
-            .findByChannelIdAndUserId(channelId, userId)
-            .orElse(ChannelPermission.builder()
-                .channel(channel)
-                .targetType(ChannelPermission.TargetType.USER)
-                .targetId(userId)
-                .allowBitmask(0L)
-                .denyBitmask(0L)
-                .build());
-        
+                .findByChannelIdAndUserId(channelId, userId)
+                .orElse(ChannelPermission.builder()
+                        .channel(channel)
+                        .targetType(ChannelPermission.TargetType.USER)
+                        .targetId(userId)
+                        .allowBitmask(0L)
+                        .denyBitmask(0L)
+                        .build());
+
         // Convert permission names to bitmasks
         long allowBitmask = convertPermissionsToBitmask(allowedPermissions);
         long denyBitmask = convertPermissionsToBitmask(deniedPermissions);
-        
+
         permission.setAllowBitmask(allowBitmask);
         permission.setDenyBitmask(denyBitmask);
-        
+
         permission = channelPermissionRepository.save(permission);
-        
+
         log.info("Updated user {} permissions in channel {}", userId, channelId);
-        
+
         return convertToDTO(permission);
     }
-    
+
     @Override
     @Transactional
     public ChannelPermissionDTO setRoleChannelPermissions(Long channelId, Long roleId,
-                                                          Set<String> allowedPermissions,
-                                                          Set<String> deniedPermissions) {
-        log.debug("Setting role {} permissions in channel {}: allow={}, deny={}", 
-                  roleId, channelId, allowedPermissions, deniedPermissions);
-        
+            Set<String> allowedPermissions,
+            Set<String> deniedPermissions) {
+        log.debug("Setting role {} permissions in channel {}: allow={}, deny={}",
+                roleId, channelId, allowedPermissions, deniedPermissions);
+
         // Validate channel exists
         Channel channel = channelRepository.findById(channelId)
-            .orElseThrow(() -> new ResourceNotFoundException("Channel not found: " + channelId));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Channel not found: " + channelId));
+
         // Validate role exists
-        Role role = roleRepository.findById(roleId)
-            .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
-        
+        roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
+
         // Get or create permission override
         ChannelPermission permission = channelPermissionRepository
-            .findByChannelIdAndRoleId(channelId, roleId)
-            .orElse(ChannelPermission.builder()
-                .channel(channel)
-                .targetType(ChannelPermission.TargetType.ROLE)
-                .targetId(roleId)
-                .allowBitmask(0L)
-                .denyBitmask(0L)
-                .build());
-        
+                .findByChannelIdAndRoleId(channelId, roleId)
+                .orElse(ChannelPermission.builder()
+                        .channel(channel)
+                        .targetType(ChannelPermission.TargetType.ROLE)
+                        .targetId(roleId)
+                        .allowBitmask(0L)
+                        .denyBitmask(0L)
+                        .build());
+
         // Convert permission names to bitmasks
         long allowBitmask = convertPermissionsToBitmask(allowedPermissions);
         long denyBitmask = convertPermissionsToBitmask(deniedPermissions);
-        
+
         permission.setAllowBitmask(allowBitmask);
         permission.setDenyBitmask(denyBitmask);
-        
+
         permission = channelPermissionRepository.save(permission);
-        
+
         log.info("Updated role {} permissions in channel {}", roleId, channelId);
-        
+
         return convertToDTO(permission);
     }
-    
+
     @Override
     @Transactional
     public void removeUserChannelPermissions(Long channelId, Long userId) {
         log.debug("Removing user {} permissions from channel {}", userId, channelId);
         channelPermissionRepository.deleteByChannelIdAndTargetTypeAndTargetId(
-            channelId, ChannelPermission.TargetType.USER, userId);
+                channelId, ChannelPermission.TargetType.USER, userId);
         log.info("Removed user {} permissions from channel {}", userId, channelId);
     }
-    
+
     @Override
     @Transactional
     public void removeRoleChannelPermissions(Long channelId, Long roleId) {
         log.debug("Removing role {} permissions from channel {}", roleId, channelId);
         channelPermissionRepository.deleteByChannelIdAndTargetTypeAndTargetId(
-            channelId, ChannelPermission.TargetType.ROLE, roleId);
+                channelId, ChannelPermission.TargetType.ROLE, roleId);
         log.info("Removed role {} permissions from channel {}", roleId, channelId);
     }
-    
+
     // ===== HELPER METHODS =====
-    
+
     /**
      * Convert Set<String> permission names to bitmask
      */
@@ -521,7 +521,7 @@ public class PermissionServiceImpl implements IPermissionService {
         if (permissionNames == null || permissionNames.isEmpty()) {
             return 0L;
         }
-        
+
         long bitmask = 0L;
         for (String permName : permissionNames) {
             PermissionBit bit = PermissionBit.fromName(permName);
@@ -533,21 +533,21 @@ public class PermissionServiceImpl implements IPermissionService {
         }
         return bitmask;
     }
-    
+
     /**
      * Convert ChannelPermission entity to DTO
      */
     private ChannelPermissionDTO convertToDTO(ChannelPermission permission) {
         ChannelPermissionDTO dto = ChannelPermissionDTO.builder()
-            .id(permission.getId())
-            .channelId(permission.getChannel().getId())
-            .targetType(permission.getTargetType())
-            .targetId(permission.getTargetId())
-            .build();
-        
+                .id(permission.getId())
+                .channelId(permission.getChannel().getId())
+                .targetType(permission.getTargetType())
+                .targetId(permission.getTargetId())
+                .build();
+
         // Convert bitmasks to permission names
         dto.fromBitmasks(permission.getAllowBitmask(), permission.getDenyBitmask());
-        
+
         // Populate target name/avatar/color for display
         if (permission.isUserOverride()) {
             userRepository.findById(permission.getTargetId()).ifPresent(user -> {
@@ -560,7 +560,7 @@ public class PermissionServiceImpl implements IPermissionService {
                 dto.setColor(role.getColor());
             });
         }
-        
+
         return dto;
     }
 }

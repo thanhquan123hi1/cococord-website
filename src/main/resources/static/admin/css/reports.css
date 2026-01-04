@@ -1,0 +1,150 @@
+/**
+ * CoCoCord Admin UI - Reports Page
+ * Report cards and report-specific styles
+ */
+
+/* ========================================
+   REPORTS LIST
+   ======================================== */
+
+.admin-reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ========================================
+   REPORT CARD
+   ======================================== */
+
+.admin-report-card {
+  background: var(--admin-surface);
+  border: 0.5px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+  transition: box-shadow var(--transition-fast);
+}
+
+.admin-report-card:hover {
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-report-card.priority-high {
+  border-left: 3px solid var(--color-danger);
+}
+
+.admin-report-card.priority-medium {
+  border-left: 3px solid var(--color-warning);
+}
+
+.admin-report-card.priority-low {
+  border-left: 3px solid var(--color-info);
+}
+
+/* Report Header */
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.report-type {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.report-type-icon {
+  font-size: 18px;
+}
+
+.report-type-label {
+  font-size: 12px;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Report Body */
+.report-body {
+  margin-bottom: var(--space-3);
+}
+
+.report-target {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.report-target strong {
+  font-size: 15px;
+}
+
+.report-reason {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-radius: var(--admin-radius-sm);
+}
+
+.report-description {
+  font-size: 14px;
+  color: var(--admin-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.report-evidence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.evidence-icon {
+  font-size: 14px;
+}
+
+/* Report Footer */
+.report-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-3);
+  border-top: 0.5px solid var(--admin-border-light);
+}
+
+.report-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.report-reporter {
+  font-size: 13px;
+  color: var(--admin-text-secondary);
+}
+
+.report-reporter strong {
+  color: var(--admin-text);
+}
+
+.report-time {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.report-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.report-resolved {
+  font-size: 12px;
+  color: var(--color-success);
+}

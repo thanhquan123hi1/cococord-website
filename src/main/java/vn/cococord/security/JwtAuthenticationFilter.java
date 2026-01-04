@@ -1,6 +1,8 @@
 package vn.cococord.security;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -53,12 +56,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Extract JWT token from Authorization header.
+     * Extract JWT token from Authorization header or from the accessToken cookie.
      */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null || cookies.length == 0) {
+            return null;
+        }
+
+        for (Cookie cookie : cookies) {
+            if (cookie == null) {
+                continue;
+            }
+            if ("accessToken".equals(cookie.getName())) {
+                String rawValue = cookie.getValue();
+                if (!StringUtils.hasText(rawValue)) {
+                    return null;
+                }
+                try {
+                    return URLDecoder.decode(rawValue, StandardCharsets.UTF_8);
+                } catch (Exception ex) {
+                    // If decoding fails, fall back to raw value.
+                    return rawValue;
+                }
+            }
         }
         return null;
     }

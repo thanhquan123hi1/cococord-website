@@ -85,6 +85,7 @@ public class AuthServiceImpl implements IAuthService {
                 .email(user.getEmail())
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
+                .role(user.getRole() != null ? user.getRole().name() : null)
                 .loginAt(LocalDateTime.now())
                 .build();
     }
@@ -176,6 +177,7 @@ public class AuthServiceImpl implements IAuthService {
                 .email(user.getEmail())
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
+                .role(user.getRole() != null ? user.getRole().name() : null)
                 .build();
     }
 

@@ -1,0 +1,429 @@
+/**
+ * CoCoCord Admin UI - Components
+ * Cards, panels, badges, avatars, lists
+ */
+
+/* ========================================
+   CARDS
+   ======================================== */
+
+.admin-card {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-2xl);
+  padding: var(--space-6);
+}
+
+.admin-card-accent {
+  background: var(--admin-surface-accent);
+}
+
+.admin-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.admin-card-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--admin-text);
+  margin: 0;
+}
+
+/* KPI Card / Stat Card */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--admin-surface-accent);
+  padding: var(--space-6);
+  border-radius: var(--admin-radius-2xl);
+}
+
+.stat-card .label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--admin-text);
+}
+
+.stat-card .value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--admin-text);
+  letter-spacing: -0.02em;
+}
+
+.stat-card .delta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 12px;
+}
+
+.stat-card .delta.up {
+  color: var(--color-success);
+}
+
+.stat-card .delta.down {
+  color: var(--color-danger);
+}
+
+.stat-card .delta svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ========================================
+   PANELS
+   ======================================== */
+
+.admin-panel {
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-2xl);
+  padding: var(--space-6);
+}
+
+.admin-panel.white {
+  background: var(--admin-surface);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.section-title h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ========================================
+   BADGES
+   ======================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--admin-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.badge-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.badge-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.badge-default {
+  background: var(--admin-hover);
+  color: var(--admin-text-secondary);
+}
+
+/* ========================================
+   AVATARS
+   ======================================== */
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--admin-radius-full);
+  background: var(--admin-surface-2);
+  border: 1px solid var(--admin-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--admin-muted);
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.avatar-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--admin-radius-full);
+  background: var(--admin-surface-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--admin-primary);
+}
+
+.server-avatar {
+  background: var(--admin-surface-accent);
+  color: var(--admin-primary);
+  border: none;
+}
+
+/* ========================================
+   ACTIVITY LIST
+   ======================================== */
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--admin-border-light);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--admin-radius-full);
+  flex-shrink: 0;
+  background: var(--admin-surface-2);
+}
+
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-text {
+  font-size: 14px;
+  color: var(--admin-text);
+  line-height: 1.4;
+}
+
+.activity-text strong {
+  font-weight: 600;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+/* ========================================
+   LIST ITEMS
+   ======================================== */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.list-item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-border-light);
+  background: var(--admin-surface);
+  transition: all var(--transition-fast);
+}
+
+.list-item:hover {
+  border-color: var(--admin-border);
+  background: var(--admin-hover);
+}
+
+.list-item .meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item .meta .name {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--admin-text);
+}
+
+.list-item .meta .sub {
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
+/* ========================================
+   NOTIFICATION BADGE
+   ======================================== */
+
+.admin-btn-notification {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-danger);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   PAGE TABS
+   ======================================== */
+
+.page-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--admin-hover);
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: var(--space-4);
+}
+
+.page-tab {
+  flex: 1;
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: none;
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--admin-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.page-tab:hover {
+  color: var(--admin-text);
+}
+
+.page-tab.active {
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.page-tab .tab-count {
+  display: inline-block;
+  margin-left: var(--space-1);
+  padding: 2px 6px;
+  background: var(--admin-hover);
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.page-tab.active .tab-count {
+  background: var(--admin-surface-accent);
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.admin-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.admin-empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-4);
+}
+
+.admin-empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.admin-empty-state p {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0;
+}
+
+/* ========================================
+   ERROR STATE
+   ======================================== */
+
+.admin-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.admin-error-state .error-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-4);
+  color: var(--color-danger);
+}
+
+.admin-error-state .error-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-error-state h3 {
+  margin-bottom: var(--space-2);
+}
+
+.admin-error-state p {
+  margin-bottom: var(--space-4);
+  color: var(--admin-muted);
+}
+
+/* Cell with icon */
+.cell-with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.server-icon {
+  font-size: 16px;
+}

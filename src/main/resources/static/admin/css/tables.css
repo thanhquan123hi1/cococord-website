@@ -1,0 +1,129 @@
+/**
+ * CoCoCord Admin UI - Tables
+ * Data tables and pagination
+ */
+
+/* ========================================
+   DATA TABLES
+   ======================================== */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.table td {
+  padding: var(--space-4);
+  font-size: 14px;
+  color: var(--admin-text);
+  border-bottom: 1px solid var(--admin-border-light);
+  vertical-align: middle;
+}
+
+.table tbody tr:hover td {
+  background: var(--admin-hover);
+}
+
+.table .cell-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.table .cell-user img {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--admin-radius-full);
+  object-fit: cover;
+}
+
+.table .cell-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.table .cell-user-name {
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.table .cell-user-email {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+/* ========================================
+   PAGINATION
+   ======================================== */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--admin-border-light);
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--admin-radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--admin-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pagination-btn:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.pagination-btn.active {
+  background: var(--admin-primary);
+  color: #FFFFFF;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pagination-ellipsis {
+  padding: 0 var(--space-2);
+  color: var(--admin-muted);
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0 var(--space-3);
+}

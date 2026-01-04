@@ -1,0 +1,372 @@
+/**
+ * CoCoCord Admin UI - Roles & Permissions Page
+ * Roles grid, permissions matrix, permission editor
+ */
+
+/* ========================================
+   ROLES GRID & CARDS
+   ======================================== */
+
+.admin-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.admin-role-card {
+  background: var(--admin-surface);
+  border: 0.5px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+  transition: box-shadow var(--transition-fast);
+}
+
+.admin-role-card:hover {
+  box-shadow: var(--admin-shadow);
+}
+
+.admin-role-card .role-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.role-color-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.admin-role-card .role-info {
+  flex: 1;
+}
+
+.admin-role-card .role-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.role-members {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.role-permissions {
+  margin-bottom: var(--space-3);
+}
+
+.permissions-label {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-bottom: var(--space-1);
+  display: block;
+}
+
+.permissions-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.permission-tag {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: var(--admin-hover);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text-secondary);
+}
+
+.permission-tag.permission-more {
+  color: var(--admin-primary);
+}
+
+.admin-role-card .role-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 0.5px solid var(--admin-border-light);
+}
+
+/* ========================================
+   PERMISSIONS LAYOUT (Matrix View)
+   ======================================== */
+
+.permissions-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: var(--space-4);
+  min-height: 500px;
+}
+
+/* Roles List (Left Sidebar) */
+.roles-list {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  border: 0.5px solid var(--admin-border);
+  overflow: hidden;
+}
+
+.roles-list-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 0.5px solid var(--admin-border);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.role-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 0.5px solid var(--admin-border-light);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.role-item:last-child {
+  border-bottom: none;
+}
+
+.role-item:hover {
+  background: var(--admin-hover);
+}
+
+.role-item.active {
+  background: var(--admin-surface-accent);
+}
+
+.role-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.role-name {
+  flex: 1;
+  font-size: 14px;
+}
+
+.role-count {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+/* ========================================
+   PERMISSIONS EDITOR (Right Panel)
+   ======================================== */
+
+.permissions-editor {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  border: 0.5px solid var(--admin-border);
+  overflow: hidden;
+}
+
+.permissions-header {
+  padding: var(--space-4);
+  border-bottom: 0.5px solid var(--admin-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.permissions-title {
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.permission-group {
+  padding: var(--space-4);
+  border-bottom: 0.5px solid var(--admin-border-light);
+}
+
+.permission-group:last-child {
+  border-bottom: none;
+}
+
+.permission-group-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.permission-group-title svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+.permission-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: var(--admin-hover);
+  border-radius: var(--admin-radius-md);
+}
+
+.permission-label {
+  font-size: 14px;
+}
+
+.permission-desc {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: 2px;
+}
+
+/* ========================================
+   PERMISSION GROUPS NAVIGATION
+   ======================================== */
+
+.permissions-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.permission-group-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--admin-radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--admin-text-secondary);
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.permission-group-btn:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.permission-group-btn.active {
+  background: var(--admin-surface-accent);
+  color: var(--admin-primary);
+}
+
+.group-icon {
+  font-size: 16px;
+}
+
+/* ========================================
+   PERMISSIONS TABLE
+   ======================================== */
+
+.permissions-table-wrapper {
+  overflow-x: auto;
+}
+
+.permissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.permissions-table th,
+.permissions-table td {
+  padding: var(--space-3);
+  text-align: left;
+  border-bottom: 0.5px solid var(--admin-border-light);
+}
+
+.permissions-table th {
+  font-weight: 500;
+  color: var(--admin-text-secondary);
+  background: var(--admin-surface-2);
+  position: sticky;
+  top: 0;
+}
+
+.permission-name-col {
+  min-width: 200px;
+}
+
+.role-col {
+  text-align: center !important;
+  min-width: 100px;
+}
+
+.role-header-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.role-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.permission-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.permission-info .permission-label {
+  font-weight: 500;
+  color: var(--admin-text);
+  font-size: 13px;
+}
+
+.permission-info .permission-desc {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: 2px;
+}
+
+.permission-checkbox-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.permission-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.permission-checkbox-wrapper .checkmark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: transparent;
+  transition: all var(--transition-fast);
+}
+
+.permission-checkbox-wrapper .checkmark.checked {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
+}

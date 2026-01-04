@@ -441,7 +441,19 @@
           // Lưu JWT tokens vào localStorage
           localStorage.setItem("accessToken", data.accessToken);
           localStorage.setItem("refreshToken", data.refreshToken);
-          localStorage.setItem("user", JSON.stringify(data.user || {}));
+          try {
+            const userForCache = {
+              id: data.userId ?? null,
+              username: data.username ?? null,
+              email: data.email ?? null,
+              displayName: data.displayName ?? null,
+              avatarUrl: data.avatarUrl ?? null,
+              role: data.role ?? null,
+            };
+            localStorage.setItem("user", JSON.stringify(userForCache));
+          } catch (_) {
+            localStorage.setItem("user", JSON.stringify({}));
+          }
 
           // Lưu accessToken vào Cookie (cho server-side rendering với JSP)
           const cookieBase =
@@ -472,7 +484,18 @@
             } catch (_) {
               next = null;
             }
-            window.location.href = next || "${pageContext.request.contextPath}/app";
+            const role = String(data.role || '').toUpperCase();
+            const isAdmin = role === 'ADMIN' || role === 'ROLE_ADMIN';
+            const defaultTarget = isAdmin
+              ? "${pageContext.request.contextPath}/admin/dashboard"
+              : "${pageContext.request.contextPath}/app";
+
+            // Với ADMIN: chỉ tôn trọng `next` nếu nó trỏ vào /admin...
+            const finalTarget = isAdmin
+              ? (next && next.startsWith('/admin') ? next : defaultTarget)
+              : (next || defaultTarget);
+
+            window.location.href = finalTarget;
           }, 1000);
         } else {
           // Lấy message lỗi từ server response với validation chặt chẽ

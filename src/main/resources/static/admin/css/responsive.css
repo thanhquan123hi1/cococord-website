@@ -1,0 +1,130 @@
+/**
+ * CoCoCord Admin UI - Responsive Styles
+ * Media queries and responsive adjustments
+ */
+
+/* ========================================
+   LARGE SCREENS (1400px)
+   ======================================== */
+
+@media (max-width: 1400px) {
+  .admin-grid-main {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========================================
+   MEDIUM SCREENS (1024px)
+   ======================================== */
+
+@media (max-width: 1024px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: 0;
+    border-bottom: 0.5px solid var(--admin-border);
+    flex-direction: row;
+    overflow-x: auto;
+    padding: var(--space-3);
+  }
+
+  .admin-main {
+    margin-left: 0;
+  }
+
+  .admin-user-profile {
+    display: none;
+  }
+
+  .admin-nav-section {
+    display: none;
+  }
+
+  .admin-sidebar .admin-nav {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-2);
+  }
+
+  /* Settings layout */
+  .admin-settings-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    position: static;
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--admin-border-light);
+  }
+  
+  /* Permissions layout */
+  .permissions-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .permissions-groups {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+  }
+}
+
+/* ========================================
+   SMALL SCREENS (768px)
+   ======================================== */
+
+@media (max-width: 768px) {
+  .cards-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-content {
+    padding: var(--space-4);
+  }
+
+  .admin-topbar {
+    padding: var(--space-4);
+  }
+
+  .admin-search {
+    width: 140px;
+  }
+
+  /* Roles grid */
+  .admin-roles-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Report/message cards footer */
+  .admin-report-card .report-footer,
+  .admin-message-card .message-footer {
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  
+  .report-actions,
+  .message-actions {
+    width: 100%;
+  }
+  
+  .report-actions .admin-btn,
+  .message-actions .admin-btn {
+    flex: 1;
+  }
+}

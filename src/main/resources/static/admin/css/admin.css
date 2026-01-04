@@ -1,0 +1,37 @@
+/**
+ * CoCoCord Admin UI - Main Stylesheet
+ * This file imports all modular CSS files
+ */
+
+/* Design Tokens & Theme Variables */
+@import url('variables.css');
+
+/* Base Styles */
+@import url('base.css');
+
+/* Layout Components */
+@import url('layout.css');
+
+/* UI Components */
+@import url('components.css');
+@import url('buttons.css');
+@import url('forms.css');
+@import url('tables.css');
+@import url('modals.css');
+@import url('charts.css');
+
+/* Page-Specific Styles */
+@import url('reports.css');
+@import url('messages.css');
+@import url('roles.css');
+@import url('audit.css');
+@import url('settings.css');
+
+/* States & Animations */
+@import url('skeleton.css');
+
+/* Utilities */
+@import url('utilities.css');
+
+/* Responsive */
+@import url('responsive.css');

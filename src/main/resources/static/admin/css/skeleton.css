@@ -1,0 +1,114 @@
+/**
+ * CoCoCord Admin UI - Skeleton Loading States
+ * Loading animations and skeleton placeholders
+ */
+
+/* ========================================
+   SKELETON LOADING
+   ======================================== */
+
+.admin-skeleton-loading {
+  padding: var(--space-6);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.skeleton-card {
+  height: 112px;
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--admin-hover),
+    transparent
+  );
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+.skeleton-panel {
+  height: 400px;
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--admin-hover),
+    transparent
+  );
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skeleton-row-item {
+  height: 56px;
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-row-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--admin-hover),
+    transparent
+  );
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Animation for refresh button */
+.spinning {
+  animation: spin 0.5s linear infinite;
+}

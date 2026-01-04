@@ -1,462 +1,406 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - CoCoCord Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --dark-bg: #1a1a2e;
-            --darker-bg: #16213e;
-            --accent: #5865f2;
-            --accent-hover: #4752c4;
-            --text-primary: #ffffff;
-            --text-secondary: #b9bbbe;
-            --danger: #ed4245;
-            --success: #3ba55c;
-            --warning: #faa61a;
-        }
-        
-        body {
-            background-color: var(--dark-bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-        
-        .sidebar {
-            background-color: var(--darker-bg);
-            min-height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            padding: 1rem;
-        }
-        
-        .sidebar .nav-link {
-            color: var(--text-secondary);
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            transition: all 0.2s;
-        }
-        
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background-color: var(--accent);
-            color: var(--text-primary);
-        }
-        
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        
-        .main-content {
-            margin-left: 250px;
-            padding: 2rem;
-        }
-        
-        .card {
-            background-color: var(--darker-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-        }
-        
-        .card-header {
-            background-color: transparent;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .table {
-            color: var(--text-primary);
-        }
-        
-        .table thead th {
-            border-color: rgba(255,255,255,0.1);
-            color: var(--text-secondary);
-        }
-        
-        .table tbody td {
-            border-color: rgba(255,255,255,0.1);
-            vertical-align: middle;
-        }
-        
-        .brand-logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--text-primary);
-            text-decoration: none;
-            margin-bottom: 2rem;
-            display: block;
-        }
-        
-        .brand-logo span {
-            color: var(--accent);
-        }
-        
-        .search-box {
-            background-color: var(--dark-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-primary);
-            border-radius: 8px;
-        }
-        
-        .search-box:focus {
-            background-color: var(--dark-bg);
-            border-color: var(--accent);
-            color: var(--text-primary);
-            box-shadow: none;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        .pagination .page-link {
-            background-color: var(--darker-bg);
-            border-color: rgba(255,255,255,0.1);
-            color: var(--text-primary);
-        }
-        
-        .pagination .page-link:hover {
-            background-color: var(--accent);
-        }
-        
-        .pagination .page-item.active .page-link {
-            background-color: var(--accent);
-            border-color: var(--accent);
-        }
-        
-        .role-select {
-            background-color: var(--dark-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-primary);
-            border-radius: 4px;
-            padding: 0.25rem 0.5rem;
-        }
-        
-        .modal-content {
-            background-color: var(--darker-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .modal-header {
-            border-bottom-color: rgba(255,255,255,0.1);
-        }
-        
-        .modal-footer {
-            border-top-color: rgba(255,255,255,0.1);
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <a href="/admin" class="brand-logo">
-            <i class="bi bi-discord"></i> Coco<span>Cord</span>
-        </a>
-        
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link" href="/admin">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" href="/admin/users">
-                    <i class="bi bi-people"></i> Users
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/servers">
-                    <i class="bi bi-hdd-stack"></i> Servers
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/stats">
-                    <i class="bi bi-graph-up"></i> Statistics
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/audit">
-                    <i class="bi bi-journal-text"></i> Audit Logs
-                </a>
-            </li>
-            <li class="nav-item mt-4">
-                <a class="nav-link" href="/">
-                    <i class="bi bi-arrow-left"></i> Back to Home
-                </a>
-            </li>
-        </ul>
-    </nav>
+<% request.setAttribute("pageTitle", "Users"); %>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="bi bi-people me-2"></i>User Management</h1>
+<title>User Management - CoCoCord Admin</title>
+
+<div class="flex flex-col gap-6">
+    <!-- Header Actions -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-semibold">User Management</h1>
+            <p class="text-secondary">Manage all users on the platform</p>
         </div>
-        
-        <!-- Search & Filter -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text bg-transparent border-secondary text-white">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" class="form-control search-box" id="searchInput" 
-                                   placeholder="Search by username or email...">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select search-box" id="statusFilter">
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="banned">Banned</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-primary w-100" onclick="loadUsers()">
-                            <i class="bi bi-funnel"></i> Apply Filters
-                        </button>
-                    </div>
-                </div>
+        <div class="flex gap-3">
+            <button class="btn btn-secondary" id="exportBtn">
+                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;">
+                    <path d="M16 12v4H2v-4M9 2v10m0-10L5 6m4-4l4 4"/>
+                </svg>
+                Export
+            </button>
+            <button class="btn btn-primary" id="addUserBtn">
+                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;">
+                    <path d="M9 2v14M2 9h14"/>
+                </svg>
+                Add User
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="admin-panel white">
+        <div class="flex flex-wrap gap-4 items-center">
+            <div class="search-box" style="flex:1;min-width:250px;">
+                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="8" cy="8" r="5"/>
+                    <path d="M12 12l4 4"/>
+                </svg>
+                <input type="text" id="searchUsers" placeholder="Search users by name, email...">
             </div>
-        </div>
-
-        <!-- Users Table -->
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Joined</th>
-                                <th>Last Login</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Pagination -->
-                <nav>
-                    <ul class="pagination justify-content-center" id="pagination">
-                    </ul>
-                </nav>
+            <div class="filter-group">
+                <label class="filter-label">Status:</label>
+                <select class="filter-select" id="filterStatus">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="banned">Banned</option>
+                </select>
             </div>
-        </div>
-    </main>
-
-    <!-- User Detail Modal -->
-    <div class="modal fade" id="userModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">User Details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="userModalBody">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            <div class="filter-group">
+                <label class="filter-label">Role:</label>
+                <select class="filter-select" id="filterRole">
+                    <option value="">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="premium">Premium</option>
+                    <option value="user">User</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Sort:</label>
+                <select class="filter-select" id="sortBy">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name-asc">Name A-Z</option>
+                    <option value="name-desc">Name Z-A</option>
+                </select>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const token = localStorage.getItem('token');
-        let currentPage = 0;
-        const pageSize = 15;
-        
-        if (!token) {
-            window.location.href = '/login';
-        }
+    <!-- Users Table -->
+    <div class="admin-panel white">
+        <div class="section-title">
+            <div class="flex items-center gap-2">
+                <h3>All Users</h3>
+                <span class="badge badge-default" id="totalCount">8 users</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="btn btn-ghost btn-sm" id="refreshBtn" title="Refresh">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;">
+                        <path d="M2 9a7 7 0 0112-5m2 5a7 7 0 01-12 5"/>
+                        <path d="M14 4v3h-3M4 14v-3h3"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-        async function fetchAPI(url, options = {}) {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                }
-            });
-            if (response.status === 401 || response.status === 403) {
-                alert('Access denied. Admin privileges required.');
-                window.location.href = '/';
-                return null;
-            }
-            return response.json();
-        }
-
-        async function loadUsers(page = 0) {
-            currentPage = page;
-            const search = document.getElementById('searchInput').value;
-            let url = `/api/admin/users?page=\${page}&size=\${pageSize}`;
-            if (search) {
-                url += `&search=\${encodeURIComponent(search)}`;
-            }
-            
-            const data = await fetchAPI(url);
-            
-            if (data && data.content) {
-                renderUsers(data.content);
-                renderPagination(data.totalPages, page);
-            }
-        }
-
-        function renderUsers(users) {
-            const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = users.map(user => `
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="user-avatar me-2">
-                                \${user.avatarUrl 
-                                    ? `<img src="\${user.avatarUrl}" width="40" height="40" style="border-radius:50%">` 
-                                    : user.username.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <strong>\${user.displayName || user.username}</strong>
-                                <br><small class="text-muted">@\${user.username}</small>
-                            </div>
+        <table class="table" id="usersTable" aria-label="Users list">
+            <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" id="selectAll" class="checkbox">
+                </th>
+                <th>User</th>
+                <th>Status</th>
+                <th>Role</th>
+                <th>Servers</th>
+                <th>Messages</th>
+                <th>Joined</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="usersTableBody">
+            <tr>
+                <td><input type="checkbox" class="checkbox user-checkbox"></td>
+                <td>
+                    <div class="cell-user">
+                        <div class="avatar">NV</div>
+                        <div class="cell-user-info">
+                            <span class="cell-user-name">Nguyễn Văn A</span>
+                            <span class="cell-user-email">nguyenvana@email.com</span>
                         </div>
-                    </td>
-                    <td>\${user.email}</td>
-                    <td>
-                        <select class="role-select" onchange="changeRole(\${user.id}, this.value)">
-                            <option value="USER" \${!user.role || user.role === 'USER' ? 'selected' : ''}>User</option>
-                            <option value="MODERATOR" \${user.role === 'MODERATOR' ? 'selected' : ''}>Moderator</option>
-                            <option value="ADMIN" \${user.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
-                        </select>
-                    </td>
-                    <td>
-                        \${user.isBanned 
-                            ? '<span class="badge bg-danger">Banned</span>' 
-                            : user.isActive 
-                                ? '<span class="badge bg-success">Active</span>'
-                                : '<span class="badge bg-secondary">Inactive</span>'}
-                    </td>
-                    <td>\${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</td>
-                    <td>\${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewUser(\${user.id})" title="View">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            \${user.isBanned 
-                                ? `<button class="btn btn-sm btn-outline-success" onclick="unbanUser(\${user.id})" title="Unban">
-                                    <i class="bi bi-unlock"></i>
-                                   </button>`
-                                : `<button class="btn btn-sm btn-outline-warning" onclick="banUser(\${user.id})" title="Ban">
-                                    <i class="bi bi-lock"></i>
-                                   </button>`}
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(\${user.id})" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                    </div>
+                </td>
+                <td><span class="badge badge-success">Active</span></td>
+                <td>Admin</td>
+                <td>12</td>
+                <td>1,234</td>
+                <td>Jan 15, 2024</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View Profile">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Ban User">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="7"/>
+                                <path d="M5 5l8 8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" class="checkbox user-checkbox"></td>
+                <td>
+                    <div class="cell-user">
+                        <div class="avatar">TT</div>
+                        <div class="cell-user-info">
+                            <span class="cell-user-name">Trần Thị B</span>
+                            <span class="cell-user-email">tranthib@email.com</span>
                         </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
+                    </div>
+                </td>
+                <td><span class="badge badge-success">Active</span></td>
+                <td>Moderator</td>
+                <td>8</td>
+                <td>856</td>
+                <td>Jan 10, 2024</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View Profile">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Ban User">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="7"/>
+                                <path d="M5 5l8 8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" class="checkbox user-checkbox"></td>
+                <td>
+                    <div class="cell-user">
+                        <div class="avatar">LM</div>
+                        <div class="cell-user-info">
+                            <span class="cell-user-name">Lê Minh C</span>
+                            <span class="cell-user-email">leminhc@email.com</span>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge badge-success">Active</span></td>
+                <td>Premium</td>
+                <td>15</td>
+                <td>2,105</td>
+                <td>Dec 20, 2023</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View Profile">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Ban User">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="7"/>
+                                <path d="M5 5l8 8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" class="checkbox user-checkbox"></td>
+                <td>
+                    <div class="cell-user">
+                        <div class="avatar">PH</div>
+                        <div class="cell-user-info">
+                            <span class="cell-user-name">Phạm Hương D</span>
+                            <span class="cell-user-email">phamhuongd@email.com</span>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge badge-warning">Inactive</span></td>
+                <td>User</td>
+                <td>3</td>
+                <td>45</td>
+                <td>Nov 15, 2023</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View Profile">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Ban User">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="7"/>
+                                <path d="M5 5l8 8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" class="checkbox user-checkbox"></td>
+                <td>
+                    <div class="cell-user">
+                        <div class="avatar">HV</div>
+                        <div class="cell-user-info">
+                            <span class="cell-user-name">Hoàng Văn E</span>
+                            <span class="cell-user-email">hoangvane@email.com</span>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge badge-danger">Banned</span></td>
+                <td>User</td>
+                <td>0</td>
+                <td>523</td>
+                <td>Oct 20, 2023</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View Profile">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-success btn-sm btn-icon" title="Unban User">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M5 9l3 3 5-5"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><input type="checkbox" class="checkbox user-checkbox"></td>
+                <td>
+                    <div class="cell-user">
+                        <div class="avatar">VT</div>
+                        <div class="cell-user-info">
+                            <span class="cell-user-name">Vũ Thảo F</span>
+                            <span class="cell-user-email">vuthaof@email.com</span>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge badge-success">Active</span></td>
+                <td>Premium</td>
+                <td>20</td>
+                <td>4,521</td>
+                <td>Sep 05, 2023</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View Profile">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Ban User">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="7"/>
+                                <path d="M5 5l8 8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
 
-        function renderPagination(totalPages, currentPage) {
-            const pagination = document.getElementById('pagination');
-            let html = '';
-            
-            // Previous
-            html += `<li class="page-item \${currentPage === 0 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" onclick="loadUsers(\${currentPage - 1})">Previous</a>
-                     </li>`;
-            
-            // Page numbers
-            for (let i = 0; i < totalPages; i++) {
-                if (i === 0 || i === totalPages - 1 || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    html += `<li class="page-item \${i === currentPage ? 'active' : ''}">
-                                <a class="page-link" href="#" onclick="loadUsers(\${i})">\${i + 1}</a>
-                             </li>`;
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                }
-            }
-            
-            // Next
-            html += `<li class="page-item \${currentPage >= totalPages - 1 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" onclick="loadUsers(\${currentPage + 1})">Next</a>
-                     </li>`;
-            
-            pagination.innerHTML = html;
-        }
+        <!-- Pagination -->
+        <div class="pagination">
+            <div class="pagination-info">
+                Showing <strong>1-6</strong> of <strong>156</strong> users
+            </div>
+            <div class="pagination-buttons">
+                <button class="pagination-btn" disabled>
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M11 4L6 9l5 5"/>
+                    </svg>
+                </button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <span class="pagination-ellipsis">...</span>
+                <button class="pagination-btn">26</button>
+                <button class="pagination-btn">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M7 4l5 5-5 5"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        async function banUser(userId) {
-            if (confirm('Are you sure you want to ban this user?')) {
-                await fetchAPI(`/api/admin/users/\${userId}/ban`, { method: 'POST' });
-                loadUsers(currentPage);
-            }
-        }
+<!-- User Modal (Hidden by default) -->
+<div class="modal-overlay" id="userModal" style="display:none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">User Details</h3>
+            <button class="modal-close" onclick="closeModal('userModal')">
+                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4l10 10M14 4L4 14"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="user-profile-card">
+                <div class="avatar-lg" id="modalAvatar">NV</div>
+                <div class="user-profile-info">
+                    <h4 id="modalName">Nguyễn Văn A</h4>
+                    <p id="modalEmail">nguyenvana@email.com</p>
+                    <div class="flex gap-2 mt-2">
+                        <span class="badge badge-success" id="modalStatus">Active</span>
+                        <span class="badge badge-default" id="modalRole">Admin</span>
+                    </div>
+                </div>
+            </div>
+            <div class="user-stats-grid">
+                <div class="user-stat-item">
+                    <div class="user-stat-value" id="modalServers">12</div>
+                    <div class="user-stat-label">Servers</div>
+                </div>
+                <div class="user-stat-item">
+                    <div class="user-stat-value" id="modalMessages">1,234</div>
+                    <div class="user-stat-label">Messages</div>
+                </div>
+                <div class="user-stat-item">
+                    <div class="user-stat-value" id="modalJoined">Jan 15</div>
+                    <div class="user-stat-label">Joined</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('userModal')">Close</button>
+            <button class="btn btn-primary">Edit User</button>
+        </div>
+    </div>
+</div>
 
-        async function unbanUser(userId) {
-            if (confirm('Are you sure you want to unban this user?')) {
-                await fetchAPI(`/api/admin/users/\${userId}/unban`, { method: 'POST' });
-                loadUsers(currentPage);
-            }
-        }
-
-        async function deleteUser(userId) {
-            if (confirm('Are you sure you want to DELETE this user? This action CANNOT be undone!')) {
-                await fetchAPI(`/api/admin/users/\${userId}`, { method: 'DELETE' });
-                loadUsers(currentPage);
-            }
-        }
-
-        async function changeRole(userId, role) {
-            await fetchAPI(`/api/admin/users/\${userId}/role?role=\${role}`, { method: 'PUT' });
-        }
-
-        async function viewUser(userId) {
-            // Show modal with user details
-            const modal = new bootstrap.Modal(document.getElementById('userModal'));
-            document.getElementById('userModalBody').innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
-            modal.show();
-            
-            // For now just show placeholder
-            document.getElementById('userModalBody').innerHTML = `
-                <p>User ID: \${userId}</p>
-                <p>Full user details coming soon...</p>
-            `;
-        }
-
-        // Search on Enter key
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadUsers();
-            }
-        });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadUsers();
-        });
-    </script>
-</body>
-</html>
+<script src="${pageContext.request.contextPath}/admin/js/mock-data.js"></script>
+<script src="${pageContext.request.contextPath}/admin/js/users.js"></script>

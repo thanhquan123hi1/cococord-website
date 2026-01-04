@@ -1,443 +1,343 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - CoCoCord</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --dark-bg: #1a1a2e;
-            --darker-bg: #16213e;
-            --accent: #5865f2;
-            --accent-hover: #4752c4;
-            --text-primary: #ffffff;
-            --text-secondary: #b9bbbe;
-            --danger: #ed4245;
-            --success: #3ba55c;
-            --warning: #faa61a;
-        }
-        
-        body {
-            background-color: var(--dark-bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
-        
-        .sidebar {
-            background-color: var(--darker-bg);
-            min-height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            padding: 1rem;
-        }
-        
-        .sidebar .nav-link {
-            color: var(--text-secondary);
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            transition: all 0.2s;
-        }
-        
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background-color: var(--accent);
-            color: var(--text-primary);
-        }
-        
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        
-        .main-content {
-            margin-left: 250px;
-            padding: 2rem;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, var(--darker-bg), var(--dark-bg));
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .stat-card .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--accent);
-        }
-        
-        .stat-card .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-        
-        .stat-card.online .stat-value {
-            color: var(--success);
-        }
-        
-        .stat-card.banned .stat-value {
-            color: var(--danger);
-        }
-        
-        .stat-card.warning .stat-value {
-            color: var(--warning);
-        }
-        
-        .card {
-            background-color: var(--darker-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-        }
-        
-        .card-header {
-            background-color: transparent;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .table {
-            color: var(--text-primary);
-        }
-        
-        .table thead th {
-            border-color: rgba(255,255,255,0.1);
-            color: var(--text-secondary);
-        }
-        
-        .table tbody td {
-            border-color: rgba(255,255,255,0.1);
-        }
-        
-        .badge-role {
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-        }
-        
-        .badge-admin {
-            background-color: var(--danger);
-        }
-        
-        .badge-moderator {
-            background-color: var(--warning);
-        }
-        
-        .badge-user {
-            background-color: var(--accent);
-        }
-        
-        .btn-action {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
-        
-        .brand-logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--text-primary);
-            text-decoration: none;
-            margin-bottom: 2rem;
-            display: block;
-        }
-        
-        .brand-logo span {
-            color: var(--accent);
-        }
-        
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 2rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <a href="/admin" class="brand-logo">
-            <i class="bi bi-discord"></i> Coco<span>Cord</span>
-        </a>
-        
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link active" href="/admin">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/users">
-                    <i class="bi bi-people"></i> Users
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/servers">
-                    <i class="bi bi-hdd-stack"></i> Servers
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/stats">
-                    <i class="bi bi-graph-up"></i> Statistics
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/audit">
-                    <i class="bi bi-journal-text"></i> Audit Logs
-                </a>
-            </li>
-            <li class="nav-item mt-4">
-                <a class="nav-link" href="/">
-                    <i class="bi bi-arrow-left"></i> Back to Home
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-danger" href="#" onclick="logout()">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </a>
-            </li>
-        </ul>
-    </nav>
+<% request.setAttribute("pageTitle", "Overview"); %>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <h1 class="mb-4">Dashboard Overview</h1>
-        
-        <!-- Stats Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalUsers">-</div>
-                    <div class="stat-label">Total Users</div>
+<title>Dashboard Overview - CoCoCord Admin</title>
+
+<div class="admin-grid-main">
+    <!-- Left: Main Dashboard Content -->
+    <div class="flex flex-col gap-6">
+        <!-- KPI Cards -->
+        <div class="cards-4">
+            <div class="stat-card">
+                <div class="label">Total Users</div>
+                <div class="value">40,689</div>
+                <div class="delta up">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
+                    </svg>
+                    <span>+8.5% vs last month</span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card online">
-                    <div class="stat-value" id="onlineUsers">-</div>
-                    <div class="stat-label">Online Now</div>
+            <div class="stat-card">
+                <div class="label">Total Servers</div>
+                <div class="value">10,293</div>
+                <div class="delta up">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
+                    </svg>
+                    <span>+1.3% vs last month</span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalServers">-</div>
-                    <div class="stat-label">Total Servers</div>
+            <div class="stat-card">
+                <div class="label">Messages Today</div>
+                <div class="value">89,000</div>
+                <div class="delta down">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 3v6m0 0l3-3m-3 3L3 6"/>
+                    </svg>
+                    <span>-4.3% vs yesterday</span>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card banned">
-                    <div class="stat-value" id="bannedUsers">-</div>
-                    <div class="stat-label">Banned Users</div>
+            <div class="stat-card">
+                <div class="label">Active Voice Calls</div>
+                <div class="value">2,040</div>
+                <div class="delta up">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
+                    </svg>
+                    <span>+1.8% vs last hour</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Main Chart -->
+        <div class="admin-panel">
+            <div class="section-title">
+                <div class="chart-tabs">
+                    <button class="chart-tab active">Total Users</button>
+                    <button class="chart-tab">Total Servers</button>
+                    <button class="chart-tab">Messages</button>
+                </div>
+                <div class="chart-legend">
+                    <div class="chart-legend-item">
+                        <span class="chart-legend-dot primary"></span>
+                        <span>This Year</span>
+                    </div>
+                    <div class="chart-legend-item">
+                        <span class="chart-legend-dot accent"></span>
+                        <span>Last Year</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <span>Chart.js sẽ được tích hợp ở Phase 2</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two Column Charts -->
+        <div class="admin-grid admin-grid-2">
+            <div class="admin-panel">
+                <div class="section-title">
+                    <h3>Server Growth</h3>
+                    <span class="badge badge-default">Weekly</span>
+                </div>
+                <div class="chart-placeholder" style="height: 200px;">Bar chart placeholder</div>
+            </div>
+            <div class="admin-panel">
+                <div class="section-title">
+                    <h3>User Distribution</h3>
+                    <span class="badge badge-default">By Role</span>
+                </div>
+                <div class="chart-placeholder" style="height: 200px;">Donut chart placeholder</div>
             </div>
         </div>
 
         <!-- Recent Users Table -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Recent Users</h5>
-                <a href="/admin/users" class="btn btn-sm btn-outline-light">View All</a>
+        <div class="admin-panel white">
+            <div class="section-title">
+                <h3>Recent Users</h3>
+                <a href="${pageContext.request.contextPath}/admin/users" class="btn btn-ghost btn-sm">View All</a>
             </div>
-            <div class="card-body">
-                <div class="loading-spinner" id="usersLoading">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+            <table class="table" aria-label="Recent users">
+                <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <div class="cell-user">
+                            <div class="avatar">NV</div>
+                            <div class="cell-user-info">
+                                <span class="cell-user-name">Nguyễn Văn A</span>
+                                <span class="cell-user-email">nguyenvana@email.com</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td>User</td>
+                    <td>Jan 15, 2024</td>
+                    <td>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="cell-user">
+                            <div class="avatar">TT</div>
+                            <div class="cell-user-info">
+                                <span class="cell-user-name">Trần Thị B</span>
+                                <span class="cell-user-email">tranthib@email.com</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-success">Active</span></td>
+                    <td>Premium</td>
+                    <td>Jan 10, 2024</td>
+                    <td>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="cell-user">
+                            <div class="avatar">LM</div>
+                            <div class="cell-user-info">
+                                <span class="cell-user-name">Lê Minh C</span>
+                                <span class="cell-user-email">leminhc@email.com</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-warning">Inactive</span></td>
+                    <td>User</td>
+                    <td>Dec 20, 2023</td>
+                    <td>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="cell-user">
+                            <div class="avatar">PH</div>
+                            <div class="cell-user-info">
+                                <span class="cell-user-name">Phạm Hương D</span>
+                                <span class="cell-user-email">phamhuongd@email.com</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-danger">Banned</span></td>
+                    <td>User</td>
+                    <td>Nov 05, 2023</td>
+                    <td>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right: Activity & Top Servers Panel -->
+    <div class="flex flex-col gap-6">
+        <!-- Recent Activity -->
+        <div class="admin-panel white">
+            <div class="section-title">
+                <h3>Recent Activity</h3>
+                <span class="badge badge-info">5</span>
+            </div>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="avatar">PT</div>
+                    <div class="activity-content">
+                        <div class="activity-text">
+                            <strong>Phan Thị A</strong> created a new server <strong>Vietnam Gamers</strong>
+                        </div>
+                        <div class="activity-time">2 minutes ago</div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover" id="usersTable">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Joined</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                        </tbody>
-                    </table>
+                <div class="activity-item">
+                    <div class="avatar">NV</div>
+                    <div class="activity-content">
+                        <div class="activity-text">
+                            <strong>Nguyễn Văn B</strong> reported a user <strong>spammer123</strong>
+                        </div>
+                        <div class="activity-time">15 minutes ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="avatar">TM</div>
+                    <div class="activity-content">
+                        <div class="activity-text">
+                            <strong>Trần Minh C</strong> updated server settings for <strong>Tech Talk VN</strong>
+                        </div>
+                        <div class="activity-time">32 minutes ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="avatar">LH</div>
+                    <div class="activity-content">
+                        <div class="activity-text">
+                            <strong>Lê Hương D</strong> joined the platform
+                        </div>
+                        <div class="activity-time">1 hour ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="avatar">
+                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;">
+                            <circle cx="9" cy="9" r="7"/>
+                            <path d="M9 5v4l2 2"/>
+                        </svg>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">
+                            <strong>System</strong> completed daily backup
+                        </div>
+                        <div class="activity-time">3 hours ago</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Servers Table -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-hdd-stack me-2"></i>Recent Servers</h5>
-                <a href="/admin/servers" class="btn btn-sm btn-outline-light">View All</a>
+        <!-- Top Servers -->
+        <div class="admin-panel white">
+            <div class="section-title">
+                <h3>Top Servers</h3>
+                <a href="${pageContext.request.contextPath}/admin/servers" class="btn btn-ghost btn-sm">View All</a>
             </div>
-            <div class="card-body">
-                <div class="loading-spinner" id="serversLoading">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+            <div class="list">
+                <div class="list-item">
+                    <div class="avatar">VG</div>
+                    <div class="meta">
+                        <div class="name">Vietnam Gamers</div>
+                        <div class="sub">15,420 members</div>
                     </div>
+                    <span class="badge badge-success">+12.5%</span>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover" id="serversTable">
-                        <thead>
-                            <tr>
-                                <th>Server</th>
-                                <th>Owner</th>
-                                <th>Members</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="serversTableBody">
-                        </tbody>
-                    </table>
+                <div class="list-item">
+                    <div class="avatar">TT</div>
+                    <div class="meta">
+                        <div class="name">Tech Talk VN</div>
+                        <div class="sub">8,930 members</div>
+                    </div>
+                    <span class="badge badge-success">+8.2%</span>
+                </div>
+                <div class="list-item">
+                    <div class="avatar">ML</div>
+                    <div class="meta">
+                        <div class="name">Music Lovers</div>
+                        <div class="sub">7,210 members</div>
+                    </div>
+                    <span class="badge badge-success">+5.1%</span>
+                </div>
+                <div class="list-item">
+                    <div class="avatar">SG</div>
+                    <div class="meta">
+                        <div class="name">Study Group</div>
+                        <div class="sub">5,890 members</div>
+                    </div>
+                    <span class="badge badge-success">+15.3%</span>
+                </div>
+                <div class="list-item">
+                    <div class="avatar">AF</div>
+                    <div class="meta">
+                        <div class="name">Anime Fans VN</div>
+                        <div class="sub">4,520 members</div>
+                    </div>
+                    <span class="badge badge-success">+3.7%</span>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            window.location.href = '/login';
-        }
-
-        async function fetchAPI(url, options = {}) {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                }
-            });
-            if (response.status === 401 || response.status === 403) {
-                alert('Access denied. Admin privileges required.');
-                window.location.href = '/';
-                return null;
-            }
-            return response.json();
-        }
-
-        async function loadStats() {
-            const stats = await fetchAPI('/api/admin/stats');
-            if (stats) {
-                document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
-                document.getElementById('onlineUsers').textContent = stats.onlineUsers || 0;
-                document.getElementById('totalServers').textContent = stats.totalServers || 0;
-                document.getElementById('bannedUsers').textContent = stats.bannedUsers || 0;
-            }
-        }
-
-        async function loadRecentUsers() {
-            document.getElementById('usersLoading').style.display = 'block';
-            const data = await fetchAPI('/api/admin/users?page=0&size=5');
-            document.getElementById('usersLoading').style.display = 'none';
-            
-            if (data && data.content) {
-                const tbody = document.getElementById('usersTableBody');
-                tbody.innerHTML = data.content.map(user => `
-                    <tr>
-                        <td>
-                            <strong>\${user.displayName || user.username}</strong>
-                            <br><small class="text-muted">@\${user.username}</small>
-                        </td>
-                        <td>\${user.email}</td>
-                        <td>
-                            \${user.isBanned 
-                                ? '<span class="badge bg-danger">Banned</span>' 
-                                : '<span class="badge bg-success">Active</span>'}
-                        </td>
-                        <td>\${new Date(user.createdAt).toLocaleDateString()}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="viewUser(\${user.id})">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            \${user.isBanned 
-                                ? `<button class="btn btn-sm btn-outline-success btn-action" onclick="unbanUser(\${user.id})">
-                                    <i class="bi bi-unlock"></i>
-                                   </button>`
-                                : `<button class="btn btn-sm btn-outline-danger btn-action" onclick="banUser(\${user.id})">
-                                    <i class="bi bi-lock"></i>
-                                   </button>`}
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        async function loadRecentServers() {
-            document.getElementById('serversLoading').style.display = 'block';
-            const data = await fetchAPI('/api/admin/servers?page=0&size=5');
-            document.getElementById('serversLoading').style.display = 'none';
-            
-            if (data && data.content) {
-                const tbody = document.getElementById('serversTableBody');
-                tbody.innerHTML = data.content.map(server => `
-                    <tr>
-                        <td>
-                            <strong>\${server.name}</strong>
-                            \${server.description ? `<br><small class="text-muted">\${server.description.substring(0, 50)}...</small>` : ''}
-                        </td>
-                        <td>@\${server.ownerUsername}</td>
-                        <td>\${server.memberCount || 0}</td>
-                        <td>\${new Date(server.createdAt).toLocaleDateString()}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteServer(\${server.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        async function banUser(userId) {
-            if (confirm('Are you sure you want to ban this user?')) {
-                await fetchAPI(`/api/admin/users/\${userId}/ban`, { method: 'POST' });
-                loadRecentUsers();
-                loadStats();
-            }
-        }
-
-        async function unbanUser(userId) {
-            if (confirm('Are you sure you want to unban this user?')) {
-                await fetchAPI(`/api/admin/users/\${userId}/unban`, { method: 'POST' });
-                loadRecentUsers();
-                loadStats();
-            }
-        }
-
-        async function deleteServer(serverId) {
-            if (confirm('Are you sure you want to delete this server? This action cannot be undone.')) {
-                await fetchAPI(`/api/admin/servers/\${serverId}`, { method: 'DELETE' });
-                loadRecentServers();
-                loadStats();
-            }
-        }
-
-        function viewUser(userId) {
-            window.location.href = `/admin/users?id=\${userId}`;
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            window.location.href = '/login';
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStats();
-            loadRecentUsers();
-            loadRecentServers();
-        });
-    </script>
-</body>
-</html>
+<script src="${pageContext.request.contextPath}/admin/js/mock-data.js"></script>
+<script src="${pageContext.request.contextPath}/admin/js/dashboard.js"></script>

@@ -28,6 +28,9 @@ public class SiteMeshConfig {
                         .addExcludedPath("/css/**")
                         .addExcludedPath("/js/**")
                         .addExcludedPath("/images/**")
+                        .addExcludedPath("/admin/css/**")
+                        .addExcludedPath("/admin/js/**")
+                        .addExcludedPath("/admin/images/**")
                         .addExcludedPath("/webjars/**")
                         .addExcludedPath("/static/**")
                         .addExcludedPath("/favicon.ico")
@@ -57,7 +60,8 @@ public class SiteMeshConfig {
                         .addDecoratorPath("/settings/**", "app.jsp")
                         .addDecoratorPath("/sessions", "app.jsp")
                         .addDecoratorPath("/change-password", "app.jsp")
-                        .addDecoratorPath("/admin/**", "app.jsp");
+                        .addDecoratorPath("/admin", "admin.jsp")
+                        .addDecoratorPath("/admin/**", "admin.jsp");
             }
         };
 

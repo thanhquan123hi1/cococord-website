@@ -143,6 +143,7 @@ public class WebSocketMessageController {
      */
     @MessageMapping("/presence.update")
     public void updatePresence(@Payload PresenceUpdate presence, Principal principal) {
+
         // Deprecated: presence is authoritative from STOMP connect/disconnect session
         // tracking.
         // Ignore client-driven updates to avoid duplicated/incorrect presence state.

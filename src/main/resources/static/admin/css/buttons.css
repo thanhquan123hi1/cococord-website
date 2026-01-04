@@ -1,0 +1,185 @@
+/**
+ * CoCoCord Admin UI - Buttons
+ * All button styles and variants
+ */
+
+/* ========================================
+   ADMIN BUTTONS (Header style)
+   ======================================== */
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--admin-text-secondary);
+}
+
+.admin-btn:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.admin-btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--admin-radius-md);
+}
+
+.admin-btn-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.admin-btn-primary {
+  background: var(--admin-primary);
+  color: #FFFFFF;
+}
+
+.admin-btn-primary:hover {
+  background: var(--admin-primary-hover);
+  color: #FFFFFF;
+}
+
+.admin-btn-danger-ghost {
+  background: transparent;
+  color: var(--color-danger);
+  border: 1px solid transparent;
+}
+
+.admin-btn-danger-ghost:hover {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+}
+
+.admin-btn-success {
+  background: var(--color-success);
+  color: white;
+}
+
+.admin-btn-success:hover {
+  background: #0ea66e;
+}
+
+/* ========================================
+   STANDARD BUTTONS
+   ======================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--admin-primary);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background: var(--admin-primary-hover);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+}
+
+.btn-secondary:hover {
+  background: var(--admin-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--admin-text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.btn-ghost.active {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+}
+
+.btn-lg {
+  padding: var(--space-3) var(--space-6);
+  font-size: 16px;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ========================================
+   BUTTON VARIANTS
+   ======================================== */
+
+.btn-success {
+  background: var(--color-success);
+  color: #FFFFFF;
+}
+
+.btn-success:hover {
+  background: #0D9668;
+}
+
+.btn-warning {
+  background: var(--color-warning);
+  color: #FFFFFF;
+}
+
+.btn-warning:hover {
+  background: #D97706;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #FFFFFF;
+}
+
+.btn-danger:hover {
+  background: #DC2626;
+}
+
+/* Action Buttons Group */
+.action-buttons {
+  display: flex;
+  gap: var(--space-1);
+}

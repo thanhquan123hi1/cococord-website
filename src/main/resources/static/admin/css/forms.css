@@ -1,0 +1,328 @@
+/**
+ * CoCoCord Admin UI - Forms
+ * Form inputs, selects, checkboxes, toggles
+ */
+
+/* ========================================
+   FORM BASICS
+   ======================================== */
+
+.form-group {
+  margin-bottom: var(--space-4);
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(79, 80, 127, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--admin-placeholder);
+}
+
+.admin-form-hint {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+/* ========================================
+   SEARCH BOX (Page-level)
+   ======================================== */
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box svg {
+  position: absolute;
+  left: var(--space-3);
+  width: 16px;
+  height: 16px;
+  color: var(--admin-muted);
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  padding-left: 40px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.search-box input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(79, 80, 127, 0.1);
+}
+
+.search-box input::placeholder {
+  color: var(--admin-placeholder);
+}
+
+/* ========================================
+   FILTERS
+   ======================================== */
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-label {
+  font-size: 13px;
+  color: var(--admin-muted);
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: var(--space-2) var(--space-3);
+  padding-right: var(--space-6);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 120px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+}
+
+/* ========================================
+   CHECKBOX
+   ======================================== */
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--admin-radius-sm);
+  border: 1.5px solid var(--admin-border);
+  background: var(--admin-surface);
+  cursor: pointer;
+  appearance: none;
+  position: relative;
+}
+
+.checkbox:checked {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+}
+
+.checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 80, 127, 0.2);
+}
+
+/* ========================================
+   TOGGLE SWITCH
+   ======================================== */
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--admin-border);
+  border-radius: 12px;
+  transition: background var(--transition-fast);
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--color-success);
+}
+
+.toggle-switch input:checked + .toggle-slider::after {
+  transform: translateX(20px);
+}
+
+/* Toggle with active class (legacy support) */
+.toggle-switch.active {
+  background: var(--color-success);
+}
+
+.toggle-switch.active::after {
+  transform: translateX(18px);
+}
+
+/* ========================================
+   SETTING TOGGLE
+   ======================================== */
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.toggle-label {
+  font-size: 14px;
+  color: var(--admin-text);
+}
+
+.input-suffix {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin-left: var(--space-2);
+}
+
+/* ========================================
+   COLOR PICKER
+   ======================================== */
+
+.color-picker-wrapper {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.admin-color-input {
+  width: 40px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-surface);
+  cursor: pointer;
+}
+
+.admin-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.admin-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+/* ========================================
+   FORM SECTIONS (for modals)
+   ======================================== */
+
+.admin-form-section {
+  margin-bottom: var(--space-5);
+}
+
+.admin-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.admin-form-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--admin-border-light);
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.permissions-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Modal footer with right-aligned buttons */
+.admin-modal-footer-right {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* Settings form */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--admin-border-light);
+}
