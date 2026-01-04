@@ -83,9 +83,9 @@
         </div>
     </div>
 
-    <!-- Search & Filters -->
-    <div class="admin-card">
-        <div class="admin-toolbar">
+    <!-- Users List (Search + Bulk Actions + Table) -->
+    <div class="admin-card admin-users-card">
+        <div class="admin-toolbar admin-users-toolbar">
             <div class="admin-toolbar-left">
                 <div class="admin-search admin-search-lg">
                     <svg class="admin-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -127,10 +127,9 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Bulk Actions Bar (hidden by default) -->
-    <div class="admin-bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
+        <!-- Bulk Actions Bar (hidden by default) -->
+        <div class="admin-bulk-actions-bar" id="bulk-actions-bar" style="display: none;">
         <div class="bulk-info">
             <span id="selected-count">0</span> users selected
         </div>
@@ -154,8 +153,7 @@
         </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="admin-card">
+        <!-- Users Table -->
         <div class="admin-card-body admin-card-body-table">
             <div class="admin-table-container">
                 <table class="admin-table admin-table-hover" id="users-table">

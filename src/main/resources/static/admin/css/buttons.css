@@ -42,6 +42,17 @@
   height: 20px;
 }
 
+.admin-btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+  border-radius: var(--admin-radius-md);
+}
+
+.admin-btn-sm svg {
+  width: 16px;
+  height: 16px;
+}
+
 .admin-btn-primary {
   background: var(--admin-primary);
   color: #FFFFFF;

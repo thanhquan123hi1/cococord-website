@@ -260,7 +260,8 @@ public class AdminServiceImpl implements IAdminService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserProfileResponse> getAllUsers(Pageable pageable, String search) {
+    public Page<UserProfileResponse> getAllUsers(Pageable pageable, String search, String status, String role) {
+        // Get all users first, then filter
         Page<User> users;
         if (search != null && !search.trim().isEmpty()) {
             users = userRepository.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(
@@ -268,7 +269,37 @@ public class AdminServiceImpl implements IAdminService {
         } else {
             users = userRepository.findAll(pageable);
         }
-        return users.map(this::mapUserToResponse);
+
+        // Apply status and role filters in memory (for simplicity)
+        // In production, this should be done with a custom query
+        List<User> filteredUsers = users.getContent().stream()
+                .filter(user -> {
+                    if (status != null && !status.isEmpty()) {
+                        switch (status.toLowerCase()) {
+                            case "active":
+                                return user.getIsActive() && !user.getIsBanned() && !user.getIsMuted();
+                            case "banned":
+                                return user.getIsBanned();
+                            case "muted":
+                                return user.getIsMuted() && !user.getIsBanned();
+                            case "inactive":
+                                return !user.getIsActive();
+                            default:
+                                return true;
+                        }
+                    }
+                    return true;
+                })
+                .filter(user -> {
+                    if (role != null && !role.isEmpty()) {
+                        return user.getRole() != null && user.getRole().name().equalsIgnoreCase(role);
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        Page<User> filteredPage = new PageImpl<>(filteredUsers, pageable, filteredUsers.size());
+        return filteredPage.map(this::mapUserToResponse);
     }
 
     @Override
@@ -279,7 +310,7 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
-    public void banUser(Long userId, String adminUsername) {
+    public void banUser(Long userId, String reason, String duration, String adminUsername) {
         User admin = getUserByUsername(adminUsername);
         User user = getUserByIdInternal(userId);
 
@@ -292,19 +323,56 @@ public class AdminServiceImpl implements IAdminService {
         }
 
         user.setIsBanned(true);
+        user.setBannedAt(LocalDateTime.now());
+        user.setBanReason(reason);
+
+        // Parse duration and set bannedUntil
+        if (duration != null && !duration.equalsIgnoreCase("permanent")) {
+            LocalDateTime bannedUntil = calculateBanEndDate(duration);
+            user.setBannedUntil(bannedUntil);
+        } else {
+            user.setBannedUntil(null); // Permanent ban
+        }
+
         userRepository.save(user);
 
+        String durationText = duration != null ? duration : "permanent";
         logAdminAction(AdminAuditLog.AdminActionType.USER_BAN,
-                "Banned user " + user.getUsername(),
+                "Banned user " + user.getUsername() + " for " + durationText + ". Reason: " + reason,
                 "USER", userId, user.getUsername(), null, adminUsername, null);
 
-        log.info("Admin {} banned user {}", adminUsername, user.getUsername());
+        log.info("Admin {} banned user {} for {} - Reason: {}", adminUsername, user.getUsername(), durationText,
+                reason);
+    }
+
+    private LocalDateTime calculateBanEndDate(String duration) {
+        LocalDateTime now = LocalDateTime.now();
+        if (duration == null)
+            return null;
+
+        switch (duration.toLowerCase()) {
+            case "1h":
+                return now.plusHours(1);
+            case "24h":
+                return now.plusHours(24);
+            case "7d":
+                return now.plusDays(7);
+            case "30d":
+                return now.plusDays(30);
+            case "permanent":
+                return null;
+            default:
+                return null;
+        }
     }
 
     @Override
     public void unbanUser(Long userId, String adminUsername) {
         User user = getUserByIdInternal(userId);
         user.setIsBanned(false);
+        user.setBannedAt(null);
+        user.setBannedUntil(null);
+        user.setBanReason(null);
         userRepository.save(user);
 
         logAdminAction(AdminAuditLog.AdminActionType.USER_UNBAN,
@@ -804,6 +872,8 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     private UserProfileResponse mapUserToResponse(User user) {
+        int serverCount = user.getServerMemberships() != null ? user.getServerMemberships().size() : 0;
+
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -811,10 +881,20 @@ public class AdminServiceImpl implements IAdminService {
                 .displayName(user.getDisplayName())
                 .avatarUrl(user.getAvatarUrl())
                 .bio(user.getBio())
+                .role(user.getRole() != null ? user.getRole().name() : "USER")
                 .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .customStatus(user.getCustomStatus())
                 .isActive(user.getIsActive())
                 .isBanned(user.getIsBanned())
+                .bannedAt(user.getBannedAt())
+                .bannedUntil(user.getBannedUntil())
+                .banReason(user.getBanReason())
+                .isMuted(user.getIsMuted())
+                .mutedUntil(user.getMutedUntil())
+                .muteReason(user.getMuteReason())
+                .isEmailVerified(user.getIsEmailVerified())
+                .twoFactorEnabled(user.getTwoFactorEnabled())
+                .serverCount(serverCount)
                 .createdAt(user.getCreatedAt())
                 .lastLogin(user.getLastLogin())
                 .build();

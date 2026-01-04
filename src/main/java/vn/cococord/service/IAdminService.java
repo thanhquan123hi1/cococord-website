@@ -27,9 +27,14 @@ public interface IAdminService {
     // ================== User Management ==================
 
     /**
-     * Get all users with pagination
+     * Get all users with pagination and filters
+     * 
+     * @param pageable pagination info
+     * @param search   search term (username or email)
+     * @param status   filter by status (active, banned, muted, inactive)
+     * @param role     filter by role (USER, MODERATOR, ADMIN)
      */
-    Page<UserProfileResponse> getAllUsers(Pageable pageable, String search);
+    Page<UserProfileResponse> getAllUsers(Pageable pageable, String search, String status, String role);
 
     /**
      * Get user by ID
@@ -38,8 +43,14 @@ public interface IAdminService {
 
     /**
      * Ban a user from the system
+     * 
+     * @param userId        user to ban
+     * @param reason        ban reason
+     * @param duration      ban duration (e.g., "1h", "24h", "7d", "30d",
+     *                      "permanent")
+     * @param adminUsername admin performing the action
      */
-    void banUser(Long userId, String adminUsername);
+    void banUser(Long userId, String reason, String duration, String adminUsername);
 
     /**
      * Unban a user

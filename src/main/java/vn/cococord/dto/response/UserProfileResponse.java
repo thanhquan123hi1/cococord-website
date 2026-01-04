@@ -28,14 +28,23 @@ public class UserProfileResponse {
     private LocalDateTime customStatusExpiresAt;
     private String theme;
     private String messageDisplay;
+    private String role;
     private Boolean isActive;
     private Boolean isBanned;
+    private LocalDateTime bannedAt;
+    private LocalDateTime bannedUntil;
+    private String banReason;
+    private Boolean isMuted;
+    private LocalDateTime mutedUntil;
+    private String muteReason;
     private Boolean isEmailVerified;
     private Boolean twoFactorEnabled;
     private Boolean allowFriendRequests;
     private Boolean allowDirectMessages;
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
+    private Integer serverCount;
+    private Long messageCount;
 
     // Additional fields for profile modal
     private String note; // Private note about this user (only visible to viewer)

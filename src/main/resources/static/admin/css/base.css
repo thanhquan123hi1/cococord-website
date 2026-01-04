@@ -82,6 +82,21 @@ p {
 
 .admin-page-header {
   margin-bottom: var(--space-6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.admin-page-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .admin-page-title {
@@ -95,6 +110,17 @@ p {
   font-size: 14px;
   color: var(--admin-muted);
   margin: 0;
+}
+
+/* Users page typography closer to Figma block */
+.admin-page[data-page="users"] .admin-page-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.admin-page[data-page="users"] .admin-page-subtitle {
+  font-size: 12px;
 }
 
 /* Activity List */
@@ -239,6 +265,23 @@ p {
   height: 32px;
   border-radius: var(--admin-radius-full);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.user-avatar-sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar-sm span {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #FFFFFF;
 }
 
 .user-info {

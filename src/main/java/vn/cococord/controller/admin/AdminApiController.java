@@ -50,13 +50,15 @@ public class AdminApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(adminService.getAllUsers(pageable, search));
+        return ResponseEntity.ok(adminService.getAllUsers(pageable, search, status, role));
     }
 
     @GetMapping("/users/{userId}")
@@ -67,8 +69,10 @@ public class AdminApiController {
     @PostMapping("/users/{userId}/ban")
     public ResponseEntity<MessageResponse> banUser(
             @PathVariable Long userId,
+            @RequestParam(required = false) String reason,
+            @RequestParam(required = false) String duration,
             @AuthenticationPrincipal UserDetails userDetails) {
-        adminService.banUser(userId, userDetails.getUsername());
+        adminService.banUser(userId, reason, duration, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("User banned successfully"));
     }
 

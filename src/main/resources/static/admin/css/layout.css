@@ -401,6 +401,38 @@
 }
 
 /* ========================================
+   PAGE TOOLBAR (used in Users fragment)
+   ======================================== */
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.admin-toolbar-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.admin-filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.admin-search.admin-search-lg {
+  width: 320px;
+}
+
+/* ========================================
    CONTENT AREA
    ======================================== */
 

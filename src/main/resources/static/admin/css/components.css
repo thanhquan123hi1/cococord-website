@@ -13,6 +13,29 @@
   padding: var(--space-6);
 }
 
+/* Figma-like elevation for Users page blocks */
+.admin-page[data-page="users"] .admin-card {
+  box-shadow: var(--admin-shadow-sm);
+}
+
+/* Users list: toolbar + bulk actions live inside the same card */
+.admin-page[data-page="users"] .admin-users-toolbar {
+  padding-bottom: var(--space-4);
+}
+
+.admin-page[data-page="users"] .admin-users-toolbar + .admin-bulk-actions-bar {
+  margin-top: var(--space-4);
+}
+
+.admin-page[data-page="users"] .admin-users-card .admin-bulk-actions-bar {
+  margin: 0;
+  padding: var(--space-3) 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--admin-border-light);
+}
+
 .admin-card-accent {
   background: var(--admin-surface-accent);
 }
@@ -249,6 +272,34 @@
 .badge-default {
   background: var(--admin-hover);
   color: var(--admin-text-secondary);
+}
+
+/* ========================================
+   BULK ACTIONS BAR
+   ======================================== */
+
+.admin-bulk-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  margin: 0 0 var(--space-6);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-xl);
+}
+
+.admin-bulk-actions-bar .bulk-info {
+  font-size: 14px;
+  color: var(--admin-text-secondary);
+}
+
+.admin-bulk-actions-bar .bulk-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 /* ========================================

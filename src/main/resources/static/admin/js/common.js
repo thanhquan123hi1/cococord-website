@@ -273,11 +273,12 @@
     formatDate: function(dateStr, options = {}) {
       if (!dateStr) return '--';
       const date = new Date(dateStr);
+      const { year, ...restOptions } = options;
       return date.toLocaleDateString('vi-VN', {
         day: 'numeric',
         month: 'short',
-        year: options.year ? 'numeric' : undefined,
-        ...options
+        year: year ? 'numeric' : undefined,
+        ...restOptions
       });
     },
 

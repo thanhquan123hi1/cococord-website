@@ -95,6 +95,13 @@ public class User {
     @Builder.Default
     private Boolean isBanned = false;
 
+    private LocalDateTime bannedAt;
+
+    private LocalDateTime bannedUntil;
+
+    @Column(length = 500)
+    private String banReason;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isMuted = false;
