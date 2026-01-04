@@ -1,13 +1,25 @@
 /**
  * CoCoCord Admin - Roles & Permissions Page JavaScript
  * Handles roles management and permissions matrix
+ * Updated to use real API endpoints
  */
 
-const AdminRoles = (function() {
+var AdminRoles = window.AdminRoles || (function() {
   'use strict';
 
   // State
   let currentTab = 'roles';
+  let rolesData = [];
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    roles: '/api/admin/roles',
+    role: (id) => `/api/admin/roles/${id}`
+  };
 
   // ========================================
   // Initialization
@@ -16,16 +28,100 @@ const AdminRoles = (function() {
   function init() {
     console.log('[AdminRoles] Initializing...');
     
-    // Update stats
-    updateStats();
-    
-    // Render initial content
-    renderContent();
-    
     // Setup event listeners
     setupEventListeners();
     
+    // Fetch roles from API
+    fetchRoles();
+    
     console.log('[AdminRoles] Initialized');
+  }
+
+  // ========================================
+  // API Calls
+  // ========================================
+
+  async function fetchRoles() {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading(true);
+
+    try {
+      const response = await AdminUtils.api.get(API.roles);
+      
+      if (Array.isArray(response)) {
+        rolesData = response;
+      } else if (response && response.content) {
+        rolesData = response.content;
+      } else {
+        console.warn('[AdminRoles] API returned unexpected format, using mock data');
+        rolesData = MockData?.roles?.list || [];
+      }
+      
+      updateStats();
+      renderContent();
+    } catch (error) {
+      console.error('[AdminRoles] Failed to fetch roles:', error);
+      AdminUtils?.showToast?.('Failed to load roles', 'danger');
+      // Fallback to mock data
+      rolesData = MockData?.roles?.list || [];
+      updateStats();
+      renderContent();
+    } finally {
+      isLoading = false;
+      showLoading(false);
+    }
+  }
+
+  async function createRole(roleData) {
+    try {
+      await AdminUtils.api.post(API.roles, roleData);
+      AdminUtils?.showToast?.('Role created successfully', 'success');
+      fetchRoles();
+    } catch (error) {
+      console.error('[AdminRoles] Failed to create role:', error);
+      AdminUtils?.showToast?.('Failed to create role', 'danger');
+    }
+  }
+
+  async function updateRole(roleId, roleData) {
+    try {
+      await AdminUtils.api.put(API.role(roleId), roleData);
+      AdminUtils?.showToast?.('Role updated successfully', 'success');
+      fetchRoles();
+    } catch (error) {
+      console.error('[AdminRoles] Failed to update role:', error);
+      AdminUtils?.showToast?.('Failed to update role', 'danger');
+    }
+  }
+
+  async function deleteRoleAPI(roleId) {
+    try {
+      await AdminUtils.api.delete(API.role(roleId));
+      AdminUtils?.showToast?.('Role deleted successfully', 'warning');
+      fetchRoles();
+    } catch (error) {
+      console.error('[AdminRoles] Failed to delete role:', error);
+      AdminUtils?.showToast?.('Failed to delete role', 'danger');
+    }
+  }
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  function showLoading(show) {
+    const container = document.getElementById('roles-list');
+    if (!container) return;
+
+    if (show) {
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <div class="loading-spinner"></div>
+          <div class="mt-2 text-muted">Loading roles...</div>
+        </div>
+      `;
+    }
   }
 
   // ========================================
@@ -33,13 +129,16 @@ const AdminRoles = (function() {
   // ========================================
 
   function updateStats() {
-    const roles = MockData.roles.list;
+    const roles = rolesData.length > 0 ? rolesData : MockData?.roles?.list || [];
+    
+    const adminRole = roles.find(r => r.name === 'Administrator' || r.name === 'Admin');
+    const modRole = roles.find(r => r.name === 'Moderator' || r.name === 'Mod');
     
     const statElements = {
       'totalRoles': roles.length,
-      'totalAdmins': roles.find(r => r.name === 'Administrator')?.members || 0,
-      'totalModerators': roles.find(r => r.name === 'Moderator')?.members || 0,
-      'permissionGroups': MockData.roles.permissionGroups.length
+      'totalAdmins': adminRole?.members || adminRole?.memberCount || 0,
+      'totalModerators': modRole?.members || modRole?.memberCount || 0,
+      'permissionGroups': MockData?.roles?.permissionGroups?.length || 5
     };
     
     Object.entries(statElements).forEach(([key, value]) => {
@@ -71,7 +170,18 @@ const AdminRoles = (function() {
     const container = document.getElementById('roles-list');
     if (!container) return;
     
-    const roles = MockData.roles.list;
+    const roles = rolesData.length > 0 ? rolesData : MockData?.roles?.list || [];
+    
+    if (roles.length === 0) {
+      container.innerHTML = `
+        <div class="admin-empty-state">
+          <i class="fas fa-user-shield"></i>
+          <h3>No roles found</h3>
+          <p>Create your first role to get started</p>
+        </div>
+      `;
+      return;
+    }
     
     container.innerHTML = roles.map(role => renderRoleCard(role)).join('');
     
@@ -80,15 +190,18 @@ const AdminRoles = (function() {
   }
 
   function renderRoleCard(role) {
-    const isAdmin = role.permissions.includes('all') || role.permissions.includes('administrator');
+    const permissions = role.permissions || [];
+    const isAdmin = permissions.includes('all') || permissions.includes('administrator') || role.name === 'Administrator';
+    const color = role.color || '#7c3aed';
+    const memberCount = role.members || role.memberCount || 0;
     
     return `
       <div class="admin-role-card" data-role-id="${role.id}">
         <div class="role-header">
-          <div class="role-color-badge" style="background-color: ${role.color}"></div>
+          <div class="role-color-badge" style="background-color: ${color}"></div>
           <div class="role-info">
             <h4 class="role-name">${role.name}</h4>
-            <span class="role-members">${formatNumber(role.members)} members</span>
+            <span class="role-members">${formatNumber(memberCount)} members</span>
           </div>
           ${isAdmin ? '<span class="admin-badge admin-badge-danger">Admin</span>' : ''}
         </div>
@@ -96,12 +209,13 @@ const AdminRoles = (function() {
         <div class="role-permissions">
           <span class="permissions-label">Permissions:</span>
           <div class="permissions-preview">
-            ${role.permissions.slice(0, 3).map(p => `
+            ${permissions.slice(0, 3).map(p => `
               <span class="permission-tag">${formatPermissionName(p)}</span>
             `).join('')}
-            ${role.permissions.length > 3 ? `
-              <span class="permission-tag permission-more">+${role.permissions.length - 3} more</span>
+            ${permissions.length > 3 ? `
+              <span class="permission-tag permission-more">+${permissions.length - 3} more</span>
             ` : ''}
+            ${permissions.length === 0 ? '<span class="permission-tag">No permissions</span>' : ''}
           </div>
         </div>
         
@@ -131,8 +245,13 @@ const AdminRoles = (function() {
     
     if (!groupsContainer || !matrixTable) return;
     
-    const groups = MockData.roles.permissionGroups;
-    const roles = MockData.roles.list;
+    const groups = MockData?.roles?.permissionGroups || [];
+    const roles = rolesData.length > 0 ? rolesData : MockData?.roles?.list || [];
+    
+    if (groups.length === 0) {
+      groupsContainer.innerHTML = '<p class="text-muted">No permission groups defined</p>';
+      return;
+    }
     
     // Render permission groups navigation
     groupsContainer.innerHTML = groups.map((group, index) => `
@@ -149,7 +268,7 @@ const AdminRoles = (function() {
       ${roles.map(role => `
         <th class="role-col">
           <div class="role-header-cell">
-            <div class="role-color-dot" style="background: ${role.color}"></div>
+            <div class="role-color-dot" style="background: ${role.color || '#7c3aed'}"></div>
             <span>${role.name}</span>
           </div>
         </th>
@@ -174,8 +293,9 @@ const AdminRoles = (function() {
     const tbody = matrixTable.querySelector('tbody');
     if (!tbody) return;
     
-    const group = MockData.roles.permissionGroups.find(g => g.name === groupName);
-    const roles = MockData.roles.list;
+    const groups = MockData?.roles?.permissionGroups || [];
+    const group = groups.find(g => g.name === groupName);
+    const roles = rolesData.length > 0 ? rolesData : MockData?.roles?.list || [];
     
     if (!group) return;
     
@@ -188,16 +308,18 @@ const AdminRoles = (function() {
           </div>
         </td>
         ${roles.map(role => {
-          const hasPermission = role.permissions.includes('all') || 
-                               role.permissions.includes('administrator') ||
-                               role.permissions.includes(perm.id);
+          const rolePerms = role.permissions || [];
+          const hasPermission = rolePerms.includes('all') || 
+                               rolePerms.includes('administrator') ||
+                               rolePerms.includes(perm.id);
+          const isAdminRole = rolePerms.includes('all');
           return `
             <td class="role-col">
               <label class="permission-checkbox-wrapper">
                 <input type="checkbox" 
                        class="permission-checkbox" 
                        ${hasPermission ? 'checked' : ''} 
-                       ${role.permissions.includes('all') ? 'disabled' : ''}
+                       ${isAdminRole ? 'disabled' : ''}
                        data-role="${role.id}"
                        data-permission="${perm.id}">
                 <span class="checkmark ${hasPermission ? 'checked' : ''}">
@@ -231,13 +353,23 @@ const AdminRoles = (function() {
     if (addRoleBtn) {
       addRoleBtn.addEventListener('click', openAddRoleModal);
     }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', async () => {
+        refreshBtn.classList.add('spinning');
+        await fetchRoles();
+        refreshBtn.classList.remove('spinning');
+      });
+    }
   }
 
   function attachRoleCardListeners() {
     // Edit role
     document.querySelectorAll('[data-action="edit-role"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const id = parseInt(e.currentTarget.dataset.id);
+        const id = e.currentTarget.dataset.id;
         openEditRoleModal(id);
       });
     });
@@ -245,7 +377,7 @@ const AdminRoles = (function() {
     // Delete role
     document.querySelectorAll('[data-action="delete-role"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const id = parseInt(e.currentTarget.dataset.id);
+        const id = e.currentTarget.dataset.id;
         confirmDeleteRole(id);
       });
     });
@@ -269,16 +401,18 @@ const AdminRoles = (function() {
     renderContent();
   }
 
-  function handlePermissionToggle(e) {
+  async function handlePermissionToggle(e) {
     const checkbox = e.target;
-    const roleId = parseInt(checkbox.dataset.role);
+    const roleId = checkbox.dataset.role;
     const permissionId = checkbox.dataset.permission;
     const isChecked = checkbox.checked;
     
-    const role = MockData.roles.list.find(r => r.id === roleId);
+    const role = rolesData.find(r => r.id == roleId);
     if (!role) return;
     
-    // Update mock data
+    // Update local data
+    if (!role.permissions) role.permissions = [];
+    
     if (isChecked) {
       if (!role.permissions.includes(permissionId)) {
         role.permissions.push(permissionId);
@@ -297,6 +431,23 @@ const AdminRoles = (function() {
       checkmark.textContent = isChecked ? '✓' : '';
     }
     
+    // Try to update via API
+    try {
+      await updateRole(roleId, { permissions: role.permissions });
+    } catch (error) {
+      // Revert on failure
+      if (isChecked) {
+        role.permissions = role.permissions.filter(p => p !== permissionId);
+      } else {
+        role.permissions.push(permissionId);
+      }
+      checkbox.checked = !isChecked;
+      if (checkmark) {
+        checkmark.classList.toggle('checked', !isChecked);
+        checkmark.textContent = !isChecked ? '✓' : '';
+      }
+    }
+    
     AdminUtils?.showToast?.(
       `Permission ${isChecked ? 'granted to' : 'revoked from'} ${role.name}`,
       'info'
@@ -308,38 +459,42 @@ const AdminRoles = (function() {
   // ========================================
 
   function openAddRoleModal() {
-    console.log('[AdminRoles] Opening add role modal');
-    AdminUtils?.showToast?.('Add role modal (coming soon)', 'info');
+    const roleName = prompt('Enter new role name:');
+    if (!roleName) return;
+    
+    const roleColor = prompt('Enter role color (hex, e.g., #7c3aed):') || '#7c3aed';
+    
+    createRole({
+      name: roleName,
+      color: roleColor,
+      permissions: []
+    });
   }
 
   function openEditRoleModal(roleId) {
-    const role = MockData.roles.list.find(r => r.id === roleId);
+    const role = rolesData.find(r => r.id == roleId);
     if (!role) return;
     
-    console.log('[AdminRoles] Editing role:', role);
-    AdminUtils?.showToast?.(`Editing role: ${role.name}`, 'info');
+    const newName = prompt('Enter new role name:', role.name);
+    if (!newName) return;
+    
+    const newColor = prompt('Enter new role color (hex):', role.color || '#7c3aed');
+    
+    updateRole(roleId, {
+      name: newName,
+      color: newColor || role.color,
+      permissions: role.permissions
+    });
   }
 
   function confirmDeleteRole(roleId) {
-    const role = MockData.roles.list.find(r => r.id === roleId);
+    const role = rolesData.find(r => r.id == roleId);
     if (!role) return;
     
-    if (confirm(`Are you sure you want to delete the "${role.name}" role? This will affect ${role.members} members.`)) {
-      deleteRole(roleId);
+    const memberCount = role.members || role.memberCount || 0;
+    if (confirm(`Are you sure you want to delete the "${role.name}" role? This will affect ${memberCount} members.`)) {
+      deleteRoleAPI(roleId);
     }
-  }
-
-  function deleteRole(roleId) {
-    const index = MockData.roles.list.findIndex(r => r.id === roleId);
-    if (index === -1) return;
-    
-    const roleName = MockData.roles.list[index].name;
-    MockData.roles.list.splice(index, 1);
-    
-    updateStats();
-    renderContent();
-    
-    AdminUtils?.showToast?.(`Role "${roleName}" deleted`, 'warning');
   }
 
   // ========================================
@@ -377,7 +532,7 @@ const AdminRoles = (function() {
 
   return {
     init,
-    refresh: renderContent
+    refresh: fetchRoles
   };
 
 })();

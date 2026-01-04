@@ -3,7 +3,7 @@
  * Handles sidebar navigation, tab switching, and mobile toggle
  */
 
-const AdminSidebar = (function() {
+var AdminSidebar = window.AdminSidebar || (function() {
   'use strict';
 
   // ========================================

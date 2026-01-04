@@ -3,7 +3,8 @@
  * Static data for UI development (no backend connection)
  */
 
-const MockData = {
+var MockData = window.MockData || {
+
   // ========================================
   // Dashboard KPIs
   // ========================================
@@ -668,6 +669,9 @@ const MockData = {
     ]
   }
 };
+
+// Ensure browser global is set (and idempotent)
+window.MockData = MockData;
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {

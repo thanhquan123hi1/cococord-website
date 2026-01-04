@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.cococord.entity.mysql.Server;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,4 +34,21 @@ public interface IServerRepository extends JpaRepository<Server, Long> {
 
         // Admin queries
         Page<Server> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+        long countByCreatedAtAfter(LocalDateTime date);
+
+        @Query("SELECT COUNT(s) FROM Server s WHERE s.createdAt >= :startDate AND s.createdAt < :endDate")
+        long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
+        @Query("SELECT DATE(s.createdAt) as date, COUNT(s) as count FROM Server s " +
+                        "WHERE s.createdAt >= :startDate GROUP BY DATE(s.createdAt) ORDER BY date")
+        List<Object[]> countNewServersByDay(@Param("startDate") LocalDateTime startDate);
+
+        long countByIsLockedTrue();
+
+        List<Server> findTop10ByOrderByCreatedAtDesc();
+
+        @Query("SELECT AVG(SIZE(s.members)) FROM Server s")
+        Double getAverageMemberCount();
 }

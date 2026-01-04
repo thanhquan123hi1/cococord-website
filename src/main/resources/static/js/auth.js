@@ -212,3 +212,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(refreshAccessToken, 50 * 60 * 1000);
     }
 });
+
+// Expose logout to window for admin panel and other modules
+window.logout = logout;

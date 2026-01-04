@@ -95,6 +95,15 @@ public class User {
     @Builder.Default
     private Boolean isBanned = false;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isMuted = false;
+
+    private LocalDateTime mutedUntil;
+
+    @Column(length = 500)
+    private String muteReason;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     @Builder.Default

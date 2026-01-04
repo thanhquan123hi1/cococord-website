@@ -91,9 +91,13 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            // Check if it's an API request or HTML page request
+                            // Check if it's an API request, AJAX request, or HTML page request
                             String requestUri = request.getRequestURI();
-                            if (requestUri.startsWith("/api/")) {
+                            String xhrHeader = request.getHeader("X-Requested-With");
+                            boolean isAjax = "XMLHttpRequest".equals(xhrHeader);
+
+                            if (requestUri.startsWith("/api/") || isAjax) {
+                                // API and AJAX requests get 401 status
                                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                                 response.setContentType("application/json");
                                 response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \""
@@ -105,7 +109,10 @@ public class SecurityConfig {
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             String requestUri = request.getRequestURI();
-                            if (requestUri.startsWith("/api/")) {
+                            String xhrHeader = request.getHeader("X-Requested-With");
+                            boolean isAjax = "XMLHttpRequest".equals(xhrHeader);
+
+                            if (requestUri.startsWith("/api/") || isAjax) {
                                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                                 response.setContentType("application/json");
                                 response.getWriter()

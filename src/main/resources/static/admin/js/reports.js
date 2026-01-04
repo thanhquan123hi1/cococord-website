@@ -1,9 +1,10 @@
 /**
  * CoCoCord Admin - Reports Page JavaScript
  * Handles reports list, filtering, and moderation actions
+ * Updated to use real API endpoints
  */
 
-const AdminReports = (function() {
+var AdminReports = window.AdminReports || (function() {
   'use strict';
 
   // State
@@ -13,6 +14,26 @@ const AdminReports = (function() {
     priority: '',
     search: ''
   };
+  let reportsData = [];
+  let stats = { total: 0, pending: 0, approved: 0, rejected: 0 };
+  let pagination = {
+    page: 0,
+    size: 20,
+    totalElements: 0,
+    totalPages: 0
+  };
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    reports: '/api/admin/reports',
+    report: (id) => `/api/admin/reports/${id}`,
+    resolve: (id) => `/api/admin/reports/${id}/resolve`,
+    reject: (id) => `/api/admin/reports/${id}/reject`
+  };
 
   // ========================================
   // Initialization
@@ -21,31 +42,136 @@ const AdminReports = (function() {
   function init() {
     console.log('[AdminReports] Initializing...');
     
-    // Update stats
-    updateStats();
-    
-    // Render reports list
-    renderReportsList();
-    
     // Setup event listeners
     setupEventListeners();
     
+    // Fetch reports from API
+    fetchReports();
+    
     console.log('[AdminReports] Initialized');
+  }
+
+  // ========================================
+  // API Calls
+  // ========================================
+
+  async function fetchReports() {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page,
+        size: pagination.size
+      });
+      
+      // Add status filter based on current tab
+      if (currentTab !== 'all') {
+        params.append('status', currentTab.toUpperCase());
+      }
+
+      const response = await AdminUtils.api.get(`${API.reports}?${params}`);
+      
+      if (response && response.content) {
+        reportsData = response.content;
+        pagination.totalElements = response.totalElements || 0;
+        pagination.totalPages = response.totalPages || 0;
+      } else if (Array.isArray(response)) {
+        reportsData = response;
+        pagination.totalElements = response.length;
+        pagination.totalPages = 1;
+      } else {
+        console.warn('[AdminReports] API returned unexpected format, using mock data');
+        reportsData = MockData?.reports?.list || [];
+      }
+      
+      // Calculate stats from data
+      calculateStats();
+      updateStats();
+      renderReportsList();
+    } catch (error) {
+      console.error('[AdminReports] Failed to fetch reports:', error);
+      AdminUtils?.showToast?.('Failed to load reports', 'danger');
+      // Fallback to mock data
+      reportsData = MockData?.reports?.list || [];
+      stats = MockData?.reports?.stats || { total: 0, pending: 0, approved: 0, rejected: 0 };
+      updateStats();
+      renderReportsList();
+    } finally {
+      isLoading = false;
+      showLoading(false);
+    }
+  }
+
+  async function resolveReport(reportId, action, note = '') {
+    try {
+      await AdminUtils.api.post(API.resolve(reportId), { action, note });
+      AdminUtils?.showToast?.(`Report #${reportId} resolved`, 'success');
+      fetchReports();
+    } catch (error) {
+      console.error('[AdminReports] Failed to resolve report:', error);
+      AdminUtils?.showToast?.('Failed to resolve report', 'danger');
+    }
+  }
+
+  async function rejectReportAPI(reportId, reason = '') {
+    try {
+      await AdminUtils.api.post(API.reject(reportId), { reason });
+      AdminUtils?.showToast?.(`Report #${reportId} rejected`, 'warning');
+      fetchReports();
+    } catch (error) {
+      console.error('[AdminReports] Failed to reject report:', error);
+      AdminUtils?.showToast?.('Failed to reject report', 'danger');
+    }
+  }
+
+  async function fetchReportDetails(reportId) {
+    try {
+      return await AdminUtils.api.get(API.report(reportId));
+    } catch (error) {
+      console.error('[AdminReports] Failed to fetch report details:', error);
+      return null;
+    }
+  }
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  function showLoading(show) {
+    const container = document.getElementById('reports-list');
+    if (!container) return;
+
+    if (show) {
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <div class="loading-spinner"></div>
+          <div class="mt-2 text-muted">Loading reports...</div>
+        </div>
+      `;
+    }
   }
 
   // ========================================
   // Stats Update
   // ========================================
 
+  function calculateStats() {
+    stats = {
+      total: reportsData.length,
+      pending: reportsData.filter(r => r.status === 'PENDING' || r.status === 'pending').length,
+      approved: reportsData.filter(r => r.status === 'RESOLVED' || r.status === 'approved').length,
+      rejected: reportsData.filter(r => r.status === 'REJECTED' || r.status === 'rejected').length
+    };
+  }
+
   function updateStats() {
-    const stats = MockData.reports.stats;
-    
-    // Update stat cards
     const statElements = {
-      'totalReports': stats.total,
+      'totalReports': stats.total || pagination.totalElements,
       'pendingReports': stats.pending,
-      'resolvedToday': Math.floor(Math.random() * 20) + 5, // Simulated
-      'avgResponseTime': '2.5h' // Simulated
+      'resolvedToday': stats.approved,
+      'avgResponseTime': '2.5h' // TODO: Calculate from API
     };
     
     Object.entries(statElements).forEach(([key, value]) => {
@@ -63,19 +189,22 @@ const AdminReports = (function() {
   // ========================================
 
   function renderReportsList() {
+    console.log('[AdminReports] renderReportsList called, data count:', reportsData.length);
     const container = document.getElementById('reports-list');
     const emptyState = document.getElementById('reports-empty');
-    if (!container) return;
+    if (!container) {
+      console.error('[AdminReports] Container #reports-list not found!');
+      return;
+    }
+    console.log('[AdminReports] Container found, rendering...');
     
-    // Filter reports based on current tab and filters
-    let reports = MockData.reports.list.filter(report => {
-      // Tab filter
-      if (currentTab === 'pending' && report.status !== 'pending') return false;
-      if (currentTab === 'approved' && report.status !== 'approved') return false;
-      if (currentTab === 'rejected' && report.status !== 'rejected') return false;
-      
+    // Filter reports based on current filters (client-side additional filtering)
+    let reports = reportsData.filter(report => {
       // Type filter
-      if (currentFilters.type && report.reason.toLowerCase() !== currentFilters.type) return false;
+      if (currentFilters.type) {
+        const reportType = (report.type || report.targetType || '').toLowerCase();
+        if (!reportType.includes(currentFilters.type.toLowerCase())) return false;
+      }
       
       // Priority filter
       if (currentFilters.priority && report.priority !== currentFilters.priority) return false;
@@ -84,8 +213,8 @@ const AdminReports = (function() {
       if (currentFilters.search) {
         const search = currentFilters.search.toLowerCase();
         const searchFields = [
-          report.reporter,
-          report.target,
+          report.reporterUsername || report.reporter,
+          report.targetUsername || report.target,
           report.description,
           report.reason
         ].join(' ').toLowerCase();
@@ -98,11 +227,17 @@ const AdminReports = (function() {
     // Show/hide empty state
     if (reports.length === 0) {
       container.innerHTML = '';
-      emptyState?.classList.remove('hidden');
+      if (emptyState) {
+        emptyState.classList.remove('hidden');
+        emptyState.style.display = 'block';
+      }
       return;
     }
     
-    emptyState?.classList.add('hidden');
+    if (emptyState) {
+      emptyState.classList.add('hidden');
+      emptyState.style.display = 'none';
+    }
     
     // Render reports
     container.innerHTML = reports.map(report => renderReportCard(report)).join('');
@@ -112,44 +247,50 @@ const AdminReports = (function() {
   }
 
   function renderReportCard(report) {
+    const priority = (report.priority || 'low').toLowerCase();
     const priorityClass = {
       'high': 'priority-high',
       'medium': 'priority-medium',
       'low': 'priority-low'
-    }[report.priority] || '';
+    }[priority] || '';
     
+    const status = (report.status || 'pending').toLowerCase();
     const statusBadge = {
       'pending': '<span class="admin-badge admin-badge-warning">Pending</span>',
+      'resolved': '<span class="admin-badge admin-badge-success">Resolved</span>',
       'approved': '<span class="admin-badge admin-badge-success">Approved</span>',
       'rejected': '<span class="admin-badge admin-badge-danger">Rejected</span>'
-    }[report.status] || '';
+    }[status] || '<span class="admin-badge admin-badge-warning">Pending</span>';
     
+    const type = (report.type || 'message').toLowerCase();
     const typeIcon = {
       'user': '👤',
       'message': '💬',
       'server': '🖥️'
-    }[report.type] || '📋';
+    }[type] || '📋';
     
     const timeAgo = AdminUtils?.timeAgo?.(report.createdAt) || formatTimeAgo(report.createdAt);
+    
+    const isPending = status === 'pending';
     
     return `
       <div class="admin-report-card ${priorityClass}" data-report-id="${report.id}">
         <div class="report-header">
           <div class="report-type">
             <span class="report-type-icon">${typeIcon}</span>
-            <span class="report-type-label">${report.targetType}</span>
+            <span class="report-type-label">${report.type || report.targetType || 'Report'}</span>
           </div>
           ${statusBadge}
         </div>
         
         <div class="report-body">
           <div class="report-target">
-            <strong>${report.target}</strong>
-            <span class="report-reason">${report.reason}</span>
+            <strong>${report.targetUsername || report.target || 'Unknown'}</strong>
+            <span class="report-reason">${report.reason || 'No reason provided'}</span>
           </div>
-          <p class="report-description">${report.description}</p>
+          <p class="report-description">${report.description || 'No description'}</p>
           
-          ${report.evidence.length > 0 ? `
+          ${report.evidence && report.evidence.length > 0 ? `
             <div class="report-evidence">
               <span class="evidence-icon">📎</span>
               <span>${report.evidence.length} attachment${report.evidence.length > 1 ? 's' : ''}</span>
@@ -160,12 +301,12 @@ const AdminReports = (function() {
         <div class="report-footer">
           <div class="report-meta">
             <span class="report-reporter">
-              Reported by <strong>${report.reporter}</strong>
+              Reported by <strong>${report.reporterUsername || report.reporter || 'Anonymous'}</strong>
             </span>
             <span class="report-time">${timeAgo}</span>
           </div>
           
-          ${report.status === 'pending' ? `
+          ${isPending ? `
             <div class="report-actions">
               <button class="admin-btn admin-btn-sm admin-btn-ghost" data-action="view-report" data-id="${report.id}">
                 View
@@ -179,7 +320,7 @@ const AdminReports = (function() {
             </div>
           ` : `
             <div class="report-resolved">
-              <span>Resolved by ${report.resolvedBy}</span>
+              <span>Resolved by ${report.resolvedByUsername || report.resolvedBy || 'Admin'}</span>
             </div>
           `}
         </div>
@@ -228,12 +369,23 @@ const AdminReports = (function() {
     if (exportBtn) {
       exportBtn.addEventListener('click', handleExport);
     }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        refreshBtn.classList.add('spinning');
+        fetchReports().finally(() => {
+          refreshBtn.classList.remove('spinning');
+        });
+      });
+    }
   }
 
   function attachReportCardListeners() {
     // View report buttons
     document.querySelectorAll('[data-action="view-report"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const id = e.target.dataset.id;
         openReportModal(id);
       });
@@ -265,71 +417,70 @@ const AdminReports = (function() {
     tab.classList.add('active');
     
     currentTab = tabId;
-    renderReportsList();
+    pagination.page = 0; // Reset to first page
+    fetchReports(); // Fetch with new status filter
   }
 
   // ========================================
   // Report Actions
   // ========================================
 
-  function openReportModal(reportId) {
-    const report = MockData.reports.list.find(r => r.id === parseInt(reportId));
-    if (!report) return;
+  async function openReportModal(reportId) {
+    const report = reportsData.find(r => r.id == reportId);
     
-    // For now, just log - modal implementation can be added
-    console.log('[AdminReports] Opening report modal:', report);
+    // Try to get detailed info
+    const detailed = await fetchReportDetails(reportId);
+    const displayReport = detailed || report;
+    
+    if (!displayReport) {
+      AdminUtils?.showToast?.('Report not found', 'danger');
+      return;
+    }
+    
+    console.log('[AdminReports] Opening report modal:', displayReport);
     AdminUtils?.showToast?.(`Viewing report #${reportId}`, 'info');
+    
+    // TODO: Implement full modal display
   }
 
-  function approveReport(reportId) {
-    const report = MockData.reports.list.find(r => r.id === parseInt(reportId));
+  async function approveReport(reportId) {
+    const report = reportsData.find(r => r.id == reportId);
     if (!report) return;
     
-    // Update mock data (in real app, this would be an API call)
-    report.status = 'approved';
-    report.resolvedAt = new Date().toISOString();
-    report.resolvedBy = 'Admin';
+    const action = prompt('Enter action taken (e.g., "User banned", "Warning issued"):');
+    if (action === null) return;
     
-    // Update stats
-    MockData.reports.stats.pending--;
-    MockData.reports.stats.approved++;
-    
-    // Re-render
-    updateStats();
-    renderReportsList();
-    
-    AdminUtils?.showToast?.(`Report #${reportId} approved`, 'success');
+    await resolveReport(reportId, action, 'Resolved by admin');
   }
 
-  function rejectReport(reportId) {
-    const report = MockData.reports.list.find(r => r.id === parseInt(reportId));
+  async function rejectReport(reportId) {
+    const report = reportsData.find(r => r.id == reportId);
     if (!report) return;
     
-    // Update mock data
-    report.status = 'rejected';
-    report.resolvedAt = new Date().toISOString();
-    report.resolvedBy = 'Admin';
-    report.rejectReason = 'No violation found';
-    
-    // Update stats
-    MockData.reports.stats.pending--;
-    MockData.reports.stats.rejected++;
-    
-    // Re-render
-    updateStats();
-    renderReportsList();
-    
-    AdminUtils?.showToast?.(`Report #${reportId} rejected`, 'warning');
+    const reason = prompt('Enter rejection reason:') || 'No violation found';
+    await rejectReportAPI(reportId, reason);
   }
 
   function handleExport() {
     console.log('[AdminReports] Exporting reports...');
     AdminUtils?.showToast?.('Export started...', 'info');
     
-    // Simulate export delay
-    setTimeout(() => {
-      AdminUtils?.showToast?.('Reports exported successfully!', 'success');
-    }, 1500);
+    // Create CSV from current data
+    const csvContent = reportsData.map(r => 
+      `${r.id},${r.type},${r.reporterUsername || r.reporter},${r.targetUsername || r.target},${r.status},${r.createdAt}`
+    ).join('\n');
+    
+    const header = 'ID,Type,Reporter,Target,Status,Created At\n';
+    const blob = new Blob([header + csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reports-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    AdminUtils?.showToast?.('Reports exported successfully!', 'success');
   }
 
   // ========================================
@@ -337,6 +488,7 @@ const AdminReports = (function() {
   // ========================================
 
   function formatTimeAgo(dateStr) {
+    if (!dateStr) return '--';
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now - date;
@@ -368,7 +520,7 @@ const AdminReports = (function() {
 
   return {
     init,
-    refresh: renderReportsList
+    refresh: fetchReports
   };
 
 })();

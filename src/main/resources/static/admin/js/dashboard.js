@@ -1,31 +1,97 @@
 /**
  * CoCoCord Admin - Dashboard Page JavaScript
- * Handles stats, activity list, and dashboard interactions
+ * Handles stats, activity list, and dashboard interactions using real API
  */
 
-const AdminDashboard = (function() {
+var AdminDashboard = window.AdminDashboard || (function() {
   'use strict';
+
+  // ========================================
+  // State
+  // ========================================
+
+  let dashboardData = null;
+  let isLoading = false;
+  let refreshInterval = null;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    summary: '/api/admin/dashboard/summary',
+    stats: '/api/admin/dashboard/stats',
+    users: '/api/admin/users'
+  };
 
   // ========================================
   // Initialization
   // ========================================
 
-  function init() {
+  async function init() {
     console.log('[AdminDashboard] Initializing...');
     
-    // Update stats from mock data
+    // Show loading state
+    showLoading();
+    
+    try {
+      // Fetch dashboard data from API
+      await fetchDashboardData();
+    } catch (error) {
+      console.warn('[AdminDashboard] API error, using mock data:', error.message);
+      // Continue with mock data - don't fail the whole init
+    }
+    
+    // Update UI (will use mock data if API failed)
     updateStats();
-    
-    // Render recent activity
     renderActivity();
-    
-    // Render new users table
     renderNewUsers();
     
     // Setup event listeners
     setupEventListeners();
     
+    // Setup auto-refresh (every 60 seconds)
+    startAutoRefresh();
+    
     console.log('[AdminDashboard] Initialized');
+  }
+
+  // ========================================
+  // Data Fetching
+  // ========================================
+
+  async function fetchDashboardData() {
+    isLoading = true;
+    
+    try {
+      dashboardData = await AdminUtils.api.get(API.summary);
+      return dashboardData;
+    } catch (error) {
+      console.error('[AdminDashboard] Failed to fetch data:', error);
+      // Fallback to mock data if API fails
+      dashboardData = getMockData();
+      throw error;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function getMockData() {
+    return {
+      totalUsers: 0,
+      totalServers: 0,
+      activeUsers24h: 0,
+      messagesToday: 0,
+      pendingReports: 0,
+      bannedUsers: 0,
+      onlineUsers: 0,
+      usersGrowth: 0,
+      serversGrowth: 0,
+      messagesGrowth: 0,
+      recentActivity: [],
+      userGrowthChart: [],
+      serverGrowthChart: []
+    };
   }
 
   // ========================================
@@ -33,35 +99,37 @@ const AdminDashboard = (function() {
   // ========================================
 
   function updateStats() {
-    const kpis = MockData.dashboard.kpis;
+    if (!dashboardData) return;
     
-    // Map KPI data to stat elements
-    const statMapping = {
-      'total_users': 'totalUsers',
-      'total_servers': 'totalServers',
-      'messages_today': 'messagesToday',
-      'active_calls': 'pendingReports'
-    };
+    // Update stat cards
+    updateStatCard('totalUsers', dashboardData.totalUsers);
+    updateStatCard('totalServers', dashboardData.totalServers);
+    updateStatCard('messagesToday', dashboardData.messagesToday);
+    updateStatCard('pendingReports', dashboardData.pendingReports);
+    updateStatCard('activeUsers24h', dashboardData.activeUsers24h);
+    updateStatCard('bannedUsers', dashboardData.bannedUsers);
+    updateStatCard('onlineUsers', dashboardData.onlineUsers);
     
-    kpis.forEach(kpi => {
-      const statKey = statMapping[kpi.id];
-      if (!statKey) return;
-      
-      const elements = document.querySelectorAll(`[data-stat="${statKey}"]`);
-      elements.forEach(el => {
-        const formatted = AdminUtils?.formatNumber?.(kpi.value) || kpi.value.toLocaleString();
-        animateValue(el, formatted);
-      });
+    // Update growth indicators
+    updateGrowth('usersGrowth', dashboardData.usersGrowth);
+    updateGrowth('serversGrowth', dashboardData.serversGrowth);
+    updateGrowth('messagesGrowth', dashboardData.messagesGrowth);
+  }
+
+  function updateStatCard(key, value) {
+    const elements = document.querySelectorAll(`[data-stat="${key}"]`);
+    elements.forEach(el => {
+      animateValue(el, AdminUtils.formatNumber(value || 0));
     });
+  }
+
+  function updateGrowth(key, value) {
+    const el = document.querySelector(`[data-stat="${key}"]`);
+    if (!el) return;
     
-    // Update growth percentages
-    const usersKpi = kpis.find(k => k.id === 'total_users');
-    if (usersKpi) {
-      const growthEl = document.querySelector('[data-stat="usersGrowth"]');
-      if (growthEl) {
-        growthEl.textContent = `${usersKpi.trendDirection === 'up' ? '+' : '-'}${usersKpi.trend}%`;
-      }
-    }
+    const formatted = AdminUtils.formatPercentage(value || 0);
+    el.textContent = formatted;
+    el.className = `stat-trend ${(value || 0) >= 0 ? 'stat-trend-up' : 'stat-trend-down'}`;
   }
 
   function animateValue(element, finalValue) {
@@ -76,7 +144,7 @@ const AdminDashboard = (function() {
     const container = document.getElementById('dashboard-activity');
     if (!container) return;
     
-    const activities = MockData.dashboard.recentActivity || [];
+    const activities = dashboardData?.recentActivity || [];
     
     if (activities.length === 0) {
       container.innerHTML = '<div class="empty-activity">No recent activity</div>';
@@ -86,14 +154,14 @@ const AdminDashboard = (function() {
     container.innerHTML = activities.slice(0, 5).map(activity => `
       <div class="activity-item">
         <div class="activity-avatar" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--admin-primary);">
-          ${getInitials(activity.user)}
+          ${AdminUtils.getInitials(activity.user)}
         </div>
         <div class="activity-content">
           <div class="activity-text">
             <strong>${activity.user}</strong> ${activity.action}
             ${activity.target ? `<span class="activity-target">${activity.target}</span>` : ''}
           </div>
-          <div class="activity-time">${activity.time}</div>
+          <div class="activity-time">${AdminUtils.timeAgo(activity.timestamp)}</div>
         </div>
       </div>
     `).join('');
@@ -103,43 +171,70 @@ const AdminDashboard = (function() {
   // New Users Table
   // ========================================
 
-  function renderNewUsers() {
+  async function renderNewUsers() {
     const tbody = document.getElementById('dashboard-new-users');
     if (!tbody) return;
     
-    const users = MockData.users?.slice(0, 5) || [];
-    
-    if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="text-center">No new users</td></tr>';
-      return;
+    try {
+      // Fetch recent users
+      const response = await AdminUtils.api.get(`${API.users}?size=5&sortBy=createdAt&sortDir=desc`);
+      const users = response.content || [];
+      
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No new users</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = users.map(user => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="user-avatar-sm" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--admin-primary);width:32px;height:32px;border-radius:50%;">
+                ${AdminUtils.getInitials(user.username)}
+              </div>
+              <div class="user-info">
+                <span class="user-name">${user.username}</span>
+                <span class="user-email">${user.email}</span>
+              </div>
+            </div>
+          </td>
+          <td>${AdminUtils.formatDate(user.createdAt)}</td>
+          <td>
+            <span class="admin-badge admin-badge-${getStatusClass(user)}">
+              ${getStatusText(user)}
+            </span>
+          </td>
+          <td>
+            <button class="admin-btn admin-btn-sm admin-btn-ghost" data-action="view-user" data-id="${user.id}">
+              View
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      
+      // Attach view buttons
+      tbody.querySelectorAll('[data-action="view-user"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          AdminRouter?.navigateTo('users');
+        });
+      });
+      
+    } catch (error) {
+      console.error('[AdminDashboard] Failed to load users:', error);
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Failed to load users</td></tr>';
     }
-    
-    tbody.innerHTML = users.map(user => `
-      <tr>
-        <td>
-          <div class="user-cell">
-            <div class="user-avatar-sm" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--admin-primary);width:32px;height:32px;border-radius:50%;">
-              ${getInitials(user.username)}
-            </div>
-            <div class="user-info">
-              <span class="user-name">${user.username}</span>
-              <span class="user-email">${user.email}</span>
-            </div>
-          </div>
-        </td>
-        <td>${formatDate(user.createdAt)}</td>
-        <td>
-          <span class="admin-badge admin-badge-${user.status === 'active' ? 'success' : 'warning'}">
-            ${user.status}
-          </span>
-        </td>
-        <td>
-          <button class="admin-btn admin-btn-sm admin-btn-ghost" data-action="view-user" data-id="${user.id}">
-            View
-          </button>
-        </td>
-      </tr>
-    `).join('');
+  }
+
+  function getStatusClass(user) {
+    if (user.isBanned) return 'danger';
+    if (user.isActive) return 'success';
+    return 'warning';
+  }
+
+  function getStatusText(user) {
+    if (user.isBanned) return 'Banned';
+    if (user.isActive) return 'Active';
+    return 'Inactive';
   }
 
   // ========================================
@@ -157,13 +252,11 @@ const AdminDashboard = (function() {
       btn.addEventListener('click', handleQuickAction);
     });
     
-    // View user buttons
-    document.querySelectorAll('[data-action="view-user"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const userId = e.target.dataset.id;
-        AdminUtils?.showToast?.(`Viewing user #${userId}`, 'info');
-      });
-    });
+    // Refresh button
+    const refreshBtn = document.querySelector('[data-action="refresh-dashboard"]');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', refresh);
+    }
   }
 
   function handleChartRangeChange(e) {
@@ -174,8 +267,18 @@ const AdminDashboard = (function() {
     document.querySelectorAll('[data-chart-range]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
-    console.log('[AdminDashboard] Chart range changed to:', range);
-    AdminUtils?.showToast?.(`Chart range: ${range}`, 'info');
+    // Fetch stats for new range
+    fetchStatsForRange(range);
+  }
+
+  async function fetchStatsForRange(range) {
+    try {
+      const stats = await AdminUtils.api.get(`${API.stats}?period=${range}`);
+      console.log('[AdminDashboard] Stats for', range, stats);
+      // Update charts with new data
+    } catch (error) {
+      console.error('[AdminDashboard] Failed to fetch stats:', error);
+    }
   }
 
   function handleQuickAction(e) {
@@ -189,7 +292,7 @@ const AdminDashboard = (function() {
         AdminRouter?.navigateTo('reports');
         break;
       case 'send-announcement':
-        AdminUtils?.showToast?.('Announcement feature coming soon', 'info');
+        AdminUtils.showToast('Announcement feature coming soon', 'info');
         break;
       case 'system-settings':
         AdminRouter?.navigateTo('settings');
@@ -198,38 +301,88 @@ const AdminDashboard = (function() {
   }
 
   // ========================================
-  // Utility Functions
+  // Auto Refresh
   // ========================================
 
-  function getInitials(name) {
-    if (!name) return '??';
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    refreshInterval = setInterval(() => {
+      refresh(true); // silent refresh
+    }, 60000); // every 60 seconds
   }
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '--';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN', {
-      day: 'numeric',
-      month: 'short'
+  function stopAutoRefresh() {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+    }
+  }
+
+  // ========================================
+  // Loading & Error States
+  // ========================================
+
+  function showLoading() {
+    const container = document.getElementById('admin-content');
+    if (!container) return;
+    
+    // Add loading class to stat cards
+    container.querySelectorAll('.admin-stat-card').forEach(card => {
+      card.classList.add('loading');
     });
+  }
+
+  function hideLoading() {
+    const container = document.getElementById('admin-content');
+    if (!container) return;
+    
+    container.querySelectorAll('.admin-stat-card').forEach(card => {
+      card.classList.remove('loading');
+    });
+  }
+
+  function showError(message) {
+    AdminUtils.showToast(message, 'error');
+    hideLoading();
   }
 
   // ========================================
   // Public API
   // ========================================
 
-  return {
-    init,
-    refresh: () => {
+  async function refresh(silent = false) {
+    if (isLoading) return;
+    
+    if (!silent) {
+      showLoading();
+    }
+    
+    try {
+      await fetchDashboardData();
       updateStats();
       renderActivity();
-      renderNewUsers();
+      await renderNewUsers();
+      
+      if (!silent) {
+        AdminUtils.showToast('Dashboard refreshed', 'success');
+      }
+    } catch (error) {
+      if (!silent) {
+        showError('Failed to refresh dashboard');
+      }
+    } finally {
+      hideLoading();
     }
+  }
+
+  function destroy() {
+    stopAutoRefresh();
+  }
+
+  return {
+    init,
+    refresh: () => refresh(false),
+    destroy
   };
 
 })();

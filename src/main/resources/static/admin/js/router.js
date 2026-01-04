@@ -4,7 +4,7 @@
  * NO page reloads - only main content changes
  */
 
-const AdminRouter = (function() {
+var AdminRouter = window.AdminRouter || (function() {
   'use strict';
 
   // ========================================
@@ -125,6 +125,12 @@ const AdminRouter = (function() {
   // Fragment Loading
   // ========================================
 
+  function getAuthToken() {
+    return localStorage.getItem('accessToken') || 
+           document.cookie.match(/accessToken=([^;]+)/)?.[1] || 
+           null;
+  }
+
   async function loadFragment(pageId) {
     const pageConfig = PAGES[pageId];
     if (!pageConfig) {
@@ -144,29 +150,54 @@ const AdminRouter = (function() {
       // Construct fragment URL
       const fragmentUrl = `${CONFIG.fragmentBasePath}${pageConfig.fragment}`;
       
+      // Build headers with auth token
+      const headers = {
+        'Accept': 'text/html',
+        'X-Requested-With': 'XMLHttpRequest'
+      };
+      
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(fragmentUrl, {
         method: 'GET',
-        headers: {
-          'Accept': 'text/html',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: headers,
+        credentials: 'include',
+        redirect: 'error' // Don't follow redirects - treat as error
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.error('[Router] Authentication required');
+          window.location.href = '/login';
+          return false;
+        }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const html = await response.text();
+      console.log('[Router] Fragment HTML loaded, length:', html.length);
+      
+      // Check if we got redirected to login page (safety check)
+      if (html.includes('id="login-form"') || html.includes('action="/api/auth/login"')) {
+        console.error('[Router] Received login page instead of fragment - session expired');
+        window.location.href = '/login';
+        return false;
+      }
       
       // Inject HTML into content container
       const container = getContentContainer();
       if (container) {
         container.innerHTML = html;
+        console.log('[Router] HTML injected into container');
         
         // Execute inline scripts if any
         executeInlineScripts(container);
         
         // Initialize page-specific JS
+        console.log('[Router] Calling initPageModule for:', pageId);
         initPageModule(pageId);
       }
 
@@ -189,6 +220,14 @@ const AdminRouter = (function() {
 
     } catch (error) {
       console.error(`[Router] Failed to load fragment: ${pageId}`, error);
+      
+      // Check if it was a redirect error (authentication issue)
+      if (error.message && error.message.includes('redirect')) {
+        console.error('[Router] Redirect detected - session may have expired');
+        window.location.href = '/login';
+        return false;
+      }
+      
       isLoading = false;
       showError(`Failed to load page: ${pageConfig.title}`);
       return false;
@@ -198,12 +237,15 @@ const AdminRouter = (function() {
   function executeInlineScripts(container) {
     const scripts = container.querySelectorAll('script');
     scripts.forEach(script => {
-      const newScript = document.createElement('script');
+      // Fragments must not include external scripts; re-loading them causes
+      // global redeclaration errors (e.g., MockData/Admin* modules).
       if (script.src) {
-        newScript.src = script.src;
-      } else {
-        newScript.textContent = script.textContent;
+        script.remove();
+        return;
       }
+
+      const newScript = document.createElement('script');
+      newScript.textContent = script.textContent;
       script.parentNode.replaceChild(newScript, script);
     });
   }

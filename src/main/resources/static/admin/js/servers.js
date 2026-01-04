@@ -1,9 +1,10 @@
 /**
  * CoCoCord Admin - Servers Page JavaScript
  * Handles server table, filters, search, view toggle and modal interactions
+ * Updated to use real API endpoints
  */
 
-const AdminServers = (function() {
+var AdminServers = window.AdminServers || (function() {
   'use strict';
 
   // ========================================
@@ -17,6 +18,25 @@ const AdminServers = (function() {
   };
 
   let currentView = 'list'; // 'list' or 'grid'
+  let serversData = [];
+  let pagination = {
+    page: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0
+  };
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    servers: '/api/admin/servers',
+    server: (id) => `/api/admin/servers/${id}`,
+    lock: (id) => `/api/admin/servers/${id}/lock`,
+    unlock: (id) => `/api/admin/servers/${id}/unlock`
+  };
 
   // ========================================
   // Initialization
@@ -25,21 +45,132 @@ const AdminServers = (function() {
   function init() {
     console.log('[AdminServers] Initializing...');
     
-    // Render servers from mock data
-    renderServersTable();
-    
-    // Update total count
-    updateTotalCount();
-    
     // Setup event listeners
     initSearch();
     initFilters();
     initSelectAll();
     initViewToggle();
-    initActionButtons();
     initModal();
+    initPagination();
+    
+    // Fetch data from API
+    fetchServers();
     
     console.log('[AdminServers] Initialized');
+  }
+
+  // ========================================
+  // API Calls
+  // ========================================
+
+  async function fetchServers() {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page,
+        size: pagination.size
+      });
+      
+      if (currentFilters.search) {
+        params.append('search', currentFilters.search);
+      }
+
+      const response = await AdminUtils.api.get(`${API.servers}?${params}`);
+      
+      if (response && response.content) {
+        serversData = response.content;
+        pagination.totalElements = response.totalElements || 0;
+        pagination.totalPages = response.totalPages || 0;
+      } else if (Array.isArray(response)) {
+        serversData = response;
+        pagination.totalElements = response.length;
+        pagination.totalPages = 1;
+      } else {
+        console.warn('[AdminServers] API returned unexpected format, using mock data');
+        serversData = MockData?.servers || [];
+        pagination.totalElements = serversData.length;
+        pagination.totalPages = 1;
+      }
+      
+      renderServersTable();
+      updateTotalCount();
+      updatePaginationUI();
+    } catch (error) {
+      console.error('[AdminServers] Failed to fetch servers:', error);
+      AdminUtils?.showToast?.('Failed to load servers', 'danger');
+      // Fallback to mock data
+      serversData = MockData?.servers || [];
+      renderServersTable();
+      updateTotalCount();
+    } finally {
+      isLoading = false;
+      showLoading(false);
+    }
+  }
+
+  async function lockServer(serverId, reason = '') {
+    try {
+      await AdminUtils.api.post(API.lock(serverId), { reason });
+      AdminUtils?.showToast?.('Server locked successfully', 'warning');
+      fetchServers();
+    } catch (error) {
+      console.error('[AdminServers] Failed to lock server:', error);
+      AdminUtils?.showToast?.('Failed to lock server', 'danger');
+    }
+  }
+
+  async function unlockServer(serverId) {
+    try {
+      await AdminUtils.api.post(API.unlock(serverId));
+      AdminUtils?.showToast?.('Server unlocked successfully', 'success');
+      fetchServers();
+    } catch (error) {
+      console.error('[AdminServers] Failed to unlock server:', error);
+      AdminUtils?.showToast?.('Failed to unlock server', 'danger');
+    }
+  }
+
+  async function deleteServer(serverId) {
+    try {
+      await AdminUtils.api.delete(API.server(serverId));
+      AdminUtils?.showToast?.('Server deleted successfully', 'success');
+      fetchServers();
+    } catch (error) {
+      console.error('[AdminServers] Failed to delete server:', error);
+      AdminUtils?.showToast?.('Failed to delete server', 'danger');
+    }
+  }
+
+  async function fetchServerDetails(serverId) {
+    try {
+      return await AdminUtils.api.get(API.server(serverId));
+    } catch (error) {
+      console.error('[AdminServers] Failed to fetch server details:', error);
+      return null;
+    }
+  }
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  function showLoading(show) {
+    const tbody = document.getElementById('serversTableBody');
+    if (!tbody) return;
+
+    if (show) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-8">
+            <div class="loading-spinner"></div>
+            <div class="mt-2 text-muted">Loading servers...</div>
+          </td>
+        </tr>
+      `;
+    }
   }
 
   // ========================================
@@ -50,14 +181,19 @@ const AdminServers = (function() {
     const tbody = document.getElementById('serversTableBody');
     if (!tbody) return;
     
-    const servers = MockData.servers || [];
+    const servers = getFilteredServers();
     
     if (servers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center">No servers found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8">No servers found</td></tr>';
       return;
     }
     
-    tbody.innerHTML = servers.map(server => `
+    tbody.innerHTML = servers.map(server => {
+      const isLocked = server.locked || server.isLocked || false;
+      const status = isLocked ? 'Locked' : (server.status || 'Active');
+      const statusClass = isLocked ? 'danger' : getStatusClass(status);
+      
+      return `
       <tr data-id="${server.id}">
         <td>
           <input type="checkbox" class="server-checkbox admin-checkbox" value="${server.id}">
@@ -73,25 +209,25 @@ const AdminServers = (function() {
             </div>
           </div>
         </td>
-        <td>@${server.owner || 'unknown'}</td>
-        <td>${AdminUtils?.formatNumber?.(server.members) || server.members.toLocaleString()}</td>
-        <td>${server.channels}</td>
+        <td>@${server.ownerUsername || server.owner || 'unknown'}</td>
+        <td>${AdminUtils?.formatNumber?.(server.memberCount || server.members || 0)}</td>
+        <td>${server.channelCount || server.channels || 0}</td>
         <td>
-          <span class="badge badge-${getStatusClass(server.status)}">${server.status}</span>
+          <span class="badge badge-${statusClass}">${status}</span>
         </td>
-        <td>${formatDate(server.createdAt)}</td>
+        <td>${AdminUtils?.formatDate?.(server.createdAt) || formatDate(server.createdAt)}</td>
         <td>
           <div class="action-buttons">
             <button class="admin-btn admin-btn-sm admin-btn-ghost" title="View Server" data-action="view" data-id="${server.id}">
               <i class="fas fa-eye"></i>
             </button>
-            ${server.status === 'suspended' ? `
-              <button class="admin-btn admin-btn-sm admin-btn-ghost admin-btn-success" title="Restore" data-action="restore" data-id="${server.id}">
-                <i class="fas fa-undo"></i>
+            ${isLocked ? `
+              <button class="admin-btn admin-btn-sm admin-btn-ghost admin-btn-success" title="Unlock" data-action="unlock" data-id="${server.id}">
+                <i class="fas fa-unlock"></i>
               </button>
             ` : `
-              <button class="admin-btn admin-btn-sm admin-btn-ghost" title="Suspend" data-action="suspend" data-id="${server.id}">
-                <i class="fas fa-pause"></i>
+              <button class="admin-btn admin-btn-sm admin-btn-ghost" title="Lock" data-action="lock" data-id="${server.id}">
+                <i class="fas fa-lock"></i>
               </button>
             `}
             <button class="admin-btn admin-btn-sm admin-btn-ghost admin-btn-danger-ghost" title="Delete" data-action="delete" data-id="${server.id}">
@@ -100,10 +236,113 @@ const AdminServers = (function() {
           </div>
         </td>
       </tr>
-    `).join('');
+    `}).join('');
     
-    // Re-attach action button listeners after render
-    initActionButtons();
+    // Attach action button listeners after render
+    attachActionListeners();
+  }
+
+  function getFilteredServers() {
+    let servers = [...serversData];
+    
+    // Apply client-side filters if using cached data
+    if (currentFilters.status) {
+      servers = servers.filter(s => {
+        const isLocked = s.locked || s.isLocked;
+        const status = isLocked ? 'locked' : (s.status || 'active').toLowerCase();
+        return status.includes(currentFilters.status.toLowerCase());
+      });
+    }
+    
+    if (currentFilters.size) {
+      servers = servers.filter(s => {
+        const memberCount = s.memberCount || s.members || 0;
+        switch (currentFilters.size) {
+          case 'small': return memberCount < 100;
+          case 'medium': return memberCount >= 100 && memberCount < 1000;
+          case 'large': return memberCount >= 1000 && memberCount < 10000;
+          case 'xlarge': return memberCount >= 10000;
+          default: return true;
+        }
+      });
+    }
+    
+    return servers;
+  }
+
+  // ========================================
+  // Action Listeners
+  // ========================================
+
+  function attachActionListeners() {
+    // View buttons
+    document.querySelectorAll('[data-action="view"]').forEach(btn => {
+      btn.onclick = async function() {
+        const serverId = this.dataset.id;
+        const server = serversData.find(s => s.id == serverId);
+        showServerModal(server || { id: serverId });
+      };
+    });
+
+    // Lock buttons
+    document.querySelectorAll('[data-action="lock"]').forEach(btn => {
+      btn.onclick = function() {
+        const serverId = this.dataset.id;
+        const server = serversData.find(s => s.id == serverId);
+        const serverName = server?.name || 'this server';
+        
+        const reason = prompt(`Enter reason for locking "${serverName}":`);
+        if (reason !== null) {
+          lockServer(serverId, reason);
+        }
+      };
+    });
+
+    // Unlock buttons
+    document.querySelectorAll('[data-action="unlock"]').forEach(btn => {
+      btn.onclick = function() {
+        const serverId = this.dataset.id;
+        const server = serversData.find(s => s.id == serverId);
+        const serverName = server?.name || 'this server';
+        
+        if (confirm(`Are you sure you want to unlock "${serverName}"?`)) {
+          unlockServer(serverId);
+        }
+      };
+    });
+
+    // Delete buttons
+    document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+      btn.onclick = function() {
+        const serverId = this.dataset.id;
+        const server = serversData.find(s => s.id == serverId);
+        const serverName = server?.name || 'this server';
+        
+        if (confirm(`WARNING: This action cannot be undone!\n\nAre you sure you want to permanently delete "${serverName}"?`)) {
+          deleteServer(serverId);
+        }
+      };
+    });
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.onclick = function() {
+        this.classList.add('spinning');
+        fetchServers().finally(() => {
+          this.classList.remove('spinning');
+          AdminUtils?.showToast?.('Servers list refreshed', 'info');
+        });
+      };
+    }
+
+    // Export button
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+      exportBtn.onclick = function() {
+        AdminUtils?.showToast?.('Export feature coming soon', 'info');
+      };
+    }
   }
 
   // ========================================
@@ -114,12 +353,14 @@ const AdminServers = (function() {
     const searchInput = document.getElementById('searchServers');
     if (!searchInput) return;
     
-    searchInput.addEventListener('input', AdminUtils?.debounce?.(function(e) {
-      currentFilters.search = e.target.value.toLowerCase();
-      applyFilters();
-    }, 300) || function(e) {
-      currentFilters.search = e.target.value.toLowerCase();
-      applyFilters();
+    let debounceTimer;
+    searchInput.addEventListener('input', function(e) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentFilters.search = e.target.value.toLowerCase();
+        pagination.page = 0; // Reset to first page
+        fetchServers();
+      }, 300);
     });
   }
 
@@ -131,74 +372,24 @@ const AdminServers = (function() {
     if (filterStatus) {
       filterStatus.addEventListener('change', (e) => {
         currentFilters.status = e.target.value;
-        applyFilters();
+        renderServersTable();
+        updateTotalCount();
       });
     }
     
     if (filterSize) {
       filterSize.addEventListener('change', (e) => {
         currentFilters.size = e.target.value;
-        applyFilters();
+        renderServersTable();
+        updateTotalCount();
       });
     }
     
     if (sortBy) {
-      sortBy.addEventListener('change', applyFilters);
+      sortBy.addEventListener('change', () => {
+        renderServersTable();
+      });
     }
-  }
-
-  function applyFilters() {
-    const tbody = document.getElementById('serversTableBody');
-    if (!tbody) return;
-    
-    const rows = tbody.querySelectorAll('tr[data-id]');
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-      const name = row.querySelector('.cell-user-name')?.textContent.toLowerCase() || '';
-      const owner = row.querySelectorAll('td')[2]?.textContent.toLowerCase() || '';
-      const desc = row.querySelector('.cell-user-email')?.textContent.toLowerCase() || '';
-      const rowStatus = row.querySelector('.badge')?.textContent.toLowerCase() || '';
-      const memberCount = parseInt(row.querySelectorAll('td')[3]?.textContent.replace(/,/g, '') || '0');
-      
-      let show = true;
-      
-      // Search filter
-      if (currentFilters.search && 
-          !name.includes(currentFilters.search) && 
-          !owner.includes(currentFilters.search) && 
-          !desc.includes(currentFilters.search)) {
-        show = false;
-      }
-      
-      // Status filter
-      if (currentFilters.status && !rowStatus.includes(currentFilters.status)) {
-        show = false;
-      }
-      
-      // Size filter
-      if (currentFilters.size && show) {
-        switch (currentFilters.size) {
-          case 'small':
-            show = memberCount < 100;
-            break;
-          case 'medium':
-            show = memberCount >= 100 && memberCount < 1000;
-            break;
-          case 'large':
-            show = memberCount >= 1000 && memberCount < 10000;
-            break;
-          case 'xlarge':
-            show = memberCount >= 10000;
-            break;
-        }
-      }
-      
-      row.style.display = show ? '' : 'none';
-      if (show) visibleCount++;
-    });
-    
-    updateTotalCount(visibleCount);
   }
 
   function updateTotalCount(count) {
@@ -206,9 +397,57 @@ const AdminServers = (function() {
     if (!countEl) return;
     
     if (count === undefined) {
-      count = MockData.servers?.length || 0;
+      const filtered = getFilteredServers();
+      count = filtered.length;
     }
     countEl.textContent = `${count} server${count !== 1 ? 's' : ''}`;
+  }
+
+  // ========================================
+  // Pagination
+  // ========================================
+
+  function initPagination() {
+    const prevBtn = document.querySelector('[data-page="prev"]');
+    const nextBtn = document.querySelector('[data-page="next"]');
+
+    if (prevBtn) {
+      prevBtn.onclick = () => {
+        if (pagination.page > 0) {
+          pagination.page--;
+          fetchServers();
+        }
+      };
+    }
+
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        if (pagination.page < pagination.totalPages - 1) {
+          pagination.page++;
+          fetchServers();
+        }
+      };
+    }
+  }
+
+  function updatePaginationUI() {
+    const pageInfo = document.querySelector('.page-info');
+    const prevBtn = document.querySelector('[data-page="prev"]');
+    const nextBtn = document.querySelector('[data-page="next"]');
+
+    if (pageInfo) {
+      const start = pagination.page * pagination.size + 1;
+      const end = Math.min((pagination.page + 1) * pagination.size, pagination.totalElements);
+      pageInfo.textContent = `${start}-${end} of ${pagination.totalElements}`;
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = pagination.page === 0;
+    }
+
+    if (nextBtn) {
+      nextBtn.disabled = pagination.page >= pagination.totalPages - 1;
+    }
   }
 
   // ========================================
@@ -242,7 +481,6 @@ const AdminServers = (function() {
         gridBtn.classList.add('active');
         listBtn?.classList.remove('active');
         currentView = 'grid';
-        // In full implementation, this would switch to grid view
         AdminUtils?.showToast?.('Grid view - coming soon', 'info');
       };
     }
@@ -252,81 +490,6 @@ const AdminServers = (function() {
         listBtn.classList.add('active');
         gridBtn?.classList.remove('active');
         currentView = 'list';
-      };
-    }
-  }
-
-  // ========================================
-  // Action Buttons
-  // ========================================
-
-  function initActionButtons() {
-    // View Server buttons
-    document.querySelectorAll('[data-action="view"]').forEach(btn => {
-      btn.onclick = function() {
-        const serverId = this.dataset.id;
-        const row = this.closest('tr');
-        showServerModal(row, serverId);
-      };
-    });
-    
-    // Suspend buttons
-    document.querySelectorAll('[data-action="suspend"]').forEach(btn => {
-      btn.onclick = function() {
-        const serverId = this.dataset.id;
-        const row = this.closest('tr');
-        const serverName = row.querySelector('.cell-user-name')?.textContent;
-        if (confirm(`Are you sure you want to suspend ${serverName}?`)) {
-          console.log('Suspending server:', serverId);
-          AdminUtils?.showToast?.(`${serverName} has been suspended`, 'warning');
-        }
-      };
-    });
-    
-    // Restore buttons
-    document.querySelectorAll('[data-action="restore"]').forEach(btn => {
-      btn.onclick = function() {
-        const serverId = this.dataset.id;
-        const row = this.closest('tr');
-        const serverName = row.querySelector('.cell-user-name')?.textContent;
-        if (confirm(`Are you sure you want to restore ${serverName}?`)) {
-          console.log('Restoring server:', serverId);
-          AdminUtils?.showToast?.(`${serverName} has been restored`, 'success');
-        }
-      };
-    });
-    
-    // Delete buttons
-    document.querySelectorAll('[data-action="delete"]').forEach(btn => {
-      btn.onclick = function() {
-        const serverId = this.dataset.id;
-        const row = this.closest('tr');
-        const serverName = row.querySelector('.cell-user-name')?.textContent;
-        if (confirm(`WARNING: This action cannot be undone!\n\nAre you sure you want to permanently delete ${serverName}?`)) {
-          console.log('Deleting server:', serverId);
-          AdminUtils?.showToast?.(`${serverName} has been deleted`, 'danger');
-        }
-      };
-    });
-    
-    // Refresh button
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) {
-      refreshBtn.onclick = function() {
-        this.classList.add('spinning');
-        setTimeout(() => {
-          this.classList.remove('spinning');
-          renderServersTable();
-          AdminUtils?.showToast?.('Servers list refreshed', 'info');
-        }, 500);
-      };
-    }
-    
-    // Export button
-    const exportBtn = document.getElementById('exportBtn');
-    if (exportBtn) {
-      exportBtn.onclick = function() {
-        AdminUtils?.showToast?.('Export feature coming soon', 'info');
       };
     }
   }
@@ -352,38 +515,46 @@ const AdminServers = (function() {
     });
   }
 
-  function showServerModal(row, serverId) {
+  async function showServerModal(serverData) {
     const modal = document.getElementById('serverModal');
     if (!modal) return;
     
-    // Find server from mock data
-    const server = MockData.servers?.find(s => s.id == serverId);
-    
-    if (server) {
-      // Populate from mock data
-      document.getElementById('modalAvatar').textContent = getInitials(server.name);
-      document.getElementById('modalName').textContent = server.name;
-      document.getElementById('modalDescription').textContent = server.description || 'No description';
-      document.getElementById('modalStatus').textContent = server.status;
-      document.getElementById('modalStatus').className = `badge badge-${getStatusClass(server.status)}`;
-      document.getElementById('modalMembers').textContent = AdminUtils?.formatNumber?.(server.members) || server.members.toLocaleString();
-      document.getElementById('modalChannels').textContent = server.channels;
-      document.getElementById('modalMessages').textContent = AdminUtils?.formatNumber?.(server.totalMessages || 0) || '0';
-      document.getElementById('modalCreated').textContent = formatDate(server.createdAt);
-      document.getElementById('modalOwnerName').textContent = server.owner || 'Unknown';
-      document.getElementById('modalOwnerEmail').textContent = `@${server.owner || 'unknown'}`;
-    } else {
-      // Fallback: Extract data from row
-      const name = row.querySelector('.cell-user-name')?.textContent || '';
-      const desc = row.querySelector('.cell-user-email')?.textContent || '';
-      const status = row.querySelector('.badge')?.textContent || '';
-      
-      document.getElementById('modalAvatar').textContent = getInitials(name);
-      document.getElementById('modalName').textContent = name;
-      document.getElementById('modalDescription').textContent = desc;
-      document.getElementById('modalStatus').textContent = status;
-      document.getElementById('modalStatus').className = `badge badge-${getStatusClass(status)}`;
+    // Try to get detailed info from API
+    let server = serverData;
+    if (serverData.id) {
+      const detailed = await fetchServerDetails(serverData.id);
+      if (detailed) server = detailed;
     }
+    
+    // Populate modal
+    const avatarEl = document.getElementById('modalAvatar');
+    const nameEl = document.getElementById('modalName');
+    const descEl = document.getElementById('modalDescription');
+    const statusEl = document.getElementById('modalStatus');
+    const membersEl = document.getElementById('modalMembers');
+    const channelsEl = document.getElementById('modalChannels');
+    const messagesEl = document.getElementById('modalMessages');
+    const createdEl = document.getElementById('modalCreated');
+    const ownerNameEl = document.getElementById('modalOwnerName');
+    const ownerEmailEl = document.getElementById('modalOwnerEmail');
+    
+    if (avatarEl) avatarEl.textContent = getInitials(server.name);
+    if (nameEl) nameEl.textContent = server.name || 'Unknown';
+    if (descEl) descEl.textContent = server.description || 'No description';
+    
+    const isLocked = server.locked || server.isLocked;
+    const status = isLocked ? 'Locked' : (server.status || 'Active');
+    if (statusEl) {
+      statusEl.textContent = status;
+      statusEl.className = `badge badge-${isLocked ? 'danger' : getStatusClass(status)}`;
+    }
+    
+    if (membersEl) membersEl.textContent = AdminUtils?.formatNumber?.(server.memberCount || server.members || 0);
+    if (channelsEl) channelsEl.textContent = server.channelCount || server.channels || 0;
+    if (messagesEl) messagesEl.textContent = AdminUtils?.formatNumber?.(server.totalMessages || 0);
+    if (createdEl) createdEl.textContent = AdminUtils?.formatDate?.(server.createdAt) || formatDate(server.createdAt);
+    if (ownerNameEl) ownerNameEl.textContent = server.ownerUsername || server.owner || 'Unknown';
+    if (ownerEmailEl) ownerEmailEl.textContent = `@${server.ownerUsername || server.owner || 'unknown'}`;
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -414,7 +585,7 @@ const AdminServers = (function() {
     const statusLower = (status || '').toLowerCase();
     if (statusLower.includes('active')) return 'success';
     if (statusLower.includes('inactive')) return 'warning';
-    if (statusLower.includes('suspended')) return 'danger';
+    if (statusLower.includes('suspended') || statusLower.includes('locked')) return 'danger';
     return 'default';
   }
 
@@ -434,7 +605,7 @@ const AdminServers = (function() {
 
   return {
     init,
-    refresh: renderServersTable,
+    refresh: fetchServers,
     closeModal
   };
 

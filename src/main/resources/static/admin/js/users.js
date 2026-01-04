@@ -1,9 +1,9 @@
-/**
+﻿/**
  * CoCoCord Admin - Users Page JavaScript
- * Handles user table, filters, search, and modal interactions
+ * Handles user table, filters, search, and modal interactions using real API
  */
 
-const AdminUsers = (function() {
+var AdminUsers = window.AdminUsers || (function() {
   'use strict';
 
   // ========================================
@@ -16,14 +16,49 @@ const AdminUsers = (function() {
     role: ''
   };
 
+  let pagination = {
+    page: 0,
+    size: 20,
+    total: 0,
+    totalPages: 0
+  };
+
+  let usersData = [];
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    users: '/api/admin/users',
+    ban: (id) => `/api/admin/users/${id}/ban`,
+    unban: (id) => `/api/admin/users/${id}/unban`,
+    mute: (id) => `/api/admin/users/${id}/mute`,
+    unmute: (id) => `/api/admin/users/${id}/unmute`,
+    updateRole: (id) => `/api/admin/users/${id}/role`,
+    deleteUser: (id) => `/api/admin/users/${id}`
+  };
+
   // ========================================
   // Initialization
   // ========================================
 
-  function init() {
+  async function init() {
     console.log('[AdminUsers] Initializing...');
     
-    // Render users from mock data
+    // Fetch users from API
+    try {
+      await fetchUsers();
+    } catch (error) {
+      console.warn('[AdminUsers] API error, using mock data:', error.message);
+      // Use mock data as fallback
+      usersData = MockData?.users?.list || [];
+      pagination.total = usersData.length;
+      pagination.totalPages = 1;
+    }
+    
+    // Render table
     renderUsersTable();
     
     // Update total count
@@ -35,8 +70,45 @@ const AdminUsers = (function() {
     initSelectAll();
     initActionButtons();
     initModal();
+    initPagination();
     
     console.log('[AdminUsers] Initialized');
+  }
+
+  // ========================================
+  // Data Fetching
+  // ========================================
+
+  async function fetchUsers() {
+    if (isLoading) return;
+    isLoading = true;
+    
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page,
+        size: pagination.size,
+        sortBy: 'createdAt',
+        sortDir: 'desc'
+      });
+      
+      if (currentFilters.search) {
+        params.append('search', currentFilters.search);
+      }
+      
+      const response = await AdminUtils.api.get(`${API.users}?${params}`);
+      
+      usersData = response.content || [];
+      pagination.total = response.totalElements || 0;
+      pagination.totalPages = response.totalPages || 0;
+      
+      return usersData;
+    } catch (error) {
+      console.error('[AdminUsers] Failed to fetch users:', error);
+      AdminUtils.showToast('Failed to load users', 'error');
+      usersData = [];
+    } finally {
+      isLoading = false;
+    }
   }
 
   // ========================================
@@ -47,14 +119,12 @@ const AdminUsers = (function() {
     const tbody = document.getElementById('usersTableBody');
     if (!tbody) return;
     
-    const users = MockData.users || [];
-    
-    if (users.length === 0) {
+    if (usersData.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" class="text-center">No users found</td></tr>';
       return;
     }
     
-    tbody.innerHTML = users.map(user => `
+    tbody.innerHTML = usersData.map(user => `
       <tr data-id="${user.id}">
         <td>
           <input type="checkbox" class="user-checkbox admin-checkbox" value="${user.id}">
@@ -62,7 +132,7 @@ const AdminUsers = (function() {
         <td>
           <div class="user-cell">
             <div class="user-avatar-sm" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--admin-primary);width:36px;height:36px;border-radius:50%;">
-              ${getInitials(user.username)}
+              ${AdminUtils.getInitials(user.username)}
             </div>
             <div class="user-info">
               <span class="cell-user-name">${user.username}</span>
@@ -71,18 +141,18 @@ const AdminUsers = (function() {
           </div>
         </td>
         <td>
-          <span class="badge badge-${getStatusClass(user.status)}">${user.status}</span>
+          <span class="badge badge-${getStatusClass(user)}">${getStatusText(user)}</span>
         </td>
         <td>${user.role || 'User'}</td>
-        <td>${user.servers}</td>
-        <td>${AdminUtils?.formatNumber?.(user.messages) || user.messages.toLocaleString()}</td>
-        <td>${formatDate(user.createdAt)}</td>
+        <td>${user.serverCount || 0}</td>
+        <td>${AdminUtils.formatNumber(user.messageCount || 0)}</td>
+        <td>${AdminUtils.formatDate(user.createdAt)}</td>
         <td>
           <div class="action-buttons">
             <button class="admin-btn admin-btn-sm admin-btn-ghost" title="View Profile" data-action="view" data-id="${user.id}">
               <i class="fas fa-eye"></i>
             </button>
-            ${user.status === 'banned' ? `
+            ${user.isBanned ? `
               <button class="admin-btn admin-btn-sm admin-btn-ghost" title="Unban User" data-action="unban" data-id="${user.id}">
                 <i class="fas fa-user-check"></i>
               </button>
@@ -91,13 +161,30 @@ const AdminUsers = (function() {
                 <i class="fas fa-user-slash"></i>
               </button>
             `}
+            <button class="admin-btn admin-btn-sm admin-btn-ghost" title="More Actions" data-action="more" data-id="${user.id}">
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
           </div>
         </td>
       </tr>
     `).join('');
     
     // Re-attach action button listeners after render
-    initActionButtons();
+    attachActionListeners();
+  }
+
+  function getStatusClass(user) {
+    if (user.isBanned) return 'danger';
+    if (user.isMuted) return 'warning';
+    if (user.isActive) return 'success';
+    return 'default';
+  }
+
+  function getStatusText(user) {
+    if (user.isBanned) return 'Banned';
+    if (user.isMuted) return 'Muted';
+    if (user.isActive) return 'Active';
+    return 'Inactive';
   }
 
   // ========================================
@@ -108,13 +195,13 @@ const AdminUsers = (function() {
     const searchInput = document.getElementById('searchUsers');
     if (!searchInput) return;
     
-    searchInput.addEventListener('input', AdminUtils?.debounce?.(function(e) {
-      currentFilters.search = e.target.value.toLowerCase();
-      applyFilters();
-    }, 300) || function(e) {
-      currentFilters.search = e.target.value.toLowerCase();
-      applyFilters();
-    });
+    searchInput.addEventListener('input', AdminUtils.debounce(async function(e) {
+      currentFilters.search = e.target.value;
+      pagination.page = 0;
+      await fetchUsers();
+      renderUsersTable();
+      updateTotalCount();
+    }, 300));
   }
 
   function initFilters() {
@@ -123,25 +210,28 @@ const AdminUsers = (function() {
     const sortBy = document.getElementById('sortBy');
     
     if (filterStatus) {
-      filterStatus.addEventListener('change', (e) => {
+      filterStatus.addEventListener('change', async (e) => {
         currentFilters.status = e.target.value;
-        applyFilters();
+        applyClientFilters();
       });
     }
     
     if (filterRole) {
-      filterRole.addEventListener('change', (e) => {
+      filterRole.addEventListener('change', async (e) => {
         currentFilters.role = e.target.value;
-        applyFilters();
+        applyClientFilters();
       });
     }
     
     if (sortBy) {
-      sortBy.addEventListener('change', applyFilters);
+      sortBy.addEventListener('change', async () => {
+        await fetchUsers();
+        renderUsersTable();
+      });
     }
   }
 
-  function applyFilters() {
+  function applyClientFilters() {
     const tbody = document.getElementById('usersTableBody');
     if (!tbody) return;
     
@@ -149,25 +239,18 @@ const AdminUsers = (function() {
     let visibleCount = 0;
     
     rows.forEach(row => {
-      const name = row.querySelector('.cell-user-name')?.textContent.toLowerCase() || '';
-      const email = row.querySelector('.cell-user-email')?.textContent.toLowerCase() || '';
       const rowStatus = row.querySelector('.badge')?.textContent.toLowerCase() || '';
       const rowRole = row.querySelectorAll('td')[3]?.textContent.toLowerCase() || '';
       
       let show = true;
       
-      // Search filter
-      if (currentFilters.search && !name.includes(currentFilters.search) && !email.includes(currentFilters.search)) {
-        show = false;
-      }
-      
       // Status filter
-      if (currentFilters.status && !rowStatus.includes(currentFilters.status)) {
+      if (currentFilters.status && !rowStatus.includes(currentFilters.status.toLowerCase())) {
         show = false;
       }
       
       // Role filter
-      if (currentFilters.role && !rowRole.includes(currentFilters.role)) {
+      if (currentFilters.role && !rowRole.includes(currentFilters.role.toLowerCase())) {
         show = false;
       }
       
@@ -183,9 +266,50 @@ const AdminUsers = (function() {
     if (!countEl) return;
     
     if (count === undefined) {
-      count = MockData.users?.length || 0;
+      count = pagination.total;
     }
     countEl.textContent = `${count} user${count !== 1 ? 's' : ''}`;
+  }
+
+  // ========================================
+  // Pagination
+  // ========================================
+
+  function initPagination() {
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    
+    if (prevBtn) {
+      prevBtn.addEventListener('click', async () => {
+        if (pagination.page > 0) {
+          pagination.page--;
+          await fetchUsers();
+          renderUsersTable();
+          updatePaginationUI();
+        }
+      });
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', async () => {
+        if (pagination.page < pagination.totalPages - 1) {
+          pagination.page++;
+          await fetchUsers();
+          renderUsersTable();
+          updatePaginationUI();
+        }
+      });
+    }
+  }
+
+  function updatePaginationUI() {
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+    
+    if (prevBtn) prevBtn.disabled = pagination.page === 0;
+    if (nextBtn) nextBtn.disabled = pagination.page >= pagination.totalPages - 1;
+    if (pageInfo) pageInfo.textContent = `Page ${pagination.page + 1} of ${pagination.totalPages}`;
   }
 
   // ========================================
@@ -211,51 +335,15 @@ const AdminUsers = (function() {
   // ========================================
 
   function initActionButtons() {
-    // View Profile buttons
-    document.querySelectorAll('[data-action="view"]').forEach(btn => {
-      btn.onclick = function() {
-        const userId = this.dataset.id;
-        const row = this.closest('tr');
-        showUserModal(row, userId);
-      };
-    });
-    
-    // Ban buttons
-    document.querySelectorAll('[data-action="ban"]').forEach(btn => {
-      btn.onclick = function() {
-        const userId = this.dataset.id;
-        const row = this.closest('tr');
-        const userName = row.querySelector('.cell-user-name')?.textContent;
-        if (confirm(`Are you sure you want to ban ${userName}?`)) {
-          console.log('Banning user:', userId);
-          AdminUtils?.showToast?.(`${userName} has been banned`, 'warning');
-        }
-      };
-    });
-    
-    // Unban buttons
-    document.querySelectorAll('[data-action="unban"]').forEach(btn => {
-      btn.onclick = function() {
-        const userId = this.dataset.id;
-        const row = this.closest('tr');
-        const userName = row.querySelector('.cell-user-name')?.textContent;
-        if (confirm(`Are you sure you want to unban ${userName}?`)) {
-          console.log('Unbanning user:', userId);
-          AdminUtils?.showToast?.(`${userName} has been unbanned`, 'success');
-        }
-      };
-    });
-    
     // Refresh button
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
-      refreshBtn.onclick = function() {
+      refreshBtn.onclick = async function() {
         this.classList.add('spinning');
-        setTimeout(() => {
-          this.classList.remove('spinning');
-          renderUsersTable();
-          AdminUtils?.showToast?.('Users list refreshed', 'info');
-        }, 500);
+        await fetchUsers();
+        renderUsersTable();
+        this.classList.remove('spinning');
+        AdminUtils.showToast('Users list refreshed', 'success');
       };
     }
     
@@ -263,9 +351,58 @@ const AdminUsers = (function() {
     const addUserBtn = document.getElementById('addUserBtn');
     if (addUserBtn) {
       addUserBtn.onclick = function() {
-        AdminUtils?.showToast?.('Add user feature coming soon', 'info');
+        AdminUtils.showToast('Add user feature coming soon', 'info');
       };
     }
+  }
+
+  function attachActionListeners() {
+    // View Profile buttons
+    document.querySelectorAll('[data-action="view"]').forEach(btn => {
+      btn.onclick = function() {
+        const userId = this.dataset.id;
+        const user = usersData.find(u => u.id == userId);
+        if (user) showUserModal(user);
+      };
+    });
+    
+    // Ban buttons
+    document.querySelectorAll('[data-action="ban"]').forEach(btn => {
+      btn.onclick = async function() {
+        const userId = this.dataset.id;
+        const user = usersData.find(u => u.id == userId);
+        
+        if (confirm(`Are you sure you want to ban ${user?.username}?`)) {
+          try {
+            await AdminUtils.api.post(API.ban(userId));
+            AdminUtils.showToast(`${user?.username} has been banned`, 'success');
+            await fetchUsers();
+            renderUsersTable();
+          } catch (error) {
+            AdminUtils.showToast('Failed to ban user: ' + error.message, 'error');
+          }
+        }
+      };
+    });
+    
+    // Unban buttons
+    document.querySelectorAll('[data-action="unban"]').forEach(btn => {
+      btn.onclick = async function() {
+        const userId = this.dataset.id;
+        const user = usersData.find(u => u.id == userId);
+        
+        if (confirm(`Are you sure you want to unban ${user?.username}?`)) {
+          try {
+            await AdminUtils.api.post(API.unban(userId));
+            AdminUtils.showToast(`${user?.username} has been unbanned`, 'success');
+            await fetchUsers();
+            renderUsersTable();
+          } catch (error) {
+            AdminUtils.showToast('Failed to unban user: ' + error.message, 'error');
+          }
+        }
+      };
+    });
   }
 
   // ========================================
@@ -289,35 +426,28 @@ const AdminUsers = (function() {
     });
   }
 
-  function showUserModal(row, userId) {
+  function showUserModal(user) {
     const modal = document.getElementById('userModal');
-    if (!modal) return;
+    if (!modal || !user) return;
     
-    // Find user from mock data
-    const user = MockData.users?.find(u => u.id == userId);
+    // Populate modal with user data
+    const setEl = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value || '--';
+    };
     
-    if (user) {
-      // Populate from mock data
-      document.getElementById('modalAvatar').textContent = getInitials(user.username);
-      document.getElementById('modalName').textContent = user.username;
-      document.getElementById('modalEmail').textContent = user.email;
-      document.getElementById('modalStatus').textContent = user.status;
-      document.getElementById('modalStatus').className = `badge badge-${getStatusClass(user.status)}`;
-      document.getElementById('modalRole').textContent = user.role || 'User';
-      document.getElementById('modalServers').textContent = user.servers;
-      document.getElementById('modalMessages').textContent = AdminUtils?.formatNumber?.(user.messages) || user.messages.toLocaleString();
-      document.getElementById('modalJoined').textContent = formatDate(user.createdAt);
-    } else {
-      // Fallback: Extract data from row
-      const name = row.querySelector('.cell-user-name')?.textContent || '';
-      const email = row.querySelector('.cell-user-email')?.textContent || '';
-      const status = row.querySelector('.badge')?.textContent || '';
-      
-      document.getElementById('modalAvatar').textContent = getInitials(name);
-      document.getElementById('modalName').textContent = name;
-      document.getElementById('modalEmail').textContent = email;
-      document.getElementById('modalStatus').textContent = status;
-      document.getElementById('modalStatus').className = `badge badge-${getStatusClass(status)}`;
+    setEl('modalAvatar', AdminUtils.getInitials(user.username));
+    setEl('modalName', user.username);
+    setEl('modalEmail', user.email);
+    setEl('modalRole', user.role);
+    setEl('modalServers', user.serverCount || 0);
+    setEl('modalMessages', AdminUtils.formatNumber(user.messageCount || 0));
+    setEl('modalJoined', AdminUtils.formatDate(user.createdAt, { year: true }));
+    
+    const statusEl = document.getElementById('modalStatus');
+    if (statusEl) {
+      statusEl.textContent = getStatusText(user);
+      statusEl.className = `badge badge-${getStatusClass(user)}`;
     }
     
     modal.style.display = 'flex';
@@ -333,43 +463,16 @@ const AdminUsers = (function() {
   }
 
   // ========================================
-  // Utility Functions
-  // ========================================
-
-  function getInitials(name) {
-    if (!name) return '??';
-    return name.split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  }
-
-  function getStatusClass(status) {
-    const statusLower = (status || '').toLowerCase();
-    if (statusLower.includes('active')) return 'success';
-    if (statusLower.includes('inactive')) return 'warning';
-    if (statusLower.includes('banned')) return 'danger';
-    return 'default';
-  }
-
-  function formatDate(dateStr) {
-    if (!dateStr) return '--';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  }
-
-  // ========================================
   // Public API
   // ========================================
 
   return {
     init,
-    refresh: renderUsersTable,
+    refresh: async () => {
+      await fetchUsers();
+      renderUsersTable();
+      updateTotalCount();
+    },
     closeModal
   };
 

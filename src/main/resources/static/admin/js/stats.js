@@ -1,9 +1,10 @@
 /**
  * CoCoCord Admin - Statistics Page JavaScript
  * Handles charts, data visualization, and stats interactions
+ * Updated to use real API endpoints
  */
 
-const AdminStats = (function() {
+var AdminStats = window.AdminStats || (function() {
   'use strict';
 
   // ========================================
@@ -11,6 +12,18 @@ const AdminStats = (function() {
   // ========================================
 
   let currentTimeRange = '7d';
+  let statsData = null;
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    stats: '/api/admin/dashboard/stats',
+    summary: '/api/admin/dashboard/summary',
+    servers: '/api/admin/servers'
+  };
 
   // ========================================
   // Initialization
@@ -19,16 +32,64 @@ const AdminStats = (function() {
   function init() {
     console.log('[AdminStats] Initializing...');
     
-    // Update stats cards
-    updateStatsCards();
-    
-    // Render top servers table
-    renderTopServers();
-    
     // Setup event listeners
     setupEventListeners();
     
+    // Fetch stats from API
+    fetchStats();
+    
     console.log('[AdminStats] Initialized');
+  }
+
+  // ========================================
+  // API Calls
+  // ========================================
+
+  async function fetchStats() {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading(true);
+
+    try {
+      const [statsResponse, serversResponse] = await Promise.all([
+        AdminUtils.api.get(`${API.stats}?range=${currentTimeRange}`),
+        AdminUtils.api.get(`${API.servers}?page=0&size=10&sort=memberCount,desc`)
+      ]);
+      
+      statsData = statsResponse;
+      
+      updateStatsCards();
+      renderTopServers(serversResponse);
+    } catch (error) {
+      console.error('[AdminStats] Failed to fetch stats:', error);
+      AdminUtils?.showToast?.('Failed to load statistics', 'danger');
+      // Fallback to mock data
+      updateStatsCards();
+      renderTopServersFromMock();
+    } finally {
+      isLoading = false;
+      showLoading(false);
+    }
+  }
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  function showLoading(show) {
+    const tbody = document.getElementById('topServersTable');
+    if (!tbody) return;
+
+    if (show) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center py-4">
+            <div class="loading-spinner"></div>
+            <div class="mt-2 text-muted">Loading statistics...</div>
+          </td>
+        </tr>
+      `;
+    }
   }
 
   // ========================================
@@ -36,9 +97,10 @@ const AdminStats = (function() {
   // ========================================
 
   function updateStatsCards() {
-    const stats = MockData.dashboard?.kpis || [];
+    // Use API data if available, otherwise use mock
+    const kpis = statsData?.kpis || MockData.dashboard?.kpis || [];
     
-    stats.forEach(kpi => {
+    kpis.forEach(kpi => {
       const el = document.querySelector(`[data-stat="${kpi.id}"]`);
       if (el) {
         el.textContent = AdminUtils?.formatNumber?.(kpi.value) || kpi.value.toLocaleString();
@@ -51,25 +113,78 @@ const AdminStats = (function() {
         trendEl.className = `stat-trend ${kpi.trendDirection === 'up' ? 'trend-up' : 'trend-down'}`;
       }
     });
+
+    // Update additional stats from API response
+    if (statsData) {
+      updateStatElement('totalUsers', statsData.totalUsers);
+      updateStatElement('totalServers', statsData.totalServers);
+      updateStatElement('totalMessages', statsData.totalMessages);
+      updateStatElement('activeUsers', statsData.activeUsers);
+      updateStatElement('newUsersToday', statsData.newUsersToday);
+      updateStatElement('newServersToday', statsData.newServersToday);
+    }
+  }
+
+  function updateStatElement(id, value) {
+    const el = document.querySelector(`[data-stat="${id}"]`);
+    if (el && value !== undefined) {
+      el.textContent = AdminUtils?.formatNumber?.(value) || value.toLocaleString();
+    }
   }
 
   // ========================================
   // Top Servers Table
   // ========================================
 
-  function renderTopServers() {
+  function renderTopServers(response) {
     const tbody = document.getElementById('topServersTable');
     if (!tbody) return;
     
-    // Sort servers by members descending
-    const servers = [...(MockData.servers || [])].sort((a, b) => b.members - a.members).slice(0, 10);
+    let servers = [];
+    if (response && response.content) {
+      servers = response.content;
+    } else if (Array.isArray(response)) {
+      servers = response;
+    }
     
     if (servers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center">No data available</td></tr>';
+      renderTopServersFromMock();
       return;
     }
     
-    tbody.innerHTML = servers.map((server, index) => `
+    // Sort by members if not already sorted
+    servers = [...servers].sort((a, b) => 
+      (b.memberCount || b.members || 0) - (a.memberCount || a.members || 0)
+    ).slice(0, 10);
+    
+    renderServersTable(servers);
+  }
+
+  function renderTopServersFromMock() {
+    const tbody = document.getElementById('topServersTable');
+    if (!tbody) return;
+    
+    const servers = [...(MockData.servers || [])].sort((a, b) => b.members - a.members).slice(0, 10);
+    renderServersTable(servers);
+  }
+
+  function renderServersTable(servers) {
+    const tbody = document.getElementById('topServersTable');
+    if (!tbody) return;
+    
+    if (servers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No data available</td></tr>';
+      return;
+    }
+    
+    const maxMembers = Math.max(...servers.map(s => s.memberCount || s.members || 0));
+    
+    tbody.innerHTML = servers.map((server, index) => {
+      const members = server.memberCount || server.members || 0;
+      const messages = server.totalMessages || Math.floor(Math.random() * 500000);
+      const barHeight = maxMembers > 0 ? (members / maxMembers) * 100 : 0;
+      
+      return `
       <tr>
         <td>
           <span class="rank-badge rank-${index < 3 ? index + 1 : 'default'}">${index + 1}</span>
@@ -81,19 +196,19 @@ const AdminStats = (function() {
             </div>
             <div class="user-info">
               <span class="cell-user-name">${server.name}</span>
-              <span class="cell-user-email">@${server.owner || 'unknown'}</span>
+              <span class="cell-user-email">@${server.ownerUsername || server.owner || 'unknown'}</span>
             </div>
           </div>
         </td>
-        <td>${AdminUtils?.formatNumber?.(server.members) || server.members.toLocaleString()}</td>
-        <td>${AdminUtils?.formatNumber?.(server.totalMessages || Math.floor(Math.random() * 500000))}</td>
+        <td>${AdminUtils?.formatNumber?.(members)}</td>
+        <td>${AdminUtils?.formatNumber?.(messages)}</td>
         <td>
           <div class="mini-chart">
-            <div class="mini-bar" style="height: ${Math.min(100, (server.members / 50000) * 100)}%"></div>
+            <div class="mini-bar" style="height: ${barHeight}%"></div>
           </div>
         </td>
       </tr>
-    `).join('');
+    `}).join('');
   }
 
   // ========================================
@@ -129,28 +244,49 @@ const AdminStats = (function() {
     
     currentTimeRange = range;
     
-    // Refresh data
-    updateStatsCards();
-    renderTopServers();
+    // Refresh data from API
+    fetchStats();
     
     AdminUtils?.showToast?.(`Time range: ${range}`, 'info');
   }
 
   function handleExport() {
-    AdminUtils?.showToast?.('Export feature coming soon', 'info');
+    if (!statsData) {
+      AdminUtils?.showToast?.('No data to export', 'warning');
+      return;
+    }
+    
+    // Create JSON export
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      timeRange: currentTimeRange,
+      stats: statsData
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stats-${currentTimeRange}-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    AdminUtils?.showToast?.('Statistics exported', 'success');
   }
 
-  function handleRefresh() {
+  async function handleRefresh() {
     const btn = document.getElementById('refreshStatsBtn');
     if (btn) {
       btn.classList.add('spinning');
-      setTimeout(() => {
-        btn.classList.remove('spinning');
-        updateStatsCards();
-        renderTopServers();
-        AdminUtils?.showToast?.('Stats refreshed', 'success');
-      }, 500);
     }
+    
+    await fetchStats();
+    
+    if (btn) {
+      btn.classList.remove('spinning');
+    }
+    AdminUtils?.showToast?.('Stats refreshed', 'success');
   }
 
   // ========================================
@@ -172,10 +308,7 @@ const AdminStats = (function() {
 
   return {
     init,
-    refresh: () => {
-      updateStatsCards();
-      renderTopServers();
-    }
+    refresh: fetchStats
   };
 
 })();

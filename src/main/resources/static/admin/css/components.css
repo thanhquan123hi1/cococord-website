@@ -75,6 +75,118 @@
 }
 
 /* ========================================
+   ADMIN STATS ROW (Dashboard)
+   ======================================== */
+
+.admin-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  background: var(--admin-surface);
+  padding: var(--space-5);
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-stat-card .stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--admin-radius-lg);
+  flex-shrink: 0;
+}
+
+.admin-stat-card .stat-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.admin-stat-card .stat-icon-blue {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.admin-stat-card .stat-icon-green {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.admin-stat-card .stat-icon-purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+.admin-stat-card .stat-icon-orange {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.admin-stat-card .stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-stat-card .stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--admin-muted);
+  margin-bottom: var(--space-1);
+}
+
+.admin-stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--admin-text);
+  line-height: 1.2;
+  margin-bottom: var(--space-2);
+}
+
+.admin-stat-card .stat-change {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.admin-stat-card .stat-change.positive {
+  color: var(--color-success);
+}
+
+.admin-stat-card .stat-change.negative {
+  color: var(--color-danger);
+}
+
+.admin-stat-card .stat-change.warning {
+  color: var(--color-warning);
+}
+
+.admin-stat-card .stat-change .change-icon {
+  font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+  .admin-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-stats-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
    PANELS
    ======================================== */
 
@@ -426,4 +538,83 @@
 
 .server-icon {
   font-size: 16px;
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+
+.admin-toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+}
+
+.admin-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-lg);
+  border-left: 4px solid var(--admin-primary);
+  min-width: 280px;
+  max-width: 400px;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease;
+}
+
+.admin-toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.admin-toast i {
+  font-size: 16px;
+}
+
+.admin-toast span {
+  flex: 1;
+  font-size: 14px;
+  color: var(--admin-text);
+}
+
+.admin-toast-success {
+  border-left-color: var(--color-success);
+}
+
+.admin-toast-success i {
+  color: var(--color-success);
+}
+
+.admin-toast-error,
+.admin-toast-danger {
+  border-left-color: var(--color-danger);
+}
+
+.admin-toast-error i,
+.admin-toast-danger i {
+  color: var(--color-danger);
+}
+
+.admin-toast-warning {
+  border-left-color: var(--color-warning);
+}
+
+.admin-toast-warning i {
+  color: var(--color-warning);
+}
+
+.admin-toast-info {
+  border-left-color: var(--admin-primary);
+}
+
+.admin-toast-info i {
+  color: var(--admin-primary);
 }

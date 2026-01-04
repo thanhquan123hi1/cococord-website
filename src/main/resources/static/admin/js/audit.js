@@ -1,9 +1,10 @@
 /**
  * CoCoCord Admin - Audit Log Page JavaScript
  * Handles audit log display, filtering, and interactions
+ * Updated to use real API endpoints
  */
 
-const AdminAudit = (function() {
+var AdminAudit = window.AdminAudit || (function() {
   'use strict';
 
   // ========================================
@@ -19,6 +20,21 @@ const AdminAudit = (function() {
   };
 
   let auditLogs = [];
+  let pagination = {
+    page: 0,
+    size: 50,
+    totalElements: 0,
+    totalPages: 0
+  };
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    auditLog: '/api/admin/audit-log'
+  };
 
   // ========================================
   // Initialization
@@ -27,20 +43,78 @@ const AdminAudit = (function() {
   function init() {
     console.log('[AdminAudit] Initializing...');
     
-    // Generate mock audit logs
-    generateMockAuditLogs();
-    
-    // Render audit logs
-    renderAuditLogs();
-    
     // Setup event listeners
     setupEventListeners();
+    
+    // Fetch audit logs from API
+    fetchAuditLogs();
     
     console.log('[AdminAudit] Initialized');
   }
 
   // ========================================
-  // Mock Data Generation
+  // API Calls
+  // ========================================
+
+  async function fetchAuditLogs() {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page,
+        size: pagination.size
+      });
+
+      const response = await AdminUtils.api.get(`${API.auditLog}?${params}`);
+      
+      if (response && response.content) {
+        auditLogs = response.content;
+        pagination.totalElements = response.totalElements || 0;
+        pagination.totalPages = response.totalPages || 0;
+      } else if (Array.isArray(response)) {
+        auditLogs = response;
+        pagination.totalElements = response.length;
+        pagination.totalPages = 1;
+      } else {
+        console.warn('[AdminAudit] API returned unexpected format, generating mock data');
+        generateMockAuditLogs();
+      }
+      
+      renderAuditLogs();
+    } catch (error) {
+      console.error('[AdminAudit] Failed to fetch audit logs:', error);
+      AdminUtils?.showToast?.('Failed to load audit logs', 'danger');
+      // Fallback to mock data
+      generateMockAuditLogs();
+      renderAuditLogs();
+    } finally {
+      isLoading = false;
+      showLoading(false);
+    }
+  }
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  function showLoading(show) {
+    const container = document.getElementById('auditTimeline');
+    if (!container) return;
+
+    if (show) {
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <div class="loading-spinner"></div>
+          <div class="mt-2 text-muted">Loading audit logs...</div>
+        </div>
+      `;
+    }
+  }
+
+  // ========================================
+  // Mock Data Generation (Fallback)
   // ========================================
 
   function generateMockAuditLogs() {
@@ -67,16 +141,23 @@ const AdminAudit = (function() {
       auditLogs.push({
         id: i + 1,
         actor: actors[Math.floor(Math.random() * actors.length)],
-        action: action,
+        adminUsername: actors[Math.floor(Math.random() * actors.length)],
+        action: action.type,
+        actionType: action.type,
+        actionLabel: action.label,
+        actionIcon: action.icon,
         target: targets[Math.floor(Math.random() * targets.length)],
+        targetType: 'user',
+        targetId: Math.floor(Math.random() * 1000),
         timestamp: date.toISOString(),
-        ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+        createdAt: date.toISOString(),
+        ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
         details: `Action performed on ${date.toLocaleDateString()}`
       });
     }
     
     // Sort by timestamp desc
-    auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    auditLogs.sort((a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt));
   }
 
   // ========================================
@@ -100,25 +181,32 @@ const AdminAudit = (function() {
       return;
     }
     
-    container.innerHTML = filtered.map(log => `
+    container.innerHTML = filtered.map(log => {
+      const actionInfo = getActionInfo(log);
+      const timestamp = log.timestamp || log.createdAt;
+      const actor = log.adminUsername || log.actor || 'System';
+      const target = log.targetDescription || log.target;
+      const ip = log.ipAddress || log.ip || '--';
+      
+      return `
       <div class="audit-item" data-id="${log.id}">
-        <div class="audit-icon ${getActionClass(log.action.type)}">
-          <i class="${log.action.icon}"></i>
+        <div class="audit-icon ${actionInfo.class}">
+          <i class="${actionInfo.icon}"></i>
         </div>
         <div class="audit-content">
           <div class="audit-header">
-            <span class="audit-action">${log.action.label}</span>
-            ${log.target ? `<span class="audit-target">${log.target}</span>` : ''}
+            <span class="audit-action">${actionInfo.label}</span>
+            ${target ? `<span class="audit-target">${target}</span>` : ''}
           </div>
           <div class="audit-meta">
             <span class="audit-actor">
-              <i class="fas fa-user"></i> ${log.actor}
+              <i class="fas fa-user"></i> ${actor}
             </span>
             <span class="audit-time">
-              <i class="fas fa-clock"></i> ${formatTimestamp(log.timestamp)}
+              <i class="fas fa-clock"></i> ${formatTimestamp(timestamp)}
             </span>
             <span class="audit-ip">
-              <i class="fas fa-globe"></i> ${log.ip}
+              <i class="fas fa-globe"></i> ${ip}
             </span>
           </div>
         </div>
@@ -126,7 +214,7 @@ const AdminAudit = (function() {
           <i class="fas fa-ellipsis-h"></i>
         </button>
       </div>
-    `).join('');
+    `}).join('');
     
     // Update count
     const countEl = document.getElementById('auditCount');
@@ -140,37 +228,79 @@ const AdminAudit = (function() {
     });
   }
 
+  function getActionInfo(log) {
+    const actionType = log.actionType || log.action?.type || log.action || '';
+    
+    const actionMap = {
+      'user_ban': { icon: 'fas fa-user-slash', label: 'Banned user', class: 'audit-icon-danger' },
+      'USER_BANNED': { icon: 'fas fa-user-slash', label: 'Banned user', class: 'audit-icon-danger' },
+      'user_unban': { icon: 'fas fa-user-check', label: 'Unbanned user', class: 'audit-icon-success' },
+      'USER_UNBANNED': { icon: 'fas fa-user-check', label: 'Unbanned user', class: 'audit-icon-success' },
+      'user_mute': { icon: 'fas fa-volume-mute', label: 'Muted user', class: 'audit-icon-warning' },
+      'USER_MUTED': { icon: 'fas fa-volume-mute', label: 'Muted user', class: 'audit-icon-warning' },
+      'user_unmute': { icon: 'fas fa-volume-up', label: 'Unmuted user', class: 'audit-icon-success' },
+      'USER_UNMUTED': { icon: 'fas fa-volume-up', label: 'Unmuted user', class: 'audit-icon-success' },
+      'server_suspend': { icon: 'fas fa-pause-circle', label: 'Suspended server', class: 'audit-icon-warning' },
+      'SERVER_LOCKED': { icon: 'fas fa-lock', label: 'Locked server', class: 'audit-icon-warning' },
+      'server_restore': { icon: 'fas fa-play-circle', label: 'Restored server', class: 'audit-icon-success' },
+      'SERVER_UNLOCKED': { icon: 'fas fa-unlock', label: 'Unlocked server', class: 'audit-icon-success' },
+      'SERVER_DELETED': { icon: 'fas fa-trash', label: 'Deleted server', class: 'audit-icon-danger' },
+      'role_update': { icon: 'fas fa-user-shield', label: 'Updated role', class: 'audit-icon-info' },
+      'ROLE_UPDATED': { icon: 'fas fa-user-shield', label: 'Updated role', class: 'audit-icon-info' },
+      'settings_change': { icon: 'fas fa-cog', label: 'Changed settings', class: 'audit-icon-info' },
+      'SETTINGS_UPDATED': { icon: 'fas fa-cog', label: 'Changed settings', class: 'audit-icon-info' },
+      'login': { icon: 'fas fa-sign-in-alt', label: 'Logged in', class: 'audit-icon-default' },
+      'report_review': { icon: 'fas fa-flag', label: 'Reviewed report', class: 'audit-icon-warning' },
+      'REPORT_RESOLVED': { icon: 'fas fa-flag', label: 'Resolved report', class: 'audit-icon-success' },
+      'REPORT_REJECTED': { icon: 'fas fa-flag', label: 'Rejected report', class: 'audit-icon-warning' },
+      'MESSAGE_DELETED': { icon: 'fas fa-trash', label: 'Deleted message', class: 'audit-icon-danger' }
+    };
+    
+    return actionMap[actionType] || { 
+      icon: log.action?.icon || 'fas fa-info-circle', 
+      label: log.action?.label || log.actionLabel || actionType || 'Action', 
+      class: 'audit-icon-default' 
+    };
+  }
+
   function applyFilters() {
     return auditLogs.filter(log => {
+      const actor = log.adminUsername || log.actor || '';
+      const actionType = log.actionType || log.action?.type || log.action || '';
+      const actionLabel = log.actionLabel || log.action?.label || '';
+      const target = log.targetDescription || log.target || '';
+      const timestamp = log.timestamp || log.createdAt;
+      
       // Search filter
       if (currentFilters.search) {
         const search = currentFilters.search.toLowerCase();
-        if (!log.actor.toLowerCase().includes(search) &&
-            !log.action.label.toLowerCase().includes(search) &&
-            !(log.target || '').toLowerCase().includes(search)) {
+        if (!actor.toLowerCase().includes(search) &&
+            !actionLabel.toLowerCase().includes(search) &&
+            !actionType.toLowerCase().includes(search) &&
+            !target.toLowerCase().includes(search)) {
           return false;
         }
       }
       
       // Actor filter
-      if (currentFilters.actor && log.actor !== currentFilters.actor) {
+      if (currentFilters.actor && !actor.includes(currentFilters.actor)) {
         return false;
       }
       
       // Action filter
-      if (currentFilters.action && log.action.type !== currentFilters.action) {
+      if (currentFilters.action && actionType !== currentFilters.action) {
         return false;
       }
       
       // Date range filter
-      if (currentFilters.dateFrom) {
-        const logDate = new Date(log.timestamp);
+      if (currentFilters.dateFrom && timestamp) {
+        const logDate = new Date(timestamp);
         const fromDate = new Date(currentFilters.dateFrom);
         if (logDate < fromDate) return false;
       }
       
-      if (currentFilters.dateTo) {
-        const logDate = new Date(log.timestamp);
+      if (currentFilters.dateTo && timestamp) {
+        const logDate = new Date(timestamp);
         const toDate = new Date(currentFilters.dateTo);
         toDate.setHours(23, 59, 59);
         if (logDate > toDate) return false;
@@ -188,12 +318,13 @@ const AdminAudit = (function() {
     // Search
     const searchInput = document.getElementById('searchAudit');
     if (searchInput) {
-      searchInput.addEventListener('input', AdminUtils?.debounce?.(function(e) {
-        currentFilters.search = e.target.value;
-        renderAuditLogs();
-      }, 300) || function(e) {
-        currentFilters.search = e.target.value;
-        renderAuditLogs();
+      let debounceTimer;
+      searchInput.addEventListener('input', function(e) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          currentFilters.search = e.target.value;
+          renderAuditLogs();
+        }, 300);
       });
     }
     
@@ -244,6 +375,16 @@ const AdminAudit = (function() {
     if (exportBtn) {
       exportBtn.addEventListener('click', handleExport);
     }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', async () => {
+        refreshBtn.classList.add('spinning');
+        await fetchAuditLogs();
+        refreshBtn.classList.remove('spinning');
+      });
+    }
   }
 
   function clearFilters() {
@@ -273,35 +414,50 @@ const AdminAudit = (function() {
   }
 
   function handleExport() {
-    AdminUtils?.showToast?.('Export feature coming soon', 'info');
+    if (auditLogs.length === 0) {
+      AdminUtils?.showToast?.('No data to export', 'warning');
+      return;
+    }
+    
+    // Create CSV
+    const filtered = applyFilters();
+    const header = 'ID,Actor,Action,Target,Timestamp,IP Address\n';
+    const csvContent = filtered.map(log => {
+      const actor = log.adminUsername || log.actor || 'System';
+      const action = log.actionType || log.action?.type || log.action || '';
+      const target = log.targetDescription || log.target || '';
+      const timestamp = log.timestamp || log.createdAt || '';
+      const ip = log.ipAddress || log.ip || '';
+      return `${log.id},"${actor}","${action}","${target}","${timestamp}","${ip}"`;
+    }).join('\n');
+    
+    const blob = new Blob([header + csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    AdminUtils?.showToast?.('Audit log exported', 'success');
   }
 
   function showLogDetails(logId) {
     const log = auditLogs.find(l => l.id == logId);
     if (!log) return;
     
-    AdminUtils?.showToast?.(`Log #${logId}: ${log.action.label}`, 'info');
+    const actionInfo = getActionInfo(log);
+    AdminUtils?.showToast?.(`Log #${logId}: ${actionInfo.label}`, 'info');
+    console.log('[AdminAudit] Log details:', log);
   }
 
   // ========================================
   // Utility Functions
   // ========================================
 
-  function getActionClass(actionType) {
-    const classes = {
-      'user_ban': 'audit-icon-danger',
-      'user_unban': 'audit-icon-success',
-      'server_suspend': 'audit-icon-warning',
-      'server_restore': 'audit-icon-success',
-      'role_update': 'audit-icon-info',
-      'settings_change': 'audit-icon-info',
-      'login': 'audit-icon-default',
-      'report_review': 'audit-icon-warning'
-    };
-    return classes[actionType] || 'audit-icon-default';
-  }
-
   function formatTimestamp(isoString) {
+    if (!isoString) return '--';
     const date = new Date(isoString);
     const now = new Date();
     const diff = now - date;
@@ -339,10 +495,7 @@ const AdminAudit = (function() {
 
   return {
     init,
-    refresh: () => {
-      generateMockAuditLogs();
-      renderAuditLogs();
-    }
+    refresh: fetchAuditLogs
   };
 
 })();

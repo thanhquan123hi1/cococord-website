@@ -31,6 +31,7 @@ public class SiteMeshConfig {
                         .addExcludedPath("/admin/css/**")
                         .addExcludedPath("/admin/js/**")
                         .addExcludedPath("/admin/images/**")
+                        .addExcludedPath("/admin/fragment/**")
                         .addExcludedPath("/webjars/**")
                         .addExcludedPath("/static/**")
                         .addExcludedPath("/favicon.ico")

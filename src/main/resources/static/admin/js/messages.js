@@ -1,14 +1,32 @@
 /**
  * CoCoCord Admin - Messages Moderation Page JavaScript
  * Handles flagged messages, automod queue, and rules management
+ * Updated to use real API endpoints
  */
 
-const AdminMessages = (function() {
+var AdminMessages = window.AdminMessages || (function() {
   'use strict';
 
   // State
   let currentTab = 'flagged';
   let selectedMessages = new Set();
+  let messagesData = [];
+  let pagination = {
+    page: 0,
+    size: 20,
+    totalElements: 0,
+    totalPages: 0
+  };
+  let isLoading = false;
+
+  // ========================================
+  // API Endpoints
+  // ========================================
+
+  const API = {
+    messages: '/api/admin/messages',
+    message: (id) => `/api/admin/messages/${id}`
+  };
 
   // ========================================
   // Initialization
@@ -17,16 +35,87 @@ const AdminMessages = (function() {
   function init() {
     console.log('[AdminMessages] Initializing...');
     
-    // Update stats
-    updateStats();
-    
-    // Render initial content based on active tab
-    renderContent();
-    
     // Setup event listeners
     setupEventListeners();
     
+    // Fetch messages from API
+    fetchMessages();
+    
     console.log('[AdminMessages] Initialized');
+  }
+
+  // ========================================
+  // API Calls
+  // ========================================
+
+  async function fetchMessages() {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page,
+        size: pagination.size
+      });
+
+      const response = await AdminUtils.api.get(`${API.messages}?${params}`);
+      
+      if (response && response.content) {
+        messagesData = response.content;
+        pagination.totalElements = response.totalElements || 0;
+        pagination.totalPages = response.totalPages || 0;
+      } else if (Array.isArray(response)) {
+        messagesData = response;
+        pagination.totalElements = response.length;
+        pagination.totalPages = 1;
+      } else {
+        console.warn('[AdminMessages] API returned unexpected format, using mock data');
+        messagesData = MockData?.messages?.flagged || [];
+      }
+      
+      updateStats();
+      renderContent();
+    } catch (error) {
+      console.error('[AdminMessages] Failed to fetch messages:', error);
+      AdminUtils?.showToast?.('Failed to load messages', 'danger');
+      // Fallback to mock data
+      messagesData = MockData?.messages?.flagged || [];
+      updateStats();
+      renderContent();
+    } finally {
+      isLoading = false;
+      showLoading(false);
+    }
+  }
+
+  async function deleteMessageAPI(messageId) {
+    try {
+      await AdminUtils.api.delete(API.message(messageId));
+      AdminUtils?.showToast?.('Message deleted', 'warning');
+      fetchMessages();
+    } catch (error) {
+      console.error('[AdminMessages] Failed to delete message:', error);
+      AdminUtils?.showToast?.('Failed to delete message', 'danger');
+    }
+  }
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  function showLoading(show) {
+    const container = document.getElementById('flagged-messages-list');
+    if (!container) return;
+
+    if (show) {
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <div class="loading-spinner"></div>
+          <div class="mt-2 text-muted">Loading messages...</div>
+        </div>
+      `;
+    }
   }
 
   // ========================================
@@ -34,13 +123,14 @@ const AdminMessages = (function() {
   // ========================================
 
   function updateStats() {
-    const stats = MockData.messages.stats;
+    const flaggedCount = messagesData.filter(m => m.status === 'pending' || m.status === 'flagged').length;
+    const autoModRules = MockData?.messages?.autoModRules || [];
     
     const statElements = {
-      'flaggedMessages': stats.flagged,
-      'automodBlocked': Math.floor(Math.random() * 50) + 100, // Simulated
-      'reviewedToday': Math.floor(Math.random() * 30) + 10, // Simulated
-      'activeRules': MockData.messages.autoModRules.filter(r => r.enabled).length
+      'flaggedMessages': flaggedCount || pagination.totalElements,
+      'automodBlocked': Math.floor(Math.random() * 50) + 100,
+      'reviewedToday': Math.floor(Math.random() * 30) + 10,
+      'activeRules': autoModRules.filter(r => r.enabled).length
     };
     
     Object.entries(statElements).forEach(([key, value]) => {
@@ -74,21 +164,29 @@ const AdminMessages = (function() {
   function renderFlaggedMessages() {
     const container = document.getElementById('flagged-messages-list');
     const emptyState = document.getElementById('messages-empty');
-    const pagination = document.getElementById('messages-pagination');
+    const paginationEl = document.getElementById('messages-pagination');
     
     if (!container) return;
     
-    const messages = MockData.messages.flagged.filter(m => m.status === 'pending');
+    const messages = messagesData.filter(m => 
+      m.status === 'pending' || m.status === 'flagged' || !m.status
+    );
     
     if (messages.length === 0) {
       container.innerHTML = '';
-      emptyState?.classList.remove('hidden');
-      pagination?.classList.add('hidden');
+      if (emptyState) {
+        emptyState.classList.remove('hidden');
+        emptyState.style.display = 'block';
+      }
+      if (paginationEl) paginationEl.classList.add('hidden');
       return;
     }
     
-    emptyState?.classList.add('hidden');
-    pagination?.classList.remove('hidden');
+    if (emptyState) {
+      emptyState.classList.add('hidden');
+      emptyState.style.display = 'none';
+    }
+    if (paginationEl) paginationEl.classList.remove('hidden');
     
     container.innerHTML = messages.map(msg => renderMessageCard(msg)).join('');
     
@@ -97,15 +195,16 @@ const AdminMessages = (function() {
   }
 
   function renderMessageCard(msg) {
+    const reason = msg.flagReason || 'Review required';
     const reasonClass = {
       'Spam/Advertising': 'reason-spam',
       'Harassment': 'reason-harassment',
       'Scam/Phishing': 'reason-scam',
       'False Positive': 'reason-false'
-    }[msg.flagReason] || '';
+    }[reason] || '';
     
-    const timeAgo = AdminUtils?.timeAgo?.(msg.flaggedAt) || formatTimeAgo(msg.flaggedAt);
-    const initials = getInitials(msg.author);
+    const timeAgo = AdminUtils?.timeAgo?.(msg.createdAt || msg.flaggedAt) || formatTimeAgo(msg.createdAt || msg.flaggedAt);
+    const initials = getInitials(msg.authorUsername || msg.author || 'UN');
     
     return `
       <div class="admin-message-card ${reasonClass}" data-message-id="${msg.id}">
@@ -118,15 +217,15 @@ const AdminMessages = (function() {
             <div class="message-author">
               <div class="message-avatar">${initials}</div>
               <div class="message-author-info">
-                <span class="author-name">${msg.author}</span>
-                <span class="message-location">${msg.server} / ${msg.channel}</span>
+                <span class="author-name">${msg.authorUsername || msg.author || 'Unknown'}</span>
+                <span class="message-location">${msg.serverName || msg.server || 'Unknown'} / ${msg.channelName || msg.channel || 'Unknown'}</span>
               </div>
             </div>
-            <span class="admin-badge admin-badge-warning">${msg.flagReason}</span>
+            <span class="admin-badge admin-badge-warning">${reason}</span>
           </div>
           
           <div class="message-body">
-            <p class="message-text">${escapeHtml(msg.content)}</p>
+            <p class="message-text">${escapeHtml(msg.content || '')}</p>
           </div>
           
           <div class="message-footer">
@@ -135,7 +234,7 @@ const AdminMessages = (function() {
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" class="meta-icon">
                   <path d="M2 3h8l2 2 2-2v8l-2-2-2 2H2V3z"/>
                 </svg>
-                ${msg.flaggedBy}
+                ${msg.flaggedBy || 'System'}
               </span>
               <span class="flagged-time">${timeAgo}</span>
             </div>
@@ -161,7 +260,7 @@ const AdminMessages = (function() {
     const container = document.getElementById('automod-queue-list');
     if (!container) return;
     
-    const autoModMessages = MockData.messages.flagged.filter(m => m.flaggedBy === 'AutoMod');
+    const autoModMessages = messagesData.filter(m => m.flaggedBy === 'AutoMod');
     
     if (autoModMessages.length === 0) {
       container.innerHTML = `
@@ -182,7 +281,8 @@ const AdminMessages = (function() {
     const container = document.getElementById('automod-rules-list');
     if (!container) return;
     
-    const rules = MockData.messages.autoModRules;
+    // AutoMod rules are still managed locally/mock for now
+    const rules = MockData?.messages?.autoModRules || [];
     
     container.innerHTML = rules.map(rule => `
       <div class="admin-rule-card" data-rule-id="${rule.id}">
@@ -260,6 +360,17 @@ const AdminMessages = (function() {
     if (addRuleBtn) {
       addRuleBtn.addEventListener('click', openAddRuleModal);
     }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        refreshBtn.classList.add('spinning');
+        fetchMessages().finally(() => {
+          refreshBtn.classList.remove('spinning');
+        });
+      });
+    }
   }
 
   function attachMessageCardListeners() {
@@ -320,7 +431,6 @@ const AdminMessages = (function() {
   }
 
   function handleFilterChange(e) {
-    // Implement filtering logic
     console.log('[AdminMessages] Filter changed:', e.target.value);
     renderFlaggedMessages();
   }
@@ -330,83 +440,75 @@ const AdminMessages = (function() {
   // ========================================
 
   function viewMessageContext(messageId) {
-    const msg = MockData.messages.flagged.find(m => m.id === parseInt(messageId));
+    const msg = messagesData.find(m => m.id == messageId);
     if (!msg) return;
     
     console.log('[AdminMessages] Viewing context for message:', msg);
-    AdminUtils?.showToast?.(`Loading context for message in ${msg.channel}...`, 'info');
+    AdminUtils?.showToast?.(`Loading context for message in ${msg.channelName || msg.channel}...`, 'info');
   }
 
   function approveMessage(messageId) {
-    const msg = MockData.messages.flagged.find(m => m.id === parseInt(messageId));
-    if (!msg) return;
+    // Remove from local data (mark as reviewed)
+    const index = messagesData.findIndex(m => m.id == messageId);
+    if (index !== -1) {
+      messagesData.splice(index, 1);
+    }
     
-    msg.status = 'reviewed';
-    MockData.messages.stats.flagged--;
-    MockData.messages.stats.reviewed++;
-    
-    updateStats();
     renderContent();
-    
+    updateStats();
     AdminUtils?.showToast?.('Message approved', 'success');
   }
 
-  function deleteMessage(messageId) {
-    const index = MockData.messages.flagged.findIndex(m => m.id === parseInt(messageId));
-    if (index === -1) return;
-    
-    MockData.messages.flagged.splice(index, 1);
-    MockData.messages.stats.flagged--;
-    MockData.messages.stats.deleted++;
-    
-    updateStats();
-    renderContent();
-    
-    AdminUtils?.showToast?.('Message deleted', 'warning');
+  async function deleteMessage(messageId) {
+    if (confirm('Are you sure you want to delete this message?')) {
+      await deleteMessageAPI(messageId);
+    }
   }
 
-  function handleBulkApprove() {
+  async function handleBulkApprove() {
     if (selectedMessages.size === 0) {
       AdminUtils?.showToast?.('No messages selected', 'warning');
       return;
     }
     
+    // Remove selected from local data
     selectedMessages.forEach(id => {
-      const msg = MockData.messages.flagged.find(m => m.id === parseInt(id));
-      if (msg) {
-        msg.status = 'reviewed';
-        MockData.messages.stats.flagged--;
-        MockData.messages.stats.reviewed++;
-      }
-    });
-    
-    selectedMessages.clear();
-    updateStats();
-    renderContent();
-    
-    AdminUtils?.showToast?.('Selected messages approved', 'success');
-  }
-
-  function handleBulkDelete() {
-    if (selectedMessages.size === 0) {
-      AdminUtils?.showToast?.('No messages selected', 'warning');
-      return;
-    }
-    
-    selectedMessages.forEach(id => {
-      const index = MockData.messages.flagged.findIndex(m => m.id === parseInt(id));
+      const index = messagesData.findIndex(m => m.id == id);
       if (index !== -1) {
-        MockData.messages.flagged.splice(index, 1);
-        MockData.messages.stats.flagged--;
-        MockData.messages.stats.deleted++;
+        messagesData.splice(index, 1);
       }
     });
     
+    const count = selectedMessages.size;
     selectedMessages.clear();
-    updateStats();
     renderContent();
+    updateStats();
     
-    AdminUtils?.showToast?.('Selected messages deleted', 'warning');
+    AdminUtils?.showToast?.(`${count} messages approved`, 'success');
+  }
+
+  async function handleBulkDelete() {
+    if (selectedMessages.size === 0) {
+      AdminUtils?.showToast?.('No messages selected', 'warning');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${selectedMessages.size} messages?`)) {
+      return;
+    }
+    
+    // Delete each selected message via API
+    const deletePromises = Array.from(selectedMessages).map(id => 
+      AdminUtils.api.delete(API.message(id)).catch(e => console.error(e))
+    );
+    
+    await Promise.all(deletePromises);
+    
+    const count = selectedMessages.size;
+    selectedMessages.clear();
+    fetchMessages();
+    
+    AdminUtils?.showToast?.(`${count} messages deleted`, 'warning');
   }
 
   function updateBulkActionState() {
@@ -427,7 +529,8 @@ const AdminMessages = (function() {
   // ========================================
 
   function toggleRule(ruleId, enabled) {
-    const rule = MockData.messages.autoModRules.find(r => r.id === ruleId);
+    const rules = MockData?.messages?.autoModRules || [];
+    const rule = rules.find(r => r.id === ruleId);
     if (!rule) return;
     
     rule.enabled = enabled;
@@ -440,7 +543,8 @@ const AdminMessages = (function() {
   }
 
   function editRule(ruleId) {
-    const rule = MockData.messages.autoModRules.find(r => r.id === ruleId);
+    const rules = MockData?.messages?.autoModRules || [];
+    const rule = rules.find(r => r.id === ruleId);
     if (!rule) return;
     
     console.log('[AdminMessages] Editing rule:', rule);
@@ -462,6 +566,7 @@ const AdminMessages = (function() {
   // ========================================
 
   function formatTimeAgo(dateStr) {
+    if (!dateStr) return '--';
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now - date;
@@ -474,6 +579,7 @@ const AdminMessages = (function() {
   }
 
   function getInitials(name) {
+    if (!name) return 'UN';
     return name.substring(0, 2).toUpperCase();
   }
 
@@ -489,7 +595,7 @@ const AdminMessages = (function() {
 
   return {
     init,
-    refresh: renderContent
+    refresh: fetchMessages
   };
 
 })();

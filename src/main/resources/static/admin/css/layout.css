@@ -187,6 +187,14 @@
   opacity: 1;
 }
 
+/* Ensure text label is always visible in active state */
+.admin-nav a > span:not(.admin-nav-icon),
+.admin-nav button > span:not(.admin-nav-icon) {
+  display: inline;
+  visibility: visible;
+  opacity: 1;
+}
+
 .admin-nav-icon svg {
   width: 20px;
   height: 20px;
@@ -204,8 +212,56 @@
   backdrop-filter: blur(20px);
 }
 
+.admin-sidebar-logo--top {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+}
+
 [data-theme="dark"] .admin-sidebar-logo {
   background: rgba(255, 255, 255, 0.04);
+}
+
+/* Sidebar Footer with Logout */
+.admin-sidebar-footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--admin-radius-lg);
+  color: var(--admin-text-secondary);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.admin-logout-btn:hover {
+  background: var(--admin-danger-bg);
+  color: var(--admin-danger);
+}
+
+.admin-logout-btn .admin-nav-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+}
+
+.admin-logout-btn:hover .admin-nav-icon {
+  opacity: 1;
+}
+
+.admin-logout-btn .admin-nav-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .admin-sidebar-logo .logo-icon {
@@ -216,6 +272,11 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--admin-text);
+}
+
+/* Guard: never show a nested topbar inside page content */
+.admin-content .admin-topbar {
+  display: none !important;
 }
 
 /* ========================================

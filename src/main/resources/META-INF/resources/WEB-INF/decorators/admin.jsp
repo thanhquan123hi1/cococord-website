@@ -22,13 +22,10 @@
          SIDEBAR - Never reloads (SPA pattern)
          ============================================ -->
     <aside class="admin-sidebar" aria-label="Admin navigation">
-        <!-- User Profile -->
-        <div class="admin-user-profile">
-            <img class="admin-user-avatar" src="${pageContext.request.contextPath}/admin/images/avatar-default.svg" alt="Admin Avatar">
-            <div class="admin-user-info">
-                <div class="admin-user-name">ByeWind</div>
-                <div class="admin-user-role">Administrator</div>
-            </div>
+        <!-- Brand -->
+        <div class="admin-sidebar-logo admin-sidebar-logo--top" aria-label="CoCoCord">
+            <span class="logo-icon">🎮</span>
+            <span class="logo-text">CoCoCord</span>
         </div>
 
         <!-- Tabs: Favorites / Recently -->
@@ -156,11 +153,20 @@
             </ul>
         </div>
 
-        <!-- Logo at bottom -->
-        <div class="admin-sidebar-logo">
-            <span class="logo-icon">🎮</span>
-            <span class="logo-text">CoCoCord</span>
+        <!-- Sidebar Footer with Logout -->
+        <div class="admin-sidebar-footer">
+            <button class="admin-logout-btn" type="button" data-admin-logout title="Logout">
+                <span class="admin-nav-icon">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 3H5a2 2 0 00-2 2v10a2 2 0 002 2h7"/>
+                        <path d="M9 10h8"/>
+                        <path d="M14 7l3 3-3 3"/>
+                    </svg>
+                </span>
+                <span>Logout</span>
+            </button>
         </div>
+
     </aside>
 
     <!-- ============================================
@@ -238,6 +244,7 @@
 </div>
 
 <!-- Admin JS - Load order matters -->
+<script src="${pageContext.request.contextPath}/js/auth.js"></script>
 <script src="${pageContext.request.contextPath}/admin/js/mock-data.js"></script>
 <script src="${pageContext.request.contextPath}/admin/js/common.js"></script>
 <script src="${pageContext.request.contextPath}/admin/js/sidebar.js"></script>
@@ -250,5 +257,8 @@
 <script src="${pageContext.request.contextPath}/admin/js/reports.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/messages.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/roles.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/stats.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/audit.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/settings.js" defer></script>
 </body>
 </html>

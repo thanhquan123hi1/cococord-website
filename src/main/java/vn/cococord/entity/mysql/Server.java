@@ -44,6 +44,15 @@ public class Server {
 
     @Column(nullable = false)
     @Builder.Default
+    private Boolean isLocked = false;
+
+    @Column(length = 500)
+    private String lockReason;
+
+    private LocalDateTime lockedAt;
+
+    @Column(nullable = false)
+    @Builder.Default
     private Integer maxMembers = 100000;
 
     @CreationTimestamp
