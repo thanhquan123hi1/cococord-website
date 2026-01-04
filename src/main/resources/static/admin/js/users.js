@@ -67,6 +67,9 @@ var AdminUsers = window.AdminUsers || (function() {
     initModal();
     initAddUserModal();
     initRefreshButton();
+    initRightClickMenu();
+    initQuickBanModal();
+    initModerationTab();
     
     // Fetch data
     await Promise.all([
@@ -697,28 +700,19 @@ var AdminUsers = window.AdminUsers || (function() {
 
   function showContextMenu(userId, x, y) {
     // Remove existing menu
-    const existingMenu = document.querySelector('.context-menu');
+    const existingMenu = document.querySelector('.admin-context-menu');
     if (existingMenu) existingMenu.remove();
     
     const user = usersData.find(u => u.id === userId);
     if (!user) return;
     
     const menu = document.createElement('div');
-    menu.className = 'context-menu';
-    menu.style.cssText = `
-      position: fixed;
-      left: ${x}px;
-      top: ${y}px;
-      background: var(--admin-card);
-      border: 1px solid var(--admin-border);
-      border-radius: 8px;
-      padding: 8px 0;
-      min-width: 180px;
-      box-shadow: var(--admin-shadow-lg);
-      z-index: 1000;
-    `;
+    menu.className = 'admin-context-menu';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
     
-    menu.innerHTML = `
+    // Build menu items based on user status
+    let menuItems = `
       <button class="context-menu-item" data-action="view-detail">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/></svg>
         Xem chi tiết
@@ -728,69 +722,51 @@ var AdminUsers = window.AdminUsers || (function() {
         Đổi vai trò
       </button>
       <div class="context-menu-divider"></div>
-      ${user.isMuted ? `
+    `;
+    
+    // Ban/Unban based on current status
+    if (user.isBanned) {
+      menuItems += `
+        <button class="context-menu-item success" data-action="unban">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-6"/></svg>
+          Bỏ cấm
+        </button>
+      `;
+    } else {
+      menuItems += `
+        <button class="context-menu-item danger" data-action="ban">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M4 12L12 4"/></svg>
+          Cấm người dùng
+        </button>
+      `;
+    }
+    
+    // Mute/Unmute
+    if (user.isMuted) {
+      menuItems += `
         <button class="context-menu-item" data-action="unmute">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5v6h3l4 4V1L5 5H2z"/><path d="M12 6v4"/></svg>
           Bật tiếng
         </button>
-      ` : `
+      `;
+    } else {
+      menuItems += `
         <button class="context-menu-item" data-action="mute">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5v6h3l4 4V1L5 5H2z"/><path d="M14 5l-4 6M10 5l4 6"/></svg>
           Tắt tiếng
         </button>
-      `}
-      ${user.isBanned ? `
-        <button class="context-menu-item text-success" data-action="unban">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-6"/></svg>
-          Bỏ cấm
-        </button>
-      ` : `
-        <button class="context-menu-item text-warning" data-action="ban">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M4 12L12 4"/></svg>
-          Cấm
-        </button>
-      `}
+      `;
+    }
+    
+    menuItems += `
       <div class="context-menu-divider"></div>
-      <button class="context-menu-item text-danger" data-action="delete">
+      <button class="context-menu-item danger" data-action="delete">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg>
         Xóa người dùng
       </button>
     `;
     
-    // Add styles for menu items
-    const style = document.createElement('style');
-    style.textContent = `
-      .context-menu-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 10px 16px;
-        border: none;
-        background: none;
-        color: var(--admin-text);
-        font-size: 14px;
-        cursor: pointer;
-        text-align: left;
-      }
-      .context-menu-item:hover {
-        background: var(--admin-surface-hover);
-      }
-      .context-menu-item svg {
-        width: 16px;
-        height: 16px;
-      }
-      .context-menu-item.text-success { color: var(--admin-success); }
-      .context-menu-item.text-warning { color: var(--admin-warning); }
-      .context-menu-item.text-danger { color: var(--admin-danger); }
-      .context-menu-divider {
-        height: 1px;
-        background: var(--admin-border);
-        margin: 4px 0;
-      }
-    `;
-    menu.appendChild(style);
-    
+    menu.innerHTML = menuItems;
     document.body.appendChild(menu);
     
     // Adjust position if menu goes off screen
@@ -813,7 +789,7 @@ var AdminUsers = window.AdminUsers || (function() {
             await showUserDetailModal(userId);
             break;
           case 'change-role':
-            await showUserDetailModal(userId, 'permissions');
+            await showUserDetailModal(userId, 'overview');
             break;
           case 'mute':
             await muteUser(user);
@@ -822,7 +798,7 @@ var AdminUsers = window.AdminUsers || (function() {
             await unmuteUser(user);
             break;
           case 'ban':
-            await showBanModal(user);
+            await showQuickBanModal(user);
             break;
           case 'unban':
             await unbanUser(user);
@@ -844,84 +820,130 @@ var AdminUsers = window.AdminUsers || (function() {
     setTimeout(() => document.addEventListener('click', closeMenu), 0);
   }
 
+  // Enable right-click context menu on table rows
+  function initRightClickMenu() {
+    const tbody = document.getElementById('users-table-body');
+    if (!tbody) return;
+    
+    tbody.addEventListener('contextmenu', (e) => {
+      const row = e.target.closest('tr[data-id]');
+      if (row) {
+        e.preventDefault();
+        const userId = parseInt(row.dataset.id);
+        showContextMenu(userId, e.clientX, e.clientY);
+      }
+    });
+  }
+
   // ========================================
-  // User Actions
+  // Quick Ban Modal (New)
   // ========================================
 
-  async function showBanModal(user) {
+  async function showQuickBanModal(user) {
     if (!user) return;
     currentUser = user;
     
-    // Create or show ban modal
-    let modal = document.getElementById('ban-modal');
-    if (!modal) {
-      modal = createBanModal();
-      document.body.appendChild(modal);
-    }
+    const modal = document.getElementById('quick-ban-modal');
+    if (!modal) return;
     
-    document.getElementById('ban-modal-username').textContent = user.username;
-    document.getElementById('ban-duration').value = 'permanent';
-    document.getElementById('ban-reason').value = '';
+    // Populate user preview
+    const avatarInitials = document.getElementById('quick-ban-avatar-initials');
+    if (avatarInitials) avatarInitials.textContent = getInitials(user.username);
+    
+    setTextContent('quick-ban-username', user.displayName || user.username);
+    setTextContent('quick-ban-email', user.email);
+    
+    // Reset form
+    const permanentRadio = document.querySelector('input[name="quick-ban-type"][value="permanent"]');
+    if (permanentRadio) permanentRadio.checked = true;
+    
+    const durationGroup = document.getElementById('quick-ban-duration-group');
+    if (durationGroup) durationGroup.style.display = 'none';
+    
+    const reasonInput = document.getElementById('quick-ban-reason');
+    if (reasonInput) reasonInput.value = '';
+    
+    const adminNoteInput = document.getElementById('quick-ban-admin-note');
+    if (adminNoteInput) adminNoteInput.value = '';
     
     modal.style.display = 'flex';
   }
 
-  function createBanModal() {
-    const modal = document.createElement('div');
-    modal.id = 'ban-modal';
-    modal.className = 'admin-modal-backdrop';
-    modal.innerHTML = `
-      <div class="admin-modal admin-modal-sm">
-        <div class="admin-modal-header">
-          <h3 class="admin-modal-title">Cấm người dùng</h3>
-          <button class="admin-btn admin-btn-icon admin-modal-close" onclick="AdminUsers.closeModal('ban-modal')">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-          </button>
-        </div>
-        <div class="admin-modal-body">
-          <p>Bạn sắp cấm <strong id="ban-modal-username"></strong></p>
-          <div class="form-group">
-            <label>Thời hạn cấm</label>
-            <select class="admin-select" id="ban-duration">
-              <option value="1h">1 giờ</option>
-              <option value="24h">24 giờ</option>
-              <option value="7d">7 ngày</option>
-              <option value="30d">30 ngày</option>
-              <option value="permanent" selected>Vĩnh viễn</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Lý do cấm</label>
-            <textarea class="admin-input" id="ban-reason" rows="3" placeholder="Nhập lý do cấm..."></textarea>
-          </div>
-        </div>
-        <div class="admin-modal-footer">
-          <button class="admin-btn admin-btn-ghost" onclick="AdminUsers.closeModal('ban-modal')">Hủy</button>
-          <button class="admin-btn admin-btn-danger" id="btn-confirm-ban">Cấm người dùng</button>
-        </div>
-      </div>
-    `;
+  function initQuickBanModal() {
+    // Toggle duration selector based on ban type
+    document.querySelectorAll('input[name="quick-ban-type"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const durationGroup = document.getElementById('quick-ban-duration-group');
+        if (durationGroup) {
+          durationGroup.style.display = e.target.value === 'temporary' ? 'block' : 'none';
+        }
+      });
+    });
     
-    // Setup confirm button
-    modal.querySelector('#btn-confirm-ban').onclick = async () => {
-      const duration = document.getElementById('ban-duration').value;
-      const reason = document.getElementById('ban-reason').value;
-      
-      try {
-        const params = new URLSearchParams();
-        if (reason) params.append('reason', reason);
-        params.append('duration', duration);
+    // Close buttons
+    document.querySelectorAll('[data-action="close-quick-ban"]').forEach(btn => {
+      btn.addEventListener('click', () => closeModal('quick-ban-modal'));
+    });
+    
+    // Close on backdrop click
+    const modal = document.getElementById('quick-ban-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal('quick-ban-modal');
+      });
+    }
+    
+    // Confirm ban button
+    const confirmBtn = document.getElementById('btn-confirm-quick-ban');
+    if (confirmBtn) {
+      confirmBtn.onclick = async () => {
+        if (!currentUser) return;
         
-        await AdminUtils.api.post(`${API.ban(currentUser.id)}?${params}`);
-        AdminUtils.showToast(`Đã cấm ${currentUser.username}`, 'success');
-        closeModal('ban-modal');
-        await fetchUsers();
-      } catch (error) {
-        AdminUtils.showToast('Không thể cấm người dùng: ' + error.message, 'error');
-      }
-    };
-    
-    return modal;
+        const reason = document.getElementById('quick-ban-reason')?.value?.trim();
+        if (!reason) {
+          AdminUtils.showToast('Vui lòng nhập lý do cấm', 'error');
+          document.getElementById('quick-ban-reason')?.focus();
+          return;
+        }
+        
+        const banType = document.querySelector('input[name="quick-ban-type"]:checked')?.value;
+        let duration = 'permanent';
+        
+        if (banType === 'temporary') {
+          duration = document.getElementById('quick-ban-duration')?.value || '7d';
+        }
+        
+        const adminNote = document.getElementById('quick-ban-admin-note')?.value?.trim();
+        
+        try {
+          const params = new URLSearchParams();
+          params.append('reason', reason);
+          params.append('duration', duration);
+          if (adminNote) params.append('adminNote', adminNote);
+          
+          await AdminUtils.api.post(`${API.ban(currentUser.id)}?${params}`);
+          AdminUtils.showToast(`Đã cấm ${currentUser.username}`, 'success');
+          closeModal('quick-ban-modal');
+          await fetchUsers();
+        } catch (error) {
+          AdminUtils.showToast('Không thể cấm người dùng: ' + error.message, 'error');
+        }
+      };
+    }
+  }
+
+  // ========================================
+  // User Actions (Original Ban Modal - now redirects to Quick Ban)
+  // ========================================
+
+  async function showBanModal(user) {
+    // Redirect to new Quick Ban Modal
+    await showQuickBanModal(user);
+  }
+
+  function createBanModal() {
+    // Legacy - now using quick-ban-modal from JSP
+    return document.getElementById('quick-ban-modal');
   }
 
   async function unbanUser(user) {
@@ -1008,34 +1030,39 @@ var AdminUsers = window.AdminUsers || (function() {
   }
 
   function populateUserModal(user) {
-    // Avatar and header
+    // Avatar (now an img element)
     const avatarEl = document.getElementById('modal-avatar');
-    const initialsEl = document.getElementById('modal-avatar-initials');
     if (avatarEl) {
-      if (user.avatarUrl) {
-        avatarEl.innerHTML = `<img src="${user.avatarUrl}" alt="${user.username}">`;
-      } else if (initialsEl) {
-        initialsEl.textContent = getInitials(user.username);
-      }
+      avatarEl.src = user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=6366f1&color=fff&size=88`;
+      avatarEl.alt = user.username;
     }
     
     setTextContent('modal-username', user.displayName || user.username);
     setTextContent('modal-email', user.email);
     
-    // Badges
-    const roleBadge = document.getElementById('modal-role-badge');
-    if (roleBadge) {
-      roleBadge.textContent = user.role || 'USER';
-      roleBadge.className = `badge badge-${getRoleClass(user.role)}`;
+    // Role text in header
+    setTextContent('modal-role-text', user.role || 'USER');
+    
+    // Join date in header
+    setTextContent('modal-join-date', user.createdAt ? AdminUtils.formatDate(user.createdAt) : '--');
+    
+    // Email verified icon
+    const emailVerifiedIcon = document.getElementById('modal-email-verified-icon');
+    if (emailVerifiedIcon) {
+      emailVerifiedIcon.textContent = user.isEmailVerified ? '✓ Verified' : '✗ Unverified';
+      emailVerifiedIcon.style.color = user.isEmailVerified ? 'var(--color-success)' : 'var(--color-warning)';
     }
     
+    // Status badge
     const statusBadge = document.getElementById('modal-status-badge');
     if (statusBadge) {
-      statusBadge.textContent = getStatusText(user);
-      statusBadge.className = `badge badge-${getStatusClass(user)}`;
+      const statusText = getStatusText(user);
+      const statusClass = getStatusClass(user);
+      statusBadge.textContent = statusText;
+      statusBadge.className = `admin-status-badge badge-${statusClass}`;
     }
     
-    // Overview tab
+    // Overview tab details
     setTextContent('modal-user-id', user.id);
     setTextContent('modal-display-name', user.displayName || '--');
     setTextContent('modal-user-email', user.email);
@@ -1048,33 +1075,294 @@ var AdminUsers = window.AdminUsers || (function() {
     setTextContent('modal-servers-count', user.serverCount || 0);
     setTextContent('modal-user-bio', user.bio || '--');
     
-    // Ban info if banned
-    if (user.isBanned) {
-      document.getElementById('ban-status-badge')?.style.setProperty('display', 'inline-flex');
-      document.getElementById('btn-ban-user')?.style.setProperty('display', 'none');
-      document.getElementById('btn-unban-user')?.style.setProperty('display', 'inline-flex');
-    } else {
-      document.getElementById('ban-status-badge')?.style.setProperty('display', 'none');
-      document.getElementById('btn-ban-user')?.style.setProperty('display', 'inline-flex');
-      document.getElementById('btn-unban-user')?.style.setProperty('display', 'none');
-    }
-    
-    // Mute info
-    if (user.isMuted) {
-      document.getElementById('mute-status-badge')?.style.setProperty('display', 'inline-flex');
-      document.getElementById('btn-mute-user')?.style.setProperty('display', 'none');
-      document.getElementById('btn-unmute-user')?.style.setProperty('display', 'inline-flex');
-    } else {
-      document.getElementById('mute-status-badge')?.style.setProperty('display', 'none');
-      document.getElementById('btn-mute-user')?.style.setProperty('display', 'inline-flex');
-      document.getElementById('btn-unmute-user')?.style.setProperty('display', 'none');
-    }
-    
-    // Set current role in permissions tab
+    // Set current role in role selector
     const roleRadios = document.querySelectorAll('input[name="user-role"]');
     roleRadios.forEach(radio => {
       radio.checked = radio.value === (user.role || 'USER');
     });
+    
+    // Populate Audit Log tab
+    populateAuditLog(user);
+    
+    // Populate Moderation tab
+    populateModerationTab(user);
+  }
+
+  function populateAuditLog(user) {
+    // Update summary stats (mock data for now - should come from API)
+    setTextContent('audit-servers-created', user.serversCreated || 0);
+    setTextContent('audit-servers-joined', user.serverCount || 0);
+    setTextContent('audit-messages-sent', user.messageCount || 0);
+    setTextContent('audit-bans-received', user.banCount || 0);
+    
+    // Load activity timeline
+    const timeline = document.getElementById('audit-timeline');
+    if (!timeline) return;
+    
+    // Mock audit log data (should come from API)
+    const auditEvents = generateMockAuditEvents(user);
+    
+    if (auditEvents.length === 0) {
+      timeline.innerHTML = `
+        <div class="audit-item">
+          <div class="audit-icon audit-icon-info">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+          </div>
+          <div class="audit-content">
+            <div class="audit-text">Không có hoạt động nào được ghi nhận</div>
+            <div class="audit-time">--</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    
+    timeline.innerHTML = auditEvents.map(event => `
+      <div class="audit-item">
+        <div class="audit-icon audit-icon-${event.type}">
+          ${getAuditIcon(event.type)}
+        </div>
+        <div class="audit-content">
+          <div class="audit-text">${event.text}</div>
+          <div class="audit-time">${AdminUtils.timeAgo(event.timestamp)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function generateMockAuditEvents(user) {
+    const events = [];
+    
+    // Account created
+    events.push({
+      type: 'membership',
+      text: `<strong>${user.username}</strong> đã tạo tài khoản`,
+      timestamp: user.createdAt
+    });
+    
+    // Last login
+    if (user.lastLogin) {
+      events.push({
+        type: 'security',
+        text: `Đăng nhập gần nhất`,
+        timestamp: user.lastLogin
+      });
+    }
+    
+    // Ban history
+    if (user.isBanned && user.bannedAt) {
+      events.push({
+        type: 'moderation',
+        text: `<strong>${user.username}</strong> đã bị cấm${user.banReason ? `: ${user.banReason}` : ''}`,
+        timestamp: user.bannedAt
+      });
+    }
+    
+    // Sort by timestamp desc
+    events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    return events;
+  }
+
+  function getAuditIcon(type) {
+    const icons = {
+      server: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="8" cy="8" r="2"/></svg>',
+      membership: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>',
+      moderation: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M4 12L12 4"/></svg>',
+      role: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2L2 5v5c0 4 6 6 6 6s6-2 6-6V5l-6-3z"/></svg>',
+      security: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>',
+      info: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>'
+    };
+    return icons[type] || icons.info;
+  }
+
+  function populateModerationTab(user) {
+    const banInfo = document.getElementById('current-ban-info');
+    const banPanel = document.getElementById('moderation-ban-panel');
+    const banPanelTitle = document.getElementById('ban-panel-title');
+    
+    if (user.isBanned) {
+      // Show current ban info
+      if (banInfo) {
+        banInfo.style.display = 'block';
+        
+        const isPermanent = !user.bannedUntil;
+        setTextContent('current-ban-type', isPermanent ? 'Vĩnh viễn' : 'Tạm thời');
+        setTextContent('current-ban-date', AdminUtils.formatDateTime(user.bannedAt));
+        
+        const untilRow = document.getElementById('current-ban-until-row');
+        if (untilRow) {
+          untilRow.style.display = isPermanent ? 'none' : 'flex';
+          if (!isPermanent) {
+            setTextContent('current-ban-until', AdminUtils.formatDateTime(user.bannedUntil));
+          }
+        }
+        
+        setTextContent('current-ban-reason', user.banReason || 'Không có lý do');
+        setTextContent('current-ban-by', user.bannedBy || 'Admin');
+      }
+      
+      // Change ban panel to "Extend Ban"
+      if (banPanelTitle) {
+        banPanelTitle.innerHTML = `
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
+            <path d="M8 3v5l3 3"/><circle cx="8" cy="8" r="6"/>
+          </svg>
+          Gia hạn lệnh cấm
+        `;
+      }
+    } else {
+      // Hide current ban info
+      if (banInfo) banInfo.style.display = 'none';
+      
+      // Reset ban panel title
+      if (banPanelTitle) {
+        banPanelTitle.innerHTML = `
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
+            <circle cx="8" cy="8" r="6"/><path d="M4 12L12 4"/>
+          </svg>
+          Cấm người dùng
+        `;
+      }
+    }
+    
+    // Reset form fields
+    const permanentRadio = document.querySelector('input[name="ban-type-mod"][value="permanent"]');
+    if (permanentRadio) permanentRadio.checked = true;
+    
+    const durationGroup = document.getElementById('ban-duration-group-mod');
+    if (durationGroup) durationGroup.style.display = 'none';
+    
+    const reasonInput = document.getElementById('ban-reason-mod');
+    if (reasonInput) reasonInput.value = '';
+    
+    const adminNoteInput = document.getElementById('ban-admin-note-mod');
+    if (adminNoteInput) adminNoteInput.value = '';
+  }
+
+  function initModerationTab() {
+    // Ban type radio toggle
+    document.querySelectorAll('input[name="ban-type-mod"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const durationGroup = document.getElementById('ban-duration-group-mod');
+        if (durationGroup) {
+          durationGroup.style.display = e.target.value === 'temporary' ? 'block' : 'none';
+        }
+      });
+    });
+    
+    // Duration selector - show custom input when "custom" selected
+    const durationSelect = document.getElementById('ban-duration-mod');
+    if (durationSelect) {
+      durationSelect.addEventListener('change', (e) => {
+        const customDuration = document.getElementById('custom-duration-mod');
+        if (customDuration) {
+          customDuration.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+        }
+      });
+    }
+    
+    // Apply ban button (in moderation tab)
+    const applyBanBtn = document.getElementById('btn-apply-ban-mod');
+    if (applyBanBtn) {
+      applyBanBtn.onclick = async () => {
+        if (!currentUser) return;
+        
+        const reason = document.getElementById('ban-reason-mod')?.value?.trim();
+        if (!reason) {
+          AdminUtils.showToast('Vui lòng nhập lý do cấm', 'error');
+          document.getElementById('ban-reason-mod')?.focus();
+          return;
+        }
+        
+        const banType = document.querySelector('input[name="ban-type-mod"]:checked')?.value;
+        let duration = 'permanent';
+        
+        if (banType === 'temporary') {
+          const durationValue = document.getElementById('ban-duration-mod')?.value;
+          if (durationValue === 'custom') {
+            const customValue = document.getElementById('ban-custom-value-mod')?.value || 1;
+            const customUnit = document.getElementById('ban-custom-unit-mod')?.value || 'days';
+            duration = `${customValue}${customUnit.charAt(0)}`; // e.g., "7d"
+          } else {
+            duration = durationValue || '7d';
+          }
+        }
+        
+        const adminNote = document.getElementById('ban-admin-note-mod')?.value?.trim();
+        
+        try {
+          const params = new URLSearchParams();
+          params.append('reason', reason);
+          params.append('duration', duration);
+          if (adminNote) params.append('adminNote', adminNote);
+          
+          await AdminUtils.api.post(`${API.ban(currentUser.id)}?${params}`);
+          AdminUtils.showToast(`Đã ${currentUser.isBanned ? 'gia hạn lệnh cấm' : 'cấm'} ${currentUser.username}`, 'success');
+          
+          // Refresh user data
+          const updatedUser = await AdminUtils.api.get(API.userById(currentUser.id));
+          currentUser = updatedUser;
+          populateUserModal(currentUser);
+          await fetchUsers();
+        } catch (error) {
+          AdminUtils.showToast('Không thể cấm người dùng: ' + error.message, 'error');
+        }
+      };
+    }
+    
+    // Unban button (in moderation tab)
+    const unbanBtn = document.getElementById('btn-unban-user-mod');
+    if (unbanBtn) {
+      unbanBtn.onclick = async () => {
+        if (!currentUser) return;
+        
+        if (!confirm(`Bạn có chắc muốn bỏ cấm ${currentUser.username}?`)) return;
+        
+        try {
+          await AdminUtils.api.post(API.unban(currentUser.id));
+          AdminUtils.showToast(`Đã bỏ cấm ${currentUser.username}`, 'success');
+          
+          // Refresh user data
+          const updatedUser = await AdminUtils.api.get(API.userById(currentUser.id));
+          currentUser = updatedUser;
+          populateUserModal(currentUser);
+          await fetchUsers();
+        } catch (error) {
+          AdminUtils.showToast('Không thể bỏ cấm người dùng: ' + error.message, 'error');
+        }
+      };
+    }
+    
+    // Extend ban button
+    const extendBanBtn = document.getElementById('btn-extend-ban');
+    if (extendBanBtn) {
+      extendBanBtn.onclick = () => {
+        // Scroll to ban panel
+        const banPanel = document.getElementById('moderation-ban-panel');
+        if (banPanel) {
+          banPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      };
+    }
+    
+    // Delete user button (in moderation tab)
+    const deleteBtn = document.getElementById('btn-delete-user-mod');
+    if (deleteBtn) {
+      deleteBtn.onclick = async () => {
+        if (!currentUser) return;
+        await deleteUser(currentUser);
+        closeModal('user-detail-modal');
+      };
+    }
+    
+    // Reset password button
+    const resetPwdBtn = document.getElementById('btn-reset-password-mod');
+    if (resetPwdBtn) {
+      resetPwdBtn.onclick = () => {
+        AdminUtils.showToast('Tính năng đặt lại mật khẩu đang được phát triển', 'info');
+      };
+    }
   }
 
   function setTextContent(id, value) {
@@ -1117,7 +1405,7 @@ var AdminUsers = window.AdminUsers || (function() {
   }
 
   function initModalActions() {
-    // Save role button
+    // Save role button (in Overview tab)
     const saveRoleBtn = document.getElementById('btn-save-role');
     if (saveRoleBtn) {
       saveRoleBtn.onclick = async () => {
@@ -1135,110 +1423,6 @@ var AdminUsers = window.AdminUsers || (function() {
         } catch (error) {
           AdminUtils.showToast('Không thể cập nhật vai trò: ' + error.message, 'error');
         }
-      };
-    }
-    
-    // Ban button in modal
-    const banBtn = document.getElementById('btn-ban-user');
-    if (banBtn) {
-      banBtn.onclick = async () => {
-        if (!currentUser) return;
-        
-        const duration = document.getElementById('ban-duration')?.value || 'permanent';
-        const reason = document.getElementById('ban-reason')?.value || '';
-        
-        try {
-          const params = new URLSearchParams();
-          if (reason) params.append('reason', reason);
-          params.append('duration', duration);
-          
-          await AdminUtils.api.post(`${API.ban(currentUser.id)}?${params}`);
-          AdminUtils.showToast(`Đã cấm ${currentUser.username}`, 'success');
-          currentUser.isBanned = true;
-          populateUserModal(currentUser);
-          await fetchUsers();
-        } catch (error) {
-          AdminUtils.showToast('Không thể cấm người dùng: ' + error.message, 'error');
-        }
-      };
-    }
-    
-    // Unban button in modal
-    const unbanBtn = document.getElementById('btn-unban-user');
-    if (unbanBtn) {
-      unbanBtn.onclick = async () => {
-        if (!currentUser) return;
-        
-        try {
-          await AdminUtils.api.post(API.unban(currentUser.id));
-          AdminUtils.showToast(`Đã bỏ cấm ${currentUser.username}`, 'success');
-          currentUser.isBanned = false;
-          populateUserModal(currentUser);
-          await fetchUsers();
-        } catch (error) {
-          AdminUtils.showToast('Không thể bỏ cấm người dùng: ' + error.message, 'error');
-        }
-      };
-    }
-    
-    // Mute button
-    const muteBtn = document.getElementById('btn-mute-user');
-    if (muteBtn) {
-      muteBtn.onclick = async () => {
-        if (!currentUser) return;
-        
-        const duration = document.getElementById('mute-duration')?.value || '1h';
-        const reason = document.getElementById('mute-reason')?.value || '';
-        
-        // Convert duration to minutes
-        const durationMinutes = {
-          '15m': 15,
-          '1h': 60,
-          '24h': 1440,
-          '7d': 10080
-        }[duration] || 60;
-        
-        try {
-          const params = new URLSearchParams();
-          if (reason) params.append('reason', reason);
-          params.append('duration', durationMinutes);
-          
-          await AdminUtils.api.post(`${API.mute(currentUser.id)}?${params}`);
-          AdminUtils.showToast(`Đã tắt tiếng ${currentUser.username}`, 'success');
-          currentUser.isMuted = true;
-          populateUserModal(currentUser);
-          await fetchUsers();
-        } catch (error) {
-          AdminUtils.showToast('Không thể tắt tiếng: ' + error.message, 'error');
-        }
-      };
-    }
-    
-    // Unmute button
-    const unmuteBtn = document.getElementById('btn-unmute-user');
-    if (unmuteBtn) {
-      unmuteBtn.onclick = async () => {
-        if (!currentUser) return;
-        
-        try {
-          await AdminUtils.api.post(API.unmute(currentUser.id));
-          AdminUtils.showToast(`Đã bật tiếng ${currentUser.username}`, 'success');
-          currentUser.isMuted = false;
-          populateUserModal(currentUser);
-          await fetchUsers();
-        } catch (error) {
-          AdminUtils.showToast('Không thể bật tiếng: ' + error.message, 'error');
-        }
-      };
-    }
-    
-    // Delete button
-    const deleteBtn = document.getElementById('btn-delete-user');
-    if (deleteBtn) {
-      deleteBtn.onclick = async () => {
-        if (!currentUser) return;
-        await deleteUser(currentUser);
-        closeModal('user-detail-modal');
       };
     }
   }
