@@ -1,0 +1,834 @@
+/**
+ * Server Settings Modal Styles
+ * - Fullscreen modal with sidebar navigation
+ * - Overview tab (icon upload, name change)
+ * - Roles tab (role list, permissions editor)
+ */
+
+/* ==================== MODAL CONTAINER ==================== */
+
+.server-settings-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.server-settings-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.server-settings-modal .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.server-settings-container {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* ==================== SIDEBAR NAVIGATION ==================== */
+
+.server-settings-sidebar {
+    width: 218px;
+    background: var(--bg-secondary, #2f3136);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.server-settings-sidebar-header {
+    padding: 60px 20px 20px;
+    border-bottom: 1px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.server-settings-sidebar-header h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted, #72767d);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.server-settings-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.server-settings-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.server-settings-nav::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+}
+
+.settings-nav-section {
+    margin-bottom: 8px;
+}
+
+.settings-nav-section-title {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted, #72767d);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    color: var(--interactive-normal, #b9bbbe);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+}
+
+.settings-nav-item:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    color: var(--interactive-hover, #dcddde);
+}
+
+.settings-nav-item.active {
+    background: var(--bg-modifier-selected, rgba(79, 84, 92, 0.6));
+    color: var(--text-normal, #dcddde);
+}
+
+.settings-nav-item i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.settings-nav-divider {
+    height: 1px;
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    margin: 8px 10px;
+}
+
+.settings-nav-item.danger {
+    color: var(--discord-red, #ed4245);
+}
+
+.settings-nav-item.danger:hover {
+    background: rgba(237, 66, 69, 0.1);
+    color: var(--discord-red, #ed4245);
+}
+
+/* ==================== MAIN CONTENT AREA ==================== */
+
+.server-settings-content {
+    flex: 1;
+    background: var(--bg-primary, #36393f);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.server-settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px 40px 20px;
+    flex-shrink: 0;
+}
+
+.server-settings-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+}
+
+.server-settings-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--interactive-normal, #b9bbbe);
+    background: transparent;
+    border-radius: 50%;
+    color: var(--interactive-normal, #b9bbbe);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.server-settings-close:hover {
+    border-color: var(--interactive-hover, #dcddde);
+    color: var(--interactive-hover, #dcddde);
+}
+
+.server-settings-close-hint {
+    position: absolute;
+    top: 60px;
+    right: 16px;
+    font-size: 13px;
+    color: var(--text-muted, #72767d);
+}
+
+.server-settings-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 40px 40px;
+}
+
+.server-settings-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.server-settings-body::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+/* Tab content visibility */
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+/* ==================== OVERVIEW TAB ==================== */
+
+.overview-section {
+    margin-bottom: 32px;
+}
+
+.overview-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted, #72767d);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+}
+
+/* Server Icon Upload */
+.server-icon-upload {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 8px;
+}
+
+.server-icon-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--bg-tertiary, #202225);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.server-icon-preview:hover {
+    opacity: 0.8;
+}
+
+.server-icon-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.server-icon-preview .icon-placeholder {
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--text-muted, #72767d);
+}
+
+.server-icon-preview .icon-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.server-icon-preview:hover .icon-overlay {
+    opacity: 1;
+}
+
+.server-icon-preview .icon-overlay i {
+    font-size: 24px;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.server-icon-preview .icon-overlay span {
+    font-size: 11px;
+    color: white;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.server-icon-info {
+    flex: 1;
+}
+
+.server-icon-info h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--text-normal, #dcddde);
+}
+
+.server-icon-info p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-muted, #72767d);
+    line-height: 1.4;
+}
+
+.server-icon-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-upload {
+    padding: 8px 16px;
+    background: var(--discord-primary, #5865f2);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-upload:hover {
+    background: var(--discord-primary-hover, #4752c4);
+}
+
+.btn-remove-icon {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--interactive-normal, #b9bbbe);
+    border-radius: 4px;
+    color: var(--interactive-normal, #b9bbbe);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-remove-icon:hover {
+    border-color: var(--discord-red, #ed4245);
+    color: var(--discord-red, #ed4245);
+}
+
+/* Server Name Input */
+.server-name-section {
+    padding: 20px;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 8px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted, #72767d);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-tertiary, #202225);
+    border: 1px solid var(--bg-tertiary, #202225);
+    border-radius: 4px;
+    color: var(--text-normal, #dcddde);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    border-color: var(--discord-primary, #5865f2);
+}
+
+.form-group .char-count {
+    font-size: 12px;
+    color: var(--text-muted, #72767d);
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* ==================== ROLES TAB ==================== */
+
+.roles-container {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 200px);
+}
+
+.roles-list-panel {
+    width: 200px;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.roles-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.roles-list-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+}
+
+.btn-create-role {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--discord-primary, #5865f2);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background 0.15s;
+}
+
+.btn-create-role:hover {
+    background: var(--discord-primary-hover, #4752c4);
+}
+
+.roles-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.roles-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.roles-list::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+}
+
+.role-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.role-item:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.role-item.active {
+    background: var(--bg-modifier-selected, rgba(79, 84, 92, 0.6));
+}
+
+.role-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.role-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-normal, #dcddde);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.role-count {
+    font-size: 12px;
+    color: var(--text-muted, #72767d);
+}
+
+/* Roles Editor Panel */
+.roles-editor-panel {
+    flex: 1;
+    background: var(--bg-secondary, #2f3136);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.roles-editor-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted, #72767d);
+}
+
+.roles-editor-empty i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.roles-editor-empty h4 {
+    margin: 0 0 8px;
+    color: var(--text-normal, #dcddde);
+    font-size: 18px;
+}
+
+.roles-editor-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.roles-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.roles-editor-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal, #dcddde);
+}
+
+.btn-delete-role {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--discord-red, #ed4245);
+    border-radius: 4px;
+    color: var(--discord-red, #ed4245);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-delete-role:hover {
+    background: rgba(237, 66, 69, 0.1);
+}
+
+.roles-editor-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.roles-editor-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.roles-editor-body::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+/* Role Basic Info */
+.role-info-section {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.role-color-picker {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid var(--bg-tertiary, #202225);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.role-color-picker input[type="color"] {
+    width: 150%;
+    height: 150%;
+    border: none;
+    cursor: pointer;
+    transform: translate(-17%, -17%);
+}
+
+.role-name-input {
+    flex: 1;
+}
+
+/* Permissions Section */
+.permissions-section {
+    margin-bottom: 24px;
+}
+
+.permissions-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted, #72767d);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+}
+
+.permission-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--bg-tertiary, #202225);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.permission-info {
+    flex: 1;
+    margin-right: 16px;
+}
+
+.permission-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-normal, #dcddde);
+    margin-bottom: 4px;
+}
+
+.permission-desc {
+    font-size: 13px;
+    color: var(--text-muted, #72767d);
+    line-height: 1.4;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 40px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--bg-tertiary, #202225);
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--interactive-normal, #b9bbbe);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--discord-green, #3ba55d);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(16px);
+    background: white;
+}
+
+/* ==================== SAVE CHANGES BAR ==================== */
+
+.save-changes-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--bg-tertiary, #202225);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 2100;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s, opacity 0.3s, visibility 0.3s;
+}
+
+.save-changes-bar.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.save-changes-bar span {
+    font-size: 14px;
+    color: var(--text-muted, #72767d);
+}
+
+.save-changes-bar .btn-reset {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-normal, #dcddde);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.save-changes-bar .btn-reset:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.save-changes-bar .btn-save {
+    padding: 8px 16px;
+    background: var(--discord-green, #3ba55d);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.save-changes-bar .btn-save:hover {
+    background: #2d7d46;
+}
+
+.save-changes-bar .btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .server-settings-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 10;
+        transform: translateX(-100%);
+        transition: transform 0.3s;
+    }
+
+    .server-settings-sidebar.show {
+        transform: translateX(0);
+    }
+
+    .server-settings-header {
+        padding: 20px;
+    }
+
+    .server-settings-body {
+        padding: 0 20px 20px;
+    }
+
+    .server-icon-upload {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .roles-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .roles-list-panel {
+        width: 100%;
+    }
+
+    .roles-editor-panel {
+        min-height: 400px;
+    }
+
+    .save-changes-bar {
+        left: 10px;
+        right: 10px;
+        transform: translateX(0) translateY(100px);
+        width: auto;
+    }
+
+    .save-changes-bar.show {
+        transform: translateX(0) translateY(0);
+    }
+}

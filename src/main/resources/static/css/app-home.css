@@ -1070,3 +1070,827 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
 }
+
+/* ==================== VIEW CONTENT (Single Page Navigation) ==================== */
+.view-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ==================== NITRO VIEW ==================== */
+.nitro-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Nitro Hero Section */
+.nitro-hero {
+  position: relative;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #5865f2 0%, #eb459e 50%, #fee75c 100%);
+}
+
+.nitro-hero-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.nitro-particles {
+  position: absolute;
+  inset: 0;
+}
+
+.nitro-particles .particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: float-particle 6s ease-in-out infinite;
+}
+
+.particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+.particle:nth-child(2) { left: 30%; top: 60%; animation-delay: 1s; }
+.particle:nth-child(3) { left: 50%; top: 30%; animation-delay: 2s; }
+.particle:nth-child(4) { left: 70%; top: 70%; animation-delay: 3s; }
+.particle:nth-child(5) { left: 90%; top: 40%; animation-delay: 4s; }
+
+@keyframes float-particle {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+}
+
+.nitro-hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  padding: 40px 20px;
+}
+
+.nitro-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.nitro-logo i {
+  font-size: 40px;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+.nitro-hero-content h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.nitro-hero-content p {
+  font-size: 16px;
+  opacity: 0.9;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Nitro Plans */
+.nitro-plans {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  padding: 40px 24px;
+  flex-wrap: wrap;
+}
+
+.nitro-plan {
+  background: var(--darker-bg);
+  border-radius: 12px;
+  padding: 24px;
+  width: 280px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.nitro-plan:hover {
+  transform: translateY(-4px);
+}
+
+.nitro-plan.featured {
+  border-color: #5865f2;
+  box-shadow: 0 0 20px rgba(88, 101, 242, 0.3);
+}
+
+.plan-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.nitro-plan.featured .plan-badge {
+  color: #5865f2;
+}
+
+.plan-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.plan-price {
+  margin-bottom: 20px;
+}
+
+.price-amount {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.price-unit {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.plan-features li i {
+  color: #23a55a;
+  font-size: 16px;
+}
+
+.btn-nitro {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-nitro-basic {
+  background: var(--light-bg);
+  color: var(--text-primary);
+}
+
+.btn-nitro-basic:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-nitro-full {
+  background: #5865f2;
+  color: white;
+}
+
+.btn-nitro-full:hover {
+  background: #4752c4;
+}
+
+/* Nitro Features Grid */
+.nitro-features {
+  padding: 40px 24px;
+  background: var(--darker-bg);
+}
+
+.nitro-features h2 {
+  text-align: center;
+  font-size: 24px;
+  color: var(--text-primary);
+  margin-bottom: 32px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: var(--light-bg);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+}
+
+.feature-card i {
+  font-size: 36px;
+  color: #5865f2;
+  margin-bottom: 16px;
+}
+
+.feature-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ==================== SHOP VIEW ==================== */
+.shop-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.shop-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.shop-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.shop-header h1 i {
+  color: #eb459e;
+}
+
+.shop-header p {
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* Shop Tabs */
+.shop-tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.shop-tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shop-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.shop-tab.active {
+  background: #5865f2;
+  color: white;
+}
+
+/* Shop Section */
+.shop-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+/* Shop Grid */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.shop-item {
+  background: var(--darker-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.shop-item:hover {
+  transform: translateY(-4px);
+  border-color: #5865f2;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.item-preview {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--light-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Avatar Decorations */
+.avatar-decoration {
+  position: relative;
+}
+
+.decoration-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #36393f;
+  position: relative;
+}
+
+.decoration-ring::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.decoration-ring.cyber::before {
+  background: conic-gradient(#00d4ff, #5865f2, #eb459e, #00d4ff);
+  animation: spin-ring 3s linear infinite;
+}
+
+.decoration-ring.flame::before {
+  background: conic-gradient(#ff6b35, #f7931e, #ff4500, #ff6b35);
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+.decoration-ring.sakura::before {
+  background: conic-gradient(#ffb7c5, #ff69b4, #ffc0cb, #ffb7c5);
+}
+
+.decoration-ring.galaxy::before {
+  background: conic-gradient(#7c3aed, #4f46e5, #0ea5e9, #7c3aed);
+  animation: spin-ring 4s linear infinite;
+}
+
+.decoration-ring.ice::before {
+  background: conic-gradient(#67e8f9, #06b6d4, #a5f3fc, #67e8f9);
+}
+
+.decoration-ring.neon::before {
+  background: conic-gradient(#39ff14, #00ff00, #7fff00, #39ff14);
+  animation: neon-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes spin-ring {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes neon-glow {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px #39ff14); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 16px #39ff14); }
+}
+
+/* Profile Effects */
+.profile-effect {
+  width: 100%;
+  height: 100%;
+}
+
+.effect-demo {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.effect-demo.sparkle {
+  background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.8) 0%, transparent 8%),
+              radial-gradient(circle at 70% 60%, rgba(255,255,255,0.6) 0%, transparent 6%),
+              radial-gradient(circle at 50% 30%, rgba(255,255,255,0.7) 0%, transparent 7%),
+              var(--light-bg);
+  animation: sparkle-effect 2s ease-in-out infinite;
+}
+
+.effect-demo.rain {
+  background: linear-gradient(180deg, transparent 0%, rgba(0,212,170,0.1) 100%);
+  position: relative;
+}
+
+.effect-demo.rain::before {
+  content: '01 10 01 11 00';
+  position: absolute;
+  top: 10%;
+  left: 20%;
+  font-family: monospace;
+  font-size: 10px;
+  color: #00d4aa;
+  opacity: 0.5;
+  animation: rain-fall 3s linear infinite;
+}
+
+.effect-demo.hearts::before {
+  content: '❤️ 💖 💕';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  animation: float-hearts 2s ease-in-out infinite;
+}
+
+.effect-demo.lightning {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.effect-demo.lightning::before {
+  content: '⚡';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  animation: lightning-flash 1s ease-in-out infinite;
+}
+
+@keyframes sparkle-effect {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+@keyframes rain-fall {
+  0% { transform: translateY(-20px); opacity: 0; }
+  20% { opacity: 0.5; }
+  80% { opacity: 0.5; }
+  100% { transform: translateY(100px); opacity: 0; }
+}
+
+@keyframes float-hearts {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -60%) scale(1.1); }
+}
+
+@keyframes lightning-flash {
+  0%, 90%, 100% { opacity: 0.3; }
+  95% { opacity: 1; }
+}
+
+/* Theme Previews */
+.themes-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.theme-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px 8px 0 0;
+}
+
+.theme-preview.midnight {
+  background: linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 100%);
+}
+
+.theme-preview.sunset {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+}
+
+.theme-preview.ocean {
+  background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+}
+
+.theme-preview.forest {
+  background: linear-gradient(135deg, #2d6a4f 0%, #40916c 100%);
+}
+
+/* Shop Item Info */
+.item-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.item-price {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.item-price i {
+  color: #5865f2;
+}
+
+/* ==================== QUESTS VIEW ==================== */
+.quests-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.quests-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.quests-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.quests-header h1 i {
+  color: #fee75c;
+}
+
+.quests-header p {
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* Quest Stats */
+.quests-stats {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--darker-bg);
+  border-radius: 12px;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--border-color);
+  min-width: 160px;
+}
+
+.stat-card i {
+  font-size: 28px;
+}
+
+.stat-card:nth-child(1) i { color: #fee75c; }
+.stat-card:nth-child(2) i { color: #5865f2; }
+.stat-card:nth-child(3) i { color: #eb459e; }
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Quests List */
+.quests-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.quests-list h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* Quest Card */
+.quest-card {
+  background: var(--darker-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 16px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.quest-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.quest-card.completed {
+  opacity: 0.7;
+}
+
+.quest-game-icon {
+  flex-shrink: 0;
+}
+
+.quest-game-icon img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+}
+
+.quest-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.quest-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.quest-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.quest-reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fee75c;
+  background: rgba(254, 231, 92, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.quest-reward.claimed {
+  color: #23a55a;
+  background: rgba(35, 165, 90, 0.1);
+}
+
+.quest-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* Quest Progress */
+.quest-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--light-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5865f2, #eb459e);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.quest-card.completed .progress-fill {
+  background: #23a55a;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Quest Meta */
+.quest-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.quest-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.quest-time i {
+  font-size: 14px;
+}
+
+.quest-sponsor {
+  color: var(--text-muted);
+}
+
+.quest-completed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #23a55a;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .nitro-plans {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .nitro-plan {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .quests-stats {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stat-card {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .quest-card {
+    flex-direction: column;
+  }
+
+  .quest-game-icon {
+    align-self: flex-start;
+  }
+}

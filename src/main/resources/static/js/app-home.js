@@ -18,7 +18,8 @@
     activeDmGroupId: null,
     activeDmUser: null,
     activeTab: "online",
-    activeView: "friends", // 'friends' or 'dm'
+    activeView: "friends", // 'friends', 'dm', 'nitro', 'shop', 'quests'
+    activeMainView: "friends", // for SPA navigation: 'friends', 'nitro', 'shop', 'quests'
     friendsSearch: "",
     dmSearch: "",
   };
@@ -2054,13 +2055,183 @@
 
   // ===== End DM Chat Functions =====
 
-  function wireEvents() {
-    // Sidebar navigation placeholders
-    document
-      .querySelectorAll('.sidebar-nav a.nav-item[href="#"]')
-      .forEach((a) => {
-        a.addEventListener("click", (e) => e.preventDefault());
+  // ==================== SINGLE PAGE NAVIGATION ====================
+  /**
+   * Switch between main views (Friends, Nitro, Shop, Quests)
+   * @param {string} viewName - 'friends', 'nitro', 'shop', 'quests'
+   */
+  function switchMainView(viewName) {
+    const validViews = ['friends', 'nitro', 'shop', 'quests'];
+    if (!validViews.includes(viewName)) {
+      console.warn('[AppHome] Invalid view:', viewName);
+      return;
+    }
+
+    // Update state
+    state.activeMainView = viewName;
+
+    // Update sidebar nav items
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+      const itemView = item.getAttribute('data-view');
+      if (itemView === viewName) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Hide all view contents
+    document.querySelectorAll('.view-content').forEach(view => {
+      view.style.display = 'none';
+    });
+
+    // Show selected view
+    const targetView = document.querySelector(`.view-content[data-view="${viewName}"]`);
+    if (targetView) {
+      targetView.style.display = 'flex';
+    }
+
+    // Update top bar based on view
+    updateTopBarForView(viewName);
+
+    // Close DM chat if open
+    if (state.activeView === 'dm') {
+      closeDmChat();
+    }
+
+    console.log('[AppHome] Switched to view:', viewName);
+  }
+
+  /**
+   * Update top bar content based on current view
+   * @param {string} viewName
+   */
+  function updateTopBarForView(viewName) {
+    const topBar = document.querySelector('.top-bar');
+    if (!topBar) return;
+
+    const topLeft = topBar.querySelector('.top-left');
+    if (!topLeft) return;
+
+    // Get elements
+    const topIcon = topLeft.querySelector('i');
+    const topTitle = topLeft.querySelector('.top-title');
+    const topDivider = topLeft.querySelector('.top-divider');
+    const topTabs = topLeft.querySelector('.top-tabs');
+    const addFriendBtn = topLeft.querySelector('#addFriendBtn');
+
+    // View configurations
+    const viewConfig = {
+      friends: {
+        icon: 'bi-people-fill',
+        title: 'Bạn bè',
+        showTabs: true,
+        showAddFriend: true
+      },
+      nitro: {
+        icon: 'bi-lightning-charge-fill',
+        title: 'Nitro',
+        showTabs: false,
+        showAddFriend: false
+      },
+      shop: {
+        icon: 'bi-bag-fill',
+        title: 'Cửa hàng',
+        showTabs: false,
+        showAddFriend: false
+      },
+      quests: {
+        icon: 'bi-compass-fill',
+        title: 'Nhiệm vụ',
+        showTabs: false,
+        showAddFriend: false
+      }
+    };
+
+    const config = viewConfig[viewName] || viewConfig.friends;
+
+    // Update icon
+    if (topIcon) {
+      topIcon.className = `bi ${config.icon}`;
+    }
+
+    // Update title
+    if (topTitle) {
+      topTitle.textContent = config.title;
+    }
+
+    // Show/hide tabs and divider
+    if (topDivider) {
+      topDivider.style.display = config.showTabs ? '' : 'none';
+    }
+    if (topTabs) {
+      topTabs.style.display = config.showTabs ? '' : 'none';
+    }
+    if (addFriendBtn) {
+      addFriendBtn.style.display = config.showAddFriend ? '' : 'none';
+    }
+  }
+
+  /**
+   * Initialize Shop tab switching
+   */
+  function initShopTabs() {
+    document.querySelectorAll('.shop-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-shop-tab');
+        
+        // Update tab active state
+        document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Show/hide sections
+        document.querySelectorAll('.shop-section').forEach(section => {
+          const sectionName = section.getAttribute('data-shop-content');
+          section.style.display = sectionName === tabName ? '' : 'none';
+        });
       });
+    });
+  }
+
+  /**
+   * Initialize Quest interactions
+   */
+  function initQuestInteractions() {
+    document.querySelectorAll('.quest-card:not(.completed)').forEach(card => {
+      card.addEventListener('click', () => {
+        const questId = card.getAttribute('data-quest-id');
+        console.log('[AppHome] Quest clicked:', questId);
+        // Could open quest details modal here
+      });
+    });
+
+    // Update quest stats
+    updateQuestStats();
+  }
+
+  /**
+   * Update quest statistics display
+   */
+  function updateQuestStats() {
+    const completedEl = document.getElementById('completedQuests');
+    const activeEl = document.getElementById('activeQuests');
+    
+    const completed = document.querySelectorAll('.quest-card.completed').length;
+    const active = document.querySelectorAll('.quest-card:not(.completed)').length;
+    
+    if (completedEl) completedEl.textContent = completed;
+    if (activeEl) activeEl.textContent = active;
+  }
+
+  function wireEvents() {
+    // Sidebar navigation - Single Page Navigation
+    document.querySelectorAll('.sidebar-nav .nav-item[data-view]').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const viewName = item.getAttribute('data-view');
+        switchMainView(viewName);
+      });
+    });
 
     // Tabs
     document.querySelectorAll(".tab").forEach((b) => {
@@ -2324,6 +2495,18 @@
     if (friendsTab) {
       setActiveTab(String(friendsTab));
     }
+
+    // Deep-link into main views (e.g., /app?view=nitro)
+    const viewParam = urlParams.get("view");
+    if (viewParam && ['friends', 'nitro', 'shop', 'quests'].includes(viewParam)) {
+      switchMainView(viewParam);
+    }
+
+    // Initialize Shop tabs
+    initShopTabs();
+
+    // Initialize Quest interactions
+    initQuestInteractions();
 
     // Initialize primary sidebar resize
     initPrimarySidebarResize();
