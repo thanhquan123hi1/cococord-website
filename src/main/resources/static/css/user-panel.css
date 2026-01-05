@@ -166,6 +166,83 @@
   line-height: 14px;
 }
 
+/* Custom Status Display */
+.user-custom-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.custom-status-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.custom-status-emoji {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.custom-status-text {
+  font-size: 12px;
+  color: var(--up-header-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 14px;
+}
+
+.custom-status-expiry {
+  display: flex;
+  align-items: center;
+  color: var(--up-interactive-normal);
+  flex-shrink: 0;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.custom-status-expiry:hover {
+  opacity: 1;
+}
+
+.custom-status-expiry svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Clear Status Button */
+.clear-status-btn {
+  background: transparent;
+  border: none;
+  color: var(--up-interactive-normal);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.user-panel-left:hover .clear-status-btn {
+  opacity: 0.7;
+}
+
+.clear-status-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--up-status-danger);
+}
+
 /* ============================================
    Right Section: Control Buttons
    ============================================ */
@@ -663,3 +740,264 @@
 }
 
 /* Tooltip intentionally disabled: hover should only brighten background. */
+
+/* ============================================
+   Custom Status Modal
+   ============================================ */
+.custom-status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.custom-status-modal-overlay.closing {
+  animation: fadeOut 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.custom-status-modal {
+  background: #313338;
+  border-radius: 8px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.custom-status-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.custom-status-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #f2f3f5;
+}
+
+.custom-status-modal-close {
+  background: transparent;
+  border: none;
+  color: #b5bac1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.custom-status-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.custom-status-modal-body {
+  padding: 16px;
+}
+
+.custom-status-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.custom-status-emoji-btn {
+  width: 44px;
+  height: 44px;
+  background: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.custom-status-emoji-btn:hover {
+  background: #2b2d31;
+}
+
+.custom-status-input {
+  flex: 1;
+  height: 44px;
+  background: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 16px;
+  color: #dbdee1;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.custom-status-input::placeholder {
+  color: #72767d;
+}
+
+.custom-status-input:focus {
+  box-shadow: 0 0 0 2px #5865f2;
+}
+
+.custom-status-duration-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-status-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #b5bac1;
+  letter-spacing: 0.02em;
+}
+
+.custom-status-select {
+  height: 40px;
+  background: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #dbdee1;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23b5bac1'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 36px;
+  transition: all 0.15s ease;
+}
+
+.custom-status-select:hover {
+  background-color: #2b2d31;
+}
+
+.custom-status-select:focus {
+  box-shadow: 0 0 0 2px #5865f2;
+}
+
+.custom-status-select option {
+  background: #1e1f22;
+  color: #dbdee1;
+}
+
+.custom-status-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  background: #2b2d31;
+  border-radius: 0 0 8px 8px;
+}
+
+.custom-status-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.custom-status-btn-cancel {
+  background: transparent;
+  color: #fff;
+}
+
+.custom-status-btn-cancel:hover {
+  text-decoration: underline;
+}
+
+.custom-status-btn-clear {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.custom-status-btn-clear:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.custom-status-btn-save {
+  background: #5865f2;
+  color: #fff;
+}
+
+.custom-status-btn-save:hover {
+  background: #4752c4;
+}
+
+/* Emoji Quick Picker */
+.emoji-quick-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: #111214;
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.emoji-quick-item {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+}
+
+.emoji-quick-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

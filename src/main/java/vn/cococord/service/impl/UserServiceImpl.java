@@ -1,5 +1,6 @@
 package vn.cococord.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -135,6 +136,18 @@ public class UserServiceImpl implements IUserService {
         }
 
         private UserProfileResponse convertToUserProfile(User user, String viewerUsername) {
+                // Check if custom status has expired
+                String customStatus = user.getCustomStatus();
+                String customStatusEmoji = user.getCustomStatusEmoji();
+                LocalDateTime customStatusExpiresAt = user.getCustomStatusExpiresAt();
+
+                if (customStatusExpiresAt != null && LocalDateTime.now().isAfter(customStatusExpiresAt)) {
+                        // Custom status has expired - treat as cleared
+                        customStatus = null;
+                        customStatusEmoji = null;
+                        customStatusExpiresAt = null;
+                }
+
                 UserProfileResponse.UserProfileResponseBuilder builder = UserProfileResponse.builder()
                                 .id(user.getId())
                                 .username(user.getUsername())
@@ -145,9 +158,9 @@ public class UserServiceImpl implements IUserService {
                                 .bannerUrl(user.getBannerUrl())
                                 .bio(user.getBio())
                                 .pronouns(user.getPronouns())
-                                .customStatus(user.getCustomStatus())
-                                .customStatusEmoji(user.getCustomStatusEmoji())
-                                .customStatusExpiresAt(user.getCustomStatusExpiresAt())
+                                .customStatus(customStatus)
+                                .customStatusEmoji(customStatusEmoji)
+                                .customStatusExpiresAt(customStatusExpiresAt)
                                 .status(user.getStatus() != null ? user.getStatus().name() : "OFFLINE")
                                 .theme(user.getTheme())
                                 .messageDisplay(user.getMessageDisplay())
