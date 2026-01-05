@@ -19,6 +19,7 @@
     isDeafened: false,
     presenceUnsub: null,
     statusHoverTimeout: null,
+    customStatusClearTimer: null,
 
     // ============================================
     // SVG Icons
@@ -68,6 +69,7 @@
           this.attachEventListeners();
           this.initPresenceSync();
           this.startPresenceHeartbeat();
+          this.initCustomStatusClearTimer();
           this.initialized = true;
         }
       } catch (error) {
@@ -313,25 +315,78 @@
 
     renderStatusDropdown: function (currentStatus) {
       const statuses = [
-        { id: 'ONLINE', label: 'Trực tuyến', icon: 'online' },
-        { id: 'IDLE', label: 'Vắng mặt', icon: 'idle' },
-        { id: 'DO_NOT_DISTURB', label: 'Không làm phiền', icon: 'dnd' },
-        { id: 'INVISIBLE', label: 'Ẩn', icon: 'invisible' }
+        { 
+          id: 'ONLINE', 
+          label: 'Trực tuyến', 
+          description: 'Mọi người có thể thấy bạn đang hoạt động',
+          iconClass: 'online',
+          icon: `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#23a55a"/></svg>`
+        },
+        { 
+          id: 'IDLE', 
+          label: 'Vắng mặt', 
+          description: 'Bạn có thể bỏ lỡ tin nhắn',
+          iconClass: 'idle',
+          icon: `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M5 0a5 5 0 1 0 0 10 3.5 3.5 0 0 1 0-10z" fill="#f0b232"/></svg>`
+        },
+        { 
+          id: 'DO_NOT_DISTURB', 
+          label: 'Không làm phiền', 
+          description: 'Bạn sẽ không nhận được thông báo',
+          iconClass: 'dnd',
+          icon: `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#f23f43"/><rect x="2" y="4" width="6" height="2" rx="1" fill="#111214"/></svg>`
+        },
+        { 
+          id: 'INVISIBLE', 
+          label: 'Ẩn', 
+          description: 'Bạn sẽ không hiển thị với người khác',
+          iconClass: 'invisible',
+          icon: `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke="#80848e" stroke-width="2"/></svg>`
+        }
       ];
 
+      const user = this.currentUser || {};
+      const hasCustomStatus = user.customStatus && user.customStatus.trim();
+
       return `
-        <div class="status-dropdown" id="statusDropdown">
-          ${statuses.map(s => `
-            <button class="status-dropdown-item ${currentStatus === s.id ? 'active' : ''}" data-status="${s.id}">
-              <span class="status-dropdown-icon ${s.icon}"></span>
-              <span>${s.label}</span>
-            </button>
-          `).join('')}
-          <div class="status-dropdown-separator"></div>
-          <button class="status-dropdown-custom" id="statusDropdownCustom">
-            <span>😊</span>
+        <div class="status-picker-menu" id="statusDropdown">
+          <div class="status-picker-header">
+            <span class="status-picker-title">Cài đặt trạng thái</span>
+          </div>
+          
+          <div class="status-picker-list">
+            ${statuses.map(s => `
+              <button class="status-picker-item ${currentStatus === s.id ? 'active' : ''}" data-status="${s.id}">
+                <div class="status-picker-icon">${s.icon}</div>
+                <div class="status-picker-info">
+                  <span class="status-picker-label">${s.label}</span>
+                </div>
+                ${currentStatus === s.id ? '<svg class="status-picker-check" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.99991 16.17L4.82991 12L3.40991 13.41L8.99991 19L20.9999 7L19.5899 5.59L8.99991 16.17Z"/></svg>' : ''}
+              </button>
+            `).join('')}
+          </div>
+          
+          <div class="status-picker-separator"></div>
+          
+          <button class="status-picker-custom" id="statusDropdownCustom">
+            <div class="status-picker-custom-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </div>
             <span>Đặt trạng thái tùy chỉnh</span>
           </button>
+          
+          ${hasCustomStatus ? `
+            <button class="status-picker-clear" id="statusDropdownClear">
+              <div class="status-picker-clear-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"/>
+                </svg>
+              </div>
+              <span>Xóa trạng thái tùy chỉnh</span>
+            </button>
+          ` : ''}
         </div>
       `;
     },
@@ -417,6 +472,51 @@
     },
 
     // ============================================
+    // Custom Status Auto-Clear Timer
+    // ============================================
+    initCustomStatusClearTimer: function () {
+      // Clear any existing timer
+      if (this.customStatusClearTimer) {
+        clearTimeout(this.customStatusClearTimer);
+        this.customStatusClearTimer = null;
+      }
+
+      const user = this.currentUser;
+      if (!user || !user.customStatusExpiresAt) return;
+
+      const expiresAt = new Date(user.customStatusExpiresAt);
+      const now = new Date();
+      const timeUntilExpiry = expiresAt - now;
+
+      // If already expired, clear immediately
+      if (timeUntilExpiry <= 0) {
+        this.autoCloseCustomStatus();
+        return;
+      }
+
+      // Schedule auto-clear
+      console.log(`UserPanel: Custom status will expire in ${Math.floor(timeUntilExpiry / 1000)}s`);
+      this.customStatusClearTimer = setTimeout(() => {
+        this.autoCloseCustomStatus();
+      }, timeUntilExpiry);
+    },
+
+    autoCloseCustomStatus: function () {
+      console.log('UserPanel: Auto-clearing expired custom status');
+      
+      // Clear from local state and UI
+      if (this.currentUser) {
+        this.currentUser.customStatus = null;
+        this.currentUser.customStatusEmoji = null;
+        this.currentUser.customStatusExpiresAt = null;
+        this.render();
+      }
+
+      // Clear timer reference
+      this.customStatusClearTimer = null;
+    },
+
+    // ============================================
     // Event Listeners
     // ============================================
     attachEventListeners: function () {
@@ -474,8 +574,8 @@
           }, 300);
         };
 
-        // Status item clicks
-        statusDropdown.querySelectorAll('.status-dropdown-item').forEach(item => {
+        // Status item clicks (updated selector for new class name)
+        statusDropdown.querySelectorAll('.status-picker-item').forEach(item => {
           item.onclick = (e) => {
             e.stopPropagation();
             const newStatus = item.dataset.status;
@@ -491,6 +591,16 @@
             e.stopPropagation();
             this.hideStatusDropdown();
             this.openStatusPicker();
+          };
+        }
+
+        // Clear custom status button in dropdown
+        const clearBtn = document.getElementById('statusDropdownClear');
+        if (clearBtn) {
+          clearBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.clearCustomStatus();
+            this.hideStatusDropdown();
           };
         }
       }
@@ -848,6 +958,14 @@
       const user = this.currentUser || {};
       const currentEmoji = user.customStatusEmoji || '';
       const currentText = user.customStatus || '';
+      const currentStatus = user.status || 'ONLINE';
+
+      const statuses = [
+        { id: 'ONLINE', label: 'Trực tuyến', color: '#23a55a' },
+        { id: 'IDLE', label: 'Vắng mặt', color: '#f0b232' },
+        { id: 'DO_NOT_DISTURB', label: 'Không làm phiền', color: '#f23f43' },
+        { id: 'INVISIBLE', label: 'Ẩn', color: '#80848e' }
+      ];
 
       const modalHtml = `
         <div class="custom-status-modal-overlay" id="customStatusModal">
@@ -883,6 +1001,22 @@
                   <option value="240">4 giờ (Hôm nay)</option>
                   <option value="1440">24 giờ</option>
                 </select>
+              </div>
+              
+              <div class="custom-status-divider"></div>
+              
+              <div class="custom-status-status-group">
+                <label class="custom-status-label">Trạng thái</label>
+                <div class="custom-status-status-options" id="customStatusStatusOptions">
+                  ${statuses.map(s => `
+                    <button class="custom-status-status-btn ${currentStatus === s.id ? 'active' : ''}" 
+                            data-status="${s.id}" 
+                            title="${s.label}">
+                      <span class="custom-status-status-dot" style="background: ${s.color}; ${s.id === 'INVISIBLE' ? 'background: transparent; border: 2px solid ' + s.color + '; box-sizing: border-box;' : ''}"></span>
+                      <span class="custom-status-status-label">${s.label}</span>
+                    </button>
+                  `).join('')}
+                </div>
               </div>
             </div>
             
@@ -936,6 +1070,20 @@
       const emojiBtn = document.getElementById('customStatusEmojiBtn');
       if (emojiBtn) {
         emojiBtn.onclick = () => this.showEmojiPicker();
+      }
+
+      // Status selection buttons in modal
+      const statusOptions = document.getElementById('customStatusStatusOptions');
+      if (statusOptions) {
+        statusOptions.querySelectorAll('.custom-status-status-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            // Remove active from all
+            statusOptions.querySelectorAll('.custom-status-status-btn').forEach(b => b.classList.remove('active'));
+            // Add active to clicked
+            btn.classList.add('active');
+          };
+        });
       }
 
       // Click outside to close
@@ -1023,9 +1171,17 @@
         });
 
         if (response.ok) {
+          // Clear timer
+          if (this.customStatusClearTimer) {
+            clearTimeout(this.customStatusClearTimer);
+            this.customStatusClearTimer = null;
+          }
+          
+          // Update local state
           this.currentUser.customStatus = null;
           this.currentUser.customStatusEmoji = null;
           this.currentUser.customStatusExpiresAt = null;
+          
           this.render();
           this.hideCustomStatusModal();
         }
@@ -1038,14 +1194,18 @@
       const textInput = document.getElementById('customStatusText');
       const emojiPreview = document.getElementById('customStatusEmojiPreview');
       const durationSelect = document.getElementById('customStatusDuration');
+      const statusOptions = document.getElementById('customStatusStatusOptions');
 
       const customStatus = textInput?.value?.trim() || '';
       const customStatusEmoji = emojiPreview?.textContent?.trim() || '';
       const durationMinutes = parseInt(durationSelect?.value) || -1;
+      
+      // Get selected status from modal
+      const selectedStatusBtn = statusOptions?.querySelector('.custom-status-status-btn.active');
+      const selectedStatus = selectedStatusBtn?.dataset?.status || this.currentUser?.status || 'ONLINE';
 
       try {
         const token = localStorage.getItem('accessToken');
-        const currentStatus = this.currentUser?.status || 'ONLINE';
         
         const response = await fetch('/api/users/me/status', {
           method: 'PUT',
@@ -1054,7 +1214,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            status: currentStatus,
+            status: selectedStatus,
             customStatus: customStatus,
             customStatusEmoji: customStatusEmoji,
             customStatusDuration: durationMinutes > 0 ? durationMinutes : null
@@ -1062,10 +1222,31 @@
         });
 
         if (response.ok) {
+          // Update local state
+          this.currentUser.status = selectedStatus;
           this.currentUser.customStatus = customStatus || null;
           this.currentUser.customStatusEmoji = customStatusEmoji || null;
+          
+          // Calculate expiry time if duration is set
+          if (durationMinutes > 0) {
+            const expiresAt = new Date();
+            expiresAt.setMinutes(expiresAt.getMinutes() + durationMinutes);
+            this.currentUser.customStatusExpiresAt = expiresAt.toISOString();
+          } else {
+            this.currentUser.customStatusExpiresAt = null;
+          }
+          
+          // Re-render UI
           this.render();
           this.hideCustomStatusModal();
+          
+          // Initialize auto-clear timer
+          this.initCustomStatusClearTimer();
+          
+          // Notify presence system of status change
+          if (window.CoCoCordPresence?.updateStatus) {
+            window.CoCoCordPresence.updateStatus(selectedStatus);
+          }
         }
       } catch (error) {
         console.error('UserPanel: Failed to save custom status', error);

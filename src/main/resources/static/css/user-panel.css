@@ -298,8 +298,158 @@
 }
 
 /* ============================================
-   Status Dropdown Menu - Discord Style
+   Status Picker Menu - Discord Style
    ============================================ */
+.status-picker-menu {
+  position: absolute;
+  left: calc(100% + 8px);
+  bottom: 0;
+  width: 300px;
+  background: #111214;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10001;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px);
+  transition: all 0.15s ease;
+  overflow: hidden;
+}
+
+.status-picker-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.status-picker-header {
+  padding: 12px 12px 8px;
+  border-bottom: none;
+}
+
+.status-picker-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--up-header-secondary);
+  letter-spacing: 0.02em;
+}
+
+.status-picker-list {
+  padding: 4px 8px;
+}
+
+.status-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--up-interactive-normal);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.status-picker-item:hover {
+  background: #4752c4;
+  color: #fff;
+}
+
+.status-picker-item.active {
+  background: rgba(79, 84, 92, 0.4);
+}
+
+.status-picker-item.active:hover {
+  background: #4752c4;
+}
+
+.status-picker-icon {
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.status-picker-icon svg {
+  width: 10px;
+  height: 10px;
+}
+
+.status-picker-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-picker-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.status-picker-check {
+  width: 20px;
+  height: 20px;
+  color: var(--up-status-online);
+  flex-shrink: 0;
+}
+
+.status-picker-separator {
+  height: 1px;
+  background: #2e3035;
+  margin: 4px 12px;
+}
+
+.status-picker-custom,
+.status-picker-clear {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 16px);
+  margin: 0 8px 8px;
+  padding: 10px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--up-interactive-normal);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.status-picker-custom:hover {
+  background: #4752c4;
+  color: #fff;
+}
+
+.status-picker-clear:hover {
+  background: rgba(242, 63, 67, 0.15);
+  color: var(--up-danger);
+}
+
+.status-picker-custom-icon,
+.status-picker-clear-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+/* Legacy status dropdown styles (keeping for compatibility) */
 .status-dropdown {
   position: absolute;
   left: calc(100% + 8px);
@@ -880,6 +1030,65 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.custom-status-divider {
+  height: 1px;
+  background: #2e3035;
+  margin: 16px 0;
+}
+
+.custom-status-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-status-status-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-status-status-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1e1f22;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  color: #b5bac1;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1;
+  min-width: 0;
+}
+
+.custom-status-status-btn:hover {
+  background: #2b2d31;
+  color: #fff;
+}
+
+.custom-status-status-btn.active {
+  border-color: #5865f2;
+  background: rgba(88, 101, 242, 0.15);
+  color: #fff;
+}
+
+.custom-status-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.custom-status-status-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .custom-status-label {
