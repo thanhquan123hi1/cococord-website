@@ -48,7 +48,7 @@ body {
 .chat-page-container {
   display: flex;
   flex-direction: row;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
   background-color: var(--bg-primary);
@@ -1663,6 +1663,18 @@ body {
   border-top: 1px solid var(--bg-tertiary);
   font-size: 13px;
   color: var(--text-muted);
+  animation: fadeInUp 0.2s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .typing-avatars {

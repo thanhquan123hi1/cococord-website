@@ -41,7 +41,22 @@
       id="dmList"
       role="list"
       aria-label="Direct Messages"
-    ></div>
+    >
+      <div id="dmListSkeleton" class="skeleton-dm-list">
+        <div class="skeleton-dm-item">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton skeleton-text w-full"></div>
+        </div>
+        <div class="skeleton-dm-item">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton skeleton-text w-80"></div>
+        </div>
+        <div class="skeleton-dm-item">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton skeleton-text w-60"></div>
+        </div>
+      </div>
+    </div>
   </aside>
 
   <!-- Draggable divider (Primary Sidebar resize) -->
@@ -100,7 +115,38 @@
         </div>
       </div>
 
-      <section class="content" id="friendsList"></section>
+      <section class="content" id="friendsList">
+        <div id="friendsListSkeleton" class="skeleton-friends-list">
+          <div class="skeleton-friend-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div style="flex: 1;">
+              <div class="skeleton skeleton-text w-60" style="margin-bottom: 4px;"></div>
+              <div class="skeleton skeleton-text w-40" style="height: 12px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-friend-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div style="flex: 1;">
+              <div class="skeleton skeleton-text w-80" style="margin-bottom: 4px;"></div>
+              <div class="skeleton skeleton-text w-60" style="height: 12px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-friend-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div style="flex: 1;">
+              <div class="skeleton skeleton-text w-full" style="margin-bottom: 4px;"></div>
+              <div class="skeleton skeleton-text w-40" style="height: 12px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-friend-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div style="flex: 1;">
+              <div class="skeleton skeleton-text w-60" style="margin-bottom: 4px;"></div>
+              <div class="skeleton skeleton-text w-80" style="height: 12px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section class="add-friend" id="addFriendView" style="display: none">
         <div class="add-friend-header">

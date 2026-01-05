@@ -113,6 +113,7 @@
     // Typing indicator state
     let typingUsers = new Map(); // username -> { timeout, displayName, avatarUrl }
     let myTypingTimeout = null;
+    let myStopTypingTimeout = null;
     let isCurrentlyTyping = false;
 
     // Voice Chat State (PeerJS/WebRTC)
@@ -130,6 +131,15 @@
     // Virtual Scrolling
     let virtualScroller = null;
     let messages = []; // Store all messages for virtual scrolling
+    
+    // Message deduplication - track received message IDs to prevent duplicates
+    let receivedMessageIds = new Set();
+    
+    // Debug: Track subscription count
+    let subscriptionCount = 0;
+    
+    // Cache messages by channel to avoid reloading on switch
+    let channelMessageCache = new Map(); // channelId -> { messages: [], currentPage: number, hasMore: boolean, oldestId: string }
 
     // Chat Input Manager (file attachments, emoji/gif/sticker picker)
     let chatInputManager = null;
@@ -415,7 +425,6 @@
             
             cancelReply();
         } catch (error) {
-            console.error('[Chat] File upload failed:', error);
             showToast('Không thể tải file lên: ' + error.message, 'error');
         }
     }
@@ -464,9 +473,16 @@
 
     /**
      * Show toast notification
+     * Uses global ToastManager if available, falls back to simple toast
      */
     function showToast(message, type = 'info') {
-        // Remove existing toast
+        // Use global ToastManager if available
+        if (window.ToastManager) {
+            window.ToastManager.show(message, type);
+            return;
+        }
+        
+        // Fallback to simple toast
         const existingToast = document.querySelector('.chat-toast');
         if (existingToast) {
             existingToast.remove();
@@ -512,7 +528,7 @@
                     if (!response.ok) return [];
                     return await response.json();
                 } catch (e) {
-                    console.error('[Chat] Failed to load threads:', e);
+                    showToast('Không thể tải danh sách threads', 'error');
                     return [];
                 }
             },
@@ -525,7 +541,7 @@
                     if (!response.ok) return [];
                     return await response.json();
                 } catch (e) {
-                    console.error('[Chat] Failed to load pinned messages:', e);
+                    showToast('Không thể tải tin nhắn đã ghim', 'error');
                     return [];
                 }
             },
@@ -540,7 +556,7 @@
                         body: JSON.stringify({ muted: isMuted })
                     });
                 } catch (e) {
-                    console.error('[Chat] Failed to toggle mute:', e);
+                    showToast('Không thể tắt/bật thông báo', 'error');
                 }
             },
             
@@ -595,7 +611,6 @@
             
             // On error callback
             onError: (error) => {
-                console.error('[Chat] Server settings error:', error);
                 showToast(error, 'error');
             }
         });
@@ -771,6 +786,15 @@
     }
 
     function renderChannelList() {
+        console.log('[renderChannelList] Starting render. Channels:', channels.length, 'Categories:', categories.length);
+        console.log('[renderChannelList] el.channelList:', el.channelList);
+        console.log('[renderChannelList] el.channelList exists:', !!el.channelList);
+        
+        if (!el.channelList) {
+            console.error('[renderChannelList] channelList element not found!');
+            return;
+        }
+        
         el.channelList.innerHTML = '';
 
         if (!channels.length) {
@@ -778,6 +802,7 @@
             div.style.cssText = 'padding: 8px; color: var(--text-muted); font-size: 13px;';
             div.textContent = 'Chưa có kênh nào.';
             el.channelList.appendChild(div);
+            console.log('[renderChannelList] No channels to render');
             return;
         }
 
@@ -990,6 +1015,9 @@
             const categoryEl = createCategory(cat.name, catChannels, cat.id);
             if (categoryEl) el.channelList.appendChild(categoryEl);
         }
+        
+        console.log('[renderChannelList] Finished render. el.channelList.children:', el.channelList.children.length);
+        console.log('[renderChannelList] el.channelList.innerHTML length:', el.channelList.innerHTML.length);
     }
 
     // Helper to open create channel modal with optional category pre-selected
@@ -1049,6 +1077,15 @@
 
         // If using virtual scroller, add to messages array
         if (virtualScroller) {
+            // Check if message already exists in array (prevent duplicates)
+            const exists = messages.find(m => m.id === msg.id);
+            if (exists) {
+                console.log('[AppendMessage] Message already exists, skipping:', msg.id);
+                return;
+            }
+            
+            console.log(`[AppendMessage] Adding message to ${prepend ? 'start' : 'end'}: ${msg.id}, total will be ${messages.length + 1}`);
+            
             if (prepend) {
                 messages.unshift(msg);
                 virtualScroller.prependItems([msg]);
@@ -1216,23 +1253,60 @@
         renderTypingIndicator();
     }
 
-    // Send typing notification
+    // Send typing notification with debounce for stop typing
     function sendTypingNotification() {
         if (!stompClient?.connected || !activeChannelId) return;
         
+        // Send "start typing" if not already typing
         if (!isCurrentlyTyping) {
             isCurrentlyTyping = true;
             stompClient.send('/app/chat.typing', {}, JSON.stringify({
                 channelId: activeChannelId,
+                serverId: activeServerId,
                 isTyping: true
             }));
         }
         
-        // Reset typing timeout
+        // Clear previous stop typing timeout
+        if (myStopTypingTimeout) clearTimeout(myStopTypingTimeout);
+        
+        // Set debounce for stop typing (2000ms after last keystroke)
+        myStopTypingTimeout = setTimeout(() => {
+            sendStopTypingNotification();
+        }, 2000);
+        
+        // Reset typing timeout (keep sending start typing every 3s if still typing)
         if (myTypingTimeout) clearTimeout(myTypingTimeout);
         myTypingTimeout = setTimeout(() => {
-            isCurrentlyTyping = false;
+            // If user is still focused on input and has content, refresh typing status
+            if (document.activeElement === el.chatInput && el.chatInput.value.trim()) {
+                isCurrentlyTyping = false; // Reset so next keystroke sends typing again
+            }
         }, 3000);
+    }
+
+    // Send stop typing notification
+    function sendStopTypingNotification() {
+        if (!stompClient?.connected || !activeChannelId) return;
+        
+        if (isCurrentlyTyping) {
+            isCurrentlyTyping = false;
+            stompClient.send('/app/chat.typing', {}, JSON.stringify({
+                channelId: activeChannelId,
+                serverId: activeServerId,
+                isTyping: false
+            }));
+        }
+        
+        // Clear timeouts
+        if (myTypingTimeout) {
+            clearTimeout(myTypingTimeout);
+            myTypingTimeout = null;
+        }
+        if (myStopTypingTimeout) {
+            clearTimeout(myStopTypingTimeout);
+            myStopTypingTimeout = null;
+        }
     }
 
     // ==================== USER PANEL ====================
@@ -1249,7 +1323,7 @@
                 window.CoCoCordApp.updateGlobalUserPanel(currentUser);
             }
         } catch (e) {
-            console.error('Failed to load user info', e);
+            showToast('Không thể tải thông tin người dùng', 'error');
         }
     }
 
@@ -1271,8 +1345,15 @@
             
             categories = categoryData || [];
             categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            
+            // Hide channel list skeleton after loading
+            const channelSkeleton = document.getElementById('channelListSkeleton');
+            if (channelSkeleton) {
+                channelSkeleton.style.opacity = '0';
+                setTimeout(() => channelSkeleton.style.display = 'none', 300);
+            }
         } catch (e) {
-            console.error('Failed to load channels:', e);
+            showToast('Không thể tải danh sách kênh', 'error');
             channels = [];
             categories = [];
             throw e; // Re-throw to trigger retry in selectServer
@@ -1282,6 +1363,13 @@
     async function loadMembers(serverId) {
         try {
             members = await apiGet(`/api/servers/${serverId}/members`);
+            
+            // Hide members sidebar skeleton after loading
+            const membersSkeleton = document.getElementById('membersSidebarSkeleton');
+            if (membersSkeleton) {
+                membersSkeleton.style.opacity = '0';
+                setTimeout(() => membersSkeleton.style.display = 'none', 300);
+            }
         } catch (e) {
             members = [];
         }
@@ -1290,11 +1378,14 @@
     async function loadHistory(channelId, append = false) {
         if (isLoadingHistory) return;
         
+        console.log(`[LoadHistory] Starting for channel ${channelId}, append=${append}, currentPage=${currentPage}`);
         isLoadingHistory = true;
         
         try {
             const page = await apiGet(`/api/messages/channel/${channelId}?page=${currentPage}&size=50`);
             const items = Array.isArray(page.content) ? page.content.slice() : [];
+            
+            console.log(`[LoadHistory] Received ${items.length} messages, hasMore=${!page.last}`);
             
             // Check if there are more pages
             hasMoreMessages = !page.last && items.length > 0;
@@ -1306,11 +1397,15 @@
                 // Initial load
                 messages = items; // Store in messages array
                 
+                console.log(`[LoadHistory] Setting ${messages.length} messages to virtual scroller`);
+                
                 if (virtualScroller) {
                     // Use virtual scroller
                     virtualScroller.setItems(messages, { scrollTo: 'bottom' });
                     el.chatEmpty.style.display = items.length === 0 ? 'block' : 'none';
+                    console.log('[LoadHistory] Virtual scroller updated');
                 } else {
+                    console.warn('[LoadHistory] Virtual scroller not available, using fallback');
                     // Fallback: Direct DOM
                     const emptyState = el.chatEmpty;
                     el.messageList.innerHTML = '';
@@ -1327,6 +1422,13 @@
                 }
                 
                 el.chatComposer.style.display = '';
+                
+                // Hide message list skeleton after loading
+                const messageSkeleton = document.getElementById('messageListSkeleton');
+                if (messageSkeleton) {
+                    messageSkeleton.style.opacity = '0';
+                    setTimeout(() => messageSkeleton.style.display = 'none', 300);
+                }
                 
                 // Track oldest message for pagination
                 if (items.length > 0) {
@@ -1359,8 +1461,18 @@
             }
             
             currentPage++;
+            console.log(`[LoadHistory] Completed. Total messages in memory: ${messages.length}`);
+            
+            // Save to cache
+            channelMessageCache.set(String(channelId), {
+                messages: messages.slice(), // Copy array
+                currentPage: currentPage,
+                hasMore: hasMoreMessages,
+                oldestId: oldestMessageId
+            });
         } catch (e) {
-            console.error('Failed to load history:', e);
+            console.error('[LoadHistory] Error:', e);
+            showToast('Không thể tải lịch sử tin nhắn', 'error');
         } finally {
             isLoadingHistory = false;
             hideLoadingSpinner();
@@ -1422,21 +1534,29 @@
             stompClient.connect(
                 { Authorization: `Bearer ${token}` },
                 () => {
-                    // Subscribe to presence updates
-                    presenceSubscription = stompClient.subscribe('/topic/presence', (message) => {
+                    // Wait a bit for connection to be fully established
+                    setTimeout(() => {
                         try {
-                            const data = JSON.parse(message.body);
-                            const presence = (data && data.type && data.payload) ? data.payload : data;
-                            const username = presence?.username;
-                            const status = presence?.newStatus || presence?.status;
-                            if (username && status) {
-                                presenceMap.set(username, String(status).toUpperCase());
-                                renderMembersList();
-                            }
-                        } catch (e) { /* ignore */ }
-                    });
-
-                    resolve();
+                            // Subscribe to presence updates
+                            presenceSubscription = stompClient.subscribe('/topic/presence', (message) => {
+                                try {
+                                    const data = JSON.parse(message.body);
+                                    const presence = (data && data.type && data.payload) ? data.payload : data;
+                                    const username = presence?.username;
+                                    const status = presence?.newStatus || presence?.status;
+                                    if (username && status) {
+                                        presenceMap.set(username, String(status).toUpperCase());
+                                        renderMembersList();
+                                    }
+                                } catch (e) { /* ignore */ }
+                            });
+                            
+                            resolve();
+                        } catch (e) {
+                            console.error('Failed to subscribe to presence:', e);
+                            resolve(); // Still resolve to allow other subscriptions
+                        }
+                    }, 100);
                 },
                 (err) => reject(err)
             );
@@ -1446,9 +1566,12 @@
     async function subscribeToChannel(channelId) {
         await ensureStompConnected();
 
+        console.log('[Subscribe] Subscribing to channel:', channelId);
+        
         // Unsubscribe from previous channel
         if (channelSubscription) {
-            try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            console.log('[Subscribe] Unsubscribing from previous channel');
+            try { channelSubscription.unsubscribe(); } catch (e) { console.error('[Subscribe] Error unsubscribing:', e); }
             channelSubscription = null;
         }
         if (typingSubscription) {
@@ -1462,10 +1585,18 @@
 
         // Clear typing users from previous channel
         clearAllTyping();
+        
+        // Clear message deduplication set for new channel
+        receivedMessageIds.clear();
+        console.log('[Subscribe] Cleared received message IDs');
 
         // Subscribe to new messages
+        subscriptionCount++;
+        console.log('[Subscribe] Creating subscription #' + subscriptionCount + ' for channel', channelId);
+        
         channelSubscription = stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
             try {
+                console.log('[WebSocket] Received message on channel', channelId, '(subscription #' + subscriptionCount + ')');
                 const data = JSON.parse(message.body);
                 
                 // Handle WebSocketEvent wrapper format from REST API
@@ -1481,7 +1612,13 @@
                     payload = data;
                 }
                 
-                if (String(payload.channelId) !== String(activeChannelId)) return;
+                console.log('[WebSocket] Event type:', eventType, 'Payload ID:', payload.id);
+                
+                // Validate channel ID first
+                if (String(payload.channelId) !== String(activeChannelId)) {
+                    console.log('[WebSocket] Ignoring message from different channel:', payload.channelId, 'vs', activeChannelId);
+                    return;
+                }
                 
                 // Handle different event types
                 if (eventType === 'message.deleted') {
@@ -1493,9 +1630,16 @@
                     return;
                 }
                 
-                // Check if this is an edit (message already exists)
+                // CRITICAL: Check for duplicates FIRST before any DOM operations
+                if (receivedMessageIds.has(payload.id)) {
+                    console.warn('[WebSocket] DUPLICATE message detected, ignoring:', payload.id);
+                    return;
+                }
+                
+                // Check if this is an edit (message already exists in DOM)
                 const existingRow = document.querySelector(`[data-message-id="${payload.id}"]`);
                 if (existingRow) {
+                    console.log('[WebSocket] Updating existing message:', payload.id);
                     // Update existing message (edit)
                     const contentEl = existingRow.querySelector('.message-content');
                     const headerEl = existingRow.querySelector('.message-header');
@@ -1507,8 +1651,9 @@
                         headerEl.appendChild(editedSpan);
                     }
                 } else {
-                    // New message - check for duplicates by ID
-                    if (document.querySelector(`[data-message-id="${payload.id}"]`)) return;
+                    console.log('[WebSocket] Appending new message:', payload.id);
+                    // New message - add to deduplication set
+                    receivedMessageIds.add(payload.id);
                     
                     appendMessage(payload);
                     
@@ -1578,7 +1723,7 @@
                 await loadChannels(serverId);
                 renderChannelList();
             } catch (e) {
-                console.error('Error handling channel update:', e);
+                showToast('Lỗi khi cập nhật kênh', 'error');
             }
         });
 
@@ -1590,13 +1735,14 @@
                 await loadChannels(serverId);
                 renderChannelList();
             } catch (e) {
-                console.error('Error handling category update:', e);
+                showToast('Lỗi khi cập nhật danh mục', 'error');
             }
         });
     }
 
     async function selectServer(serverId) {
         try {
+            console.log('[selectServer] Selecting server:', serverId);
             activeServerId = serverId;
             
             // Update URL
@@ -1614,10 +1760,13 @@
             clearMessages();
 
             // Load data from API
+            console.log('[selectServer] Loading channels...');
             try {
                 await loadChannels(serverId);
+                console.log('[selectServer] Channels loaded:', channels.length);
             } catch (err) {
-                console.error('[Chat] Failed to load channels:', err);
+                console.error('[selectServer] Failed to load channels:', err);
+                showToast('Không thể tải kênh của máy chủ', 'error');
                 throw err;
             }
 
@@ -1649,19 +1798,35 @@
             }
 
         } catch (e) {
-            console.error('[Chat] Error loading server:', e);
+            showToast('Không thể tải máy chủ', 'error');
         }
     }
 
     async function selectChannel(channelId) {
+        // Stop typing in previous channel
+        sendStopTypingNotification();
+        
         activeChannelId = channelId;
         setQueryParams({ serverId: activeServerId, channelId });
 
-        // Reset pagination state for new channel
-        currentPage = 0;
-        hasMoreMessages = true;
-        oldestMessageId = null;
-        messages = []; // Clear messages array
+        // Check if we have cached data for this channel
+        const cached = channelMessageCache.get(String(channelId));
+        if (cached) {
+            console.log(`[SelectChannel] Using cached data for channel ${channelId}: ${cached.messages.length} messages`);
+            // Restore cached state
+            messages = cached.messages;
+            currentPage = cached.currentPage;
+            hasMoreMessages = cached.hasMore;
+            oldestMessageId = cached.oldestId;
+        } else {
+            console.log(`[SelectChannel] No cache for channel ${channelId}, will load fresh`);
+            // Reset pagination state for new channel
+            currentPage = 0;
+            hasMoreMessages = true;
+            oldestMessageId = null;
+            messages = []; // Clear messages array
+        }
+        
         clearAllTyping();
 
         // Close mobile sidebars when selecting channel
@@ -1683,12 +1848,26 @@
             el.channelTopic.style.display = 'none';
         }
 
-        // Initialize virtual scroller for this channel
-        initVirtualScroller();
+        // If we have cached messages, render them immediately
+        if (cached && messages.length > 0) {
+            if (virtualScroller) {
+                virtualScroller.setItems(messages, { scrollTo: 'bottom' });
+            }
+            el.chatComposer.style.display = '';
+        } else {
+            // Clear virtual scroller for fresh load
+            if (virtualScroller) {
+                virtualScroller.setItems([], { scrollTo: 'bottom' });
+            }
+        }
 
         renderChannelList();
         await subscribeToChannel(channelId);
-        await loadHistory(channelId);
+        
+        // Only load history if no cache
+        if (!cached) {
+            await loadHistory(channelId);
+        }
     }
 
     // ==================== CUSTOM CONTEXT MENU ====================
@@ -1829,7 +2008,7 @@
         navigator.clipboard.writeText(content).then(() => {
             showToast('Đã sao chép tin nhắn');
         }).catch(err => {
-            console.error('Failed to copy:', err);
+            showToast('Không thể sao chép tin nhắn', 'error');
         });
     }
 
@@ -1866,7 +2045,7 @@
                         }
                         contentEl.textContent = newContent;
                     } catch (err) {
-                        console.error('Failed to edit:', err);
+                        showToast('Không thể chỉnh sửa tin nhắn', 'error');
                         contentEl.innerHTML = originalHtml;
                     }
                 } else {
@@ -1896,8 +2075,7 @@
                 stompClient.send('/app/chat.deleteMessage', {}, JSON.stringify(messageId));
             }
         } catch (err) {
-            console.error('Failed to delete:', err);
-            alert('Không thể xóa tin nhắn');
+            showToast('Không thể xóa tin nhắn', 'error');
         }
     }
 
@@ -1931,8 +2109,13 @@
         showServerSettingsModal();
     }
 
-    // Simple toast notification
-    function showToast(message) {
+    // Simple toast notification - uses ToastManager if available
+    function showToast(message, type = 'info') {
+        if (window.ToastManager) {
+            window.ToastManager.show(message, type);
+            return;
+        }
+        // Fallback
         let toast = document.getElementById('toast');
         if (!toast) {
             toast = document.createElement('div');
@@ -2173,7 +2356,7 @@
         try {
             friendsList = await apiGet('/api/friends') || [];
         } catch (err) {
-            console.error('Failed to load friends:', err);
+            showToast('Không thể tải danh sách bạn bè', 'error');
             friendsList = [];
         }
     }
@@ -2190,7 +2373,7 @@
                 linkInput.value = `${window.location.origin}/invite/${inviteCode}`;
             }
         } catch (err) {
-            console.error('Failed to generate invite:', err);
+            showToast('Không thể tạo link mời', 'error');
             const linkInput = document.getElementById('inviteLinkInput');
             if (linkInput) {
                 linkInput.value = 'Không thể tạo link mời';
@@ -2282,7 +2465,7 @@
                 }
             }
         } catch (err) {
-            console.error('Failed to send invite:', err);
+            showToast('Không thể gửi lời mời', 'error');
         }
     }
 
@@ -2306,9 +2489,10 @@
                 }, 2000);
             }
         } catch (err) {
-            console.error('Failed to copy:', err);
+            // Fallback to old method
             linkInput.select();
             document.execCommand('copy');
+            showToast('Đã sao chép link mời', 'success');
         }
     }
 
@@ -3664,6 +3848,10 @@
         // Chat composer - handle submit with ChatInputManager for file attachments
         el.chatComposer?.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Stop typing indicator immediately
+            sendStopTypingNotification();
+            
             const text = (el.chatInput.value || '').trim();
             
             // Check for file attachments from ChatInputManager
@@ -3685,6 +3873,11 @@
         // Typing indicator - send when user types
         el.chatInput?.addEventListener('input', () => {
             sendTypingNotification();
+        });
+        
+        // Send stop typing when input loses focus
+        el.chatInput?.addEventListener('blur', () => {
+            sendStopTypingNotification();
         });
         
         // Message list scroll handler for infinite scroll & new message banner
@@ -3764,7 +3957,12 @@
 
     // ==================== INITIALIZATION ====================
     async function init() {
-        wireEvents();
+        // Only wire events once to prevent duplicate handlers
+        if (!_eventsWired) {
+            wireEvents();
+            _eventsWired = true;
+            console.log('[Init] Events wired');
+        }
         
         // Initialize mobile sidebar toggle
         initMobileSidebarToggle();
@@ -3851,8 +4049,10 @@
 
     // Track initialization state to prevent double-init
     let _chatInitialized = false;
+    let _eventsWired = false; // Track if events have been wired
     
     function cleanupSubscriptions() {
+        console.log('[Cleanup] Cleaning up all WebSocket subscriptions');
         // Unsubscribe all active subscriptions to prevent duplicate messages
         if (channelSubscription) {
             try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
@@ -3882,14 +4082,34 @@
             try { serverCategoriesSubscription.unsubscribe(); } catch (e) { /* ignore */ }
             serverCategoriesSubscription = null;
         }
+        
+        // Disconnect STOMP client to prevent reconnection issues
+        if (stompClient && stompClient.connected) {
+            try { 
+                stompClient.disconnect(() => {
+                    console.log('[Cleanup] STOMP disconnected');
+                });
+            } catch (e) { 
+                console.error('[Cleanup] Error disconnecting STOMP:', e);
+            }
+            stompClient = null;
+        }
     }
     
     async function initIfNeeded() {
         // Only init if we're on the chat page
-        if (!document.getElementById('chatApp')) return;
+        if (!document.getElementById('chatApp')) {
+            console.log('[Init] Not on chat page, skipping init');
+            return;
+        }
         
         // Check if already initialized for current DOM
-        if (_chatInitialized && el.channelList && document.contains(el.channelList)) return;
+        if (_chatInitialized && el.channelList && document.contains(el.channelList)) {
+            console.log('[Init] Already initialized, skipping');
+            return;
+        }
+        
+        console.log('[Init] Starting chat initialization...');
         
         // Cleanup old subscriptions to prevent duplicate messages
         cleanupSubscriptions();
@@ -3947,33 +4167,29 @@
         el.createCategoryBtn = document.getElementById('createCategoryBtn');
     }
 
-    // Initial run
-    initIfNeeded().catch((e) => {
-        console.error('Chat init failed:', e);
-    });
+    // Initial run - ONLY run once on page load
+    if (!window._chatInitStarted) {
+        window._chatInitStarted = true;
+        initIfNeeded().catch((e) => {
+            console.error('Chat init failed:', e);
+        });
+    }
     
     // Listen for SPA navigation events to re-init when navigating to /chat
     document.addEventListener('cococord:page:loaded', (e) => {
         const url = e.detail?.url || '';
         if (url.includes('/chat')) {
+            console.log('[SPA] Navigated to chat page, re-initializing...');
             _chatInitialized = false; // Force re-init
+            _eventsWired = false; // Reset events flag
             initIfNeeded().catch((e) => {
                 console.error('Chat re-init failed:', e);
             });
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const serverId = urlParams.get('serverId');
-
-    if (serverId) {
-        selectServer(Number(serverId));
-        
-        const serverItem = document.querySelector(`.server-item[data-server-id="${serverId}"]`);
-        if (serverItem) serverItem.classList.add('active');
-    }
-});
+    // Remove DOMContentLoaded listener to prevent duplicate init
+    // The initIfNeeded() call above is sufficient
     
     // Export API cho SPA navigation từ app.js
     window.CoCoCordChat = {

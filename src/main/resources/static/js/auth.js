@@ -102,13 +102,17 @@ async function logout() {
     const refreshToken = getRefreshToken();
     
     if (refreshToken) {
-        await fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ refreshToken })
-        });
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refreshToken })
+            });
+        } catch (e) {
+            console.error("Logout error:", e);
+        }
     }
 
     localStorage.removeItem('accessToken');
@@ -123,8 +127,6 @@ async function logout() {
 
     window.location.href = '/login';
 }
-
-
 
 // Update navigation based on login status
 function updateNavigation() {

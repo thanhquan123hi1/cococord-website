@@ -75,6 +75,38 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 
     <!-- Scrollable Channel List -->
     <div class="channel-list-wrapper">
+      <!-- Skeleton Loading for Channel List -->
+      <div class="skeleton-container" id="channelListSkeleton">
+        <div class="skeleton-channel-sidebar">
+          <div class="skeleton-channel-category">
+            <div class="skeleton skeleton-category-title"></div>
+          </div>
+          <div class="skeleton-channel-item">
+            <div class="skeleton skeleton-channel-icon"></div>
+            <div class="skeleton skeleton-channel-name"></div>
+          </div>
+          <div class="skeleton-channel-item">
+            <div class="skeleton skeleton-channel-icon"></div>
+            <div class="skeleton skeleton-channel-name"></div>
+          </div>
+          <div class="skeleton-channel-item">
+            <div class="skeleton skeleton-channel-icon"></div>
+            <div class="skeleton skeleton-channel-name"></div>
+          </div>
+          <div class="skeleton-channel-category">
+            <div class="skeleton skeleton-category-title"></div>
+          </div>
+          <div class="skeleton-channel-item">
+            <div class="skeleton skeleton-channel-icon"></div>
+            <div class="skeleton skeleton-channel-name"></div>
+          </div>
+          <div class="skeleton-channel-item">
+            <div class="skeleton skeleton-channel-icon"></div>
+            <div class="skeleton skeleton-channel-name"></div>
+          </div>
+        </div>
+      </div>
+      
       <div class="channel-list" id="channelList">
         <!-- Channel categories and items will be rendered here -->
       </div>
@@ -192,6 +224,77 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
       </header>
 
       <div class="content-body" id="messageList" aria-label="Messages">
+        <!-- Skeleton Loading for Message List -->
+        <div class="skeleton-container" id="messageListSkeleton">
+          <div class="skeleton-message-list">
+            <div class="skeleton-message-item">
+              <div class="skeleton skeleton-avatar"></div>
+              <div class="skeleton-message-content">
+                <div class="skeleton-message-header">
+                  <div class="skeleton skeleton-message-username"></div>
+                  <div class="skeleton skeleton-message-timestamp"></div>
+                </div>
+                <div class="skeleton-message-text">
+                  <div class="skeleton skeleton-text w-full"></div>
+                  <div class="skeleton skeleton-text w-80"></div>
+                </div>
+              </div>
+            </div>
+            <div class="skeleton-message-item">
+              <div class="skeleton skeleton-avatar"></div>
+              <div class="skeleton-message-content">
+                <div class="skeleton-message-header">
+                  <div class="skeleton skeleton-message-username"></div>
+                  <div class="skeleton skeleton-message-timestamp"></div>
+                </div>
+                <div class="skeleton-message-text">
+                  <div class="skeleton skeleton-text w-full"></div>
+                  <div class="skeleton skeleton-text w-60"></div>
+                </div>
+              </div>
+            </div>
+            <div class="skeleton-message-item">
+              <div class="skeleton skeleton-avatar"></div>
+              <div class="skeleton-message-content">
+                <div class="skeleton-message-header">
+                  <div class="skeleton skeleton-message-username"></div>
+                  <div class="skeleton skeleton-message-timestamp"></div>
+                </div>
+                <div class="skeleton-message-text">
+                  <div class="skeleton skeleton-text w-full"></div>
+                  <div class="skeleton skeleton-text w-80"></div>
+                  <div class="skeleton skeleton-text w-40"></div>
+                </div>
+              </div>
+            </div>
+            <div class="skeleton-message-item">
+              <div class="skeleton skeleton-avatar"></div>
+              <div class="skeleton-message-content">
+                <div class="skeleton-message-header">
+                  <div class="skeleton skeleton-message-username"></div>
+                  <div class="skeleton skeleton-message-timestamp"></div>
+                </div>
+                <div class="skeleton-message-text">
+                  <div class="skeleton skeleton-text w-full"></div>
+                </div>
+              </div>
+            </div>
+            <div class="skeleton-message-item">
+              <div class="skeleton skeleton-avatar"></div>
+              <div class="skeleton-message-content">
+                <div class="skeleton-message-header">
+                  <div class="skeleton skeleton-message-username"></div>
+                  <div class="skeleton skeleton-message-timestamp"></div>
+                </div>
+                <div class="skeleton-message-text">
+                  <div class="skeleton skeleton-text w-full"></div>
+                  <div class="skeleton skeleton-text w-80"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div class="welcome-message" id="chatEmpty">
           <!-- Server onboarding (shown for new servers / empty default channel) -->
           <div
@@ -431,18 +534,37 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 
   <!-- Members Sidebar -->
   <aside class="members-sidebar" id="membersSidebar" aria-label="Members">
-    <div class="members-section">
-      <div class="members-category" id="onlineMembersSection">
-        <span class="category-title"
-          >TRỰC TUYẾN — <span id="onlineCount">0</span></span
-        >
-        <div class="members-list" id="onlineMembersList"></div>
+    <div class="skeleton-container">
+      <div id="membersSidebarSkeleton" class="skeleton-members-sidebar">
+        <div class="members-category">
+          <div class="skeleton skeleton-text w-40" style="height: 12px; margin-bottom: 8px;"></div>
+          <div class="skeleton-member-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div class="skeleton skeleton-text w-60"></div>
+          </div>
+          <div class="skeleton-member-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div class="skeleton skeleton-text w-full"></div>
+          </div>
+          <div class="skeleton-member-item">
+            <div class="skeleton skeleton-avatar"></div>
+            <div class="skeleton skeleton-text w-80"></div>
+          </div>
+        </div>
       </div>
-      <div class="members-category" id="offlineMembersSection">
-        <span class="category-title"
-          >NGOẠI TUYẾN — <span id="offlineCount">0</span></span
-        >
-        <div class="members-list" id="offlineMembersList"></div>
+      <div class="members-section">
+        <div class="members-category" id="onlineMembersSection">
+          <span class="category-title"
+            >TRỰC TUYẾN — <span id="onlineCount">0</span></span
+          >
+          <div class="members-list" id="onlineMembersList"></div>
+        </div>
+        <div class="members-category" id="offlineMembersSection">
+          <span class="category-title"
+            >NGOẠI TUYẾN — <span id="offlineCount">0</span></span
+          >
+          <div class="members-list" id="offlineMembersList"></div>
+        </div>
       </div>
     </div>
   </aside>

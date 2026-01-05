@@ -719,6 +719,13 @@
         // ==================== UTILITY ====================
         
         _showToast(message, type = 'info') {
+            // Use global ToastManager if available
+            if (window.ToastManager) {
+                window.ToastManager.show(message, type);
+                return;
+            }
+            
+            // Fallback to simple toast
             const toast = document.createElement('div');
             toast.className = `chat-toast chat-toast-${type}`;
             toast.textContent = message;
