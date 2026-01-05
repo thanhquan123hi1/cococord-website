@@ -580,7 +580,7 @@
 <!-- ================================== -->
 <!-- LOCK SERVER MODAL -->
 <!-- ================================== -->
-<div class="admin-modal-backdrop glass-backdrop" id="quick-lock-modal" style="display: none;">
+<div class="admin-modal-backdrop glass-backdrop" id="lock-modal" style="display: none;">
     <div class="admin-modal admin-modal-sm glass-modal action-modal">
         <div class="action-modal-header action-header-warning">
             <div class="action-modal-icon">
@@ -589,31 +589,31 @@
                     <path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
             </div>
-            <h3 class="action-modal-title" id="quick-lock-title">Lock Server</h3>
-            <p class="action-modal-subtitle">This action will restrict all member access</p>
+            <h3 class="action-modal-title">Lock Server</h3>
+            <p class="action-modal-subtitle">You are about to lock <strong id="lock-server-name">Server</strong></p>
         </div>
-        <button class="admin-modal-close" data-action="close-quick-lock">&times;</button>
+        <button class="admin-modal-close" data-action="close-lock-modal">&times;</button>
         
         <div class="admin-modal-body">
             <div class="action-target-card">
-                <div class="server-avatar" id="quick-lock-avatar">??</div>
+                <div class="server-avatar" id="lock-avatar">??</div>
                 <div class="action-target-info">
-                    <span class="action-target-name" id="quick-lock-server-name">Server Name</span>
-                    <span class="action-target-meta" id="quick-lock-server-meta">0 members</span>
+                    <span class="action-target-name" id="lock-server-name-display">Server Name</span>
+                    <span class="action-target-meta" id="lock-server-meta">0 members</span>
                 </div>
             </div>
             
             <div class="form-group">
                 <label class="form-label required">Reason for locking</label>
-                <textarea class="admin-input" id="quick-lock-reason" rows="3" 
+                <textarea class="admin-input" id="lock-reason" rows="3" 
                     placeholder="Explain why this server is being locked..." required></textarea>
                 <small class="form-hint">This will be recorded in the audit log and shown to users.</small>
             </div>
         </div>
         
         <div class="admin-modal-footer">
-            <button class="admin-btn admin-btn-ghost" data-action="close-quick-lock">Cancel</button>
-            <button class="admin-btn admin-btn-warning" id="btn-confirm-quick-lock">
+            <button class="admin-btn admin-btn-ghost" data-action="close-lock-modal">Cancel</button>
+            <button class="admin-btn admin-btn-warning" id="btn-confirm-lock">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
                     <rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/>
                 </svg>
@@ -638,7 +638,7 @@
             <h3 class="action-modal-title">Suspend Server</h3>
             <p class="action-modal-subtitle">Temporarily disable this server</p>
         </div>
-        <button class="admin-modal-close" data-action="close-suspend">&times;</button>
+        <button class="admin-modal-close" data-action="close-suspend-modal">&times;</button>
         
         <div class="admin-modal-body">
             <div class="action-target-card">
@@ -671,7 +671,7 @@
         </div>
         
         <div class="admin-modal-footer">
-            <button class="admin-btn admin-btn-ghost" data-action="close-suspend">Cancel</button>
+            <button class="admin-btn admin-btn-ghost" data-action="close-suspend-modal">Cancel</button>
             <button class="admin-btn admin-btn-warning" id="btn-confirm-suspend">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
                     <circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/>
@@ -700,7 +700,7 @@
             <h3 class="action-modal-title">Transfer Ownership</h3>
             <p class="action-modal-subtitle">Reassign this server to a different owner</p>
         </div>
-        <button class="admin-modal-close" data-action="close-transfer">&times;</button>
+        <button class="admin-modal-close" data-action="close-transfer-modal">&times;</button>
         
         <div class="admin-modal-body">
             <div class="action-target-card">
@@ -725,7 +725,7 @@
         </div>
         
         <div class="admin-modal-footer">
-            <button class="admin-btn admin-btn-ghost" data-action="close-transfer">Cancel</button>
+            <button class="admin-btn admin-btn-ghost" data-action="close-transfer-modal">Cancel</button>
             <button class="admin-btn admin-btn-primary" id="btn-confirm-transfer">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
                     <path d="M4 8h8M9 5l3 3-3 3"/>
@@ -737,9 +737,9 @@
 </div>
 
 <!-- ================================== -->
-<!-- CONFIRM DELETE MODAL -->
+<!-- DELETE SERVER MODAL -->
 <!-- ================================== -->
-<div class="admin-modal-backdrop glass-backdrop" id="confirm-delete-modal" style="display: none;">
+<div class="admin-modal-backdrop glass-backdrop" id="delete-modal" style="display: none;">
     <div class="admin-modal admin-modal-sm glass-modal action-modal">
         <div class="action-modal-header action-header-danger">
             <div class="action-modal-icon">
@@ -751,7 +751,7 @@
             <h3 class="action-modal-title">Delete Server</h3>
             <p class="action-modal-subtitle">This action is permanent and cannot be undone</p>
         </div>
-        <button class="admin-modal-close" data-action="close-confirm-delete">&times;</button>
+        <button class="admin-modal-close" data-action="close-delete-modal">&times;</button>
         
         <div class="admin-modal-body">
             <div class="action-target-card action-target-danger">
@@ -791,12 +791,167 @@
         </div>
         
         <div class="admin-modal-footer">
-            <button class="admin-btn admin-btn-ghost" data-action="close-confirm-delete">Cancel</button>
+            <button class="admin-btn admin-btn-ghost" data-action="close-delete-modal">Cancel</button>
             <button class="admin-btn admin-btn-danger" id="btn-confirm-delete" disabled>
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
                     <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/>
                 </svg>
                 Delete Permanently
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- BULK ACTION MODALS -->
+<!-- ================================== -->
+
+<!-- Bulk Lock Modal -->
+<div class="admin-modal-backdrop glass-backdrop" id="bulk-lock-modal" style="display: none;">
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-warning">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+            </div>
+            <h3 class="action-modal-title">Lock Multiple Servers</h3>
+            <p class="action-modal-subtitle">You are about to lock <strong id="bulk-lock-count">0</strong> servers</p>
+        </div>
+        <button class="admin-modal-close" data-action="close-bulk-lock-modal">&times;</button>
+        
+        <div class="admin-modal-body">
+            <div class="warning-box warning-box-warning">
+                <div class="warning-icon">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="10" cy="10" r="8"/><path d="M10 6v4M10 12v.01"/>
+                    </svg>
+                </div>
+                <div class="warning-content">
+                    <strong>Locking these servers will:</strong>
+                    <ul>
+                        <li>Prevent all members from accessing them</li>
+                        <li>Hide servers from public listings</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">Reason for locking</label>
+                <textarea class="admin-input" id="bulk-lock-reason" rows="3" 
+                    placeholder="Enter reason for locking these servers..." required></textarea>
+            </div>
+        </div>
+        
+        <div class="admin-modal-footer">
+            <button class="admin-btn admin-btn-ghost" data-action="close-bulk-lock-modal">Cancel</button>
+            <button class="admin-btn admin-btn-warning" id="btn-confirm-bulk-lock">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/>
+                </svg>
+                Lock Selected Servers
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Unlock Modal -->
+<div class="admin-modal-backdrop glass-backdrop" id="bulk-unlock-modal" style="display: none;">
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-success">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M17 11V7a5 5 0 00-8.5-3.5"/>
+                </svg>
+            </div>
+            <h3 class="action-modal-title">Unlock Multiple Servers</h3>
+            <p class="action-modal-subtitle">You are about to unlock <strong id="bulk-unlock-count">0</strong> servers</p>
+        </div>
+        <button class="admin-modal-close" data-action="close-bulk-unlock-modal">&times;</button>
+        
+        <div class="admin-modal-body">
+            <div class="warning-box warning-box-success">
+                <div class="warning-icon">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M6 10l3 3 5-6"/>
+                        <circle cx="10" cy="10" r="8"/>
+                    </svg>
+                </div>
+                <div class="warning-content">
+                    <strong>Unlocking these servers will:</strong>
+                    <ul>
+                        <li>Restore access for all members</li>
+                        <li>Make servers visible in public listings</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-modal-footer">
+            <button class="admin-btn admin-btn-ghost" data-action="close-bulk-unlock-modal">Cancel</button>
+            <button class="admin-btn admin-btn-success" id="btn-confirm-bulk-unlock">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <rect x="3" y="7" width="10" height="7" rx="1"/><path d="M11 7V5a3 3 0 00-5-2"/>
+                </svg>
+                Unlock Selected Servers
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Modal -->
+<div class="admin-modal-backdrop glass-backdrop" id="bulk-delete-modal" style="display: none;">
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-danger">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2L2 20h20L12 2z"/>
+                    <path d="M12 9v4M12 17v.01"/>
+                </svg>
+            </div>
+            <h3 class="action-modal-title">Delete Multiple Servers</h3>
+            <p class="action-modal-subtitle">You are about to delete <strong id="bulk-delete-count">0</strong> servers</p>
+        </div>
+        <button class="admin-modal-close" data-action="close-bulk-delete-modal">&times;</button>
+        
+        <div class="admin-modal-body">
+            <div class="warning-box warning-box-danger">
+                <div class="warning-icon">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M10 2L2 17h16L10 2zM10 7v4M10 13v.01"/>
+                    </svg>
+                </div>
+                <div class="warning-content">
+                    <strong>This action is IRREVERSIBLE!</strong>
+                    <ul>
+                        <li>All server data will be deleted</li>
+                        <li>All channels and messages will be lost</li>
+                        <li>All member data will be removed</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">Type "DELETE" to confirm</label>
+                <input type="text" class="admin-input" id="confirm-bulk-delete-input" placeholder="Type DELETE to confirm">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Reason (optional)</label>
+                <textarea class="admin-input" id="bulk-delete-reason" rows="2" 
+                    placeholder="Enter reason for deletion..."></textarea>
+            </div>
+        </div>
+        
+        <div class="admin-modal-footer">
+            <button class="admin-btn admin-btn-ghost" data-action="close-bulk-delete-modal">Cancel</button>
+            <button class="admin-btn admin-btn-danger" id="btn-confirm-bulk-delete" disabled>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/>
+                </svg>
+                Delete Selected Servers
             </button>
         </div>
     </div>
