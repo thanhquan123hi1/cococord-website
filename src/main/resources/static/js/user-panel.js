@@ -13,10 +13,12 @@
     // ============================================
     currentUser: null,
     isPopoutVisible: false,
+    isStatusDropdownVisible: false,
     initialized: false,
     isMuted: false,
     isDeafened: false,
     presenceUnsub: null,
+    statusHoverTimeout: null,
 
     // ============================================
     // SVG Icons
@@ -221,10 +223,10 @@
 
       container.innerHTML = `
                 <div class="user-panel-content">
-                    <!-- Left: Avatar + Info -->
+                    <!-- Left: Avatar + Info (Status Trigger) -->
                     <div class="user-panel-left" id="userPanelTrigger">
                         <div class="user-avatar-wrapper">
-                            ${this.renderAvatar(35)}
+                            ${this.renderAvatar(32)}
                             <span class="status-indicator status-${status.toLowerCase()}"></span>
                         </div>
                         <div class="user-info">
@@ -265,11 +267,39 @@
                             ${this.icons.settings}
                         </button>
                     </div>
+                    
+                    <!-- Status Dropdown (Hidden by default) -->
+                    ${this.renderStatusDropdown(status)}
                 </div>
             `;
 
       // Re-attach event listeners after render
       this.attachEventListeners();
+    },
+
+    renderStatusDropdown: function (currentStatus) {
+      const statuses = [
+        { id: 'ONLINE', label: 'Trực tuyến', icon: 'online' },
+        { id: 'IDLE', label: 'Vắng mặt', icon: 'idle' },
+        { id: 'DO_NOT_DISTURB', label: 'Không làm phiền', icon: 'dnd' },
+        { id: 'INVISIBLE', label: 'Ẩn', icon: 'invisible' }
+      ];
+
+      return `
+        <div class="status-dropdown" id="statusDropdown">
+          ${statuses.map(s => `
+            <button class="status-dropdown-item ${currentStatus === s.id ? 'active' : ''}" data-status="${s.id}">
+              <span class="status-dropdown-icon ${s.icon}"></span>
+              <span>${s.label}</span>
+            </button>
+          `).join('')}
+          <div class="status-dropdown-separator"></div>
+          <button class="status-dropdown-custom" id="statusDropdownCustom">
+            <span>😊</span>
+            <span>Đặt trạng thái tùy chỉnh</span>
+          </button>
+        </div>
+      `;
     },
 
     renderAvatar: function (size = 32) {
@@ -323,13 +353,71 @@
     // Event Listeners
     // ============================================
     attachEventListeners: function () {
-      // Avatar/Info trigger - toggle popout
       const panelLeft = document.getElementById("userPanelTrigger");
+      const statusDropdown = document.getElementById("statusDropdown");
+      const userPanelContent = document.querySelector(".user-panel-content");
+
+      // Avatar/Info trigger - show status dropdown on hover, click for popout
       if (panelLeft) {
+        // Click to open full popout
         panelLeft.onclick = (e) => {
           e.stopPropagation();
+          this.hideStatusDropdown();
           this.togglePopout();
         };
+
+        // Hover to show status dropdown
+        panelLeft.onmouseenter = () => {
+          if (this.isPopoutVisible) return;
+          this.statusHoverTimeout = setTimeout(() => {
+            this.showStatusDropdown();
+          }, 200);
+        };
+
+        panelLeft.onmouseleave = (e) => {
+          clearTimeout(this.statusHoverTimeout);
+          // Check if mouse moved to dropdown
+          const relatedTarget = e.relatedTarget;
+          if (statusDropdown && statusDropdown.contains(relatedTarget)) {
+            return;
+          }
+          this.hideStatusDropdown();
+        };
+      }
+
+      // Status dropdown hover persistence
+      if (statusDropdown) {
+        statusDropdown.onmouseenter = () => {
+          clearTimeout(this.statusHoverTimeout);
+        };
+
+        statusDropdown.onmouseleave = (e) => {
+          const relatedTarget = e.relatedTarget;
+          if (panelLeft && panelLeft.contains(relatedTarget)) {
+            return;
+          }
+          this.hideStatusDropdown();
+        };
+
+        // Status item clicks
+        statusDropdown.querySelectorAll('.status-dropdown-item').forEach(item => {
+          item.onclick = (e) => {
+            e.stopPropagation();
+            const newStatus = item.dataset.status;
+            this.updateUserStatus(newStatus);
+            this.hideStatusDropdown();
+          };
+        });
+
+        // Custom status button
+        const customBtn = document.getElementById('statusDropdownCustom');
+        if (customBtn) {
+          customBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.hideStatusDropdown();
+            this.openStatusPicker();
+          };
+        }
       }
 
       // Mic button
@@ -372,8 +460,69 @@
               this.hidePopout();
             }
           }
+          // Also close status dropdown on outside click
+          if (this.isStatusDropdownVisible) {
+            const dropdown = document.getElementById("statusDropdown");
+            const trigger = document.getElementById("userPanelTrigger");
+            if (dropdown && !dropdown.contains(e.target) && trigger && !trigger.contains(e.target)) {
+              this.hideStatusDropdown();
+            }
+          }
         });
         this._documentListenerAttached = true;
+      }
+    },
+
+    // ============================================
+    // Status Dropdown Logic
+    // ============================================
+    showStatusDropdown: function () {
+      const dropdown = document.getElementById("statusDropdown");
+      const trigger = document.getElementById("userPanelTrigger");
+      if (dropdown) {
+        dropdown.classList.add("visible");
+        this.isStatusDropdownVisible = true;
+        if (trigger) {
+          trigger.classList.add("status-menu-open");
+        }
+      }
+    },
+
+    hideStatusDropdown: function () {
+      const dropdown = document.getElementById("statusDropdown");
+      const trigger = document.getElementById("userPanelTrigger");
+      if (dropdown) {
+        dropdown.classList.remove("visible");
+        this.isStatusDropdownVisible = false;
+        if (trigger) {
+          trigger.classList.remove("status-menu-open");
+        }
+      }
+    },
+
+    updateUserStatus: async function (status) {
+      try {
+        const token = localStorage.getItem("accessToken");
+        const response = await fetch("/api/users/me/status", {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ status: status })
+        });
+
+        if (response.ok) {
+          this.currentUser.status = status;
+          this.render();
+          
+          // Notify presence system
+          if (window.CoCoCordPresence?.updateStatus) {
+            window.CoCoCordPresence.updateStatus(status);
+          }
+        }
+      } catch (error) {
+        console.error("UserPanel: Failed to update status", error);
       }
     },
 

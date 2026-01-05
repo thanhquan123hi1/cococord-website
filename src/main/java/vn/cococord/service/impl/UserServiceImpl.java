@@ -211,6 +211,10 @@ public class UserServiceImpl implements IUserService {
                         user.setBio(request.getBio());
                 }
 
+                if (request.getPhone() != null && !request.getPhone().equals(user.getPhone())) {
+                        user.setPhone(request.getPhone());
+                }
+
                 if (request.getPronouns() != null) {
                         user.setPronouns(request.getPronouns());
                 }
