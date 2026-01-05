@@ -202,6 +202,11 @@
     background-color: var(--bg-primary);
     z-index: 10;
     overflow: hidden;
+    display: none; /* Hidden by default, show only during loading */
+}
+
+.skeleton-container.loading {
+    display: block;
 }
 
 .skeleton-container.hidden {

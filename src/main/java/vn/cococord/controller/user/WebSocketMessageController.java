@@ -41,15 +41,10 @@ public class WebSocketMessageController {
             String username = principal.getName();
             log.info("Received message from user: {} to channel: {}", username, request.getChannelId());
 
-            // Save message
-            ChatMessageResponse response = messageService.sendMessage(request, username);
+            // Save message - service will handle WebSocket broadcast
+            messageService.sendMessage(request, username);
 
-            // Broadcast to all subscribers of this channel
-            messagingTemplate.convertAndSend(
-                    "/topic/channel/" + request.getChannelId(),
-                    response);
-
-            log.info("Message broadcast to channel: {}", request.getChannelId());
+            log.info("Message saved and broadcast handled by service for channel: {}", request.getChannelId());
         } catch (Exception e) {
             log.error("Error sending message: {}", e.getMessage(), e);
 
@@ -71,14 +66,10 @@ public class WebSocketMessageController {
             String username = principal.getName();
             log.info("User: {} editing message: {}", username, request.getMessageId());
 
+            // Edit message - service will handle WebSocket broadcast
             ChatMessageResponse response = messageService.editMessage(request, username);
 
-            // Broadcast edited message to channel
-            messagingTemplate.convertAndSend(
-                    "/topic/channel/" + response.getChannelId(),
-                    response);
-
-            log.info("Edited message broadcast to channel: {}", response.getChannelId());
+            log.info("Message edited and broadcast handled by service for channel: {}", response.getChannelId());
         } catch (Exception e) {
             log.error("Error editing message: {}", e.getMessage(), e);
 
@@ -99,19 +90,10 @@ public class WebSocketMessageController {
             String username = principal.getName();
             log.info("User: {} deleting message: {}", username, messageId);
 
-            // Get message details before deletion
-            ChatMessageResponse message = messageService.getMessageById(messageId);
-            Long channelId = message.getChannelId();
-
-            // Delete message
+            // Delete message - service will handle WebSocket broadcast
             messageService.deleteMessage(messageId, username);
 
-            // Notify channel about deletion
-            messagingTemplate.convertAndSend(
-                    "/topic/channel/" + channelId + "/delete",
-                    messageId);
-
-            log.info("Message deletion broadcast to channel: {}", channelId);
+            log.info("Message deleted and broadcast handled by service");
         } catch (Exception e) {
             log.error("Error deleting message: {}", e.getMessage(), e);
 

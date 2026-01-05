@@ -75,10 +75,6 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 
     <!-- Scrollable Channel List -->
     <div class="channel-list-wrapper">
-      <div class="channel-list" id="channelList">
-        <!-- Channel categories and items will be rendered here -->
-      </div>
-      
       <!-- Skeleton Loading for Channel List -->
       <div class="skeleton-container" id="channelListSkeleton">
         <div class="skeleton-channel-sidebar">
@@ -109,6 +105,10 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
             <div class="skeleton skeleton-channel-name"></div>
           </div>
         </div>
+      </div>
+      
+      <div class="channel-list" id="channelList">
+        <!-- Channel categories and items will be rendered here -->
       </div>
     </div>
 

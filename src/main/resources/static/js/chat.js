@@ -131,6 +131,15 @@
     // Virtual Scrolling
     let virtualScroller = null;
     let messages = []; // Store all messages for virtual scrolling
+    
+    // Message deduplication - track received message IDs to prevent duplicates
+    let receivedMessageIds = new Set();
+    
+    // Debug: Track subscription count
+    let subscriptionCount = 0;
+    
+    // Cache messages by channel to avoid reloading on switch
+    let channelMessageCache = new Map(); // channelId -> { messages: [], currentPage: number, hasMore: boolean, oldestId: string }
 
     // Chat Input Manager (file attachments, emoji/gif/sticker picker)
     let chatInputManager = null;
@@ -777,6 +786,15 @@
     }
 
     function renderChannelList() {
+        console.log('[renderChannelList] Starting render. Channels:', channels.length, 'Categories:', categories.length);
+        console.log('[renderChannelList] el.channelList:', el.channelList);
+        console.log('[renderChannelList] el.channelList exists:', !!el.channelList);
+        
+        if (!el.channelList) {
+            console.error('[renderChannelList] channelList element not found!');
+            return;
+        }
+        
         el.channelList.innerHTML = '';
 
         if (!channels.length) {
@@ -784,6 +802,7 @@
             div.style.cssText = 'padding: 8px; color: var(--text-muted); font-size: 13px;';
             div.textContent = 'Chưa có kênh nào.';
             el.channelList.appendChild(div);
+            console.log('[renderChannelList] No channels to render');
             return;
         }
 
@@ -996,6 +1015,9 @@
             const categoryEl = createCategory(cat.name, catChannels, cat.id);
             if (categoryEl) el.channelList.appendChild(categoryEl);
         }
+        
+        console.log('[renderChannelList] Finished render. el.channelList.children:', el.channelList.children.length);
+        console.log('[renderChannelList] el.channelList.innerHTML length:', el.channelList.innerHTML.length);
     }
 
     // Helper to open create channel modal with optional category pre-selected
@@ -1055,6 +1077,15 @@
 
         // If using virtual scroller, add to messages array
         if (virtualScroller) {
+            // Check if message already exists in array (prevent duplicates)
+            const exists = messages.find(m => m.id === msg.id);
+            if (exists) {
+                console.log('[AppendMessage] Message already exists, skipping:', msg.id);
+                return;
+            }
+            
+            console.log(`[AppendMessage] Adding message to ${prepend ? 'start' : 'end'}: ${msg.id}, total will be ${messages.length + 1}`);
+            
             if (prepend) {
                 messages.unshift(msg);
                 virtualScroller.prependItems([msg]);
@@ -1347,11 +1378,14 @@
     async function loadHistory(channelId, append = false) {
         if (isLoadingHistory) return;
         
+        console.log(`[LoadHistory] Starting for channel ${channelId}, append=${append}, currentPage=${currentPage}`);
         isLoadingHistory = true;
         
         try {
             const page = await apiGet(`/api/messages/channel/${channelId}?page=${currentPage}&size=50`);
             const items = Array.isArray(page.content) ? page.content.slice() : [];
+            
+            console.log(`[LoadHistory] Received ${items.length} messages, hasMore=${!page.last}`);
             
             // Check if there are more pages
             hasMoreMessages = !page.last && items.length > 0;
@@ -1363,11 +1397,15 @@
                 // Initial load
                 messages = items; // Store in messages array
                 
+                console.log(`[LoadHistory] Setting ${messages.length} messages to virtual scroller`);
+                
                 if (virtualScroller) {
                     // Use virtual scroller
                     virtualScroller.setItems(messages, { scrollTo: 'bottom' });
                     el.chatEmpty.style.display = items.length === 0 ? 'block' : 'none';
+                    console.log('[LoadHistory] Virtual scroller updated');
                 } else {
+                    console.warn('[LoadHistory] Virtual scroller not available, using fallback');
                     // Fallback: Direct DOM
                     const emptyState = el.chatEmpty;
                     el.messageList.innerHTML = '';
@@ -1423,7 +1461,17 @@
             }
             
             currentPage++;
+            console.log(`[LoadHistory] Completed. Total messages in memory: ${messages.length}`);
+            
+            // Save to cache
+            channelMessageCache.set(String(channelId), {
+                messages: messages.slice(), // Copy array
+                currentPage: currentPage,
+                hasMore: hasMoreMessages,
+                oldestId: oldestMessageId
+            });
         } catch (e) {
+            console.error('[LoadHistory] Error:', e);
             showToast('Không thể tải lịch sử tin nhắn', 'error');
         } finally {
             isLoadingHistory = false;
@@ -1486,21 +1534,29 @@
             stompClient.connect(
                 { Authorization: `Bearer ${token}` },
                 () => {
-                    // Subscribe to presence updates
-                    presenceSubscription = stompClient.subscribe('/topic/presence', (message) => {
+                    // Wait a bit for connection to be fully established
+                    setTimeout(() => {
                         try {
-                            const data = JSON.parse(message.body);
-                            const presence = (data && data.type && data.payload) ? data.payload : data;
-                            const username = presence?.username;
-                            const status = presence?.newStatus || presence?.status;
-                            if (username && status) {
-                                presenceMap.set(username, String(status).toUpperCase());
-                                renderMembersList();
-                            }
-                        } catch (e) { /* ignore */ }
-                    });
-
-                    resolve();
+                            // Subscribe to presence updates
+                            presenceSubscription = stompClient.subscribe('/topic/presence', (message) => {
+                                try {
+                                    const data = JSON.parse(message.body);
+                                    const presence = (data && data.type && data.payload) ? data.payload : data;
+                                    const username = presence?.username;
+                                    const status = presence?.newStatus || presence?.status;
+                                    if (username && status) {
+                                        presenceMap.set(username, String(status).toUpperCase());
+                                        renderMembersList();
+                                    }
+                                } catch (e) { /* ignore */ }
+                            });
+                            
+                            resolve();
+                        } catch (e) {
+                            console.error('Failed to subscribe to presence:', e);
+                            resolve(); // Still resolve to allow other subscriptions
+                        }
+                    }, 100);
                 },
                 (err) => reject(err)
             );
@@ -1510,9 +1566,12 @@
     async function subscribeToChannel(channelId) {
         await ensureStompConnected();
 
+        console.log('[Subscribe] Subscribing to channel:', channelId);
+        
         // Unsubscribe from previous channel
         if (channelSubscription) {
-            try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            console.log('[Subscribe] Unsubscribing from previous channel');
+            try { channelSubscription.unsubscribe(); } catch (e) { console.error('[Subscribe] Error unsubscribing:', e); }
             channelSubscription = null;
         }
         if (typingSubscription) {
@@ -1526,10 +1585,18 @@
 
         // Clear typing users from previous channel
         clearAllTyping();
+        
+        // Clear message deduplication set for new channel
+        receivedMessageIds.clear();
+        console.log('[Subscribe] Cleared received message IDs');
 
         // Subscribe to new messages
+        subscriptionCount++;
+        console.log('[Subscribe] Creating subscription #' + subscriptionCount + ' for channel', channelId);
+        
         channelSubscription = stompClient.subscribe(`/topic/channel/${channelId}`, (message) => {
             try {
+                console.log('[WebSocket] Received message on channel', channelId, '(subscription #' + subscriptionCount + ')');
                 const data = JSON.parse(message.body);
                 
                 // Handle WebSocketEvent wrapper format from REST API
@@ -1545,7 +1612,13 @@
                     payload = data;
                 }
                 
-                if (String(payload.channelId) !== String(activeChannelId)) return;
+                console.log('[WebSocket] Event type:', eventType, 'Payload ID:', payload.id);
+                
+                // Validate channel ID first
+                if (String(payload.channelId) !== String(activeChannelId)) {
+                    console.log('[WebSocket] Ignoring message from different channel:', payload.channelId, 'vs', activeChannelId);
+                    return;
+                }
                 
                 // Handle different event types
                 if (eventType === 'message.deleted') {
@@ -1557,9 +1630,16 @@
                     return;
                 }
                 
-                // Check if this is an edit (message already exists)
+                // CRITICAL: Check for duplicates FIRST before any DOM operations
+                if (receivedMessageIds.has(payload.id)) {
+                    console.warn('[WebSocket] DUPLICATE message detected, ignoring:', payload.id);
+                    return;
+                }
+                
+                // Check if this is an edit (message already exists in DOM)
                 const existingRow = document.querySelector(`[data-message-id="${payload.id}"]`);
                 if (existingRow) {
+                    console.log('[WebSocket] Updating existing message:', payload.id);
                     // Update existing message (edit)
                     const contentEl = existingRow.querySelector('.message-content');
                     const headerEl = existingRow.querySelector('.message-header');
@@ -1571,8 +1651,9 @@
                         headerEl.appendChild(editedSpan);
                     }
                 } else {
-                    // New message - check for duplicates by ID
-                    if (document.querySelector(`[data-message-id="${payload.id}"]`)) return;
+                    console.log('[WebSocket] Appending new message:', payload.id);
+                    // New message - add to deduplication set
+                    receivedMessageIds.add(payload.id);
                     
                     appendMessage(payload);
                     
@@ -1661,6 +1742,7 @@
 
     async function selectServer(serverId) {
         try {
+            console.log('[selectServer] Selecting server:', serverId);
             activeServerId = serverId;
             
             // Update URL
@@ -1678,9 +1760,12 @@
             clearMessages();
 
             // Load data from API
+            console.log('[selectServer] Loading channels...');
             try {
                 await loadChannels(serverId);
+                console.log('[selectServer] Channels loaded:', channels.length);
             } catch (err) {
+                console.error('[selectServer] Failed to load channels:', err);
                 showToast('Không thể tải kênh của máy chủ', 'error');
                 throw err;
             }
@@ -1724,11 +1809,24 @@
         activeChannelId = channelId;
         setQueryParams({ serverId: activeServerId, channelId });
 
-        // Reset pagination state for new channel
-        currentPage = 0;
-        hasMoreMessages = true;
-        oldestMessageId = null;
-        messages = []; // Clear messages array
+        // Check if we have cached data for this channel
+        const cached = channelMessageCache.get(String(channelId));
+        if (cached) {
+            console.log(`[SelectChannel] Using cached data for channel ${channelId}: ${cached.messages.length} messages`);
+            // Restore cached state
+            messages = cached.messages;
+            currentPage = cached.currentPage;
+            hasMoreMessages = cached.hasMore;
+            oldestMessageId = cached.oldestId;
+        } else {
+            console.log(`[SelectChannel] No cache for channel ${channelId}, will load fresh`);
+            // Reset pagination state for new channel
+            currentPage = 0;
+            hasMoreMessages = true;
+            oldestMessageId = null;
+            messages = []; // Clear messages array
+        }
+        
         clearAllTyping();
 
         // Close mobile sidebars when selecting channel
@@ -1750,12 +1848,26 @@
             el.channelTopic.style.display = 'none';
         }
 
-        // Initialize virtual scroller for this channel
-        initVirtualScroller();
+        // If we have cached messages, render them immediately
+        if (cached && messages.length > 0) {
+            if (virtualScroller) {
+                virtualScroller.setItems(messages, { scrollTo: 'bottom' });
+            }
+            el.chatComposer.style.display = '';
+        } else {
+            // Clear virtual scroller for fresh load
+            if (virtualScroller) {
+                virtualScroller.setItems([], { scrollTo: 'bottom' });
+            }
+        }
 
         renderChannelList();
         await subscribeToChannel(channelId);
-        await loadHistory(channelId);
+        
+        // Only load history if no cache
+        if (!cached) {
+            await loadHistory(channelId);
+        }
     }
 
     // ==================== CUSTOM CONTEXT MENU ====================
@@ -3845,7 +3957,12 @@
 
     // ==================== INITIALIZATION ====================
     async function init() {
-        wireEvents();
+        // Only wire events once to prevent duplicate handlers
+        if (!_eventsWired) {
+            wireEvents();
+            _eventsWired = true;
+            console.log('[Init] Events wired');
+        }
         
         // Initialize mobile sidebar toggle
         initMobileSidebarToggle();
@@ -3932,8 +4049,10 @@
 
     // Track initialization state to prevent double-init
     let _chatInitialized = false;
+    let _eventsWired = false; // Track if events have been wired
     
     function cleanupSubscriptions() {
+        console.log('[Cleanup] Cleaning up all WebSocket subscriptions');
         // Unsubscribe all active subscriptions to prevent duplicate messages
         if (channelSubscription) {
             try { channelSubscription.unsubscribe(); } catch (e) { /* ignore */ }
@@ -3963,14 +4082,34 @@
             try { serverCategoriesSubscription.unsubscribe(); } catch (e) { /* ignore */ }
             serverCategoriesSubscription = null;
         }
+        
+        // Disconnect STOMP client to prevent reconnection issues
+        if (stompClient && stompClient.connected) {
+            try { 
+                stompClient.disconnect(() => {
+                    console.log('[Cleanup] STOMP disconnected');
+                });
+            } catch (e) { 
+                console.error('[Cleanup] Error disconnecting STOMP:', e);
+            }
+            stompClient = null;
+        }
     }
     
     async function initIfNeeded() {
         // Only init if we're on the chat page
-        if (!document.getElementById('chatApp')) return;
+        if (!document.getElementById('chatApp')) {
+            console.log('[Init] Not on chat page, skipping init');
+            return;
+        }
         
         // Check if already initialized for current DOM
-        if (_chatInitialized && el.channelList && document.contains(el.channelList)) return;
+        if (_chatInitialized && el.channelList && document.contains(el.channelList)) {
+            console.log('[Init] Already initialized, skipping');
+            return;
+        }
+        
+        console.log('[Init] Starting chat initialization...');
         
         // Cleanup old subscriptions to prevent duplicate messages
         cleanupSubscriptions();
@@ -4028,33 +4167,29 @@
         el.createCategoryBtn = document.getElementById('createCategoryBtn');
     }
 
-    // Initial run
-    initIfNeeded().catch((e) => {
-        console.error('Chat init failed:', e);
-    });
+    // Initial run - ONLY run once on page load
+    if (!window._chatInitStarted) {
+        window._chatInitStarted = true;
+        initIfNeeded().catch((e) => {
+            console.error('Chat init failed:', e);
+        });
+    }
     
     // Listen for SPA navigation events to re-init when navigating to /chat
     document.addEventListener('cococord:page:loaded', (e) => {
         const url = e.detail?.url || '';
         if (url.includes('/chat')) {
+            console.log('[SPA] Navigated to chat page, re-initializing...');
             _chatInitialized = false; // Force re-init
+            _eventsWired = false; // Reset events flag
             initIfNeeded().catch((e) => {
                 console.error('Chat re-init failed:', e);
             });
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const serverId = urlParams.get('serverId');
-
-    if (serverId) {
-        selectServer(Number(serverId));
-        
-        const serverItem = document.querySelector(`.server-item[data-server-id="${serverId}"]`);
-        if (serverItem) serverItem.classList.add('active');
-    }
-});
+    // Remove DOMContentLoaded listener to prevent duplicate init
+    // The initIfNeeded() call above is sufficient
     
     // Export API cho SPA navigation từ app.js
     window.CoCoCordChat = {

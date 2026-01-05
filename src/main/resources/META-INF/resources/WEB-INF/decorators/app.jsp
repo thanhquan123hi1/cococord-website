@@ -31,6 +31,8 @@
     
     <!-- Custom CSS for App -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
+    <!-- Server Sidebar CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/server-sidebar.css?v=20260105a">
     <!-- Channel panel CSS (used for global User Control Panel styling) -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/channel-panel.css">
     <!-- User Panel CSS -->

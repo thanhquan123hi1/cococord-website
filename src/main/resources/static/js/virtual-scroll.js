@@ -38,6 +38,8 @@
             this.lastScrollTop = 0;
             this.isScrolling = false;
             this.scrollTimeout = null;
+            this.isProgrammaticScroll = false;              // Flag to skip render during programmatic scroll
+            this.isProgrammaticScroll = false;              // Flag to skip render during programmatic scroll
             
             // DOM elements
             this.viewport = null;                           // Inner container for items
@@ -87,7 +89,10 @@
          * @param {Object} options - { preserveScroll: boolean, scrollTo: 'top'|'bottom' }
          */
         setItems(newItems, options = {}) {
-            this.items = newItems || [];
+            // IMPORTANT: Copy array to avoid reference issues
+            this.items = (newItems || []).slice();
+            
+            console.log(`[VirtualScroller] setItems: ${this.items.length} items, scrollTo=${options.scrollTo}`);
             
             // Reset height cache if items changed significantly
             if (this.items.length === 0) {
@@ -97,13 +102,14 @@
             // Calculate total height (estimate for unmeasured items)
             this._updateTotalHeight();
             
-            // Render visible range
+            // Always render first to create DOM
+            this._render();
+            
+            // Then scroll after render completes
             if (options.scrollTo === 'bottom') {
                 this.scrollToBottom();
             } else if (options.scrollTo === 'top') {
                 this.scrollToTop();
-            } else if (!options.preserveScroll) {
-                this._render();
             }
         }
 
@@ -115,8 +121,13 @@
         appendItems(newItems, autoScroll = true) {
             if (!newItems || newItems.length === 0) return;
             
+            console.log(`[VirtualScroller.appendItems] Appending ${newItems.length} items, current total: ${this.items.length}`);
+            newItems.forEach(item => console.log(`  - Item ID: ${item.id}`));
+            
             const wasNearBottom = this._isNearBottom();
             this.items.push(...newItems);
+            console.log(`[VirtualScroller.appendItems] After append, total items: ${this.items.length}`);
+            
             this._updateTotalHeight();
             this._render();
             
@@ -208,8 +219,11 @@
         _render() {
             const range = this._calculateVisibleRange();
             
+            console.log(`[VirtualScroller] _render: range=${range.start}-${range.end}, total items=${this.items.length}`);
+            
             // Skip if range hasn't changed
             if (range.start === this.visibleRange.start && range.end === this.visibleRange.end) {
+                console.log('[VirtualScroller] _render: range unchanged, skipping');
                 return;
             }
             
@@ -257,9 +271,12 @@
          * Create DOM node for an item
          */
         _createItemNode(item, index) {
+            console.log(`[VirtualScroller._createItemNode] Creating DOM for index ${index}, item ID: ${item.id}`);
+            
             const wrapper = document.createElement('div');
             wrapper.className = 'virtual-scroll-item';
             wrapper.dataset.index = index;
+            wrapper.dataset.itemId = item.id; // Add item ID for debugging
             
             // Call user-provided render function
             const html = this.renderItem(item, index);
@@ -307,6 +324,11 @@
          * Handle scroll event
          */
         _onScroll() {
+            // Skip render if programmatic scroll (prevents infinite loop)
+            if (this.isProgrammaticScroll) {
+                return;
+            }
+            
             const scrollTop = this.container.scrollTop;
             const scrollHeight = this.container.scrollHeight;
             const clientHeight = this.container.clientHeight;
@@ -363,8 +385,13 @@
          * Scroll to bottom
          */
         scrollToBottom() {
+            this.isProgrammaticScroll = true;
             requestAnimationFrame(() => {
                 this.container.scrollTop = this.container.scrollHeight;
+                // Reset flag after scroll completes
+                setTimeout(() => {
+                    this.isProgrammaticScroll = false;
+                }, 100);
             });
         }
 
@@ -372,8 +399,12 @@
          * Scroll to top
          */
         scrollToTop() {
+            this.isProgrammaticScroll = true;
             requestAnimationFrame(() => {
                 this.container.scrollTop = 0;
+                setTimeout(() => {
+                    this.isProgrammaticScroll = false;
+                }, 100);
             });
         }
 
