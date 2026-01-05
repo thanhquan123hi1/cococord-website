@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.AdminReportActionRequest;
 import vn.cococord.dto.request.AdminRoleRequest;
 import vn.cococord.dto.request.AdminSettingsRequest;
+import vn.cococord.dto.request.AdminCreateUserRequest;
 import vn.cococord.dto.response.*;
 import vn.cococord.entity.mongodb.Message;
 import vn.cococord.entity.mysql.*;
@@ -27,6 +29,7 @@ import vn.cococord.exception.BadRequestException;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.repository.*;
 import vn.cococord.service.IAdminService;
+import vn.cococord.service.IEmailService;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,8 @@ public class AdminServiceImpl implements IAdminService {
     private final IMessageRepository messageRepository;
     private final IAdminAuditLogRepository auditLogRepository;
     private final ISystemSettingsRepository settingsRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final IEmailService emailService;
 
     // ================== Dashboard ==================
 
@@ -306,6 +311,64 @@ public class AdminServiceImpl implements IAdminService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserById(Long userId) {
         User user = getUserByIdInternal(userId);
+        return mapUserToResponse(user);
+    }
+
+    @Override
+    public UserProfileResponse createUser(AdminCreateUserRequest request, String adminUsername) {
+        if (request == null) {
+            throw new BadRequestException("Invalid request");
+        }
+
+        String username = request.getUsername() != null ? request.getUsername().trim() : null;
+        String email = request.getEmail() != null ? request.getEmail().trim() : null;
+
+        if (username == null || username.isEmpty()) {
+            throw new BadRequestException("Vui lòng nhập tên đăng nhập");
+        }
+        if (email == null || email.isEmpty()) {
+            throw new BadRequestException("Vui lòng nhập email");
+        }
+
+        if (userRepository.existsByUsername(username)) {
+            throw new BadRequestException("Tên đăng nhập đã tồn tại");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new BadRequestException("Email đã được đăng ký");
+        }
+
+        Role role;
+        try {
+            role = Role.valueOf(request.getRole().trim().toUpperCase());
+        } catch (Exception e) {
+            throw new BadRequestException("Vai trò không hợp lệ");
+        }
+
+        User admin = getUserByUsername(adminUsername);
+
+        User user = User.builder()
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .displayName(username)
+                .role(role)
+                .isEmailVerified(Boolean.TRUE.equals(request.getEmailVerified()))
+                .build();
+
+        userRepository.save(user);
+
+        logAdminAction(AdminAuditLog.AdminActionType.USER_CREATE,
+                "Created user " + user.getUsername() + " with role " + user.getRole(),
+                "USER", user.getId(), user.getUsername(), null, admin.getUsername(), null);
+
+        if (Boolean.TRUE.equals(request.getSendWelcomeEmail())) {
+            try {
+                emailService.sendWelcomeEmail(user.getEmail(), user.getDisplayName());
+            } catch (Exception e) {
+                log.error("Failed to send welcome email to {}", user.getEmail(), e);
+            }
+        }
+
         return mapUserToResponse(user);
     }
 

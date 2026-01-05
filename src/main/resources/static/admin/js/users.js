@@ -30,9 +30,16 @@ var AdminUsers = window.AdminUsers || (function() {
   };
 
   let usersData = [];
+  let allUsers = [];
   let selectedUsers = new Set();
   let isLoading = false;
   let currentUser = null; // User currently being viewed in modal
+
+  // Realtime presence
+  let presenceUnsub = null;
+
+  // Presence-only filter (independent from backend status/role/time)
+  let presenceFilter = ''; // '' | 'online' | 'offline'
 
   // ========================================
   // API Endpoints
@@ -70,6 +77,8 @@ var AdminUsers = window.AdminUsers || (function() {
     initRightClickMenu();
     initQuickBanModal();
     initModerationTab();
+    initActiveNowModal();
+    initRealtimePresence();
     
     // Fetch data
     await Promise.all([
@@ -110,12 +119,22 @@ var AdminUsers = window.AdminUsers || (function() {
       
       const response = await AdminUtils.api.get(`${API.users}?${params}`);
       
-      usersData = response.content || [];
+      allUsers = response.content || [];
+      usersData = allUsers;
+
+      // Seed realtime presence snapshot for UI-first realtime features
+      if (window.AdminPresence && AdminPresence.seedUsers) {
+        await Promise.resolve(AdminPresence.seedUsers(allUsers));
+      }
+
       pagination.total = response.totalElements || 0;
       pagination.totalPages = response.totalPages || 0;
       
-      renderUsersTable();
+      applyPresenceFilterAndRender();
       renderPagination();
+
+      updateActiveNowStat();
+      updateRealtimeFilterSummary();
       
       return usersData;
     } catch (error) {
@@ -133,7 +152,7 @@ var AdminUsers = window.AdminUsers || (function() {
       
       // Update stat cards
       setStatValue('stat-total-users', response.totalUsers);
-      setStatValue('stat-active-users', response.onlineUsers);
+      updateActiveNowStat();
       setStatValue('stat-new-users', response.usersGrowth ? `+${Math.round(response.usersGrowth)}%` : '--');
       setStatValue('stat-banned-users', response.bannedUsers);
     } catch (error) {
@@ -146,6 +165,77 @@ var AdminUsers = window.AdminUsers || (function() {
     if (el) {
       el.textContent = value != null ? AdminUtils.formatNumber(value) : '--';
     }
+  }
+
+  function updateActiveNowStat() {
+    const el = document.getElementById('stat-active-users');
+    if (!el) return;
+    const count = window.AdminPresence && AdminPresence.countOnline ? AdminPresence.countOnline() : 0;
+    el.textContent = AdminUtils.formatNumber(count);
+  }
+
+  function initPresenceFilter() {
+    const el = document.getElementById('filter-presence');
+    if (!el) return;
+
+    el.addEventListener('change', () => {
+      presenceFilter = el.value || '';
+
+      // Selection no longer valid after list changes
+      selectedUsers.clear();
+      updateCheckboxes();
+      updateSelectAllCheckbox();
+      updateBulkActionsBar();
+
+      applyPresenceFilterAndRender();
+      updateRealtimeFilterSummary();
+    });
+  }
+
+  function applyPresenceFilterAndRender() {
+    const p = (presenceFilter || '').toLowerCase();
+    const hasPresence = window.AdminPresence && typeof AdminPresence.isOnline === 'function';
+
+    if (!p) {
+      usersData = allUsers.slice();
+      renderUsersTable();
+      return;
+    }
+
+    usersData = allUsers.filter((u) => {
+      const isOnline = hasPresence ? AdminPresence.isOnline(u.id) === true : false;
+      if (p === 'online') return isOnline;
+      if (p === 'offline') return !isOnline;
+      return true;
+    });
+
+    renderUsersTable();
+  }
+
+  function updateRealtimeFilterSummary() {
+    const visibleEl = document.getElementById('realtime-visible-count');
+    const totalEl = document.getElementById('realtime-total-count');
+    const onlineEl = document.getElementById('realtime-online-count');
+    const offlineEl = document.getElementById('realtime-offline-count');
+    if (!visibleEl || !totalEl || !onlineEl || !offlineEl) return;
+
+    const visible = Array.isArray(usersData) ? usersData.length : 0;
+    const total = Number.isFinite(pagination.total) ? pagination.total : (Array.isArray(allUsers) ? allUsers.length : 0);
+
+    let onlineCount = 0;
+    let offlineCount = 0;
+
+    const hasPresence = window.AdminPresence && typeof AdminPresence.isOnline === 'function';
+    (usersData || []).forEach((u) => {
+      const isOnline = !u?.isBanned && hasPresence && AdminPresence.isOnline(u.id) === true;
+      if (isOnline) onlineCount += 1;
+      else offlineCount += 1;
+    });
+
+    visibleEl.textContent = AdminUtils.formatNumber(visible);
+    totalEl.textContent = AdminUtils.formatNumber(total);
+    onlineEl.textContent = AdminUtils.formatNumber(onlineCount);
+    offlineEl.textContent = AdminUtils.formatNumber(offlineCount);
   }
 
   // ========================================
@@ -225,31 +315,41 @@ var AdminUsers = window.AdminUsers || (function() {
         </td>
         <td>${AdminUtils.formatDate(user.createdAt, { year: true })}</td>
         <td>${user.lastLogin ? AdminUtils.timeAgo(user.lastLogin) : 'Chưa đăng nhập'}</td>
-        <td>
-          <div class="action-buttons">
-            <button class="admin-btn admin-btn-sm admin-btn-ghost" title="Xem chi tiết" data-action="view" data-id="${user.id}">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/></svg>
-            </button>
-            ${user.isBanned ? `
-              <button class="admin-btn admin-btn-sm admin-btn-ghost admin-btn-success-ghost" title="Bỏ cấm" data-action="unban" data-id="${user.id}">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-6"/></svg>
-              </button>
-            ` : `
-              <button class="admin-btn admin-btn-sm admin-btn-ghost admin-btn-danger-ghost" title="Cấm người dùng" data-action="ban" data-id="${user.id}">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M4 12L12 4"/></svg>
-              </button>
-            `}
-            <button class="admin-btn admin-btn-sm admin-btn-ghost" title="Thêm hành động" data-action="more" data-id="${user.id}">
-              <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
-            </button>
-          </div>
+        <td class="cell-presence" data-presence-user="${user.id}">
+          ${renderPresenceBadge(user)}
         </td>
       </tr>
     `).join('');
     
-    // Attach action button listeners after render
-    attachActionListeners();
+    // View is left-click on row; actions are in right-click context menu.
+    attachRowViewListeners();
     attachCheckboxListeners();
+  }
+
+  function renderPresenceBadge(user) {
+    const isOnline = !user?.isBanned && window.AdminPresence && AdminPresence.isOnline
+      ? AdminPresence.isOnline(user.id)
+      : false;
+
+    return isOnline
+      ? '<span class="badge badge-success">Online</span>'
+      : '<span class="badge badge-default">Offline</span>';
+  }
+
+  function attachRowViewListeners() {
+    const tbody = document.getElementById('users-table-body');
+    if (!tbody) return;
+
+    tbody.querySelectorAll('tr[data-id]').forEach((row) => {
+      row.addEventListener('click', async (e) => {
+        if (e.target.closest('input[type="checkbox"]')) return;
+
+        const userId = parseInt(row.dataset.id);
+        if (Number.isFinite(userId)) {
+          await showUserDetailModal(userId);
+        }
+      });
+    });
   }
 
   function getStatusClass(user) {
@@ -416,6 +516,8 @@ var AdminUsers = window.AdminUsers || (function() {
         await fetchUsers();
       });
     }
+
+    initPresenceFilter();
   }
 
   function initSorting() {
@@ -451,6 +553,12 @@ var AdminUsers = window.AdminUsers || (function() {
       card.addEventListener('click', async () => {
         const filterStatus = card.dataset.filterStatus;
         const filterTime = card.dataset.filterTime;
+
+        // Active Now opens realtime list
+        if (filterStatus === 'active') {
+          openActiveNowModal();
+          return;
+        }
         
         if (filterStatus !== undefined) {
           currentFilters.status = filterStatus;
@@ -467,6 +575,163 @@ var AdminUsers = window.AdminUsers || (function() {
         pagination.page = 0;
         await fetchUsers();
       });
+    });
+  }
+
+  function initActiveNowModal() {
+    document.querySelectorAll('[data-action="close-active-now"]').forEach((btn) => {
+      btn.addEventListener('click', () => closeModal('active-now-modal'));
+    });
+
+    const modal = document.getElementById('active-now-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal('active-now-modal');
+      });
+    }
+
+    const search = document.getElementById('active-now-search-input');
+    if (search) {
+      search.addEventListener('input', () => {
+        const m = document.getElementById('active-now-modal');
+        if (m && m.style.display === 'flex') {
+          renderActiveNowList();
+        }
+      });
+    }
+  }
+
+  function openActiveNowModal() {
+    const modal = document.getElementById('active-now-modal');
+    if (!modal) return;
+    renderActiveNowList();
+    modal.style.display = 'flex';
+  }
+
+  function renderActiveNowList() {
+    const list = document.getElementById('active-now-list');
+    if (!list) return;
+
+    const q = (document.getElementById('active-now-search-input')?.value || '').trim().toLowerCase();
+
+    const onlineIds = window.AdminPresence && AdminPresence.getOnlineUsers ? AdminPresence.getOnlineUsers() : [];
+    const onlineUsers = onlineIds
+      .map((id) => allUsers.find((u) => u.id === id) || (AdminPresence.getKnownUser ? AdminPresence.getKnownUser(id) : null))
+      .filter(Boolean)
+      .filter((u) => !u.isBanned);
+
+    const filtered = q
+      ? onlineUsers.filter((u) => {
+          const name = String(u.displayName || u.username || '').toLowerCase();
+          const email = String(u.email || '').toLowerCase();
+          return name.includes(q) || email.includes(q);
+        })
+      : onlineUsers;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div style="color:var(--admin-text-secondary);font-size:14px;">Không có user nào đang online.</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map((u) => {
+      const initials = getInitials(u.username);
+      const avatar = u.avatarUrl
+        ? `<img src="${u.avatarUrl}" alt="${escapeHtml(u.username)}" style="width:32px;height:32px;border-radius:999px;object-fit:cover;">`
+        : `<div style="width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:${getAvatarColor(u.id)};color:#fff;font-weight:600;">${initials}</div>`;
+
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--admin-border-light);">
+          ${avatar}
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:600;color:var(--admin-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.displayName || u.username)}</span>
+              <span class="badge badge-success">Online</span>
+            </div>
+            <span style="font-size:12px;color:var(--admin-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.email || '')}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function initRealtimePresence() {
+    if (!window.AdminPresence || !AdminPresence.subscribe) return;
+
+    if (presenceUnsub) {
+      presenceUnsub();
+      presenceUnsub = null;
+    }
+
+    presenceUnsub = AdminPresence.subscribe((evt) => {
+      if (!evt || evt.type !== 'presence') return;
+
+      const cell = document.querySelector(`[data-presence-user="${evt.userId}"]`);
+      if (cell) {
+        const user = allUsers.find((u) => u.id === evt.userId) || usersData.find((u) => u.id === evt.userId) || {};
+        cell.innerHTML = renderPresenceBadge(user);
+      }
+
+      updateActiveNowStat();
+
+      // Re-apply presence filter + update summary in realtime
+      if (presenceFilter) {
+        applyPresenceFilterAndRender();
+      }
+      updateRealtimeFilterSummary();
+
+      const modal = document.getElementById('active-now-modal');
+      if (modal && modal.style.display === 'flex') {
+        renderActiveNowList();
+      }
+    });
+
+    // Connect to real WebSocket for presence updates
+    if (AdminPresence.startRealtime) {
+      AdminPresence.startRealtime();
+    }
+
+    // Listen for user patches from UserDetailModal
+    window.addEventListener('cococord:user-updated', (e) => {
+      const detail = e?.detail;
+      const userId = Number(detail?.userId);
+      if (!Number.isFinite(userId)) return;
+
+      const patch = detail?.patch;
+      if (!patch || typeof patch !== 'object') return;
+
+      const u = allUsers.find((x) => x.id === userId);
+      if (!u) return;
+
+      Object.assign(u, patch);
+
+      if (u.isBanned && AdminPresence.forceDisconnect) {
+        AdminPresence.forceDisconnect(u.id);
+      }
+
+      applyPresenceFilterAndRender();
+      updateActiveNowStat();
+      updateRealtimeFilterSummary();
+
+      // Update visible row cells
+      const row = document.querySelector(`tr[data-id="${u.id}"]`);
+      if (row) {
+        const roleBadge = row.querySelector('.badge-role');
+        if (roleBadge) {
+          roleBadge.textContent = u.role || 'USER';
+          roleBadge.className = `badge badge-role badge-${getRoleClass(u.role)}`;
+        }
+
+        const statusBadge = row.querySelector('td:nth-child(5) .badge');
+        if (statusBadge) {
+          statusBadge.textContent = getStatusText(u);
+          statusBadge.className = `badge badge-${getStatusClass(u)}`;
+        }
+
+        const presenceCell = row.querySelector(`[data-presence-user="${u.id}"]`);
+        if (presenceCell) {
+          presenceCell.innerHTML = renderPresenceBadge(u);
+        }
+      }
     });
   }
 
@@ -620,6 +885,11 @@ var AdminUsers = window.AdminUsers || (function() {
   function showBulkRoleModal() {
     const modal = document.getElementById('bulk-role-modal');
     const countEl = document.getElementById('bulk-role-count');
+
+    if (!selectedUsers || selectedUsers.size === 0) {
+      AdminUtils.showToast('Vui lòng chọn ít nhất 1 người dùng', 'info');
+      return;
+    }
     
     if (countEl) countEl.textContent = selectedUsers.size;
     if (modal) modal.style.display = 'flex';
@@ -646,6 +916,40 @@ var AdminUsers = window.AdminUsers || (function() {
         await fetchUsers();
       };
     }
+  }
+
+  function showSingleRoleModal(userId) {
+    if (!userId && userId !== 0) return;
+
+    // Use the existing bulk role modal for a single user.
+    // Keep current selection intact by restoring after modal closes.
+    const prevSelected = new Set(selectedUsers);
+    selectedUsers.clear();
+    selectedUsers.add(userId);
+
+    showBulkRoleModal();
+
+    // Restore selection when modal closes (either via close button or cancel)
+    const restore = () => {
+      selectedUsers.clear();
+      prevSelected.forEach((id) => selectedUsers.add(id));
+      document.removeEventListener('click', restoreOnClose, true);
+    };
+
+    const restoreOnClose = (e) => {
+      const modal = document.getElementById('bulk-role-modal');
+      if (!modal) {
+        restore();
+        return;
+      }
+      // When bulk-role-modal is hidden, restore selection
+      if (modal.style.display === 'none' || modal.style.display === '') {
+        restore();
+      }
+    };
+
+    // Capture phase so it runs even if other handlers stop propagation
+    document.addEventListener('click', restoreOnClose, true);
   }
 
   // ========================================
@@ -789,7 +1093,7 @@ var AdminUsers = window.AdminUsers || (function() {
             await showUserDetailModal(userId);
             break;
           case 'change-role':
-            await showUserDetailModal(userId, 'overview');
+            showSingleRoleModal(userId);
             break;
           case 'mute':
             await muteUser(user);
@@ -1004,10 +1308,48 @@ var AdminUsers = window.AdminUsers || (function() {
   }
 
   // ========================================
-  // User Detail Modal
+  // User Detail Modal (New 3-Column Layout)
   // ========================================
 
   async function showUserDetailModal(userId, activeTab = 'overview') {
+    // Try to use the new UserDetailModal if available
+    if (typeof UserDetailModal !== 'undefined' && UserDetailModal.open) {
+      try {
+        // Fetch user details
+        const user = await AdminUtils.api.get(API.userById(userId));
+        currentUser = user;
+        
+        // Add mock stats if not present
+        if (!user.stats) {
+          user.stats = {
+            serversJoined: user.serverCount || 0,
+            serversCreated: user.serversCreated || 0,
+            banCount: user.banCount || 0,
+            messageCount: user.messageCount || 0
+          };
+        }
+        
+        // Add ban info if banned
+        if (user.isBanned) {
+          user.banInfo = {
+            type: user.bannedUntil ? 'temporary' : 'permanent',
+            reason: user.banReason || 'Không có lý do',
+            expiresAt: user.bannedUntil,
+            bannedBy: user.bannedBy || 'Admin'
+          };
+        }
+        
+        // Open new modal
+        UserDetailModal.open(user);
+        
+      } catch (error) {
+        console.error('Failed to load user details:', error);
+        AdminUtils.showToast('Không thể tải thông tin người dùng', 'error');
+      }
+      return;
+    }
+    
+    // Fallback to legacy modal
     const modal = document.getElementById('user-detail-modal');
     if (!modal) return;
     
@@ -1444,13 +1786,117 @@ var AdminUsers = window.AdminUsers || (function() {
     document.querySelectorAll('[data-action="close-add-modal"]').forEach(btn => {
       btn.addEventListener('click', () => closeModal('add-user-modal'));
     });
+
+    // Close on backdrop click
+    const modal = document.getElementById('add-user-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal('add-user-modal');
+      });
+    }
+
+    const form = document.getElementById('add-user-form');
     
     // Create user button
     const createBtn = document.getElementById('btn-create-user');
     if (createBtn) {
-      createBtn.onclick = () => {
-        AdminUtils.showToast('Tính năng thêm người dùng đang được phát triển', 'info');
+      createBtn.onclick = async (e) => {
+        e.preventDefault();
+        if (form && typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+          return;
+        }
+        await submitAddUserForm();
       };
+    }
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await submitAddUserForm();
+      });
+    }
+  }
+
+  async function submitAddUserForm() {
+    const usernameEl = document.getElementById('new-username');
+    const emailEl = document.getElementById('new-email');
+    const passwordEl = document.getElementById('new-password');
+    const roleEl = document.getElementById('new-role');
+    const verifiedEl = document.getElementById('new-email-verified');
+    const welcomeEl = document.getElementById('new-send-welcome');
+    const createBtn = document.getElementById('btn-create-user');
+
+    const username = (usernameEl?.value || '').trim();
+    const email = (emailEl?.value || '').trim();
+    const password = passwordEl?.value || '';
+    const role = (roleEl?.value || 'USER').trim();
+    const emailVerified = Boolean(verifiedEl?.checked);
+    const sendWelcomeEmail = Boolean(welcomeEl?.checked);
+
+    if (!username) {
+      AdminUtils.showToast('Vui lòng nhập Username', 'warning');
+      usernameEl?.focus();
+      return;
+    }
+    if (!email) {
+      AdminUtils.showToast('Vui lòng nhập Email', 'warning');
+      emailEl?.focus();
+      return;
+    }
+    if (!password) {
+      AdminUtils.showToast('Vui lòng nhập Password', 'warning');
+      passwordEl?.focus();
+      return;
+    }
+
+    // Match backend register password rules for consistency
+    const pwdOk = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+    if (!pwdOk) {
+      AdminUtils.showToast('Password cần có chữ hoa, chữ thường, số và ký tự đặc biệt (>=8)', 'warning');
+      passwordEl?.focus();
+      return;
+    }
+
+    const payload = {
+      username,
+      email,
+      password,
+      role,
+      emailVerified,
+      sendWelcomeEmail
+    };
+
+    const prevText = createBtn?.textContent;
+    if (createBtn) {
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating...';
+    }
+
+    try {
+      await AdminUtils.api.post(API.users, payload);
+      AdminUtils.showToast('Đã tạo user mới', 'success');
+
+      // Reset form
+      if (usernameEl) usernameEl.value = '';
+      if (emailEl) emailEl.value = '';
+      if (passwordEl) passwordEl.value = '';
+      if (roleEl) roleEl.value = 'USER';
+      if (verifiedEl) verifiedEl.checked = false;
+      if (welcomeEl) welcomeEl.checked = false;
+
+      closeModal('add-user-modal');
+
+      // New users should appear on first page with createdAt desc
+      pagination.page = 0;
+      await Promise.all([fetchUsers(), fetchStats()]);
+    } catch (error) {
+      AdminUtils.showToast('Không thể tạo user: ' + (error?.message || 'Unknown error'), 'error');
+    } finally {
+      if (createBtn) {
+        createBtn.disabled = false;
+        createBtn.textContent = prevText || 'Create User';
+      }
     }
   }
 

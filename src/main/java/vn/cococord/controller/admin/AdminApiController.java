@@ -10,7 +10,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import vn.cococord.dto.request.AdminReportActionRequest;
+import vn.cococord.dto.request.AdminCreateUserRequest;
 import vn.cococord.dto.request.AdminRoleRequest;
 import vn.cococord.dto.request.AdminSettingsRequest;
 import vn.cococord.dto.response.*;
@@ -64,6 +66,13 @@ public class AdminApiController {
     @GetMapping("/users/{userId}")
     public ResponseEntity<UserProfileResponse> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(adminService.getUserById(userId));
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<UserProfileResponse> createUser(
+            @Valid @RequestBody AdminCreateUserRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(adminService.createUser(request, userDetails.getUsername()));
     }
 
     @PostMapping("/users/{userId}/ban")

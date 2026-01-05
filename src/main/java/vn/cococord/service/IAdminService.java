@@ -2,6 +2,7 @@ package vn.cococord.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import vn.cococord.dto.request.AdminCreateUserRequest;
 import vn.cococord.dto.request.AdminReportActionRequest;
 import vn.cococord.dto.request.AdminRoleRequest;
 import vn.cococord.dto.request.AdminSettingsRequest;
@@ -40,6 +41,11 @@ public interface IAdminService {
      * Get user by ID
      */
     UserProfileResponse getUserById(Long userId);
+
+    /**
+     * Create a new user (admin)
+     */
+    UserProfileResponse createUser(AdminCreateUserRequest request, String adminUsername);
 
     /**
      * Ban a user from the system

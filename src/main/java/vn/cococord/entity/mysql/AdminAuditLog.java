@@ -62,7 +62,7 @@ public class AdminAuditLog {
 
     public enum AdminActionType {
         // User management
-        USER_VIEW, USER_BAN, USER_UNBAN, USER_MUTE, USER_UNMUTE,
+        USER_VIEW, USER_CREATE, USER_BAN, USER_UNBAN, USER_MUTE, USER_UNMUTE,
         USER_ROLE_CHANGE, USER_DELETE,
 
         // Server management
