@@ -471,14 +471,14 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
         </div>
       </div>
 
-      <!-- Voice Bottom Controls -->
+      <!-- Voice Bottom Controls - Centralized Floating Dock -->
       <div class="voice-bottom-controls">
         <button
           class="voice-btn voice-btn-mute"
           id="voiceBtnMute"
-          title="Bật/Tắt mic"
+          data-tooltip="Tắt tiếng"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
             <path
               d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
             />
@@ -487,20 +487,23 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
         <button
           class="voice-btn voice-btn-deafen"
           id="voiceBtnDeafen"
-          title="Bật/Tắt headphone (deafen)"
+          data-tooltip="Tắt nghe"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
             <path
               d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"
             />
           </svg>
         </button>
+        
+        <div class="voice-controls-divider"></div>
+        
         <button
           class="voice-btn voice-btn-camera"
           id="voiceBtnCamera"
-          title="Bật/Tắt camera"
+          data-tooltip="Bật Camera"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
             <path
               d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"
             />
@@ -509,20 +512,23 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
         <button
           class="voice-btn voice-btn-screen"
           id="voiceBtnScreen"
-          title="Chia sẻ màn hình"
+          data-tooltip="Chia sẻ màn hình"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
             <path
               d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.11-.9-2-2-2H4c-1.11 0-2 .89-2 2v10c0 1.1.89 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"
             />
           </svg>
         </button>
+        
+        <div class="voice-controls-divider"></div>
+        
         <button
           class="voice-btn voice-btn-disconnect"
           id="voiceBtnDisconnect"
-          title="Rời kênh thoại"
+          data-tooltip="Rời phòng"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
             <path
               d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.51-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"
             />

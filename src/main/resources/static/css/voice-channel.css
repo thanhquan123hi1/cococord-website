@@ -1,17 +1,27 @@
-/* ==================== VOICE CHANNEL UI - Discord Style ==================== */
+/* ==================== VOICE CHANNEL UI - Discord Style (Refactored) ==================== */
 
-/* Voice Connected Bar (Bottom of channel list) */
+/* 
+ * Design System:
+ * - Background Primary: #1E1F22
+ * - Background Secondary: #2B2D31  
+ * - Border Radius: 12px
+ * - Transition: 0.2s ease
+ */
+
+/* ==================== VOICE CONNECTED STATUS (Bottom-Left Integration) ==================== */
 .voice-connected-bar {
     position: absolute;
-    bottom: 52px;
+    bottom: 0;
     left: 0;
     right: 0;
-    background: var(--background-secondary-alt, #292b2f);
-    border-top: 1px solid var(--background-tertiary, #202225);
+    background: linear-gradient(180deg, transparent 0%, rgba(30, 31, 34, 0.95) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 0;
     display: none;
     flex-direction: column;
     z-index: 100;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .voice-connected-bar.show {
@@ -21,8 +31,8 @@
 .voice-connected-info {
     display: flex;
     align-items: center;
-    padding: 8px 10px;
-    gap: 8px;
+    padding: 10px 12px;
+    gap: 10px;
 }
 
 .voice-connected-status {
@@ -33,25 +43,34 @@
 }
 
 .voice-connected-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #23a559;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .voice-connected-label svg {
     width: 14px;
     height: 14px;
+    animation: voice-pulse 2s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
 }
 
 .voice-connected-channel {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted, #949ba4);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-top: 2px;
 }
 
 .voice-signal-bars {
@@ -64,7 +83,8 @@
 .voice-signal-bars span {
     width: 4px;
     background: #23a559;
-    border-radius: 1px;
+    border-radius: 2px;
+    transition: height 0.2s ease;
 }
 
 .voice-signal-bars span:nth-child(1) { height: 4px; }
@@ -72,18 +92,19 @@
 .voice-signal-bars span:nth-child(3) { height: 12px; }
 
 .voice-disconnect-btn {
-    background: none;
+    background: transparent;
     border: none;
-    padding: 6px;
+    padding: 8px;
     cursor: pointer;
     color: var(--text-muted, #949ba4);
-    border-radius: 4px;
-    transition: all 0.15s ease;
+    border-radius: 12px;
+    transition: all 0.2s ease;
 }
 
 .voice-disconnect-btn:hover {
-    background: var(--background-modifier-hover, #3c3f45);
+    background: rgba(242, 63, 67, 0.15);
     color: #f23f43;
+    transform: scale(1.05);
 }
 
 .voice-disconnect-btn svg {
@@ -91,10 +112,11 @@
     height: 20px;
 }
 
+/* Compact voice controls in sidebar */
 .voice-controls {
     display: flex;
-    padding: 0 8px 8px;
-    gap: 8px;
+    padding: 8px 12px 12px;
+    gap: 6px;
 }
 
 .voice-control-btn {
@@ -102,25 +124,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px;
-    background: var(--background-secondary, #1d1d1e);
+    padding: 10px;
+    background: var(--background-secondary, #2B2D31);
     border: none;
-    border-radius: 4px;
+    border-radius: 12px;
     color: var(--interactive-normal, #b5bac1);
-    font-size: 12px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
 }
 
 .voice-control-btn:hover {
     background: var(--background-modifier-hover, #404249);
     color: var(--interactive-hover, #dcddde);
+    transform: translateY(-1px);
 }
 
 .voice-control-btn.active,
 .voice-control-btn.muted,
 .voice-control-btn.deafened {
+    background: rgba(242, 63, 67, 0.2);
     color: #f23f43;
 }
 
@@ -134,7 +156,8 @@
     display: none;
     flex-direction: column;
     height: 100%;
-    background: var(--background-tertiary, #121214);
+    background: #1E1F22;
+    position: relative;
 }
 
 .voice-channel-view.active {
@@ -145,59 +168,174 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: var(--background-secondary, #1d1d1e);
-    border-bottom: 1px solid var(--background-tertiary, #121214);
+    padding: 14px 20px;
+    background: rgba(43, 45, 49, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    z-index: 5;
 }
 
 .voice-channel-title {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     color: var(--header-primary, #f2f3f5);
     font-weight: 600;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .voice-channel-title svg {
     width: 20px;
     height: 20px;
-    color: var(--text-muted, #949ba4);
+    color: #23a559;
 }
 
-/* ==================== VOICE PARTICIPANTS GRID ==================== */
+/* ==================== VOICE PARTICIPANTS GRID (Responsive) ==================== */
 .voice-participants-area {
     flex: 1;
     display: flex;
     overflow: hidden;
+    position: relative;
+    padding-bottom: 100px; /* Space for floating dock */
 }
 
 .voice-participants-grid {
     flex: 1;
     display: grid;
-    gap: 8px;
-    padding: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    padding: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     align-content: center;
     justify-content: center;
     overflow-y: auto;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    width: 100%;
 }
 
-/* Single participant: keep a larger centered tile */
+/* Single participant: 80% width, centered, 16:9 */
 .voice-participants-grid[data-count="1"] {
-    grid-template-columns: minmax(320px, 1fr);
-    max-width: 900px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px;
 }
 
-/* ==================== VOICE PARTICIPANT TILE ==================== */
+.voice-participants-grid[data-count="1"] .voice-participant-tile {
+    width: 80%;
+    max-width: 1000px;
+    aspect-ratio: 16/9;
+}
+
+/* 2 participants side by side */
+.voice-participants-grid[data-count="2"] {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1200px;
+}
+
+/* 3-4 participants */
+.voice-participants-grid[data-count="3"],
+.voice-participants-grid[data-count="4"] {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1000px;
+}
+
+/* 5-6 participants */
+.voice-participants-grid[data-count="5"],
+.voice-participants-grid[data-count="6"] {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1200px;
+}
+
+/* ==================== VOICE PARTICIPANT TILE (Enhanced) ==================== */
 .voice-participant-tile {
     position: relative;
     aspect-ratio: 16/9;
-    background: var(--background-secondary, #1d1d1e);
-    border-radius: 8px;
+    background: #2B2D31;
+    border-radius: 12px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+/* Speaking state: 2px glow border with animation */
+.voice-participant-tile.speaking {
+    border-color: #23a559;
+    box-shadow: 
+        0 0 0 1px rgba(35, 165, 89, 0.3),
+        0 0 20px rgba(35, 165, 89, 0.4),
+        0 0 40px rgba(35, 165, 89, 0.2),
+        inset 0 0 20px rgba(35, 165, 89, 0.05);
+    animation: voice-glow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes voice-glow-pulse {
+    0%, 100% { 
+        box-shadow: 
+            0 0 0 1px rgba(35, 165, 89, 0.3),
+            0 0 20px rgba(35, 165, 89, 0.4),
+            0 0 40px rgba(35, 165, 89, 0.2),
+            inset 0 0 20px rgba(35, 165, 89, 0.05);
+    }
+    50% { 
+        box-shadow: 
+            0 0 0 2px rgba(35, 165, 89, 0.5),
+            0 0 30px rgba(35, 165, 89, 0.6),
+            0 0 60px rgba(35, 165, 89, 0.3),
+            inset 0 0 30px rgba(35, 165, 89, 0.1);
+    }
+}
+
+/* Remove old speaking pulse animation */
+.voice-participant-tile.speaking::after {
+    display: none;
+}
+
+.voice-participant-tile.focused {
+    border-color: #5865f2;
+    box-shadow: 0 0 20px rgba(88, 101, 242, 0.5);
+}
+
+.voice-participant-tile:hover {
+    transform: scale(1.01);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.voice-tile-badges {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 6px 10px;
+    border-radius: 20px;
+    z-index: 5;
+    font-size: 12px;
+}
+
+.voice-tile-badges i {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.voice-participant-tile.self {
+    background: linear-gradient(135deg, #2B2D31 0%, #1E1F22 100%);
+}
+
+.voice-participant-tile.camera-on,
+.voice-participant-tile.screen-sharing {
+    background: #000;
+}
     display: flex;
     align-items: center;
     justify-content: center;
@@ -261,32 +399,90 @@
     background: #000;
 }
 
-/* Avatar wrapper */
+/* Avatar wrapper - Enhanced for Empty State */
 .voice-avatar-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    z-index: 1;
 }
 
-/* Avatar display (when camera is off) */
+/* Animated gradient background when camera is off */
+.voice-participant-tile:not(.camera-on):not(.screen-sharing)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        #1E1F22 0%,
+        #2B2D31 25%,
+        #363940 50%,
+        #2B2D31 75%,
+        #1E1F22 100%
+    );
+    background-size: 400% 400%;
+    animation: gradient-shift 8s ease infinite;
+    z-index: 0;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Avatar display (when camera is off) - LARGER */
 .voice-participant-avatar {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.voice-participant-tile.speaking .voice-participant-avatar {
+    border-color: #23a559;
+    box-shadow: 
+        0 0 0 4px rgba(35, 165, 89, 0.2),
+        0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .voice-participant-avatar-placeholder {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    background: var(--brand-experiment, #5865f2);
+    background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 32px;
+    font-size: 48px;
     font-weight: 700;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    position: relative;
+    z-index: 2;
+    transition: all 0.2s ease;
+}
+
+.voice-participant-tile.speaking .voice-participant-avatar-placeholder {
+    border-color: #23a559;
+    box-shadow: 
+        0 0 0 4px rgba(35, 165, 89, 0.2),
+        0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Single participant gets even larger avatar */
+.voice-participants-grid[data-count="1"] .voice-participant-avatar,
+.voice-participants-grid[data-count="1"] .voice-participant-avatar-placeholder {
+    width: 160px;
+    height: 160px;
+    font-size: 64px;
 }
 
 /* Video display (when camera is on) */
@@ -298,6 +494,7 @@
     height: 100%;
     object-fit: cover;
     z-index: 1;
+    border-radius: 10px;
 }
 
 /* Screen sharing - contain instead of cover */
@@ -309,22 +506,24 @@
 /* Participant info overlay - above video */
 .voice-participant-info {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    z-index: 2;
+    z-index: 3;
 }
 
 .voice-participant-name {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 4px 8px;
-    border-radius: 4px;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
     color: white;
@@ -337,22 +536,26 @@
 
 .voice-participant-indicators {
     display: flex;
-    gap: 4px;
+    gap: 6px;
 }
 
 .voice-indicator {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    transition: all 0.2s ease;
 }
 
 .voice-indicator.muted {
     color: #f23f43;
+    background: rgba(242, 63, 67, 0.2);
 }
 
 .voice-indicator svg {
@@ -363,14 +566,16 @@
 /* Camera off indicator */
 .voice-camera-off-indicator {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 4px 8px;
-    border-radius: 4px;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     color: #f23f43;
     font-size: 12px;
 }
@@ -378,25 +583,43 @@
 /* Avatar decoration in voice */
 .voice-avatar-decoration {
     position: absolute;
-    width: 96px;
-    height: 96px;
+    width: 140px;
+    height: 140px;
     pointer-events: none;
+    z-index: 3;
 }
 
-/* ==================== VOICE BOTTOM CONTROLS ==================== */
+/* ==================== VOICE BOTTOM CONTROLS - CENTRALIZED FLOATING DOCK ==================== */
 .voice-bottom-controls {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 16px;
-    background: var(--background-secondary, #1d1d1e);
-    border-top: 1px solid var(--background-tertiary, #121214);
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
+    padding: 12px 20px;
+    background: rgba(30, 31, 34, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    z-index: 100;
+    transition: all 0.2s ease;
 }
 
+.voice-bottom-controls:hover {
+    background: rgba(30, 31, 34, 0.98);
+    box-shadow: 
+        0 12px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Control button base - Icon Only */
 .voice-btn {
     width: 48px;
     height: 48px;
@@ -406,14 +629,58 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     color: var(--interactive-normal, #b5bac1);
-    background: var(--background-secondary-alt, #232428);
+    background: rgba(255, 255, 255, 0.06);
+    position: relative;
+}
+
+.voice-btn::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    padding: 6px 12px;
+    background: #111214;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.voice-btn::after {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #111214;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.15s ease;
+}
+
+.voice-btn:hover::before,
+.voice-btn:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
 }
 
 .voice-btn:hover {
-    background: var(--background-modifier-hover, #404249);
+    background: rgba(255, 255, 255, 0.12);
     color: var(--interactive-hover, #dcddde);
+    transform: translateY(-2px);
+}
+
+.voice-btn:active {
+    transform: translateY(0);
 }
 
 .voice-btn svg {
@@ -421,24 +688,39 @@
     height: 22px;
 }
 
-
+/* Mute & Deafen - Red when active */
 .voice-btn-mute.active,
 .voice-btn-deafen.active {
-    background: #f23f43;
-    color: white;
+    background: rgba(242, 63, 67, 0.2);
+    color: #f23f43;
 }
 
+.voice-btn-mute.active:hover,
+.voice-btn-deafen.active:hover {
+    background: rgba(242, 63, 67, 0.3);
+}
+
+/* Camera - Green when active */
 .voice-btn-camera.active {
-    background: #23a559;
-    color: white;
+    background: rgba(35, 165, 89, 0.2);
+    color: #23a559;
 }
 
+.voice-btn-camera.active:hover {
+    background: rgba(35, 165, 89, 0.3);
+}
+
+/* Screen Share - Blue when active */
 .voice-btn-screen.active {
-    background: #5865f2;
-    color: white;
+    background: rgba(88, 101, 242, 0.2);
+    color: #5865f2;
 }
 
-/* Disconnect button - red */
+.voice-btn-screen.active:hover {
+    background: rgba(88, 101, 242, 0.3);
+}
+
+/* Disconnect button - Always Red */
 .voice-btn-disconnect {
     background: #f23f43;
     color: white;
@@ -446,9 +728,17 @@
 }
 
 .voice-btn-disconnect:hover {
-    background: #f23f43;
-    filter: brightness(0.95);
+    background: #d83c3e;
     color: white;
+    transform: translateY(-2px);
+}
+
+/* Divider between control groups */
+.voice-controls-divider {
+    width: 1px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 4px;
 }
 
 /* Voice mode: hide members list to keep screen focused on voice/video */
@@ -467,19 +757,39 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .voice-btn-with-label {
-        min-width: 50px;
-        padding: 8px 10px;
+    .voice-bottom-controls {
+        bottom: 16px;
+        padding: 10px 16px;
+        gap: 6px;
     }
     
-    .voice-btn-label {
-        font-size: 10px;
+    .voice-btn {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .voice-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .voice-participants-grid[data-count="1"] .voice-participant-tile {
+        width: 95%;
+    }
+}
+
+@media (max-width: 480px) {
+    .voice-bottom-controls {
+        width: calc(100% - 32px);
+        justify-content: space-around;
     }
 }
 
 /* ==================== CHANNEL LIST VOICE ITEMS ==================== */
 .channel-item.voice-channel {
     cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .channel-item.voice-channel .channel-name {
@@ -493,11 +803,12 @@
 }
 
 .channel-item.voice-channel.voice-active {
-    background: var(--background-modifier-selected, #404249);
+    background: rgba(35, 165, 89, 0.1);
+    border-left: 3px solid #23a559;
 }
 
 .channel-item.voice-channel.voice-active .channel-name {
-    color: var(--interactive-active, #ffffff);
+    color: #23a559;
 }
 
 /* Voice channel participants in sidebar */
@@ -510,9 +821,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 6px 8px;
+    border-radius: 8px;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .voice-channel-participant:hover {
@@ -524,6 +836,12 @@
     height: 24px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.voice-channel-participant.speaking .voice-channel-participant-avatar {
+    border-color: #23a559;
 }
 
 .voice-channel-participant-name {
@@ -534,18 +852,63 @@
 
 .voice-channel-participant-icons {
     display: flex;
-    gap: 2px;
+    gap: 4px;
 }
 
 .voice-channel-participant-icons svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     color: #f23f43;
 }
 
 /* Voice channel timer */
 .voice-channel-timer {
-    font-size: 12px;
+    font-size: 11px;
     color: #23a559;
     margin-left: auto;
+    font-weight: 500;
+}
+
+/* ==================== USER PANEL INTEGRATION (Voice Status) ==================== */
+.user-panel-voice-status {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(35, 165, 89, 0.1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.user-panel-voice-status.show {
+    display: flex;
+}
+
+.user-panel-voice-status .voice-icon {
+    color: #23a559;
+}
+
+.user-panel-voice-status .voice-channel-name {
+    font-size: 12px;
+    color: #23a559;
+    font-weight: 600;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-panel-voice-disconnect {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.user-panel-voice-disconnect:hover {
+    color: #f23f43;
+    background: rgba(242, 63, 67, 0.1);
 }

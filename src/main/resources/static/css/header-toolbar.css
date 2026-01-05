@@ -111,8 +111,14 @@
 
 .threads-empty {
     text-align: center;
-    padding: 40px 20px;
+    padding: 60px 30px;
     color: var(--text-muted, #72767d);
+}
+
+.threads-empty-icon {
+    color: var(--text-muted, #72767d);
+    margin-bottom: 24px;
+    opacity: 0.4;
 }
 
 .threads-empty i {
@@ -122,14 +128,17 @@
 }
 
 .threads-empty h4 {
-    margin: 0 0 8px;
+    margin: 0 0 12px;
     color: var(--text-normal, #dcddde);
     font-size: 18px;
+    font-weight: 600;
 }
 
 .threads-empty p {
     margin: 0;
     font-size: 14px;
+    line-height: 1.6;
+    opacity: 0.8;
 }
 
 .thread-item {

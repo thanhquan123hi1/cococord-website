@@ -95,9 +95,12 @@
                 </div>
                 <div class="threads-content" id="threadsContent">
                     <div class="threads-empty">
-                        <i class="bi bi-chat-square-text"></i>
+                        <svg class="threads-empty-icon" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="40" cy="40" r="38" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                            <path d="M25 30h30M25 40h25M25 50h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+                        </svg>
                         <h4>Chưa có thread nào</h4>
-                        <p>Các cuộc trò chuyện thread sẽ xuất hiện ở đây</p>
+                        <p>Threads giúp bạn tổ chức các cuộc trò chuyện<br/>Nhấp chuột phải vào tin nhắn để tạo thread</p>
                     </div>
                 </div>
             `;
@@ -131,9 +134,12 @@
                 if (!threads || threads.length === 0) {
                     content.innerHTML = `
                         <div class="threads-empty">
-                            <i class="bi bi-chat-square-text"></i>
+                            <svg class="threads-empty-icon" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="40" cy="40" r="38" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                                <path d="M25 30h30M25 40h25M25 50h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+                            </svg>
                             <h4>Chưa có thread nào</h4>
-                            <p>Các cuộc trò chuyện thread sẽ xuất hiện ở đây</p>
+                            <p>Threads giúp bạn tổ chức các cuộc trò chuyện<br/>Nhấp chuột phải vào tin nhắn để tạo thread</p>
                         </div>
                     `;
                     return;

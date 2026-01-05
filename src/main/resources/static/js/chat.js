@@ -1032,13 +1032,29 @@
     }
 
     function renderMembersList() {
+        console.log('[RenderMembersList] Total members:', members.length);
+        console.log('[RenderMembersList] Presence map size:', presenceMap.size);
+        
+        // Check if elements exist
+        if (!el.onlineCount || !el.offlineCount || !el.onlineMembersList || !el.offlineMembersList) {
+            console.error('[RenderMembersList] Required DOM elements not found!', {
+                onlineCount: !!el.onlineCount,
+                offlineCount: !!el.offlineCount,
+                onlineMembersList: !!el.onlineMembersList,
+                offlineMembersList: !!el.offlineMembersList
+            });
+            return;
+        }
+        
         const onlineMembers = members.filter(m => isOnline(m.username));
         const offlineMembers = members.filter(m => !isOnline(m.username));
 
+        console.log('[RenderMembersList] Online:', onlineMembers.length, 'Offline:', offlineMembers.length);
+        
         el.onlineCount.textContent = onlineMembers.length;
         el.offlineCount.textContent = offlineMembers.length;
 
-        el.onlineMembersList.innerHTML = onlineMembers.map(m => `
+        const onlineHTML = onlineMembers.map(m => `
             <div class="member-item online" data-user-id="${m.id}">
                 <div class="member-avatar">
                     ${m.avatarUrl ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">` : escapeHtml((m.displayName || m.username || 'U').charAt(0).toUpperCase())}
@@ -1047,8 +1063,8 @@
                 <span class="member-name">${escapeHtml(m.displayName || m.username || 'User')}</span>
             </div>
         `).join('');
-
-        el.offlineMembersList.innerHTML = offlineMembers.map(m => `
+        
+        const offlineHTML = offlineMembers.map(m => `
             <div class="member-item" data-user-id="${m.id}">
                 <div class="member-avatar">
                     ${m.avatarUrl ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">` : escapeHtml((m.displayName || m.username || 'U').charAt(0).toUpperCase())}
@@ -1057,6 +1073,11 @@
                 <span class="member-name">${escapeHtml(m.displayName || m.username || 'User')}</span>
             </div>
         `).join('');
+        
+        el.onlineMembersList.innerHTML = onlineHTML;
+        el.offlineMembersList.innerHTML = offlineHTML;
+        
+        console.log('[RenderMembersList] Rendered successfully. Online HTML length:', onlineHTML.length, 'Offline HTML length:', offlineHTML.length);
     }
 
     function clearMessages() {
@@ -1836,8 +1857,10 @@
 
         const channel = channels.find(c => String(c.id) === String(channelId));
         const channelName = channel ? (channel.name || 'channel') : 'channel';
+        const channelTopic = channel?.topic || '';
         
         el.channelName.textContent = channelName;
+        el.channelName.title = channelTopic ? `#${channelName} - ${channelTopic}` : `#${channelName}`;
         el.welcomeChannelName.textContent = '#' + channelName;
         el.chatInput.placeholder = `Nhắn #${channelName}`;
         
@@ -3555,43 +3578,47 @@
     }
     
     function updateVoiceViewButtons() {
-        // Update mute button
+        // Update mute button - Icon Only with tooltip
         const btnMute = document.getElementById('voiceBtnMute');
         if (btnMute) {
             btnMute.classList.toggle('active', isMuted);
+            btnMute.setAttribute('data-tooltip', isMuted ? 'Bật tiếng' : 'Tắt tiếng');
             btnMute.innerHTML = isMuted 
-                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 11c0 1.19-.34 2.3-.9 3.28l-1.23-1.23c.27-.62.43-1.3.43-2.05V9.5c0-.28.22-.5.5-.5s.5.22.5.5V11zm-5.5 4.28l-1.23-1.23V15c0 .55-.45 1-1 1H9.27l-2 2h4c1.66 0 3-1.34 3-3v-.72zm3.13 3.13L4.41 6.41 3 7.82l3.03 3.03C6.01 11.23 6 11.61 6 12v3c0 1.66 1.34 3 3 3h2v2h2v-2h.17l3.31 3.31 1.15-1.15zM12 3c-1.66 0-3 1.34-3 3v2.17l6 6V6c0-1.66-1.34-3-3-3z"/></svg>
-                <span class="voice-btn-label">Tắt tiếng</span>`
-                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                <span class="voice-btn-label">Tắt tiếng</span>`;
+                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 11c0 1.19-.34 2.3-.9 3.28l-1.23-1.23c.27-.62.43-1.3.43-2.05V9.5c0-.28.22-.5.5-.5s.5.22.5.5V11zm-5.5 4.28l-1.23-1.23V15c0 .55-.45 1-1 1H9.27l-2 2h4c1.66 0 3-1.34 3-3v-.72zm3.13 3.13L4.41 6.41 3 7.82l3.03 3.03C6.01 11.23 6 11.61 6 12v3c0 1.66 1.34 3 3 3h2v2h2v-2h.17l3.31 3.31 1.15-1.15zM12 3c-1.66 0-3 1.34-3 3v2.17l6 6V6c0-1.66-1.34-3-3-3z"/></svg>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>`;
         }
         
-        // Update deafen button
+        // Update deafen button - Icon Only with tooltip
         const btnDeafen = document.getElementById('voiceBtnDeafen');
         if (btnDeafen) {
             btnDeafen.classList.toggle('active', isDeafened);
+            btnDeafen.setAttribute('data-tooltip', isDeafened ? 'Bật nghe' : 'Tắt nghe');
             btnDeafen.innerHTML = isDeafened
-                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3.63 3.63L2.21 5.05 6.16 9H4.41C3.07 9 2.2 10.33 2.56 11.6L4.1 16.93C4.3 17.59 4.89 18.04 5.58 18.04H8.5L12 21.5V15.5l3.76 3.76c-.37.23-.76.43-1.18.58v2.09c.72-.23 1.41-.53 2.06-.92l2.31 2.31 1.41-1.41L3.63 3.63zM12 4L9.91 6.09 12 8.18V4zm6.5 8c0-1.77-.77-3.29-2-4.35V13.5l2-2v.5z"/></svg>
-                <span class="voice-btn-label">Bật nghe</span>`
-                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/></svg>
-                <span class="voice-btn-label">Tắt nghe</span>`;
+                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3.63 3.63L2.21 5.05 6.16 9H4.41C3.07 9 2.2 10.33 2.56 11.6L4.1 16.93C4.3 17.59 4.89 18.04 5.58 18.04H8.5L12 21.5V15.5l3.76 3.76c-.37.23-.76.43-1.18.58v2.09c.72-.23 1.41-.53 2.06-.92l2.31 2.31 1.41-1.41L3.63 3.63zM12 4L9.91 6.09 12 8.18V4zm6.5 8c0-1.77-.77-3.29-2-4.35V13.5l2-2v.5z"/></svg>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/></svg>`;
         }
         
-        // Update camera button
+        // Update camera button - Icon Only with tooltip
         const btnCamera = document.getElementById('voiceBtnCamera');
         if (btnCamera) {
             btnCamera.classList.toggle('active', isCameraOn);
+            btnCamera.setAttribute('data-tooltip', isCameraOn ? 'Tắt Camera' : 'Bật Camera');
             btnCamera.innerHTML = isCameraOn
-                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-                <span class="voice-btn-label">Tắt Camera</span>`
-                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>
-                <span class="voice-btn-label">Bật Camera</span>`;
+                ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>`;
         }
         
-        // Update screen share button
+        // Update screen share button - Icon Only with tooltip
         const btnScreen = document.getElementById('voiceBtnScreen');
         if (btnScreen) {
             btnScreen.classList.toggle('active', isScreenSharing);
+            btnScreen.setAttribute('data-tooltip', isScreenSharing ? 'Dừng chia sẻ' : 'Chia sẻ màn hình');
+        }
+        
+        // Update disconnect button tooltip
+        const btnDisconnect = document.getElementById('voiceBtnDisconnect');
+        if (btnDisconnect) {
+            btnDisconnect.setAttribute('data-tooltip', 'Rời phòng');
         }
         
         // Update voice bar buttons
