@@ -37,9 +37,9 @@ public class ChatMessageResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AttachmentResponse {
-        private String url;
-        private String filename;
-        private String contentType;
-        private Long size;
+        private String fileUrl;
+        private String fileName;
+        private String fileType;
+        private Long fileSize;
     }
 }

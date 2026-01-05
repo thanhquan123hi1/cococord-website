@@ -68,6 +68,8 @@ public class FileStorageServiceImpl implements IFileStorageService {
                 String.format("%02d", today.getMonthValue()),
                 String.format("%02d", today.getDayOfMonth())
             );
+            
+            log.info("Attempting to create upload directory: {}", uploadPath.toAbsolutePath());
             Files.createDirectories(uploadPath);
 
             // Generate unique filename

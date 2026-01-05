@@ -138,6 +138,6 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponse.error("Có lỗi xảy ra. Vui lòng thử lại sau."));
+                .body(MessageResponse.error("Error: " + ex.getClass().getSimpleName() + ": " + ex.getMessage()));
     }
 }

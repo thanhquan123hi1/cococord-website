@@ -125,6 +125,7 @@
 
         _handleFileSelect(files) {
             const fileArray = Array.from(files);
+            console.log('[ChatInputManager] _handleFileSelect called with', fileArray.length, 'file(s)');
             
             for (const file of fileArray) {
                 if (this.attachedFiles.length >= MAX_FILES) {
@@ -144,6 +145,7 @@
                 }
                 
                 this.attachedFiles.push(file);
+                console.log('[ChatInputManager] File added:', file.name, '- Total files:', this.attachedFiles.length);
                 this._renderFilePreview(file);
             }
             
@@ -194,14 +196,24 @@
             removeBtn.className = 'preview-remove-btn';
             removeBtn.innerHTML = '<i class="bi bi-x"></i>';
             removeBtn.title = 'Xóa file';
-            removeBtn.addEventListener('click', () => this._removeFile(file.name));
+            removeBtn.type = 'button'; // CRITICAL: Prevent form submission
+            removeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[ChatInputManager] Remove button clicked for:', file.name);
+                this._removeFile(file.name);
+            });
             previewItem.appendChild(removeBtn);
             
             this.previewContainer.appendChild(previewItem);
         }
 
         _removeFile(fileName) {
+            console.log('[ChatInputManager] _removeFile called for:', fileName);
+            console.trace('[ChatInputManager] Stack trace:'); // Show who called this
+            const beforeCount = this.attachedFiles.length;
             this.attachedFiles = this.attachedFiles.filter(f => f.name !== fileName);
+            console.log('[ChatInputManager] Files after removal:', this.attachedFiles.length, '(removed:', beforeCount - this.attachedFiles.length, ')');
             
             const previewItem = this.previewContainer.querySelector(`[data-file-name="${fileName}"]`);
             if (previewItem) {
@@ -636,9 +648,11 @@
             }
             
             this.fileInput.addEventListener('change', (e) => {
+                console.log('[ChatInputManager] File input change event fired, files:', e.target.files.length);
                 if (e.target.files.length > 0) {
                     this._handleFileSelect(e.target.files);
                 }
+                console.log('[ChatInputManager] File input change event processed');
             });
             
             if (this.emojiBtn) {
@@ -683,19 +697,27 @@
         
         /**
          * Get attached files
-         * @returns {File[]}
+         * @returns {File[]} Copy of attached files array
          */
         getAttachedFiles() {
-            return this.attachedFiles;
+            // Return a copy to prevent external modifications
+            console.log('[ChatInputManager] getAttachedFiles() called, returning', this.attachedFiles.length, 'files');
+            return [...this.attachedFiles];
         }
 
         /**
          * Clear all attachments
          */
         clearAttachments() {
-            this.attachedFiles.forEach(file => {
+            console.log('[ChatInputManager] clearAttachments() called');
+            console.trace('[ChatInputManager] clearAttachments stack trace:'); // Show who called this
+            console.log('[ChatInputManager] Clearing', this.attachedFiles.length, 'files');
+            // Create a copy to avoid modifying array during iteration
+            const filesToRemove = [...this.attachedFiles];
+            filesToRemove.forEach(file => {
                 this._removeFile(file.name);
             });
+            console.log('[ChatInputManager] All attachments cleared, remaining:', this.attachedFiles.length);
         }
 
         /**
