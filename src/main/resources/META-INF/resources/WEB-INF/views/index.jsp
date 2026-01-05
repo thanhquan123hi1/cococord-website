@@ -164,12 +164,12 @@
               >
                 Group Chat<br />
                 <span
-                  class="bg-gradient-to-r from-blue-400 via-blue-300 to-purple-400 bg-clip-text text-transparent"
+                  class="bg-gradient-to-r pr-4 from-blue-400 via-blue-300 to-purple-400 bg-clip-text text-transparent"
                 >
                   That's All</span
                 ><br />
                 <span
-                  class="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent"
+                  class="bg-gradient-to-r pr-4 from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent"
                 >
                   Fun & Games
                 </span>
@@ -180,7 +180,7 @@
               <p
                 class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-lg leading-relaxed mx-auto lg:mx-0"
               >
-                Discord là nơi tuyệt vời để chơi game và chilled với bạn bè.
+                CoCoCord là nơi tuyệt vời để chơi game và chilled với bạn bè.
               </p>
             </div>
 
@@ -211,7 +211,7 @@
                   href="/login"
                   class="px-6 sm:px-8 py-3 border-2 border-white text-white font-bold rounded-full hover:bg-white/10 transition-colors flex items-center justify-center text-sm sm:text-base"
                 >
-                  Open Browser
+                  Open Browser App
                 </a>
               </div>
             </div>
@@ -300,11 +300,11 @@
                           <div class="min-w-0">
                             <div class="flex items-baseline gap-1">
                               <span class="text-white font-semibold"
-                                >Sarah</span
+                                >Negav</span
                               >
                               <span class="text-gray-500">10:45</span>
                             </div>
-                            <p class="text-gray-300">Ai muốn chơi tối?</p>
+                            <p class="text-gray-300">Ai chơi khum?</p>
                           </div>
                         </div>
                         <div class="flex gap-2">
@@ -313,10 +313,10 @@
                           ></div>
                           <div class="min-w-0">
                             <div class="flex items-baseline gap-1">
-                              <span class="text-white font-semibold">Mike</span>
+                              <span class="text-white font-semibold">J97</span>
                               <span class="text-gray-500">10:46</span>
                             </div>
-                            <p class="text-gray-300">Sẵn sàng!</p>
+                            <p class="text-gray-300">OK nè!</p>
                           </div>
                         </div>
                       </div>
@@ -604,8 +604,8 @@
     </section>
 
     <script>
-      if (typeof window.forceInitAppHome === 'function') {
-          window.forceInitAppHome();
+      if (typeof window.forceInitAppHome === "function") {
+        window.forceInitAppHome();
       }
     </script>
   </body>

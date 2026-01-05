@@ -317,34 +317,6 @@ request.getAttribute(Content.class.getName()); %>
             </ul>
           </div>
         </div>
-
-        <!-- Bottom Bar -->
-        <div
-          class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-6"
-        >
-          <div class="flex items-center gap-2">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 28 22"
-              fill="none"
-              class="text-gray-400"
-            >
-              <path
-                d="M23.7219 2.07962C21.9478 1.26571 20.0549 0.672392 18.0867 0.341797C17.8381 0.769092 17.5619 1.34839 17.3684 1.80395C15.2726 1.49921 13.195 1.49921 11.1356 1.80395C10.9421 1.34839 10.6577 0.769092 10.4073 0.341797C8.43722 0.672392 6.54244 1.26755 4.76837 2.08331C1.2244 7.31024 0.255336 12.4048 0.739867 17.4272C3.09888 19.1469 5.38583 20.2104 7.6363 20.9278C8.19118 20.1795 8.68601 19.3822 9.11303 18.5429C8.30091 18.2484 7.52296 17.8844 6.78676 17.4599C6.98034 17.3205 7.16949 17.1755 7.35421 17.0268C11.7899 19.0908 16.6241 19.0908 21.0055 17.0268C21.1921 17.1755 21.3812 17.3205 21.5729 17.4599C20.8349 17.8863 20.0551 18.2502 19.243 18.5447C19.67 19.3822 20.163 20.1814 20.7197 20.9297C22.9702 20.2122 25.2589 19.1488 27.6179 17.4272C28.1892 11.6183 26.6548 6.57169 23.7219 2.07962Z"
-                fill="currentColor"
-              />
-            </svg>
-            <span class="font-bold text-gray-400">CoCoCord</span>
-          </div>
-
-          <a
-            href="${pageContext.request.contextPath}/register"
-            class="px-8 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition"
-          >
-            Sign up
-          </a>
-        </div>
       </div>
     </footer>
 
