@@ -125,16 +125,23 @@ public class WebSocketMessageController {
     /**
      * User typing indicator
      * Client sends to: /app/chat.typing
+     * Broadcast to: /topic/channel/{channelId}/typing
      */
     @MessageMapping("/chat.typing")
     public void userTyping(@Payload TypingNotification notification, Principal principal) {
-        String username = principal.getName();
-        notification.setUsername(username);
+        try {
+            String username = principal.getName();
+            notification.setUsername(username);
+            
+            log.debug("User {} typing in channel {}: {}", username, notification.getChannelId(), notification.isTyping());
 
-        // Broadcast typing indicator to channel (except sender)
-        messagingTemplate.convertAndSend(
-                "/topic/channel/" + notification.getChannelId() + "/typing",
-                notification);
+            // Broadcast typing indicator to channel (all subscribers will receive)
+            messagingTemplate.convertAndSend(
+                    "/topic/channel/" + notification.getChannelId() + "/typing",
+                    notification);
+        } catch (Exception e) {
+            log.error("Error handling typing notification: {}", e.getMessage());
+        }
     }
 
     /**
@@ -266,6 +273,7 @@ public class WebSocketMessageController {
     // DTOs for WebSocket messages
     public static class TypingNotification {
         private Long channelId;
+        private Long serverId;
         private String username;
         private boolean isTyping;
 
@@ -278,6 +286,14 @@ public class WebSocketMessageController {
 
         public void setChannelId(Long channelId) {
             this.channelId = channelId;
+        }
+
+        public Long getServerId() {
+            return serverId;
+        }
+
+        public void setServerId(Long serverId) {
+            this.serverId = serverId;
         }
 
         public String getUsername() {

@@ -41,6 +41,10 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/quick-switcher.css">
     <!-- Inbox overlay CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/inbox.css?v=20260103a">
+    <!-- Toast Notification CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/toast.css?v=20260105a">
+    <!-- Skeleton Loading CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/skeleton.css?v=20260105a">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260103a">
     
@@ -175,6 +179,9 @@
     
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js?v=20260105_release"></script>
+    
+    <!-- Toast Notification System (must load before other scripts) -->
+    <script src="${pageContext.request.contextPath}/js/toast.js?v=20260105a"></script>
 
     <script src="${pageContext.request.contextPath}/js/app.js?v=20260105_release"></script>
     <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105_release"></script>

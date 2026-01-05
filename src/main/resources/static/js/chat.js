@@ -113,6 +113,7 @@
     // Typing indicator state
     let typingUsers = new Map(); // username -> { timeout, displayName, avatarUrl }
     let myTypingTimeout = null;
+    let myStopTypingTimeout = null;
     let isCurrentlyTyping = false;
 
     // Voice Chat State (PeerJS/WebRTC)
@@ -415,7 +416,6 @@
             
             cancelReply();
         } catch (error) {
-            console.error('[Chat] File upload failed:', error);
             showToast('Không thể tải file lên: ' + error.message, 'error');
         }
     }
@@ -464,9 +464,16 @@
 
     /**
      * Show toast notification
+     * Uses global ToastManager if available, falls back to simple toast
      */
     function showToast(message, type = 'info') {
-        // Remove existing toast
+        // Use global ToastManager if available
+        if (window.ToastManager) {
+            window.ToastManager.show(message, type);
+            return;
+        }
+        
+        // Fallback to simple toast
         const existingToast = document.querySelector('.chat-toast');
         if (existingToast) {
             existingToast.remove();
@@ -512,7 +519,7 @@
                     if (!response.ok) return [];
                     return await response.json();
                 } catch (e) {
-                    console.error('[Chat] Failed to load threads:', e);
+                    showToast('Không thể tải danh sách threads', 'error');
                     return [];
                 }
             },
@@ -525,7 +532,7 @@
                     if (!response.ok) return [];
                     return await response.json();
                 } catch (e) {
-                    console.error('[Chat] Failed to load pinned messages:', e);
+                    showToast('Không thể tải tin nhắn đã ghim', 'error');
                     return [];
                 }
             },
@@ -540,7 +547,7 @@
                         body: JSON.stringify({ muted: isMuted })
                     });
                 } catch (e) {
-                    console.error('[Chat] Failed to toggle mute:', e);
+                    showToast('Không thể tắt/bật thông báo', 'error');
                 }
             },
             
@@ -595,7 +602,6 @@
             
             // On error callback
             onError: (error) => {
-                console.error('[Chat] Server settings error:', error);
                 showToast(error, 'error');
             }
         });
@@ -1216,23 +1222,60 @@
         renderTypingIndicator();
     }
 
-    // Send typing notification
+    // Send typing notification with debounce for stop typing
     function sendTypingNotification() {
         if (!stompClient?.connected || !activeChannelId) return;
         
+        // Send "start typing" if not already typing
         if (!isCurrentlyTyping) {
             isCurrentlyTyping = true;
             stompClient.send('/app/chat.typing', {}, JSON.stringify({
                 channelId: activeChannelId,
+                serverId: activeServerId,
                 isTyping: true
             }));
         }
         
-        // Reset typing timeout
+        // Clear previous stop typing timeout
+        if (myStopTypingTimeout) clearTimeout(myStopTypingTimeout);
+        
+        // Set debounce for stop typing (2000ms after last keystroke)
+        myStopTypingTimeout = setTimeout(() => {
+            sendStopTypingNotification();
+        }, 2000);
+        
+        // Reset typing timeout (keep sending start typing every 3s if still typing)
         if (myTypingTimeout) clearTimeout(myTypingTimeout);
         myTypingTimeout = setTimeout(() => {
-            isCurrentlyTyping = false;
+            // If user is still focused on input and has content, refresh typing status
+            if (document.activeElement === el.chatInput && el.chatInput.value.trim()) {
+                isCurrentlyTyping = false; // Reset so next keystroke sends typing again
+            }
         }, 3000);
+    }
+
+    // Send stop typing notification
+    function sendStopTypingNotification() {
+        if (!stompClient?.connected || !activeChannelId) return;
+        
+        if (isCurrentlyTyping) {
+            isCurrentlyTyping = false;
+            stompClient.send('/app/chat.typing', {}, JSON.stringify({
+                channelId: activeChannelId,
+                serverId: activeServerId,
+                isTyping: false
+            }));
+        }
+        
+        // Clear timeouts
+        if (myTypingTimeout) {
+            clearTimeout(myTypingTimeout);
+            myTypingTimeout = null;
+        }
+        if (myStopTypingTimeout) {
+            clearTimeout(myStopTypingTimeout);
+            myStopTypingTimeout = null;
+        }
     }
 
     // ==================== USER PANEL ====================
@@ -1249,7 +1292,7 @@
                 window.CoCoCordApp.updateGlobalUserPanel(currentUser);
             }
         } catch (e) {
-            console.error('Failed to load user info', e);
+            showToast('Không thể tải thông tin người dùng', 'error');
         }
     }
 
@@ -1271,8 +1314,15 @@
             
             categories = categoryData || [];
             categories.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            
+            // Hide channel list skeleton after loading
+            const channelSkeleton = document.getElementById('channelListSkeleton');
+            if (channelSkeleton) {
+                channelSkeleton.style.opacity = '0';
+                setTimeout(() => channelSkeleton.style.display = 'none', 300);
+            }
         } catch (e) {
-            console.error('Failed to load channels:', e);
+            showToast('Không thể tải danh sách kênh', 'error');
             channels = [];
             categories = [];
             throw e; // Re-throw to trigger retry in selectServer
@@ -1282,6 +1332,13 @@
     async function loadMembers(serverId) {
         try {
             members = await apiGet(`/api/servers/${serverId}/members`);
+            
+            // Hide members sidebar skeleton after loading
+            const membersSkeleton = document.getElementById('membersSidebarSkeleton');
+            if (membersSkeleton) {
+                membersSkeleton.style.opacity = '0';
+                setTimeout(() => membersSkeleton.style.display = 'none', 300);
+            }
         } catch (e) {
             members = [];
         }
@@ -1328,6 +1385,13 @@
                 
                 el.chatComposer.style.display = '';
                 
+                // Hide message list skeleton after loading
+                const messageSkeleton = document.getElementById('messageListSkeleton');
+                if (messageSkeleton) {
+                    messageSkeleton.style.opacity = '0';
+                    setTimeout(() => messageSkeleton.style.display = 'none', 300);
+                }
+                
                 // Track oldest message for pagination
                 if (items.length > 0) {
                     oldestMessageId = items[0].id;
@@ -1360,7 +1424,7 @@
             
             currentPage++;
         } catch (e) {
-            console.error('Failed to load history:', e);
+            showToast('Không thể tải lịch sử tin nhắn', 'error');
         } finally {
             isLoadingHistory = false;
             hideLoadingSpinner();
@@ -1578,7 +1642,7 @@
                 await loadChannels(serverId);
                 renderChannelList();
             } catch (e) {
-                console.error('Error handling channel update:', e);
+                showToast('Lỗi khi cập nhật kênh', 'error');
             }
         });
 
@@ -1590,7 +1654,7 @@
                 await loadChannels(serverId);
                 renderChannelList();
             } catch (e) {
-                console.error('Error handling category update:', e);
+                showToast('Lỗi khi cập nhật danh mục', 'error');
             }
         });
     }
@@ -1617,7 +1681,7 @@
             try {
                 await loadChannels(serverId);
             } catch (err) {
-                console.error('[Chat] Failed to load channels:', err);
+                showToast('Không thể tải kênh của máy chủ', 'error');
                 throw err;
             }
 
@@ -1649,11 +1713,14 @@
             }
 
         } catch (e) {
-            console.error('[Chat] Error loading server:', e);
+            showToast('Không thể tải máy chủ', 'error');
         }
     }
 
     async function selectChannel(channelId) {
+        // Stop typing in previous channel
+        sendStopTypingNotification();
+        
         activeChannelId = channelId;
         setQueryParams({ serverId: activeServerId, channelId });
 
@@ -1829,7 +1896,7 @@
         navigator.clipboard.writeText(content).then(() => {
             showToast('Đã sao chép tin nhắn');
         }).catch(err => {
-            console.error('Failed to copy:', err);
+            showToast('Không thể sao chép tin nhắn', 'error');
         });
     }
 
@@ -1866,7 +1933,7 @@
                         }
                         contentEl.textContent = newContent;
                     } catch (err) {
-                        console.error('Failed to edit:', err);
+                        showToast('Không thể chỉnh sửa tin nhắn', 'error');
                         contentEl.innerHTML = originalHtml;
                     }
                 } else {
@@ -1896,8 +1963,7 @@
                 stompClient.send('/app/chat.deleteMessage', {}, JSON.stringify(messageId));
             }
         } catch (err) {
-            console.error('Failed to delete:', err);
-            alert('Không thể xóa tin nhắn');
+            showToast('Không thể xóa tin nhắn', 'error');
         }
     }
 
@@ -1931,8 +1997,13 @@
         showServerSettingsModal();
     }
 
-    // Simple toast notification
-    function showToast(message) {
+    // Simple toast notification - uses ToastManager if available
+    function showToast(message, type = 'info') {
+        if (window.ToastManager) {
+            window.ToastManager.show(message, type);
+            return;
+        }
+        // Fallback
         let toast = document.getElementById('toast');
         if (!toast) {
             toast = document.createElement('div');
@@ -2173,7 +2244,7 @@
         try {
             friendsList = await apiGet('/api/friends') || [];
         } catch (err) {
-            console.error('Failed to load friends:', err);
+            showToast('Không thể tải danh sách bạn bè', 'error');
             friendsList = [];
         }
     }
@@ -2190,7 +2261,7 @@
                 linkInput.value = `${window.location.origin}/invite/${inviteCode}`;
             }
         } catch (err) {
-            console.error('Failed to generate invite:', err);
+            showToast('Không thể tạo link mời', 'error');
             const linkInput = document.getElementById('inviteLinkInput');
             if (linkInput) {
                 linkInput.value = 'Không thể tạo link mời';
@@ -2282,7 +2353,7 @@
                 }
             }
         } catch (err) {
-            console.error('Failed to send invite:', err);
+            showToast('Không thể gửi lời mời', 'error');
         }
     }
 
@@ -2306,9 +2377,10 @@
                 }, 2000);
             }
         } catch (err) {
-            console.error('Failed to copy:', err);
+            // Fallback to old method
             linkInput.select();
             document.execCommand('copy');
+            showToast('Đã sao chép link mời', 'success');
         }
     }
 
@@ -3664,6 +3736,10 @@
         // Chat composer - handle submit with ChatInputManager for file attachments
         el.chatComposer?.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Stop typing indicator immediately
+            sendStopTypingNotification();
+            
             const text = (el.chatInput.value || '').trim();
             
             // Check for file attachments from ChatInputManager
@@ -3685,6 +3761,11 @@
         // Typing indicator - send when user types
         el.chatInput?.addEventListener('input', () => {
             sendTypingNotification();
+        });
+        
+        // Send stop typing when input loses focus
+        el.chatInput?.addEventListener('blur', () => {
+            sendStopTypingNotification();
         });
         
         // Message list scroll handler for infinite scroll & new message banner

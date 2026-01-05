@@ -779,7 +779,11 @@
       case "CALL_DECLINE": {
         if (!call.active || !call.isCaller) return;
         endCall({ sendHangup: false });
-        alert("Đối phương đã từ chối cuộc gọi");
+        if (window.ToastManager) {
+          ToastManager.info("Đối phương đã từ chối cuộc gọi");
+        } else {
+          alert("Đối phương đã từ chối cuộc gọi");
+        }
         break;
       }
       case "OFFER": {
@@ -947,6 +951,13 @@
 
   async function loadFriends() {
     state.friends = (await apiJson("/api/friends", { method: "GET" })) || [];
+    
+    // Hide friends list skeleton after loading
+    const friendsSkeleton = document.getElementById('friendsListSkeleton');
+    if (friendsSkeleton) {
+      friendsSkeleton.style.opacity = '0';
+      setTimeout(() => friendsSkeleton.style.display = 'none', 300);
+    }
   }
 
   async function loadRequests() {
@@ -962,6 +973,13 @@
   async function loadDmSidebar() {
     state.dmItems =
       (await apiJson("/api/direct-messages/sidebar", { method: "GET" })) || [];
+    
+    // Hide DM list skeleton after loading
+    const dmSkeleton = document.getElementById('dmListSkeleton');
+    if (dmSkeleton) {
+      dmSkeleton.style.opacity = '0';
+      setTimeout(() => dmSkeleton.style.display = 'none', 300);
+    }
   }
 
   function emptyState(message) {
@@ -1298,7 +1316,11 @@
             if (entry?.userId != null) removeRelationshipEntry(entry.userId);
             render();
           } else {
-            alert(err?.message || "Thao tác thất bại");
+            if (window.ToastManager) {
+              ToastManager.error(err?.message || "Thao tác thất bại");
+            } else {
+              alert(err?.message || "Thao tác thất bại");
+            }
             btn.disabled = false;
           }
         }
@@ -1335,7 +1357,11 @@
         );
       }
     } catch (err) {
-      alert(err?.message || "Không thể mở DM");
+      if (window.ToastManager) {
+        ToastManager.error(err?.message || "Không thể mở DM");
+      } else {
+        alert(err?.message || "Không thể mở DM");
+      }
     }
   }
 
@@ -1408,7 +1434,11 @@
             removeRelationshipEntry(userId);
             render();
           } catch (err) {
-            alert(err?.message || "Không thể bỏ chặn người dùng");
+            if (window.ToastManager) {
+              ToastManager.error(err?.message || "Không thể bỏ chặn người dùng");
+            } else {
+              alert(err?.message || "Không thể bỏ chặn người dùng");
+            }
           }
         });
       });
@@ -1465,7 +1495,11 @@
             removeRelationshipEntry(friendId);
             render();
           } catch (err) {
-            alert(err?.message || "Không thể xóa bạn bè");
+            if (window.ToastManager) {
+              ToastManager.error(err?.message || "Không thể xóa bạn bè");
+            } else {
+              alert(err?.message || "Không thể xóa bạn bè");
+            }
           }
         } else if (action === "block") {
           if (!confirm(`Bạn có chắc chắn muốn chặn ${displayName(friend)}?`))
@@ -1481,7 +1515,11 @@
             });
             render();
           } catch (err) {
-            alert(err?.message || "Không thể chặn người dùng");
+            if (window.ToastManager) {
+              ToastManager.error(err?.message || "Không thể chặn người dùng");
+            } else {
+              alert(err?.message || "Không thể chặn người dùng");
+            }
           }
         }
       });
@@ -1843,7 +1881,11 @@
       }
       renderDmMessages();
     } catch (err) {
-      alert(err?.message || "Không thể xóa tin nhắn");
+      if (window.ToastManager) {
+        ToastManager.error(err?.message || "Không thể xóa tin nhắn");
+      } else {
+        alert(err?.message || "Không thể xóa tin nhắn");
+      }
     }
   }
 
@@ -2027,7 +2069,11 @@
         renderDmMessages();
       }
     } catch (err) {
-      alert(err?.message || "Không thể gửi tin nhắn");
+      if (window.ToastManager) {
+        ToastManager.error(err?.message || "Không thể gửi tin nhắn");
+      } else {
+        alert(err?.message || "Không thể gửi tin nhắn");
+      }
     }
   }
 
@@ -2242,11 +2288,14 @@
       try {
         await startOutgoingCall({ video: false });
       } catch (err) {
-        alert(
-          err?.name === "NotAllowedError"
+        const msg = err?.name === "NotAllowedError"
             ? "Vui lòng cho phép microphone"
-            : err?.message || "Không thể gọi thoại"
-        );
+            : err?.message || "Không thể gọi thoại";
+        if (window.ToastManager) {
+          ToastManager.error(msg);
+        } else {
+          alert(msg);
+        }
         endCall({ sendHangup: false });
       }
     });
@@ -2256,12 +2305,18 @@
       try {
         await startOutgoingCall({ video: true });
       } catch (err) {
+        let msg;
         if (err?.name === "NotAllowedError") {
-          alert("Vui lòng cho phép camera/microphone");
+          msg = "Vui lòng cho phép camera/microphone";
         } else if (err?.name === "NotReadableError") {
-          alert("Camera đang được ứng dụng/tab khác sử dụng");
+          msg = "Camera đang được ứng dụng/tab khác sử dụng";
         } else {
-          alert(err?.message || "Không thể gọi video");
+          msg = err?.message || "Không thể gọi video";
+        }
+        if (window.ToastManager) {
+          ToastManager.error(msg);
+        } else {
+          alert(msg);
         }
         endCall({ sendHangup: false });
       }
@@ -2274,11 +2329,14 @@
       try {
         await acceptIncomingCall();
       } catch (err) {
-        alert(
-          err?.name === "NotAllowedError"
+        const msg = err?.name === "NotAllowedError"
             ? "Vui lòng cho phép microphone/camera"
-            : err?.message || "Không thể tham gia cuộc gọi"
-        );
+            : err?.message || "Không thể tham gia cuộc gọi";
+        if (window.ToastManager) {
+          ToastManager.error(msg);
+        } else {
+          alert(msg);
+        }
         endCall({ sendHangup: true });
       }
     });

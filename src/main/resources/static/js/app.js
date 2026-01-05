@@ -570,7 +570,11 @@ async function handleCreateServer(e) {
   const serverName = nameInput ? nameInput.value.trim() : "";
 
   if (!serverName) {
-    alert("Vui lòng nhập tên server");
+    if (window.ToastManager) {
+      ToastManager.warning("Vui lòng nhập tên server");
+    } else {
+      alert("Vui lòng nhập tên server");
+    }
     return;
   }
 
@@ -591,7 +595,11 @@ async function handleCreateServer(e) {
     await loadGlobalServers();
     await navigateToServerWithChannel(newServer.id);
   } catch (error) {
-    alert("Lỗi khi tạo server: " + error.message);
+    if (window.ToastManager) {
+      ToastManager.error("Lỗi khi tạo server: " + error.message);
+    } else {
+      alert("Lỗi khi tạo server: " + error.message);
+    }
   }
 }
 
@@ -602,7 +610,11 @@ async function handleJoinServer(e) {
   const inviteCode = codeInput ? codeInput.value.trim() : "";
 
   if (!inviteCode) {
-    alert("Vui lòng nhập mã mời");
+    if (window.ToastManager) {
+      ToastManager.warning("Vui lòng nhập mã mời");
+    } else {
+      alert("Vui lòng nhập mã mời");
+    }
     return;
   }
 
@@ -630,7 +642,11 @@ async function handleJoinServer(e) {
     await loadGlobalServers();
     await navigateToServerWithChannel(server.id);
   } catch (error) {
-    alert("Lỗi: " + error.message);
+    if (window.ToastManager) {
+      ToastManager.error("Lỗi: " + error.message);
+    } else {
+      alert("Lỗi: " + error.message);
+    }
   }
 }
 
