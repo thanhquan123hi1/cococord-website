@@ -659,3 +659,10 @@
     </div>
   </div>
 </div>
+<script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105_release"></script>
+
+<script>
+    if (typeof window.forceInitAppHome === 'function') {
+        window.forceInitAppHome();
+    }
+</script>

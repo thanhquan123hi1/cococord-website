@@ -2,14 +2,11 @@
 
 (() => {
   "use strict";
+  let isInitializing = false;
 
   const state = {
     currentUser: null,
-    // Single source of truth for relationships keyed by otherUserId.
-    // Shape: { [userId]: { userId, username, displayName, avatarUrl, relationshipStatus, requestId } }
     friendsState: {},
-
-    // Initial snapshots (used only to build friendsState on first load / fallback)
     friends: [],
     requests: [],
     blocked: [],
@@ -456,22 +453,17 @@
   }) {
     if (!dmGroupId || !callId) return;
     if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
-    try {
-      await apiJson(
-        `/api/direct-messages/${encodeURIComponent(dmGroupId)}/call-log`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            callId,
-            video: !!video,
-            durationSeconds: Math.max(1, Math.floor(durationSeconds)),
-          }),
-        }
-      );
-    } catch (e) {
-      // Best-effort only; do not block call teardown.
-      console.warn("Failed to log call event:", e);
-    }
+    await apiJson(
+      `/api/direct-messages/${encodeURIComponent(dmGroupId)}/call-log`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          callId,
+          video: !!video,
+          durationSeconds: Math.max(1, Math.floor(durationSeconds)),
+        }),
+      }
+    );
   }
 
   function endCall({ sendHangup } = { sendHangup: true }) {
@@ -1736,7 +1728,6 @@
       state.dmMessages = Array.isArray(messages) ? messages.reverse() : [];
       renderDmMessages();
     } catch (err) {
-      console.error("Failed to load DM messages:", err);
       state.dmMessages = [];
       renderDmMessages();
     }
@@ -1852,7 +1843,6 @@
       }
       renderDmMessages();
     } catch (err) {
-      console.error("Failed to delete message:", err);
       alert(err?.message || "Không thể xóa tin nhắn");
     }
   }
@@ -1968,15 +1958,10 @@
         dmSubscription = stompClient.subscribe(
           `/topic/dm/${state.activeDmGroupId}`,
           (message) => {
-            try {
-              const msg = JSON.parse(message.body);
-              // Avoid duplicate
-              if (!state.dmMessages.find((m) => m.id === msg.id)) {
-                state.dmMessages.push(msg);
-                renderDmMessages();
-              }
-            } catch (e) {
-              console.error("Failed to parse DM message:", e);
+            const msg = JSON.parse(message.body);
+            if (!state.dmMessages.find((m) => m.id === msg.id)) {
+              state.dmMessages.push(msg);
+              renderDmMessages();
             }
           }
         );
@@ -1985,18 +1970,12 @@
         callSubscription = stompClient.subscribe(
           `/topic/call/${state.activeDmGroupId}`,
           (message) => {
-            try {
-              const evt = JSON.parse(message.body);
-              handleCallSignal(evt);
-            } catch (e) {
-              console.error("Failed to parse call signal:", e);
-            }
+            const evt = JSON.parse(message.body);
+            handleCallSignal(evt);
+            
           }
         );
       },
-      (err) => {
-        console.error("DM WebSocket error:", err);
-      }
     );
   }
 
@@ -2048,7 +2027,6 @@
         renderDmMessages();
       }
     } catch (err) {
-      console.error("Failed to send DM:", err);
       alert(err?.message || "Không thể gửi tin nhắn");
     }
   }
@@ -2063,7 +2041,6 @@
   function switchMainView(viewName) {
     const validViews = ['friends', 'nitro', 'shop', 'quests'];
     if (!validViews.includes(viewName)) {
-      console.warn('[AppHome] Invalid view:', viewName);
       return;
     }
 
@@ -2098,8 +2075,6 @@
     if (state.activeView === 'dm') {
       closeDmChat();
     }
-
-    console.log('[AppHome] Switched to view:', viewName);
   }
 
   /**
@@ -2200,12 +2175,8 @@
     document.querySelectorAll('.quest-card:not(.completed)').forEach(card => {
       card.addEventListener('click', () => {
         const questId = card.getAttribute('data-quest-id');
-        console.log('[AppHome] Quest clicked:', questId);
-        // Could open quest details modal here
       });
     });
-
-    // Update quest stats
     updateQuestStats();
   }
 
@@ -2346,8 +2317,14 @@
   function render() {
     renderDmList();
     renderFriendsList();
+    document.querySelectorAll(".tab").forEach((b) => {
+          b.onclick = () => { // Dùng onclick trực tiếp để chắc chắn chạy
+              setActiveTab(b.dataset.tab);
+          };
+  });
+  const btnAdd = document.getElementById("addFriendBtn");
+      if(btnAdd) btnAdd.onclick = showAddFriendView;
   }
-
   async function initPresence() {
     const store = window.CoCoCordPresence;
     if (!store || typeof store.ensureConnected !== "function") return;
@@ -2429,7 +2406,6 @@
         }
       }
 
-      // Only re-render friends UI when relevant.
       if (state.activeView === "friends") {
         renderFriendsList();
       }
@@ -2437,36 +2413,46 @@
   }
 
   async function init() {
-    // Listen for global incoming call events (from notification.js) ASAP.
-    // Guard to avoid attaching duplicate listeners when init() reruns.
-    if (!window.__cococordIncomingCallListenerAttached) {
-      window.__cococordIncomingCallListenerAttached = true;
-      window.addEventListener("incomingCall", (e) => {
-        const evt = e.detail;
-        if (evt && evt.type === "CALL_START") {
-          handleGlobalIncomingCall(evt);
-        }
-      });
-    }
+    if (isInitializing) return;
+    isInitializing = true;
 
-    wireEvents();
-    await loadCurrentUser();
-    await Promise.all([
-      loadFriends(),
-      loadRequests(),
-      loadBlocked(),
-      loadDmSidebar(),
-    ]);
-    rebuildFriendsStateFromSnapshots();
-    render();
+    try {
+      const navItems = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
+        navItems.forEach(item => {
+            item.onclick = (e) => {
+                e.preventDefault();
+                switchMainView(item.getAttribute('data-view'));
+            };
+        });
+      if (!window.__cococordIncomingCallListenerAttached) {
+        window.__cococordIncomingCallListenerAttached = true;
+        window.addEventListener("incomingCall", (e) => {
+          const evt = e.detail;
+          if (evt && evt.type === "CALL_START") {
+            handleGlobalIncomingCall(evt);
+          }
+        });
+      }
 
+      wireEvents();
+      await loadCurrentUser();
+      await Promise.all([
+        loadFriends(),
+        loadRequests(),
+        loadBlocked(),
+        loadDmSidebar(),
+      ]);
+      rebuildFriendsStateFromSnapshots();
+      render();
+  } catch (err) {
+    throw err;
+  }
     // Friends realtime updates (no polling)
     await initFriendsRealtime();
 
     // Presence realtime (no polling)
     await initPresence();
 
-    // Drain any buffered call events that arrived before init completed.
     if (
       Array.isArray(window.__cococordIncomingCallQueue) &&
       window.__cococordIncomingCallQueue.length
@@ -2480,7 +2466,6 @@
       }
     }
 
-    // Check URL params for dmGroupId
     const urlParams = new URLSearchParams(window.location.search);
     const dmGroupId = urlParams.get("dmGroupId");
     if (dmGroupId) {
@@ -2490,28 +2475,29 @@
       openDmChat(dmGroupId, dmItem);
     }
 
-    // Deep-link into Friends tabs from notifications (e.g., /app?friendsTab=pending)
     const friendsTab = urlParams.get("friendsTab");
     if (friendsTab) {
       setActiveTab(String(friendsTab));
     }
 
-    // Deep-link into main views (e.g., /app?view=nitro)
     const viewParam = urlParams.get("view");
     if (viewParam && ['friends', 'nitro', 'shop', 'quests'].includes(viewParam)) {
       switchMainView(viewParam);
     }
-
-    // Initialize Shop tabs
     initShopTabs();
-
-    // Initialize Quest interactions
     initQuestInteractions();
-
-    // Initialize primary sidebar resize
     initPrimarySidebarResize();
   }
-
+  window.reInitAppHome = function() {
+      const homeRoot = document.getElementById("cococordHome");
+      if (!homeRoot) return;
+      if (typeof wireEvents === 'function') {
+          wireEvents(); 
+      }
+      if (typeof render === 'function') {
+           render();
+      }
+  };
   // ==================== PRIMARY SIDEBAR RESIZE ====================
   function initPrimarySidebarResize() {
     const resizer = document.getElementById("primarySidebarResizer");
@@ -2613,25 +2599,7 @@
     });
   }
 
-  let lastRootEl = null;
-
-  function maybeInit() {
-    const root = document.getElementById("cococordHome");
-    if (!root) return;
-    if (root === lastRootEl) return;
-    lastRootEl = root;
-    init().catch((e) => console.error("App home init failed", e));
-  }
-
-  // Run on initial page load
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", maybeInit);
-  } else {
-    maybeInit();
-  }
-
-  // Run again when app.js swaps page content without reloading
-  document.addEventListener("cococord:page:loaded", maybeInit);
+  
 
   // ===== Expose API for Quick Switcher =====
   window.AppHome = {
@@ -2659,4 +2627,52 @@
       await openDM(userId);
     },
   };
+
+  // ==========================================
+  // APP HOME INITIALIZATION
+  // ==========================================
+
+  function forceInit() {
+      const root = document.getElementById("cococordHome");
+      if (!root) return;
+      
+      isInitializing = false; 
+
+      // Set up sidebar navigation with capture phase listener
+      const sidebarNav = root.querySelector(".sidebar-nav");
+      if (sidebarNav) {
+          sidebarNav.addEventListener('click', (e) => {
+              const navItem = e.target.closest('.nav-item');
+              if (navItem) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.stopImmediatePropagation(); 
+
+                  // Update active state
+                  root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                  navItem.classList.add('active');
+
+                  // Switch view
+                  const view = navItem.getAttribute("data-view");
+                  if (view && typeof switchMainView === 'function') {
+                      switchMainView(view);
+                  }
+              }
+          }, true); // Capture phase
+      }
+
+      // Wire events and initialize
+      try {
+          if (typeof wireEvents === 'function') {
+              wireEvents(); 
+          }
+      } catch (e) {
+          console.error('[AppHome] Wire events failed:', e);
+      }
+      
+      if (typeof init === 'function') {
+          init().catch(err => console.error('[AppHome] Init failed:', err));
+      }
+  }
+  window.forceInitAppHome = forceInit;
 })();

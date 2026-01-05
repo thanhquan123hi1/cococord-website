@@ -621,9 +621,9 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <!-- Markdown & Syntax Highlighting Libraries -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css" integrity="sha512-IHD9jLLUjCx53TLIPc/t0vCJJH/FH8SFzUxjUJv/+R+qEd8WTF/OXI0yfnkQa0OgFQY9bJQIYqHuN0o9W1/5Ng==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.2.0/marked.min.js" integrity="sha512-eUxlZzJK5H7MjNWdmLRZR2YqzEoJPjNnYfSCW+r7L7R2FYvZ0nZjGDr0JdGX2+BxQZ6k7xzJxT4ZBaHnmNIQzg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-H8S3B7t4vTnfg1IXSvWXGMxvYlSLXr7IzaSwG3Prd/aCQjqnPxCYXWP5KgRpMW/JFY48Gn3S1X1vR2UkuB+kJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.2.0/marked.min.js" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" referrerpolicy="no-referrer"></script>
 
 <!-- CocoCord Scripts -->
 <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101"></script>

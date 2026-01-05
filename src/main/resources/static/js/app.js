@@ -18,9 +18,7 @@ async function navigateToServerWithChannel(serverId) {
     return window.ServerSidebar.navigateToServerWithChannel(serverId);
   }
 
-  // Fallback nếu ServerSidebar chưa load
   try {
-    console.log("[App -> Server] Fetching channels for server:", serverId);
     const token = localStorage.getItem("accessToken");
     const response = await fetch(`/api/servers/${serverId}/channels`, {
       method: "GET",
@@ -31,9 +29,6 @@ async function navigateToServerWithChannel(serverId) {
     });
 
     if (!response.ok) {
-      console.warn(
-        "[App -> Server] Failed to fetch channels, navigating without channelId"
-      );
       window.location.href = `/chat?serverId=${serverId}`;
       return;
     }
@@ -41,35 +36,25 @@ async function navigateToServerWithChannel(serverId) {
     const channels = await response.json();
 
     if (!channels || channels.length === 0) {
-      console.warn(
-        "[App -> Server] No channels found, navigating without channelId"
-      );
       window.location.href = `/chat?serverId=${serverId}`;
       return;
     }
 
-    // Tìm general channel
     let targetChannel = channels.find(
       (ch) => ch.name && ch.name.toLowerCase() === "general"
     );
 
-    // Nếu không có general, tìm TEXT channel đầu tiên
     if (!targetChannel) {
       targetChannel = channels.find(
         (ch) => ch.type && ch.type.toUpperCase() === "TEXT"
       );
     }
 
-    // Nếu vẫn không có, lấy channel đầu tiên
     if (!targetChannel) {
       targetChannel = channels[0];
     }
-
-    console.log("[App -> Server] Navigating to channel:", targetChannel);
     window.location.href = `/chat?serverId=${serverId}&channelId=${targetChannel.id}`;
   } catch (err) {
-    console.error("[App -> Server] Failed to fetch channels:", err);
-    // Fallback: navigate chỉ với serverId
     window.location.href = `/chat?serverId=${serverId}`;
   }
 }
@@ -103,7 +88,6 @@ async function navigateToServerWithChannel(serverId) {
       }
     })
     .catch((error) => {
-      console.error("Auth verification error:", error);
       localStorage.clear();
       document.cookie =
         "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -260,7 +244,6 @@ function logout() {
         window.location.href = "/login";
       })
       .catch((error) => {
-        console.error("Logout error:", error);
         localStorage.clear();
         document.cookie =
           "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -317,7 +300,6 @@ async function refreshAccessToken() {
       return null;
     }
   } catch (error) {
-    console.error("Token refresh error:", error);
     localStorage.clear();
     document.cookie =
       "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -375,22 +357,14 @@ function discriminatorFromId(id) {
 // Load current user and render UCP
 async function loadGlobalUserPanel() {
   if (globalUcpInitialized) return; // Already initialized
-
-  try {
-    const response = await apiRequest("/api/auth/me");
-    if (!response.ok) throw new Error("Failed to load user");
-
-    globalCurrentUser = await response.json();
-
-    // Store in localStorage for other uses
-    localStorage.setItem("user", JSON.stringify(globalCurrentUser));
-
-    renderGlobalUserPanel();
-    bindGlobalUserPanelEvents();
-    globalUcpInitialized = true;
-  } catch (e) {
-    console.error("Failed to load global user panel", e);
-  }
+  const response = await apiRequest("/api/auth/me");
+  if (!response.ok) throw new Error("Failed to load user");
+  globalCurrentUser = await response.json();
+  localStorage.setItem("user", JSON.stringify(globalCurrentUser));
+  renderGlobalUserPanel();
+  bindGlobalUserPanelEvents();
+  globalUcpInitialized = true;
+  
 }
 
 // Render user info into UCP elements
@@ -507,95 +481,76 @@ function updateGlobalUserPanel(userData) {
 
 // ==================== GLOBAL SERVER SIDEBAR LOGIC ====================
 
-// Load servers for global sidebar
 async function loadGlobalServers() {
   const serverList = document.getElementById("globalServerList");
   if (!serverList) return;
+  const response = await apiRequest("/api/servers");
+  if (!response.ok) throw new Error("Failed to load servers");
+  const servers = await response.json();
+  const existingServerItems = serverList.querySelectorAll(
+    ".server-item[data-server-id]"
+  );
+  existingServerItems.forEach((item) => item.remove());
+  const actionDivider = serverList.querySelector(
+    ".server-divider[data-action-divider]"
+  );
 
-  try {
-    const response = await apiRequest("/api/servers");
-    if (!response.ok) throw new Error("Failed to load servers");
+  servers.forEach((server) => {
+    const serverItem = document.createElement("a");
+    serverItem.className = "server-item";
+    serverItem.setAttribute("data-server-id", server.id);
+    serverItem.setAttribute("title", server.name);
+    serverItem.setAttribute("href", `/chat?serverId=${server.id}`);
 
-    const servers = await response.json();
+    if (server.iconUrl) {
+      serverItem.innerHTML = `<img src="${server.iconUrl}" alt="${server.name}">`;
+    } else {
+      const initial = server.name.charAt(0).toUpperCase();
+      serverItem.innerHTML = `<span class="server-initial">${initial}</span>`;
+    }
 
-    // Remove only server items, keep action buttons (divider + add + discover)
-    const existingServerItems = serverList.querySelectorAll(
-      ".server-item[data-server-id]"
-    );
-    existingServerItems.forEach((item) => item.remove());
+    serverItem.addEventListener("click", (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
+        return;
+      const isOnChatPage = window.location.pathname.endsWith("/chat");
 
-    // Find the action divider to insert servers before it
-    const actionDivider = serverList.querySelector(
-      ".server-divider[data-action-divider]"
-    );
-
-    servers.forEach((server) => {
-      const serverItem = document.createElement("a");
-      serverItem.className = "server-item";
-      serverItem.setAttribute("data-server-id", server.id);
-      serverItem.setAttribute("title", server.name);
-      serverItem.setAttribute("href", `/chat?serverId=${server.id}`);
-
-      if (server.iconUrl) {
-        serverItem.innerHTML = `<img src="${server.iconUrl}" alt="${server.name}">`;
-      } else {
-        const initial = server.name.charAt(0).toUpperCase();
-        serverItem.innerHTML = `<span class="server-initial">${initial}</span>`;
+      if (
+        isOnChatPage &&
+        typeof window.CoCoCordChat !== "undefined" &&
+        window.CoCoCordChat.selectServer
+      ) {
+        e.preventDefault();
+        window.CoCoCordChat.selectServer(server.id);
+        return;
       }
-
-      // SPA-like navigation: nếu đang ở trang /chat, không reload toàn trang
-      serverItem.addEventListener("click", (e) => {
-        // Allow opening in a new tab/window
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)
-          return;
-
-        const isOnChatPage = window.location.pathname.endsWith("/chat");
-
-        // If already on /chat, delegate to chat.js SPA API
-        if (
-          isOnChatPage &&
-          typeof window.CoCoCordChat !== "undefined" &&
-          window.CoCoCordChat.selectServer
-        ) {
-          e.preventDefault();
-          window.CoCoCordChat.selectServer(server.id);
-          return;
-        }
-
-        // From other pages (e.g. /app), navigate to /chat without full reload to keep UCP persistent
-        if (typeof spaNavigate === "function") {
-          e.preventDefault();
-          spaNavigate(serverItem.href);
-        }
-      });
-
-      // Insert before action divider, or append if not found
-      if (actionDivider) {
-        serverList.insertBefore(serverItem, actionDivider);
-      } else {
-        serverList.appendChild(serverItem);
+      if (typeof spaNavigate === "function") {
+        e.preventDefault();
+        spaNavigate(serverItem.href);
       }
     });
 
-    // Highlight current server if on chat page
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentServerId = urlParams.get("serverId");
-    if (currentServerId) {
-      const activeItem = serverList.querySelector(
-        `[data-server-id="${currentServerId}"]`
-      );
-      if (activeItem) activeItem.classList.add("active");
+    if (actionDivider) {
+      serverList.insertBefore(serverItem, actionDivider);
+    } else {
+      serverList.appendChild(serverItem);
     }
+  });
 
-    // Highlight home button on friends page
-    if (window.location.pathname.includes("/app")) {
-      const homeBtn = document.querySelector(".server-sidebar .home-btn");
-      if (homeBtn) homeBtn.classList.add("active");
-    }
-  } catch (error) {
-    console.error("Error loading servers:", error);
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentServerId = urlParams.get("serverId");
+  if (currentServerId) {
+    const activeItem = serverList.querySelector(
+      `[data-server-id="${currentServerId}"]`
+    );
+    if (activeItem) activeItem.classList.add("active");
+  }
+
+  if (window.location.pathname.includes("/app")) {
+    const homeBtn = document.querySelector(".server-sidebar .home-btn");
+    if (homeBtn) homeBtn.classList.add("active");
   }
 }
+
 
 // Global modal handling
 function openGlobalModal(modalId) {
@@ -636,7 +591,6 @@ async function handleCreateServer(e) {
     await loadGlobalServers();
     await navigateToServerWithChannel(newServer.id);
   } catch (error) {
-    console.error("Error creating server:", error);
     alert("Lỗi khi tạo server: " + error.message);
   }
 }
@@ -676,7 +630,6 @@ async function handleJoinServer(e) {
     await loadGlobalServers();
     await navigateToServerWithChannel(server.id);
   } catch (error) {
-    console.error("Error joining server:", error);
     alert("Lỗi: " + error.message);
   }
 }
@@ -696,29 +649,45 @@ function getAppContextPath() {
   }
 }
 
-function updateGlobalSidebarActiveState() {
-  const homeBtn = document.getElementById("homeBtn");
-  const serverList = document.getElementById("globalServerList");
+function extractServerIdFromPath(path) {
+  const regex = /\/chat\?serverId=(\d+)/;
+  const match = path.match(regex);
+  return match ? match[1] : null;
+}
 
-  serverList
-    ?.querySelectorAll(".server-item.active")
-    .forEach((el) => el.classList.remove("active"));
+function updateGlobalSidebarActiveState() {
+  const serverList = document.getElementById("globalServerList") || document.getElementById("serverList");
+  let homeBtn = document.getElementById("homeBtn");
+  
+  if (!homeBtn && serverList) {
+      homeBtn = serverList.querySelector(".home-btn");
+  }
+
+  // Clear ALL active states from both containers
+  if (serverList) {
+    serverList.querySelectorAll(".server-item.active, .home-btn.active").forEach(el => {
+        el.classList.remove("active");
+        el.removeAttribute("aria-current");
+    });
+  }
   if (homeBtn) homeBtn.classList.remove("active");
 
+  // Determine current state
   const urlParams = new URLSearchParams(window.location.search);
   const serverId = urlParams.get("serverId");
-  const isChat = window.location.pathname.endsWith("/chat");
-  const isHome = window.location.pathname.endsWith("/app") && !serverId;
+  const path = window.location.pathname;
+  
+  const isHome = (path === "/app" || path.startsWith("/app/")) && !serverId;
+  const isChat = (path.includes("/chat") || !!serverId);
 
-  if (isHome && homeBtn) {
-    homeBtn.classList.add("active");
+  // Set new active state
+  if (isHome) {
+    if (homeBtn) homeBtn.classList.add("active");
     return;
   }
 
   if (isChat && serverId && serverList) {
-    const activeItem = serverList.querySelector(
-      `[data-server-id="${serverId}"]`
-    );
+    const activeItem = serverList.querySelector(`[data-server-id="${serverId}"]`);
     if (activeItem) activeItem.classList.add("active");
   }
 }
@@ -728,46 +697,39 @@ async function runScriptsInElement(container) {
 
   const existingScriptSrc = new Set(
     Array.from(document.querySelectorAll("script[src]")).map((s) => {
-      try {
-        return new URL(
-          s.getAttribute("src"),
-          window.location.origin
-        ).toString();
-      } catch {
-        return s.getAttribute("src");
-      }
+      try { return new URL(s.getAttribute("src"), window.location.origin).toString(); } 
+      catch { return s.getAttribute("src"); }
     })
   );
 
   const scripts = Array.from(container.querySelectorAll("script"));
+
   for (const script of scripts) {
     const src = script.getAttribute("src");
     if (src) {
       let absSrc = src;
-      try {
-        absSrc = new URL(src, window.location.origin).toString();
-      } catch {
-        /* ignore */
-      }
+      try { absSrc = new URL(src, window.location.origin).toString(); } catch {}
 
       if (!existingScriptSrc.has(absSrc)) {
         await new Promise((resolve) => {
           const el = document.createElement("script");
           el.src = src;
           el.async = false;
-          el.onload = resolve;
-          el.onerror = resolve;
+          el.onload = () => {
+              resolve();
+          };
+          el.onerror = (e) => {
+              resolve();
+          };
           document.body.appendChild(el);
         });
         existingScriptSrc.add(absSrc);
-      }
+      } 
     } else if (script.textContent && script.textContent.trim()) {
       const el = document.createElement("script");
       el.textContent = script.textContent;
       document.body.appendChild(el);
     }
-
-    // Remove inert script tag from injected HTML
     script.remove();
   }
 }
@@ -859,14 +821,7 @@ async function spaNavigate(url, opts = {}) {
   if (isSame) return;
 
   try {
-    // Abort any in-flight navigation to keep transitions smooth
-    if (_spaNavController) {
-      try {
-        _spaNavController.abort();
-      } catch {
-        /* ignore */
-      }
-    }
+    if (_spaNavController) try { _spaNavController.abort(); } catch {}
     _spaNavController = new AbortController();
     const myToken = ++_spaNavToken;
 
@@ -879,41 +834,31 @@ async function spaNavigate(url, opts = {}) {
 
     const html = await res.text();
     if (myToken !== _spaNavToken) return;
+    
     const doc = new DOMParser().parseFromString(html, "text/html");
     const newArea = doc.querySelector(".page-content-area");
 
-    // If the server returns an undecorated fragment (no SiteMesh wrapper),
-    // fall back to using the response body instead of doing a full reload.
-    const nextHtml = newArea
-      ? newArea.innerHTML
-      : doc.body
-      ? doc.body.innerHTML
-      : html;
+    const nextHtml = newArea ? newArea.innerHTML : (doc.body ? doc.body.innerHTML : html);
     pageArea.innerHTML = nextHtml;
+
     if (myToken !== _spaNavToken) return;
-    await syncHeadStylesFromDoc(doc);
+    // await syncHeadStylesFromDoc(doc); // Có thể comment dòng này nếu nghi ngờ lỗi CSS
     await runScriptsInElement(pageArea);
 
     if (doc.title) document.title = doc.title;
     if (pushState) {
-      history.pushState(
-        {},
-        "",
-        targetUrl.pathname + targetUrl.search + targetUrl.hash
-      );
+      history.pushState({}, "", targetUrl.pathname + targetUrl.search + targetUrl.hash);
     }
 
     updateGlobalSidebarActiveState();
+    
     document.dispatchEvent(
       new CustomEvent("cococord:page:loaded", {
         detail: { url: targetUrl.toString() },
       })
     );
   } catch (e) {
-    if (e && (e.name === "AbortError" || String(e).includes("AbortError"))) {
-      return;
-    }
-    console.warn("SPA navigate failed, fallback to full navigation", e);
+    if (e?.name === "AbortError") return;
     window.location.href = url;
   }
 }
