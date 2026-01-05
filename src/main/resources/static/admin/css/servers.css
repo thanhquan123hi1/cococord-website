@@ -77,129 +77,527 @@
 }
 
 /* ========================================
-   MODERN SERVER LIST - FIGMA STYLE
+   MODERN SERVER LIST - FIGMA DASHBOARD STYLE
+   Alternating gray/white rows with clean design
    ======================================== */
 
-/* Figma component tokens (Projects block) */
-.admin-page[data-page="servers"] .admin-servers-card {
-  --servers-figma-card-radius: 24px;
-  --servers-figma-card-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.1);
-  --servers-figma-row-radius: var(--admin-radius-xl);
+/* Card container - Figma white block style */
+.admin-page[data-page="servers"] .admin-servers-card,
+.servers-figma-card {
+  --servers-card-radius: 24px;
+  background: var(--admin-surface);
+  border-radius: var(--servers-card-radius);
+  box-shadow: var(--admin-shadow-sm);
+  border: 1px solid var(--admin-border-light);
+  overflow: hidden;
+  padding: 24px;
 }
 
-.admin-page[data-page="servers"] .admin-servers-card {
-  border-radius: var(--servers-figma-card-radius);
-  box-shadow: var(--servers-figma-card-shadow);
-}
-
-.admin-page[data-page="servers"] .servers-card-header {
+.admin-page[data-page="servers"] .servers-card-header,
+.servers-figma-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-4);
+  padding: 0 0 16px 0;
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
-.admin-page[data-page="servers"] .servers-card-title {
+.admin-page[data-page="servers"] .servers-card-title,
+.servers-figma-title {
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 600;
   line-height: 28px;
   margin: 0;
-  color: #1DC9A0;
+  color: #1DC9A0; /* Secondary/Mint from Figma */
 }
 
-.admin-page[data-page="servers"] .servers-card-more {
+.admin-page[data-page="servers"] .servers-card-more,
+.servers-figma-more {
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: var(--admin-radius-xl);
-  background: var(--admin-surface-2);
+  border-radius: 80px;
+  background: transparent;
   color: var(--admin-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background 150ms ease, color 150ms ease;
 }
 
-.admin-page[data-page="servers"] .servers-card-more:hover {
+.admin-page[data-page="servers"] .servers-card-more:hover,
+.servers-figma-more:hover {
   background: var(--admin-hover);
   color: var(--admin-text-secondary);
 }
 
+/* Toolbar - Figma style */
 .admin-page[data-page="servers"] .admin-servers-toolbar {
-  padding-bottom: var(--space-4);
+  padding: 0 0 16px 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.admin-page[data-page="servers"] .admin-card-body-table {
+  padding: 0;
 }
 
 .admin-page[data-page="servers"] .admin-table-container {
-  overflow: hidden;
-  border-radius: var(--admin-radius-xl);
+  overflow-x: auto;
+  border-radius: 0;
 }
 
-.admin-page[data-page="servers"] #servers-table {
+/* Table design - Figma Dashboard style with alternating rows */
+.admin-page[data-page="servers"] #servers-table,
+.servers-figma-table {
   border-collapse: separate;
-  border-spacing: 0 var(--space-2);
+  border-spacing: 0;
+  width: 100%;
 }
 
-.admin-page[data-page="servers"] #servers-table thead th {
+/* Table Header - Figma style */
+.admin-page[data-page="servers"] #servers-table thead th,
+.servers-figma-table thead th {
   border-bottom: none;
-  padding-top: var(--space-2);
-  padding-bottom: var(--space-2);
+  padding: 12px 16px;
   text-transform: none;
   letter-spacing: 0;
   font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--admin-muted);
+  background: transparent;
+  white-space: nowrap;
+  text-align: left;
 }
 
-.admin-page[data-page="servers"] #servers-table td {
-  border-bottom: none;
-  padding-top: var(--space-3);
-  padding-bottom: var(--space-3);
+.admin-page[data-page="servers"] #servers-table tbody tr,
+.servers-figma-table tbody tr {
+  transition: background 150ms ease;
 }
 
-.admin-page[data-page="servers"] #servers-table tbody tr:nth-child(odd) td {
-  background: var(--admin-surface-2);
-}
-
-.admin-page[data-page="servers"] #servers-table tbody tr:nth-child(even) td {
+/* Figma alternating row colors */
+.admin-page[data-page="servers"] #servers-table tbody tr:nth-child(odd) td,
+.servers-figma-table tbody tr:nth-child(odd) td {
   background: var(--admin-surface);
 }
 
-.admin-page[data-page="servers"] #servers-table tbody tr:hover td {
-  background: var(--admin-hover);
+.admin-page[data-page="servers"] #servers-table tbody tr:nth-child(even) td,
+.servers-figma-table tbody tr:nth-child(even) td {
+  background: var(--admin-surface-2);
 }
 
-.admin-page[data-page="servers"] #servers-table tbody td:first-child {
-  border-top-left-radius: var(--servers-figma-row-radius);
-  border-bottom-left-radius: var(--servers-figma-row-radius);
+.admin-page[data-page="servers"] #servers-table td,
+.servers-figma-table td {
+  border-bottom: none;
+  padding: 16px;
+  vertical-align: middle;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--admin-text-secondary);
 }
 
-.admin-page[data-page="servers"] #servers-table tbody td:last-child {
-  border-top-right-radius: var(--servers-figma-row-radius);
-  border-bottom-right-radius: var(--servers-figma-row-radius);
+/* Row hover effect */
+.admin-page[data-page="servers"] #servers-table tbody tr:hover td,
+.servers-figma-table tbody tr:hover td {
+  background: var(--admin-hover) !important;
 }
 
-.admin-page[data-page="servers"] #servers-table .badge {
-  border-radius: var(--admin-radius-full);
-  padding: 6px 12px;
+/* First and last cell border radius for rounded row effect */
+.admin-page[data-page="servers"] #servers-table tbody td:first-child,
+.servers-figma-table tbody td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.admin-page[data-page="servers"] #servers-table tbody td:last-child,
+.servers-figma-table tbody td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* ID column styling */
+.admin-page[data-page="servers"] #servers-table td:nth-child(2) {
+  color: var(--admin-muted);
   font-weight: 400;
 }
 
-.admin-page[data-page="servers"] .server-avatar-sm {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--admin-radius-full);
-  font-size: 12px;
+/* Figma-style Status badges */
+.admin-page[data-page="servers"] #servers-table .badge,
+.servers-figma-table .badge,
+.figma-badge {
+  border-radius: 80px;
+  padding: 4px 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  white-space: nowrap;
 }
 
-.admin-page[data-page="servers"] .user-cell {
+/* In Progress - Cyan/Mint */
+.admin-page[data-page="servers"] #servers-table .badge-success,
+.figma-badge.in-progress,
+.figma-badge-success {
+  background: rgba(0, 199, 190, 0.1); /* Secondary/Mint with opacity */
+  color: #00C7BE; /* Secondary/Mint */
+}
+
+/* Complete - Cyan */
+.figma-badge.complete,
+.figma-badge-complete {
+  background: rgba(0, 199, 190, 0.1);
+  color: #00C7BE;
+}
+
+/* Pending - Yellow */
+.admin-page[data-page="servers"] #servers-table .badge-warning,
+.figma-badge.pending,
+.figma-badge-warning {
+  background: rgba(255, 204, 0, 0.15); /* Secondary/Yellow with opacity */
+  color: #E6B800; /* Darker yellow for contrast */
+}
+
+/* Approved - Green */
+.figma-badge.approved,
+.figma-badge-approved {
+  background: rgba(52, 199, 89, 0.1); /* Secondary/Green with opacity */
+  color: #34C759; /* Secondary/Green */
+}
+
+/* Rejected - Gray */
+.admin-page[data-page="servers"] #servers-table .badge-danger,
+.figma-badge.rejected,
+.figma-badge-danger {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Locked - Gray outline */
+.figma-badge.locked {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Suspended - Orange */
+.figma-badge.suspended {
+  background: rgba(255, 149, 0, 0.1);
+  color: #FF9500;
+}
+
+/* Server avatar - Figma style with circular avatars */
+.admin-page[data-page="servers"] .server-avatar-sm,
+.figma-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 80px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  overflow: hidden;
+}
+
+.admin-page[data-page="servers"] .server-avatar-sm img,
+.figma-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Avatar color variants - Figma gradients */
+.admin-page[data-page="servers"] .server-avatar-sm,
+.figma-avatar {
+  background: linear-gradient(135deg, #af52de 0%, #8b5cf6 100%); /* Secondary/Purple */
+}
+
+.admin-page[data-page="servers"] tr:nth-child(3n+1) .server-avatar-sm {
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%); /* Secondary/Blue */
+}
+
+.admin-page[data-page="servers"] tr:nth-child(3n+2) .server-avatar-sm {
+  background: linear-gradient(135deg, #34c759 0%, #00c7be 100%); /* Secondary/Green to Mint */
+}
+
+.admin-page[data-page="servers"] tr:nth-child(3n) .server-avatar-sm {
+  background: linear-gradient(135deg, #ffcc00 0%, #ff9500 100%); /* Secondary/Yellow to Orange */
+}
+
+/* User cell - Figma layout */
+.admin-page[data-page="servers"] .user-cell,
+.figma-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-page[data-page="servers"] .user-info,
+.figma-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.admin-page[data-page="servers"] .cell-user-name,
+.figma-user-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: var(--admin-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.admin-page[data-page="servers"] .cell-user-email,
+.figma-user-email {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--admin-muted);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Owner link - matching user list link style */
+.admin-page[data-page="servers"] .owner-link {
+  color: var(--admin-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  text-decoration: none;
+}
+
+.admin-page[data-page="servers"] .owner-link:hover {
+  color: var(--admin-primary-hover);
+  text-decoration: underline;
+}
+
+/* Numbers styling - centered like user list */
+.admin-page[data-page="servers"] #servers-table td:nth-child(5),
+.admin-page[data-page="servers"] #servers-table td:nth-child(6) {
+  font-weight: 500;
+  color: var(--admin-primary);
+  text-align: center;
+}
+
+/* Date columns styling */
+.admin-page[data-page="servers"] #servers-table td:nth-child(8),
+.admin-page[data-page="servers"] #servers-table td:nth-child(9) {
+  font-size: 13px;
+  color: var(--admin-text-secondary);
+  white-space: nowrap;
+}
+
+/* Action buttons - matching user list style */
+.admin-page[data-page="servers"] .action-buttons {
+  display: flex;
   gap: var(--space-2);
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.admin-page[data-page="servers"] .action-buttons .admin-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.admin-page[data-page="servers"] .action-buttons .admin-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* View button */
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="view"] {
+  color: var(--admin-muted);
+}
+
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="view"]:hover {
+  color: var(--admin-primary);
+  background: var(--admin-hover);
+}
+
+/* Lock button */
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="lock"] {
+  color: #f59e0b;
+}
+
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="lock"]:hover {
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Unlock button */
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="unlock"] {
+  color: #22c55e;
+}
+
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="unlock"]:hover {
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+/* Delete button */
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="delete"] {
+  color: #ef4444;
+}
+
+.admin-page[data-page="servers"] .action-buttons .admin-btn[data-action="delete"]:hover {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Pagination footer - matching user list */
+.admin-page[data-page="servers"] .admin-card-footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--admin-border-light);
+  background: var(--admin-surface-2);
+  margin-top: 0;
 }
 
 .servers-list-panel {
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 24px;
-  box-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--admin-shadow-sm);
   padding: 24px;
   overflow: hidden;
+}
+
+/* Figma table class - direct application */
+.figma-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.figma-table thead th {
+  border-bottom: none;
+  padding: 12px 16px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--admin-muted);
+  background: transparent;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.figma-table tbody tr.figma-row:nth-child(odd) td {
+  background: var(--admin-surface);
+}
+
+.figma-table tbody tr.figma-row:nth-child(even) td {
+  background: var(--admin-surface-2);
+}
+
+.figma-table tbody td {
+  border-bottom: none;
+  padding: 16px;
+  vertical-align: middle;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--admin-text-secondary);
+}
+
+.figma-table tbody tr.figma-row:hover td {
+  background: var(--admin-hover) !important;
+}
+
+.figma-table tbody td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.figma-table tbody td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Avatar color rotation for figma rows */
+.figma-table tbody tr:nth-child(4n+1) .figma-avatar {
+  background: linear-gradient(135deg, #af52de 0%, #8b5cf6 100%);
+}
+
+.figma-table tbody tr:nth-child(4n+2) .figma-avatar {
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+}
+
+.figma-table tbody tr:nth-child(4n+3) .figma-avatar {
+  background: linear-gradient(135deg, #34c759 0%, #00c7be 100%);
+}
+
+.figma-table tbody tr:nth-child(4n) .figma-avatar {
+  background: linear-gradient(135deg, #ffcc00 0%, #ff9500 100%);
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--admin-border);
+  border-top-color: var(--admin-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Text utilities (scoped to admin servers page) */
+.admin-page[data-page="servers"] .text-center {
+  text-align: center;
+}
+
+.admin-page[data-page="servers"] .text-muted {
+  color: var(--admin-muted);
+}
+
+.admin-page[data-page="servers"] .py-8 {
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+.admin-page[data-page="servers"] .mt-2 {
+  margin-top: 8px;
+}
+
+/* Dark theme tweaks for neutral badges */
+[data-theme="dark"] .figma-badge.rejected,
+[data-theme="dark"] .figma-badge-danger,
+[data-theme="dark"] .figma-badge.locked {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--admin-muted);
 }
 
 .servers-list-header {
@@ -295,11 +693,11 @@
   width: 18px;
   height: 18px;
   border-radius: 4px;
-  border: 2px solid #D1D5DB;
+  border: 2px solid var(--admin-border);
   cursor: pointer;
   transition: all 0.15s ease;
   appearance: none;
-  background: #fff;
+  background: var(--admin-surface);
 }
 
 .server-list-checkbox:checked {
@@ -709,7 +1107,7 @@
 }
 
 /* ========================================
-   SERVER DETAIL MODAL - HORIZONTAL LAYOUT
+   SERVER DETAIL MODAL - FIGMA HORIZONTAL LAYOUT
    ======================================== */
 
 .server-detail-horizontal {
@@ -718,13 +1116,32 @@
   max-height: 90vh;
   padding: 0;
   overflow: hidden;
+  border-radius: 24px;
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-lg);
 }
 
 .server-detail-horizontal .admin-modal-close {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
+  top: 16px;
+  right: 16px;
   z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--admin-hover);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--admin-muted);
+  transition: all 150ms ease;
+}
+
+.server-detail-horizontal .admin-modal-close:hover {
+  background: var(--admin-active);
+  color: var(--admin-text-secondary);
 }
 
 .server-detail-layout {
@@ -734,53 +1151,83 @@
   max-height: calc(90vh - 2px);
 }
 
-/* Left Sidebar (30-35%) */
+/* Left Sidebar - Figma style */
 .server-detail-sidebar {
-  width: 320px;
+  width: 300px;
   min-width: 280px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, var(--admin-surface-accent) 0%, var(--admin-surface) 100%);
+  background: linear-gradient(180deg, var(--admin-surface-2) 0%, var(--admin-surface) 100%);
   border-right: 1px solid var(--admin-border-light);
-  padding: var(--space-6);
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 24px;
   overflow-y: auto;
 }
 
-/* Server Profile */
+/* Server Profile - Figma centered style */
 .server-profile {
   text-align: center;
 }
 
 .server-avatar-large {
-  width: 80px;
-  height: 80px;
-  border-radius: var(--admin-radius-xl);
-  background: linear-gradient(135deg, var(--admin-primary) 0%, var(--color-purple) 100%);
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #af52de 0%, #8b5cf6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-family: 'Inter', sans-serif;
+  font-size: 36px;
   font-weight: 700;
   color: white;
-  margin: 0 auto var(--space-4);
-  box-shadow: 0 4px 12px rgba(79, 80, 127, 0.3);
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(175, 82, 222, 0.3);
+  overflow: hidden;
+}
+
+.server-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Server placeholder icon */
+.server-avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--admin-surface-accent) 0%, var(--admin-surface-2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: var(--admin-muted);
+}
+
+.server-avatar-placeholder svg {
+  width: 48px;
+  height: 48px;
 }
 
 .server-profile-name {
-  font-size: 20px;
-  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
   color: var(--admin-text);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 4px;
   word-break: break-word;
 }
 
 .server-profile-desc {
-  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
   color: var(--admin-muted);
-  margin: 0;
-  line-height: 1.5;
+  margin: 0 0 16px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -788,141 +1235,183 @@
   overflow: hidden;
 }
 
-/* Status Badges */
+/* Status Badges in sidebar */
 .server-badges {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-2);
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.badge-lg {
-  padding: var(--space-2) var(--space-3);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-/* Risk Level Badges */
-.badge-risk-low {
-  background: rgba(34, 197, 94, 0.12);
-  color: var(--color-success);
-}
-
-.badge-risk-medium {
-  background: rgba(245, 158, 11, 0.12);
-  color: var(--color-warning);
-}
-
-.badge-risk-high {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--color-danger);
-}
-
-/* Sidebar Stats */
+/* Sidebar Stats - Figma card style */
 .server-sidebar-stats {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 8px;
 }
 
 .sidebar-stat {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: 12px;
+  padding: 16px;
   background: var(--admin-surface);
-  border-radius: var(--admin-radius-lg);
+  border-radius: 16px;
   border: 1px solid var(--admin-border-light);
+  box-shadow: var(--admin-shadow-sm);
 }
 
-.sidebar-stat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--admin-radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sidebar-stat svg {
+  width: 20px;
+  height: 20px;
+  color: var(--admin-primary);
   flex-shrink: 0;
 }
 
-.sidebar-stat-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.sidebar-stat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.sidebar-stat-value {
+.sidebar-stat span:not(.stat-label) {
+  font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: var(--admin-text);
   line-height: 1.2;
 }
 
-.sidebar-stat-label {
-  font-size: 11px;
+.sidebar-stat .stat-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
   color: var(--admin-muted);
+  margin-left: auto;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
-/* Right Content (65-70%) */
+/* Right Content - Figma style */
 .server-detail-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--admin-surface);
 }
 
-/* Horizontal Tabs */
+/* Horizontal Tabs - Figma Dashboard Style */
 .horizontal-tabs {
   display: flex;
-  padding: var(--space-4) var(--space-5);
+  padding: 16px 24px;
   border-bottom: 1px solid var(--admin-border-light);
   background: var(--admin-surface);
-  gap: var(--space-1);
+  gap: 8px;
+}
+
+/* Tab Button - Figma style with icons */
+.horizontal-tabs .tab-btn,
+.figma-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--admin-text-secondary);
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.horizontal-tabs .tab-btn:hover,
+.figma-tab-btn:hover {
+  background: var(--admin-hover);
+  border-color: var(--admin-border);
+}
+
+.horizontal-tabs .tab-btn.active,
+.figma-tab-btn.active {
+  background: var(--admin-primary);
+  color: #FFFFFF;
+  border-color: var(--admin-primary);
+  box-shadow: var(--admin-shadow);
+}
+
+.horizontal-tabs .tab-btn.active:hover,
+.figma-tab-btn.active:hover {
+  background: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+}
+
+/* Tab icon */
+.horizontal-tabs .tab-btn svg,
+.figma-tab-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Tab badge (for counts like Reports) */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.horizontal-tabs .tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
 }
 
 .horizontal-tabs .admin-tab {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--admin-radius);
-  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 .horizontal-tabs .admin-tab.active {
-  background: var(--admin-surface-accent);
-  color: var(--admin-primary);
+  background: var(--admin-primary);
+  color: #FFFFFF;
 }
 
-/* Tab Body */
+/* Tab Body - Figma style */
 .server-tab-body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-5);
+  padding: 24px;
+  background: var(--admin-surface);
 }
 
 /* ========================================
-   OVERVIEW TAB STYLES
+   OVERVIEW TAB - FIGMA STYLE
    ======================================== */
 
-.server-details-section {
-  margin-bottom: var(--space-5);
+.server-details-section,
+.detail-section {
+  margin-bottom: 24px;
 }
 
 .section-title {
-  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--admin-muted);
-  margin: 0 0 var(--space-3);
+  margin: 0 0 12px;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
 }
 
 .section-title svg {
@@ -930,68 +1419,175 @@
   height: 14px;
 }
 
-/* Details Grid - 3 columns */
+/* Server Information Grid - Figma style */
+.info-grid,
 .details-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
+  gap: 16px;
 }
 
+.info-item,
 .detail-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
+  gap: 4px;
+  padding: 16px;
   background: var(--admin-surface-2);
-  border-radius: var(--admin-radius-lg);
+  border-radius: 12px;
 }
 
+.info-label,
 .detail-label {
+  font-family: 'Inter', sans-serif;
   font-size: 11px;
+  font-weight: 500;
   color: var(--admin-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
+.info-value,
 .detail-value {
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--admin-text);
+  font-weight: 500;
+  color: var(--admin-text-secondary);
+  line-height: 20px;
 }
 
-/* Owner Card Horizontal */
+/* Owner Card - Figma horizontal style */
+.owner-card,
 .owner-card-horizontal {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  gap: 16px;
+  padding: 16px;
   background: var(--admin-surface-2);
-  border-radius: var(--admin-radius-lg);
+  border-radius: 12px;
 }
 
 .owner-avatar {
   width: 48px;
   height: 48px;
-  border-radius: var(--admin-radius-full);
+  border-radius: 80px;
   object-fit: cover;
-  background: var(--admin-surface);
+  background: linear-gradient(135deg, #34c759 0%, #00c7be 100%);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.owner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 80px;
 }
 
 .owner-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .owner-name {
-  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
   font-size: 14px;
-  color: var(--admin-text);
+  line-height: 20px;
+  color: var(--admin-text-secondary);
 }
 
 .owner-email {
-  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
   color: var(--admin-muted);
+}
+
+/* View Profile Button */
+.owner-card .btn,
+#btn-view-owner {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--admin-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 150ms ease;
+}
+
+.owner-card .btn:hover,
+#btn-view-owner:hover {
+  background: var(--admin-primary-hover);
+}
+
+/* Reports section header */
+.reports-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--admin-surface-2);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.reports-summary-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.reports-summary-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.reports-summary-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--admin-muted);
+}
+
+/* Empty state - Figma style */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--admin-muted);
+  text-align: center;
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0;
 }
 
 /* Lock Info Section */
@@ -1182,40 +1778,78 @@
 }
 
 /* ========================================
-   ADMIN ACTIONS TAB - CARD GRID
+   ADMIN ACTIONS TAB - FIGMA CARD GRID
    ======================================== */
 
 .admin-actions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
+  gap: 16px;
 }
 
 .action-card {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-4);
-  padding: var(--space-5);
-  background: var(--admin-surface-2);
-  border-radius: var(--admin-radius-xl);
+  gap: 16px;
+  padding: 20px;
+  background: var(--admin-surface);
+  border-radius: 16px;
   border: 1px solid var(--admin-border-light);
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .action-card:hover {
   border-color: var(--admin-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--admin-shadow);
+  transform: translateY(-2px);
 }
 
-.action-card-danger {
-  background: rgba(239, 68, 68, 0.04);
-  border-color: rgba(239, 68, 68, 0.15);
+/* Action card variants */
+.action-card.warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.04) 0%, rgba(245, 158, 11, 0.02) 100%);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.action-card.warning:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+}
+
+.action-card.orange {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.04) 0%, rgba(249, 115, 22, 0.02) 100%);
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+.action-card.orange:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
+}
+
+.action-card.blue {
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.04) 0%, rgba(0, 122, 255, 0.02) 100%);
+  border-color: rgba(0, 122, 255, 0.2);
+}
+
+.action-card.blue:hover {
+  border-color: rgba(0, 122, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.15);
+}
+
+.action-card.danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.04) 0%, rgba(239, 68, 68, 0.02) 100%);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.action-card.danger:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
 }
 
 .action-card-icon {
   width: 48px;
   height: 48px;
-  border-radius: var(--admin-radius-lg);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1227,24 +1861,24 @@
   height: 24px;
 }
 
-.action-icon-warning {
+.action-card.warning .action-card-icon {
   background: rgba(245, 158, 11, 0.12);
-  color: var(--color-warning);
+  color: #F59E0B;
 }
 
-.action-icon-orange {
+.action-card.orange .action-card-icon {
   background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
+  color: #F97316;
 }
 
-.action-icon-blue {
-  background: rgba(79, 80, 127, 0.12);
-  color: var(--admin-primary);
+.action-card.blue .action-card-icon {
+  background: rgba(0, 122, 255, 0.12);
+  color: #007AFF;
 }
 
-.action-icon-danger {
+.action-card.danger .action-card-icon {
   background: rgba(239, 68, 68, 0.12);
-  color: var(--color-danger);
+  color: #EF4444;
 }
 
 .action-card-content {
@@ -1252,19 +1886,21 @@
   min-width: 0;
 }
 
-.action-card-title {
+.action-card-content h4 {
+  font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 600;
   color: var(--admin-text);
-  margin: 0 0 var(--space-1);
+  margin: 0 0 4px;
 }
 
-.action-card-danger .action-card-title {
-  color: var(--color-danger);
+.action-card.danger .action-card-content h4 {
+  color: #EF4444;
 }
 
-.action-card-desc {
-  font-size: 12px;
+.action-card-content p {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
   color: var(--admin-muted);
   margin: 0;
   line-height: 1.5;
@@ -2139,12 +2775,198 @@
   gap: var(--space-3);
 }
 
-/* Server Row - Clickable */
+/* Server Row - Removed clickable behavior (only context menu works) */
 .server-row {
-  cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .server-row:hover {
   background: var(--admin-surface-accent);
+}
+
+/* ========================================
+   CONFIRMATION MODAL - ENHANCED & PROMINENT
+   ======================================== */
+
+.confirmation-modal {
+  max-width: 400px;
+  border-radius: 20px;
+  background: var(--admin-surface);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: confirmModalSlideIn 0.25s ease-out;
+  overflow: hidden;
+}
+
+@keyframes confirmModalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.confirmation-modal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-8) var(--space-6) var(--space-5);
+  text-align: center;
+}
+
+.confirmation-header-warning {
+  background: linear-gradient(180deg, 
+    rgba(251, 191, 36, 0.15) 0%, 
+    rgba(251, 191, 36, 0.05) 50%,
+    transparent 100%);
+}
+
+.confirmation-header-danger {
+  background: linear-gradient(180deg, 
+    rgba(239, 68, 68, 0.15) 0%, 
+    rgba(239, 68, 68, 0.05) 50%,
+    transparent 100%);
+}
+
+.confirmation-modal-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+  position: relative;
+}
+
+.confirmation-header-warning .confirmation-modal-icon {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+  box-shadow: 0 8px 16px -4px rgba(251, 191, 36, 0.4);
+}
+
+.confirmation-header-danger .confirmation-modal-icon {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
+  box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.4);
+}
+
+.confirmation-modal-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 2;
+}
+
+.confirmation-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--admin-text);
+  letter-spacing: -0.025em;
+}
+
+.confirmation-modal .admin-modal-body {
+  padding: 0 var(--space-6) var(--space-5);
+}
+  color: var(--admin-text-secondary);
+.confirmation-message {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #64748b;
+  text-align: center;
+  margin: 0;
+}
+
+.confirmation-modal .admin-modal-footer {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  gap: var(--space-3);
+  display: flex;
+  justify-content: center;
+  background: var(--admin-surface-2);
+  border-top: 1px solid var(--admin-border-light);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn {
+  min-width: 120px;
+  padding: 10px 20px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-ghost {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-secondary);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-ghost:hover {
+  background: var(--admin-hover);
+  border-color: var(--admin-border);
+  color: var(--admin-text);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.5);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-warning:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -2px rgba(245, 158, 11, 0.6);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.5);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -2px rgba(239, 68, 68, 0.6);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-success {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 12px -2px rgba(34, 197, 94, 0.5);
+}
+
+.confirmation-modal .admin-modal-footer .admin-btn-success:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -2px rgba(34, 197, 94, 0.6);
+}
+
+/* Enhanced backdrop for confirmation modal */
+#confirmation-modal.admin-modal-backdrop {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* ========================================
+   FILTER RESULTS COUNT
+   ======================================== */
+
+.filter-results-info {
+  padding: var(--space-2) var(--space-4);
+  background: var(--admin-surface-accent);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--admin-primary);
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+  text-align: center;
+  border: 1px solid var(--admin-border);
 }

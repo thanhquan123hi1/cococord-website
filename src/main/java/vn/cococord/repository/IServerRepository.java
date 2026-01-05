@@ -47,6 +47,8 @@ public interface IServerRepository extends JpaRepository<Server, Long> {
 
         long countByIsLockedTrue();
 
+        long countByIsSuspendedTrue();
+
         List<Server> findTop10ByOrderByCreatedAtDesc();
 
         @Query("SELECT AVG(SIZE(s.members)) FROM Server s")

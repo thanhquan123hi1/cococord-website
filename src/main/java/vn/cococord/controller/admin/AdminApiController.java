@@ -166,6 +166,24 @@ public class AdminApiController {
         return ResponseEntity.ok(new MessageResponse("Server unlocked successfully"));
     }
 
+    @PostMapping("/servers/{serverId}/suspend")
+    public ResponseEntity<MessageResponse> suspendServer(
+            @PathVariable Long serverId,
+            @RequestParam(required = false) String reason,
+            @RequestParam(required = false) Integer duration,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        adminService.suspendServer(serverId, reason, duration, userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Server suspended successfully"));
+    }
+
+    @PostMapping("/servers/{serverId}/unsuspend")
+    public ResponseEntity<MessageResponse> unsuspendServer(
+            @PathVariable Long serverId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        adminService.unsuspendServer(serverId, userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Server unsuspended successfully"));
+    }
+
     @DeleteMapping("/servers/{serverId}")
     public ResponseEntity<MessageResponse> deleteServer(
             @PathVariable Long serverId,

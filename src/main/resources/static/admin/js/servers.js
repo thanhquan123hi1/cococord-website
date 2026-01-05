@@ -48,6 +48,81 @@ var AdminServers = window.AdminServers || (function() {
   };
 
   // ========================================
+  // Confirmation Modal
+  // ========================================
+
+  function showConfirmationModal(options) {
+    const { title, message, confirmText, confirmClass, isDangerous, onConfirm } = options;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('confirmation-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'confirmation-modal';
+    modal.className = 'admin-modal-backdrop glass-backdrop';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="admin-modal admin-modal-sm glass-modal confirmation-modal">
+        <div class="confirmation-modal-header ${isDangerous ? 'confirmation-header-danger' : 'confirmation-header-warning'}">
+          <div class="confirmation-modal-icon">
+            ${isDangerous ? `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2L2 20h20L12 2z"/>
+                <path d="M12 9v4M12 17v.01"/>
+              </svg>
+            ` : `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4M12 16v.01"/>
+              </svg>
+            `}
+          </div>
+          <h3 class="confirmation-modal-title">${escapeHtml(title)}</h3>
+        </div>
+        <div class="admin-modal-body">
+          <p class="confirmation-message">${escapeHtml(message)}</p>
+        </div>
+        <div class="admin-modal-footer">
+          <button class="admin-btn admin-btn-ghost" id="confirmation-cancel">Cancel</button>
+          <button class="admin-btn ${confirmClass || 'admin-btn-primary'}" id="confirmation-confirm">
+            ${escapeHtml(confirmText || 'Confirm')}
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Event handlers
+    const closeConfirmationModal = () => {
+      modal.remove();
+      document.body.style.overflow = '';
+    };
+    
+    modal.querySelector('#confirmation-cancel').addEventListener('click', closeConfirmationModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeConfirmationModal();
+    });
+    
+    modal.querySelector('#confirmation-confirm').addEventListener('click', () => {
+      closeConfirmationModal();
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+    
+    // Escape key
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeConfirmationModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  }
+
+  // ========================================
   // Initialization
   // ========================================
 
@@ -64,12 +139,96 @@ var AdminServers = window.AdminServers || (function() {
     initActionModals();
     initPagination();
     initStatCardClicks();
+    initWebSocket();
     
     // Fetch initial data
     fetchStats();
     fetchServers();
     
     console.log('[AdminServers] Initialized');
+  }
+
+  // ========================================
+  // WebSocket for Realtime Updates
+  // ========================================
+
+  function initWebSocket() {
+    if (!AdminUtils?.websocket) {
+      console.warn('[AdminServers] WebSocket not available');
+      return;
+    }
+
+    AdminUtils.websocket.connect(() => {
+      AdminUtils.websocket.subscribe('/topic/admin.servers', handleServerEvent);
+    });
+  }
+
+  function handleServerEvent(event) {
+    console.log('[AdminServers] Received event:', event.type, event);
+    
+    switch (event.type) {
+      case 'SERVER_CREATED':
+        handleServerCreated(event.server);
+        break;
+      case 'SERVER_UPDATED':
+      case 'SERVER_LOCKED':
+      case 'SERVER_UNLOCKED':
+      case 'SERVER_SUSPENDED':
+      case 'SERVER_UNSUSPENDED':
+        handleServerUpdated(event.server);
+        break;
+      case 'SERVER_DELETED':
+        handleServerDeleted(event.serverId);
+        break;
+      default:
+        console.log('[AdminServers] Unknown event type:', event.type);
+    }
+  }
+
+  function handleServerCreated(server) {
+    // Add new server to the beginning of the list
+    serversData.unshift(server);
+    pagination.totalElements++;
+    
+    renderServersTable();
+    updatePaginationUI();
+    fetchStats();
+    
+    AdminUtils?.showToast?.(`New server created: ${server.name}`, 'info');
+  }
+
+  function handleServerUpdated(server) {
+    // Update server in list
+    const index = serversData.findIndex(s => s.id === server.id);
+    if (index !== -1) {
+      serversData[index] = server;
+      renderServersTable();
+      fetchStats();
+      
+      // Update detail modal if this server is currently shown
+      if (currentServer && currentServer.id === server.id) {
+        showServerDetailModal(server);
+      }
+    }
+  }
+
+  function handleServerDeleted(serverId) {
+    // Remove server from list
+    const index = serversData.findIndex(s => s.id === serverId);
+    if (index !== -1) {
+      const serverName = serversData[index].name;
+      serversData.splice(index, 1);
+      pagination.totalElements--;
+      
+      renderServersTable();
+      updatePaginationUI();
+      fetchStats();
+      
+      // Close detail modal if this server was shown
+      if (currentServer && currentServer.id === serverId) {
+        closeModal('server-detail-modal');
+      }
+    }
   }
 
   // ========================================
@@ -84,6 +243,7 @@ var AdminServers = window.AdminServers || (function() {
         updateStatCard('stat-active-servers', stats.activeServers);
         updateStatCard('stat-total-members', stats.totalMembers);
         updateStatCard('stat-flagged-servers', stats.flaggedServers);
+        updateStatCard('stat-suspended-servers', stats.suspendedServers);
       }
     } catch (error) {
       console.error('[AdminServers] Failed to fetch stats:', error);
@@ -180,21 +340,21 @@ var AdminServers = window.AdminServers || (function() {
       return;
     }
     
-    tbody.innerHTML = servers.map(server => {
+    tbody.innerHTML = servers.map((server, index) => {
       const isLocked = server.isLocked || server.locked || false;
       const isSuspended = server.isSuspended || server.suspended || false;
       const status = isSuspended ? 'Suspended' : (isLocked ? 'Locked' : 'Active');
-      const statusClass = isSuspended ? 'warning' : (isLocked ? 'danger' : 'success');
+      const statusClass = isSuspended ? 'suspended' : (isLocked ? 'locked' : 'in-progress');
       
       return `
-      <tr data-id="${server.id}" class="server-row" data-server='${JSON.stringify(server).replace(/'/g, "\\'")}'>
+      <tr data-id="${server.id}" class="server-row figma-row" data-server='${JSON.stringify(server).replace(/'/g, "\\'")}'>
         <td>
           <input type="checkbox" class="server-checkbox admin-checkbox" value="${server.id}" onclick="event.stopPropagation();">
         </td>
         <td class="text-muted">#${server.id}</td>
         <td>
           <div class="user-cell">
-            <div class="server-avatar-sm">${getInitials(server.name)}</div>
+            <div class="figma-avatar">${getInitials(server.name)}</div>
             <div class="user-info">
               <span class="cell-user-name">${escapeHtml(server.name)}</span>
               <span class="cell-user-email">${escapeHtml(server.description || 'No description')}</span>
@@ -207,7 +367,7 @@ var AdminServers = window.AdminServers || (function() {
         <td>${AdminUtils?.formatNumber?.(server.memberCount || 0)}</td>
         <td>${server.channelCount || 0}</td>
         <td>
-          <span class="badge badge-${statusClass}">${status}</span>
+          <span class="figma-badge ${statusClass}">${status}</span>
         </td>
         <td>${formatDate(server.createdAt)}</td>
         <td>${formatDate(server.lastActivityAt || server.updatedAt)}</td>
@@ -216,7 +376,11 @@ var AdminServers = window.AdminServers || (function() {
             <button class="admin-btn admin-btn-sm admin-btn-ghost" title="View Details" data-action="view" data-id="${server.id}">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="8" cy="8" r="3"/><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/></svg>
             </button>
-            ${isLocked ? `
+            ${isSuspended ? `
+              <button class="admin-btn admin-btn-sm admin-btn-ghost text-success" title="Unsuspend" data-action="unsuspend" data-id="${server.id}">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M1 8h14M8 1v14"/></svg>
+              </button>
+            ` : isLocked ? `
               <button class="admin-btn admin-btn-sm admin-btn-ghost text-success" title="Unlock" data-action="unlock" data-id="${server.id}">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M11 7V5a3 3 0 00-5-2"/></svg>
               </button>
@@ -239,12 +403,25 @@ var AdminServers = window.AdminServers || (function() {
   function getFilteredServers() {
     let servers = [...serversData];
     
+    // Apply client-side search (including owner)
+    if (currentFilters.search) {
+      const searchLower = currentFilters.search.toLowerCase();
+      servers = servers.filter(s => {
+        const name = (s.name || '').toLowerCase();
+        const owner = (s.ownerUsername || '').toLowerCase();
+        const id = String(s.id || '');
+        return name.includes(searchLower) || owner.includes(searchLower) || id.includes(searchLower);
+      });
+    }
+    
     // Apply client-side filters
     if (currentFilters.status) {
       servers = servers.filter(s => {
         const isLocked = s.isLocked || s.locked;
-        if (currentFilters.status === 'locked') return isLocked;
-        if (currentFilters.status === 'active') return !isLocked;
+        const isSuspended = s.isSuspended || s.suspended;
+        if (currentFilters.status === 'locked') return isLocked && !isSuspended;
+        if (currentFilters.status === 'suspended') return isSuspended;
+        if (currentFilters.status === 'active') return !isLocked && !isSuspended;
         return true;
       });
     }
@@ -290,16 +467,8 @@ var AdminServers = window.AdminServers || (function() {
   // ========================================
 
   function attachTableListeners() {
-    // Row click for detail modal (left click)
+    // Right-click for context menu (removed row click for detail modal)
     document.querySelectorAll('.server-row').forEach(row => {
-      row.addEventListener('click', function(e) {
-        // Don't trigger if clicking on checkbox or action buttons
-        if (e.target.closest('.server-checkbox') || e.target.closest('.admin-btn')) return;
-        
-        const server = JSON.parse(this.dataset.server);
-        if (server) showServerDetailModal(server);
-      });
-      
       // Right-click for context menu
       row.addEventListener('contextmenu', function(e) {
         e.preventDefault();
@@ -318,35 +487,76 @@ var AdminServers = window.AdminServers || (function() {
       };
     });
 
-    // Lock buttons
+    // Lock buttons - with confirmation modal
     document.querySelectorAll('[data-action="lock"]').forEach(btn => {
       btn.onclick = function(e) {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) showLockModal(server);
-      };
-    });
-
-    // Unlock buttons
-    document.querySelectorAll('[data-action="unlock"]').forEach(btn => {
-      btn.onclick = async function(e) {
-        e.stopPropagation();
-        const serverId = this.dataset.id;
-        const server = serversData.find(s => s.id == serverId);
-        if (confirm(`Are you sure you want to unlock "${server?.name || 'this server'}"?`)) {
-          await unlockServer(serverId);
+        if (server) {
+          showConfirmationModal({
+            title: 'Lock Server',
+            message: `Are you sure you want to lock "${server.name}"? Members will not be able to access this server.`,
+            confirmText: 'Lock Server',
+            confirmClass: 'admin-btn-warning',
+            onConfirm: () => showLockModal(server)
+          });
         }
       };
     });
 
-    // Delete buttons
+    // Unlock buttons - with confirmation modal
+    document.querySelectorAll('[data-action="unlock"]').forEach(btn => {
+      btn.onclick = function(e) {
+        e.stopPropagation();
+        const serverId = this.dataset.id;
+        const server = serversData.find(s => s.id == serverId);
+        if (server) {
+          showConfirmationModal({
+            title: 'Unlock Server',
+            message: `Are you sure you want to unlock "${server.name}"? Members will be able to access this server again.`,
+            confirmText: 'Unlock Server',
+            confirmClass: 'admin-btn-success',
+            onConfirm: async () => await unlockServer(serverId)
+          });
+        }
+      };
+    });
+
+    // Unsuspend buttons - with confirmation modal
+    document.querySelectorAll('[data-action="unsuspend"]').forEach(btn => {
+      btn.onclick = function(e) {
+        e.stopPropagation();
+        const serverId = this.dataset.id;
+        const server = serversData.find(s => s.id == serverId);
+        if (server) {
+          showConfirmationModal({
+            title: 'Unsuspend Server',
+            message: `Are you sure you want to unsuspend "${server.name}"? The server will become active again.`,
+            confirmText: 'Unsuspend Server',
+            confirmClass: 'admin-btn-success',
+            onConfirm: async () => await unsuspendServer(serverId)
+          });
+        }
+      };
+    });
+
+    // Delete buttons - with confirmation modal
     document.querySelectorAll('[data-action="delete"]').forEach(btn => {
       btn.onclick = function(e) {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) showDeleteModal(server);
+        if (server) {
+          showConfirmationModal({
+            title: 'Delete Server',
+            message: `Are you sure you want to delete "${server.name}"? This action cannot be undone.`,
+            confirmText: 'Delete Server',
+            confirmClass: 'admin-btn-danger',
+            isDangerous: true,
+            onConfirm: () => showDeleteModal(server)
+          });
+        }
       };
     });
 
@@ -385,45 +595,96 @@ var AdminServers = window.AdminServers || (function() {
       if (e.key === 'Escape') hideContextMenu();
     });
 
-    // Context menu item clicks
-    document.getElementById('ctx-view-details')?.addEventListener('click', function() {
+    // Context menu item clicks - using data-action selectors
+    const contextMenu = document.getElementById('server-context-menu');
+    if (!contextMenu) return;
+
+    // View Details
+    contextMenu.querySelector('[data-action="view-details"]')?.addEventListener('click', function() {
       if (contextMenuServer) showServerDetailModal(contextMenuServer);
       hideContextMenu();
     });
 
-    document.getElementById('ctx-lock')?.addEventListener('click', function() {
-      if (contextMenuServer) showLockModal(contextMenuServer);
-      hideContextMenu();
-    });
-
-    document.getElementById('ctx-unlock')?.addEventListener('click', async function() {
-      if (contextMenuServer && confirm(`Are you sure you want to unlock "${contextMenuServer.name}"?`)) {
-        await unlockServer(contextMenuServer.id);
+    // Lock Server - show confirmation modal
+    contextMenu.querySelector('[data-action="lock-server"]')?.addEventListener('click', function() {
+      if (contextMenuServer) {
+        showConfirmationModal({
+          title: 'Lock Server',
+          message: `Are you sure you want to lock "${contextMenuServer.name}"? Members will not be able to access this server.`,
+          confirmText: 'Lock Server',
+          confirmClass: 'admin-btn-warning',
+          onConfirm: () => showLockModal(contextMenuServer)
+        });
       }
       hideContextMenu();
     });
 
-    document.getElementById('ctx-suspend')?.addEventListener('click', function() {
-      if (contextMenuServer) showSuspendModal(contextMenuServer);
-      hideContextMenu();
-    });
-
-    document.getElementById('ctx-unsuspend')?.addEventListener('click', async function() {
-      if (contextMenuServer && confirm(`Are you sure you want to unsuspend "${contextMenuServer.name}"?`)) {
-        await unsuspendServer(contextMenuServer.id);
+    // Unlock Server - show confirmation modal
+    contextMenu.querySelector('[data-action="unlock-server"]')?.addEventListener('click', function() {
+      if (contextMenuServer) {
+        showConfirmationModal({
+          title: 'Unlock Server',
+          message: `Are you sure you want to unlock "${contextMenuServer.name}"? Members will be able to access this server again.`,
+          confirmText: 'Unlock Server',
+          confirmClass: 'admin-btn-success',
+          onConfirm: async () => {
+            await unlockServer(contextMenuServer.id);
+          }
+        });
       }
       hideContextMenu();
     });
 
-    document.getElementById('ctx-delete')?.addEventListener('click', function() {
-      if (contextMenuServer) showDeleteModal(contextMenuServer);
+    // Suspend Server - show confirmation modal
+    contextMenu.querySelector('[data-action="suspend-server"]')?.addEventListener('click', function() {
+      if (contextMenuServer) {
+        showConfirmationModal({
+          title: 'Suspend Server',
+          message: `Are you sure you want to suspend "${contextMenuServer.name}"? The server will be temporarily disabled.`,
+          confirmText: 'Suspend Server',
+          confirmClass: 'admin-btn-warning',
+          onConfirm: () => showSuspendModal(contextMenuServer)
+        });
+      }
       hideContextMenu();
     });
 
-    document.getElementById('ctx-audit-log')?.addEventListener('click', function() {
+    // Unsuspend Server - show confirmation modal
+    contextMenu.querySelector('[data-action="unsuspend-server"]')?.addEventListener('click', function() {
+      if (contextMenuServer) {
+        showConfirmationModal({
+          title: 'Unsuspend Server',
+          message: `Are you sure you want to unsuspend "${contextMenuServer.name}"? The server will become active again.`,
+          confirmText: 'Unsuspend Server',
+          confirmClass: 'admin-btn-success',
+          onConfirm: async () => {
+            await unsuspendServer(contextMenuServer.id);
+          }
+        });
+      }
+      hideContextMenu();
+    });
+
+    // View Audit Log
+    contextMenu.querySelector('[data-action="view-audit"]')?.addEventListener('click', function() {
       if (contextMenuServer) {
         showServerDetailModal(contextMenuServer);
         setTimeout(() => switchModalTab('audit-log'), 100);
+      }
+      hideContextMenu();
+    });
+
+    // Force Delete - show confirmation modal
+    contextMenu.querySelector('[data-action="delete-server"]')?.addEventListener('click', function() {
+      if (contextMenuServer) {
+        showConfirmationModal({
+          title: 'Force Delete Server',
+          message: `Are you sure you want to permanently delete "${contextMenuServer.name}"? This action cannot be undone and all data will be lost.`,
+          confirmText: 'Delete Server',
+          confirmClass: 'admin-btn-danger',
+          isDangerous: true,
+          onConfirm: () => showDeleteModal(contextMenuServer)
+        });
       }
       hideContextMenu();
     });
@@ -437,21 +698,30 @@ var AdminServers = window.AdminServers || (function() {
     const isLocked = server.isLocked || server.locked || false;
     const isSuspended = server.isSuspended || server.suspended || false;
 
-    // Update context menu header with server info
-    const headerTitle = document.getElementById('ctx-server-name');
-    const headerSubtitle = document.getElementById('ctx-server-id');
-    if (headerTitle) headerTitle.textContent = server.name || 'Unknown Server';
-    if (headerSubtitle) headerSubtitle.textContent = `ID: #${server.id}`;
-
-    // Show/hide lock/unlock options
-    const lockItem = document.getElementById('ctx-lock');
-    const unlockItem = document.getElementById('ctx-unlock');
-    if (lockItem) lockItem.style.display = isLocked ? 'none' : 'flex';
-    if (unlockItem) unlockItem.style.display = isLocked ? 'flex' : 'none';
+    // Show/hide lock/unlock options using data-action
+    const lockItem = menu.querySelector('[data-action="lock-server"]');
+    const unlockItem = menu.querySelector('[data-action="unlock-server"]');
+    
+    // Can't lock a suspended server (already more restricted)
+    if (lockItem) {
+      if (isSuspended) {
+        lockItem.style.display = 'none';
+      } else {
+        lockItem.style.display = isLocked ? 'none' : 'flex';
+      }
+    }
+    if (unlockItem) {
+      // Can't unlock a suspended server via unlock (need to unsuspend first)
+      if (isSuspended) {
+        unlockItem.style.display = 'none';
+      } else {
+        unlockItem.style.display = isLocked ? 'flex' : 'none';
+      }
+    }
 
     // Show/hide suspend/unsuspend options
-    const suspendItem = document.getElementById('ctx-suspend');
-    const unsuspendItem = document.getElementById('ctx-unsuspend');
+    const suspendItem = menu.querySelector('[data-action="suspend-server"]');
+    const unsuspendItem = menu.querySelector('[data-action="unsuspend-server"]');
     if (suspendItem) suspendItem.style.display = isSuspended ? 'none' : 'flex';
     if (unsuspendItem) unsuspendItem.style.display = isSuspended ? 'flex' : 'none';
 
@@ -481,17 +751,22 @@ var AdminServers = window.AdminServers || (function() {
   // ========================================
 
   async function lockServer(serverId, reason) {
+    if (!reason || !reason.trim()) {
+      AdminUtils?.showToast?.('Reason is required', 'warning');
+      return false;
+    }
+    
     try {
       const params = new URLSearchParams();
-      if (reason) params.append('reason', reason);
+      params.append('reason', reason.trim());
       
       await AdminUtils.api.post(`${API.lock(serverId)}?${params}`);
       AdminUtils?.showToast?.('Server locked successfully', 'warning');
-      await Promise.all([fetchStats(), fetchServers()]);
+      // Stats will update via WebSocket
       return true;
     } catch (error) {
       console.error('[AdminServers] Failed to lock server:', error);
-      AdminUtils?.showToast?.('Failed to lock server', 'danger');
+      AdminUtils?.showToast?.('Failed to lock server: ' + error.message, 'danger');
       return false;
     }
   }
@@ -500,35 +775,49 @@ var AdminServers = window.AdminServers || (function() {
     try {
       await AdminUtils.api.post(API.unlock(serverId));
       AdminUtils?.showToast?.('Server unlocked successfully', 'success');
-      await Promise.all([fetchStats(), fetchServers()]);
+      // Stats will update via WebSocket
       return true;
     } catch (error) {
       console.error('[AdminServers] Failed to unlock server:', error);
-      AdminUtils?.showToast?.('Failed to unlock server', 'danger');
+      AdminUtils?.showToast?.('Failed to unlock server: ' + error.message, 'danger');
       return false;
     }
   }
 
   async function deleteServer(serverId, reason) {
+    if (!reason || !reason.trim()) {
+      AdminUtils?.showToast?.('Reason is required', 'warning');
+      return false;
+    }
+    
     try {
       const params = new URLSearchParams();
-      if (reason) params.append('reason', reason);
+      params.append('reason', reason.trim());
       
       await AdminUtils.api.delete(`${API.server(serverId)}?${params}`);
       AdminUtils?.showToast?.('Server deleted successfully', 'success');
-      await Promise.all([fetchStats(), fetchServers()]);
+      // Stats will update via WebSocket
       return true;
     } catch (error) {
       console.error('[AdminServers] Failed to delete server:', error);
-      AdminUtils?.showToast?.('Failed to delete server', 'danger');
+      AdminUtils?.showToast?.('Failed to delete server: ' + error.message, 'danger');
       return false;
     }
   }
 
   async function transferOwnership(serverId, newOwnerId, reason) {
+    if (!newOwnerId) {
+      AdminUtils?.showToast?.('New owner ID is required', 'warning');
+      return false;
+    }
+    if (!reason || !reason.trim()) {
+      AdminUtils?.showToast?.('Reason is required', 'warning');
+      return false;
+    }
+    
     try {
       const params = new URLSearchParams({ newOwnerId });
-      if (reason) params.append('reason', reason);
+      params.append('reason', reason.trim());
       
       await AdminUtils.api.post(`${API.transfer(serverId)}?${params}`);
       AdminUtils?.showToast?.('Ownership transferred successfully', 'success');
@@ -536,23 +825,31 @@ var AdminServers = window.AdminServers || (function() {
       return true;
     } catch (error) {
       console.error('[AdminServers] Failed to transfer ownership:', error);
-      AdminUtils?.showToast?.('Failed to transfer ownership', 'danger');
+      AdminUtils?.showToast?.('Failed to transfer ownership: ' + error.message, 'danger');
       return false;
     }
   }
 
-  async function suspendServer(serverId, reason) {
+  async function suspendServer(serverId, reason, duration) {
+    if (!reason || !reason.trim()) {
+      AdminUtils?.showToast?.('Reason is required', 'warning');
+      return false;
+    }
+    
     try {
       const params = new URLSearchParams();
-      if (reason) params.append('reason', reason);
+      params.append('reason', reason.trim());
+      if (duration && duration !== 'permanent') {
+        params.append('duration', duration);
+      }
       
       await AdminUtils.api.post(`${API.suspend(serverId)}?${params}`);
       AdminUtils?.showToast?.('Server suspended successfully', 'warning');
-      await Promise.all([fetchStats(), fetchServers()]);
+      // Stats will update via WebSocket
       return true;
     } catch (error) {
       console.error('[AdminServers] Failed to suspend server:', error);
-      AdminUtils?.showToast?.('Failed to suspend server', 'danger');
+      AdminUtils?.showToast?.('Failed to suspend server: ' + error.message, 'danger');
       return false;
     }
   }
@@ -561,11 +858,11 @@ var AdminServers = window.AdminServers || (function() {
     try {
       await AdminUtils.api.post(API.unsuspend(serverId));
       AdminUtils?.showToast?.('Server unsuspended successfully', 'success');
-      await Promise.all([fetchStats(), fetchServers()]);
+      // Stats will update via WebSocket
       return true;
     } catch (error) {
       console.error('[AdminServers] Failed to unsuspend server:', error);
-      AdminUtils?.showToast?.('Failed to unsuspend server', 'danger');
+      AdminUtils?.showToast?.('Failed to unsuspend server: ' + error.message, 'danger');
       return false;
     }
   }
@@ -584,6 +881,10 @@ var AdminServers = window.AdminServers || (function() {
       debounceTimer = setTimeout(() => {
         currentFilters.search = e.target.value.trim();
         pagination.page = 0;
+        // Apply client-side filtering first for instant results
+        renderServersTable();
+        updatePaginationUI();
+        // Then fetch from server for fresh data
         fetchServers();
       }, 300);
     });
@@ -664,6 +965,7 @@ var AdminServers = window.AdminServers || (function() {
     const prevBtn = document.getElementById('btn-prev-page');
     const nextBtn = document.getElementById('btn-next-page');
     const pagesContainer = document.getElementById('pagination-pages');
+    const filterCountEl = document.getElementById('filter-results-count');
 
     if (showingEl) {
       const start = pagination.page * pagination.size + 1;
@@ -673,6 +975,17 @@ var AdminServers = window.AdminServers || (function() {
 
     if (totalEl) {
       totalEl.textContent = filtered.length;
+    }
+    
+    // Update filter results count
+    if (filterCountEl) {
+      const hasFilters = currentFilters.search || currentFilters.status || currentFilters.size || currentFilters.time;
+      if (hasFilters) {
+        filterCountEl.style.display = 'block';
+        filterCountEl.textContent = `${filtered.length} server${filtered.length !== 1 ? 's' : ''} found after filtering`;
+      } else {
+        filterCountEl.style.display = 'none';
+      }
     }
 
     if (prevBtn) prevBtn.disabled = pagination.page === 0;
@@ -914,20 +1227,20 @@ var AdminServers = window.AdminServers || (function() {
     document.getElementById('detail-server-name')?.textContent && 
       (document.getElementById('detail-server-name').textContent = server.name);
     document.getElementById('detail-server-desc')?.textContent &&
-      (document.getElementById('detail-server-desc').textContent = server.description || 'No description');
+      (document.getElementById('detail-server-desc').textContent = server.description || 'Server description...');
 
-    // Server Badges
+    // Server Badges - Figma style
     const badgesEl = document.getElementById('detail-server-badges');
     if (badgesEl) {
       let badgesHtml = '';
       if (isSuspended) {
-        badgesHtml += '<span class="badge badge-warning">Suspended</span>';
+        badgesHtml += '<span class="figma-badge suspended">Suspended</span>';
       } else if (isLocked) {
-        badgesHtml += '<span class="badge badge-danger">Locked</span>';
+        badgesHtml += '<span class="figma-badge locked">Locked</span>';
       } else {
-        badgesHtml += '<span class="badge badge-success">Active</span>';
+        badgesHtml += '<span class="figma-badge in-progress">Active</span>';
       }
-      badgesHtml += server.isPublic ? '<span class="badge badge-info">Public</span>' : '<span class="badge badge-ghost">Private</span>';
+      badgesHtml += server.isPublic ? '<span class="figma-badge complete">Public</span>' : '<span class="figma-badge rejected">Private</span>';
       badgesEl.innerHTML = badgesHtml;
     }
 
@@ -943,24 +1256,35 @@ var AdminServers = window.AdminServers || (function() {
 
     // Overview Tab - Server Info
     document.getElementById('detail-server-id')?.textContent &&
-      (document.getElementById('detail-server-id').textContent = '#' + server.id);
+      (document.getElementById('detail-server-id').textContent = server.id);
     document.getElementById('detail-created-at')?.textContent &&
       (document.getElementById('detail-created-at').textContent = formatDateTime(server.createdAt));
     document.getElementById('detail-last-activity')?.textContent &&
-      (document.getElementById('detail-last-activity').textContent = formatDateTime(server.lastActivityAt || server.updatedAt));
+      (document.getElementById('detail-last-activity').textContent = formatDateTime(server.lastActivityAt || server.updatedAt) || '--');
     document.getElementById('detail-max-members')?.textContent &&
-      (document.getElementById('detail-max-members').textContent = AdminUtils?.formatNumber?.(server.maxMembers || 100000));
+      (document.getElementById('detail-max-members').textContent = AdminUtils?.formatNumber?.(server.maxMembers || 100000) || '--');
+    document.getElementById('detail-message-volume')?.textContent &&
+      (document.getElementById('detail-message-volume').textContent = '--');
+    document.getElementById('detail-boost-level')?.textContent &&
+      (document.getElementById('detail-boost-level').textContent = 'Level ' + (server.boostLevel || 0));
 
-    // Owner Info
+    // Owner Info - Figma style
     const ownerAvatarEl = document.getElementById('detail-owner-avatar');
-    if (ownerAvatarEl) {
-      ownerAvatarEl.src = server.ownerAvatarUrl || '/images/default-avatar.png';
-      ownerAvatarEl.onerror = () => ownerAvatarEl.src = '/images/default-avatar.png';
+    if (ownerAvatarEl && server.ownerAvatarUrl) {
+      ownerAvatarEl.innerHTML = `<img src="${server.ownerAvatarUrl}" alt="Owner" onerror="this.parentElement.innerHTML = '${getInitials(server.ownerUsername || 'Owner')}'">`;
+    } else if (ownerAvatarEl) {
+      ownerAvatarEl.innerHTML = getInitials(server.ownerUsername || 'Owner');
     }
     document.getElementById('detail-owner-name')?.textContent &&
-      (document.getElementById('detail-owner-name').textContent = server.ownerUsername || '--');
+      (document.getElementById('detail-owner-name').textContent = server.ownerUsername || 'Owner');
     document.getElementById('detail-owner-email')?.textContent &&
       (document.getElementById('detail-owner-email').textContent = server.ownerEmail || '--');
+
+    // Reports summary
+    const totalReportsEl = document.getElementById('detail-total-reports');
+    const reportsStatusEl = document.getElementById('detail-reports-status');
+    if (totalReportsEl) totalReportsEl.textContent = '0';
+    if (reportsStatusEl) reportsStatusEl.textContent = 'No Reports';
 
     // Lock Info Section
     const lockInfoSection = document.getElementById('detail-lock-info');
@@ -968,7 +1292,7 @@ var AdminServers = window.AdminServers || (function() {
       if (isLocked) {
         lockInfoSection.style.display = 'block';
         document.getElementById('detail-locked-at')?.textContent &&
-          (document.getElementById('detail-locked-at').textContent = formatDateTime(server.lockedAt));
+          (document.getElementById('detail-locked-at').textContent = formatDateTime(server.lockedAt) || '--');
         document.getElementById('detail-lock-reason')?.textContent &&
           (document.getElementById('detail-lock-reason').textContent = server.lockReason || 'No reason provided');
       } else {
@@ -982,7 +1306,7 @@ var AdminServers = window.AdminServers || (function() {
       if (isSuspended) {
         suspendInfoSection.style.display = 'block';
         document.getElementById('detail-suspended-at')?.textContent &&
-          (document.getElementById('detail-suspended-at').textContent = formatDateTime(server.suspendedAt));
+          (document.getElementById('detail-suspended-at').textContent = formatDateTime(server.suspendedAt) || '--');
         document.getElementById('detail-suspend-reason')?.textContent &&
           (document.getElementById('detail-suspend-reason').textContent = server.suspendReason || 'No reason provided');
       } else {
@@ -1169,27 +1493,45 @@ var AdminServers = window.AdminServers || (function() {
       if (!currentServer) return;
       const reason = document.getElementById('lock-reason')?.value?.trim();
       if (!reason) {
-        AdminUtils?.showToast?.('Please enter a reason', 'warning');
+        AdminUtils?.showToast?.('Please enter a reason for locking this server', 'warning');
+        document.getElementById('lock-reason')?.focus();
         return;
       }
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Locking...';
+      
       if (await lockServer(currentServer.id, reason)) {
         closeModal('lock-modal');
         closeModal('server-detail-modal');
       }
+      
+      this.disabled = false;
+      this.textContent = 'Lock Server';
     });
 
     // Suspend Modal
     document.getElementById('btn-confirm-suspend')?.addEventListener('click', async function() {
       if (!currentServer) return;
       const reason = document.getElementById('suspend-reason')?.value?.trim();
+      const duration = document.getElementById('suspend-duration')?.value || 'permanent';
+      
       if (!reason) {
-        AdminUtils?.showToast?.('Please enter a reason', 'warning');
+        AdminUtils?.showToast?.('Please enter a reason for suspending this server', 'warning');
+        document.getElementById('suspend-reason')?.focus();
         return;
       }
-      if (await suspendServer(currentServer.id, reason)) {
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Suspending...';
+      
+      if (await suspendServer(currentServer.id, reason, duration)) {
         closeModal('suspend-modal');
         closeModal('server-detail-modal');
       }
+      
+      this.disabled = false;
+      this.textContent = 'Suspend Server';
     });
 
     // Transfer Modal
@@ -1197,15 +1539,29 @@ var AdminServers = window.AdminServers || (function() {
       if (!currentServer) return;
       const newOwnerId = document.getElementById('transfer-user-id')?.value?.trim();
       const reason = document.getElementById('transfer-reason')?.value?.trim();
+      
       if (!newOwnerId) {
         AdminUtils?.showToast?.('Please enter a user ID', 'warning');
+        document.getElementById('transfer-user-id')?.focus();
         return;
       }
-      if (!confirm(`Transfer "${currentServer.name}" to user #${newOwnerId}?`)) return;
+      
+      if (!reason) {
+        AdminUtils?.showToast?.('Please enter a reason for the transfer', 'warning');
+        document.getElementById('transfer-reason')?.focus();
+        return;
+      }
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Transferring...';
+      
       if (await transferOwnership(currentServer.id, newOwnerId, reason)) {
         closeModal('transfer-modal');
         closeModal('server-detail-modal');
       }
+      
+      this.disabled = false;
+      this.textContent = 'Transfer Ownership';
     });
 
     // Delete Modal
@@ -1218,11 +1574,24 @@ var AdminServers = window.AdminServers || (function() {
 
     document.getElementById('btn-confirm-delete')?.addEventListener('click', async function() {
       if (!currentServer || this.disabled) return;
-      const reason = document.getElementById('delete-reason')?.value?.trim() || 'Admin deletion';
+      const reason = document.getElementById('delete-reason')?.value?.trim();
+      
+      if (!reason) {
+        AdminUtils?.showToast?.('Please enter a reason for deleting this server', 'warning');
+        document.getElementById('delete-reason')?.focus();
+        return;
+      }
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Deleting...';
+      
       if (await deleteServer(currentServer.id, reason)) {
         closeModal('delete-modal');
         closeModal('server-detail-modal');
       }
+      
+      this.disabled = false;
+      this.textContent = 'Delete Server';
     });
 
     // Close buttons for action modals
@@ -1259,9 +1628,25 @@ var AdminServers = window.AdminServers || (function() {
     const modal = document.getElementById('lock-modal');
     if (!modal) return;
 
+    // Update modal content
+    const avatarEl = document.getElementById('lock-avatar');
+    if (avatarEl) avatarEl.textContent = getInitials(server.name);
+    
     document.getElementById('lock-server-name')?.textContent &&
       (document.getElementById('lock-server-name').textContent = server.name);
+    
+    const metaEl = document.getElementById('lock-server-meta');
+    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
+    
+    // Reset form
     document.getElementById('lock-reason').value = '';
+    
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-lock');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Lock Server';
+    }
 
     modal.style.display = 'flex';
   }
@@ -1271,9 +1656,26 @@ var AdminServers = window.AdminServers || (function() {
     const modal = document.getElementById('suspend-modal');
     if (!modal) return;
 
+    // Update modal content
+    const avatarEl = document.getElementById('suspend-avatar');
+    if (avatarEl) avatarEl.textContent = getInitials(server.name);
+    
     document.getElementById('suspend-server-name')?.textContent &&
       (document.getElementById('suspend-server-name').textContent = server.name);
+    
+    const metaEl = document.getElementById('suspend-server-meta');
+    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
+    
+    // Reset form
     document.getElementById('suspend-reason').value = '';
+    document.getElementById('suspend-duration').value = '7';
+    
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-suspend');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Suspend Server';
+    }
 
     modal.style.display = 'flex';
   }
@@ -1283,10 +1685,26 @@ var AdminServers = window.AdminServers || (function() {
     const modal = document.getElementById('transfer-modal');
     if (!modal) return;
 
+    // Update modal content
+    const avatarEl = document.getElementById('transfer-avatar');
+    if (avatarEl) avatarEl.textContent = getInitials(server.name);
+    
     document.getElementById('transfer-server-name')?.textContent &&
       (document.getElementById('transfer-server-name').textContent = server.name);
+    
+    const metaEl = document.getElementById('transfer-server-meta');
+    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
+    
+    // Reset form
     document.getElementById('transfer-user-id').value = '';
     document.getElementById('transfer-reason').value = '';
+    
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-transfer');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Transfer Ownership';
+    }
 
     modal.style.display = 'flex';
   }
@@ -1296,11 +1714,26 @@ var AdminServers = window.AdminServers || (function() {
     const modal = document.getElementById('delete-modal');
     if (!modal) return;
 
+    // Update modal content
+    const avatarEl = document.getElementById('delete-avatar');
+    if (avatarEl) avatarEl.textContent = getInitials(server.name);
+    
     document.getElementById('delete-server-name')?.textContent &&
       (document.getElementById('delete-server-name').textContent = server.name);
+    
+    const metaEl = document.getElementById('delete-server-meta');
+    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
+    
+    // Reset form
     document.getElementById('confirm-delete-input').value = '';
     document.getElementById('delete-reason').value = '';
-    document.getElementById('btn-confirm-delete').disabled = true;
+    
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-delete');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Delete Server';
+    }
 
     modal.style.display = 'flex';
   }

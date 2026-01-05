@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import vn.cococord.dto.request.BanMemberRequest;
 import vn.cococord.dto.request.CreateInviteLinkRequest;
 import vn.cococord.dto.request.CreateRoleRequest;
@@ -52,6 +53,7 @@ public class ServerServiceImpl implements IServerService {
     private final IInviteLinkRepository inviteLinkRepository;
     private final IChannelRepository channelRepository;
     private final IPermissionService permissionService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public ServerResponse createServer(CreateServerRequest request, String username) {
@@ -102,7 +104,30 @@ public class ServerServiceImpl implements IServerService {
         channelRepository.save(generalChannel);
 
         log.info("Server created: {} by user: {}", server.getName(), username);
-        return convertToServerResponse(server);
+        
+        ServerResponse response = convertToServerResponse(server);
+        
+        // Broadcast to admin dashboard for realtime updates
+        broadcastServerCreated(response);
+        
+        return response;
+    }
+
+    /**
+     * Broadcast server creation to admin dashboard via WebSocket
+     */
+    private void broadcastServerCreated(ServerResponse server) {
+        try {
+            java.util.Map<String, Object> event = new java.util.HashMap<>();
+            event.put("type", "SERVER_CREATED");
+            event.put("server", server);
+            event.put("timestamp", LocalDateTime.now().toString());
+            
+            messagingTemplate.convertAndSend("/topic/admin.servers", event);
+            log.debug("Broadcast SERVER_CREATED for server {}", server.getId());
+        } catch (Exception e) {
+            log.error("Failed to broadcast server creation: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -495,9 +520,21 @@ public class ServerServiceImpl implements IServerService {
                 .bannerUrl(server.getBannerUrl())
                 .ownerId(server.getOwner().getId())
                 .ownerUsername(server.getOwner().getUsername())
+                .ownerEmail(server.getOwner().getEmail())
+                .ownerAvatarUrl(server.getOwner().getAvatarUrl())
                 .isPublic(server.getIsPublic())
                 .maxMembers(server.getMaxMembers())
                 .memberCount(memberCount.intValue())
+                .channelCount(channels.size())
+                .roleCount(roles.size())
+                .isLocked(server.getIsLocked())
+                .lockReason(server.getLockReason())
+                .lockedAt(server.getLockedAt())
+                .isSuspended(server.getIsSuspended())
+                .suspendReason(server.getSuspendReason())
+                .suspendedAt(server.getSuspendedAt())
+                .suspendedUntil(server.getSuspendedUntil())
+                .lastActivityAt(server.getUpdatedAt())
                 .createdAt(server.getCreatedAt())
                 .updatedAt(server.getUpdatedAt())
                 .channels(channels.stream().map(this::convertToChannelResponse).collect(Collectors.toList()))

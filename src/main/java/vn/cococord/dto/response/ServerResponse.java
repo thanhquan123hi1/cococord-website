@@ -30,6 +30,10 @@ public class ServerResponse {
     private Boolean isLocked;
     private String lockReason;
     private LocalDateTime lockedAt;
+    private Boolean isSuspended;
+    private String suspendReason;
+    private LocalDateTime suspendedAt;
+    private LocalDateTime suspendedUntil;
     private LocalDateTime lastActivityAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

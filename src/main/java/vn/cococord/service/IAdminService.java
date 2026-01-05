@@ -106,6 +106,16 @@ public interface IAdminService {
     void unlockServer(Long serverId, String adminUsername);
 
     /**
+     * Suspend a server (full disable)
+     */
+    void suspendServer(Long serverId, String reason, Integer durationDays, String adminUsername);
+
+    /**
+     * Unsuspend a server
+     */
+    void unsuspendServer(Long serverId, String adminUsername);
+
+    /**
      * Delete a server (admin can delete any server)
      */
     void deleteServer(Long serverId, String reason, String adminUsername);

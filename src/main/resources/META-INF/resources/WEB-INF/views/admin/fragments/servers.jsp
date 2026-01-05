@@ -78,6 +78,19 @@
                 <div class="stat-value text-warning" id="stat-flagged-servers">--</div>
             </div>
         </div>
+        <div class="admin-stat-card admin-stat-card-sm clickable" data-filter-status="suspended">
+            <div class="stat-icon stat-icon-orange">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="5" y="3" width="10" height="14" rx="1"/>
+                    <path d="M8 7h4M8 10h4M8 13h2"/>
+                    <path d="M15 5l2 2-2 2"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Suspended</div>
+                <div class="stat-value text-danger" id="stat-suspended-servers">--</div>
+            </div>
+        </div>
     </div>
 
     <!-- Servers List (Search + Bulk Actions + Table) -->
@@ -99,7 +112,7 @@
                         <circle cx="7" cy="7" r="4"/>
                         <path d="M10 10l4 4"/>
                     </svg>
-                    <input type="text" placeholder="Search by server name, owner, or ID..." id="server-search-input">
+                    <input type="text" placeholder="Search by server name, owner (@username), or ID..." id="server-search-input">
                 </div>
             </div>
             <div class="admin-toolbar-right">
@@ -108,6 +121,7 @@
                         <option value="">All Status</option>
                         <option value="active">Active</option>
                         <option value="locked">Locked</option>
+                        <option value="suspended">Suspended</option>
                     </select>
                     <select class="admin-select" id="filter-size">
                         <option value="">All Sizes</option>
@@ -193,6 +207,9 @@
 
         <!-- Pagination -->
         <div class="admin-card-footer">
+            <!-- Filter Results Count -->
+            <div class="filter-results-info" id="filter-results-count" style="display: none;"></div>
+            
             <div class="admin-pagination">
                 <div class="pagination-info">
                     Showing <span id="pagination-showing">0</span> of <span id="pagination-total">0</span> servers
@@ -635,20 +652,15 @@
             <div class="form-group">
                 <label class="form-label required">Suspension Duration</label>
                 <select class="admin-select" id="suspend-duration">
-                    <option value="1h">1 Hour</option>
-                    <option value="6h">6 Hours</option>
-                    <option value="12h">12 Hours</option>
-                    <option value="1d" selected>1 Day</option>
-                    <option value="3d">3 Days</option>
-                    <option value="7d">7 Days</option>
-                    <option value="30d">30 Days</option>
-                    <option value="custom">Custom...</option>
+                    <option value="1">1 Day</option>
+                    <option value="3">3 Days</option>
+                    <option value="7" selected>7 Days</option>
+                    <option value="14">14 Days</option>
+                    <option value="30">30 Days</option>
+                    <option value="90">90 Days</option>
+                    <option value="permanent">Permanent</option>
                 </select>
-            </div>
-            
-            <div class="form-group" id="custom-duration-group" style="display: none;">
-                <label class="form-label">Custom End Time</label>
-                <input type="datetime-local" class="admin-input" id="suspend-custom-time">
+                <small class="form-hint">Select how long the server will be suspended. Permanent suspension requires manual unsuspension.</small>
             </div>
             
             <div class="form-group">

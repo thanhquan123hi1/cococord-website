@@ -81,7 +81,7 @@
                 <select class="filter-select" id="filterStatus">
                     <option value="">All Status</option>
                     <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="locked">Locked</option>
                     <option value="suspended">Suspended</option>
                 </select>
             </div>
@@ -158,276 +158,29 @@
                 </button>
             </div>
         </div>
-        <table class="table" id="serversTable" aria-label="Servers list">
+        <table class="table figma-table" id="serversTable" aria-label="Servers list">
             <thead>
             <tr>
-                <th>
+                <th style="width: 40px;">
                     <input type="checkbox" id="selectAll" class="checkbox">
                 </th>
+                <th style="width: 70px;">ID</th>
                 <th>Server</th>
                 <th>Owner</th>
-                <th>Members</th>
-                <th>Channels</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th style="width: 100px;">Members</th>
+                <th style="width: 90px;">Channels</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 120px;">Created</th>
+                <th style="width: 130px;">Last Activity</th>
+                <th style="width: 120px;">Actions</th>
             </tr>
             </thead>
             <tbody id="serversTableBody">
+            <!-- Content populated by JavaScript -->
             <tr>
-                <td><input type="checkbox" class="checkbox server-checkbox"></td>
-                <td>
-                    <div class="cell-user">
-                        <div class="avatar server-avatar">VG</div>
-                        <div class="cell-user-info">
-                            <span class="cell-user-name">Vietnam Gamers</span>
-                            <span class="cell-user-email">Gaming community for Vietnamese</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="cell-user-name">@nguyenvana</div>
-                </td>
-                <td>
-                    <span class="text-strong">15,420</span>
-                </td>
-                <td>45</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>Mar 15, 2023</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View Server">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Settings">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M9 1v2m0 12v2M1 9h2m12 0h2m-2.7-5.3l-1.4 1.4M5.1 12.9l-1.4 1.4m0-10.6l1.4 1.4m7.8 7.8l1.4 1.4"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Suspend">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="7"/>
-                                <path d="M9 5v4M9 12v1"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><input type="checkbox" class="checkbox server-checkbox"></td>
-                <td>
-                    <div class="cell-user">
-                        <div class="avatar server-avatar">TT</div>
-                        <div class="cell-user-info">
-                            <span class="cell-user-name">Tech Talk VN</span>
-                            <span class="cell-user-email">Technology discussions</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="cell-user-name">@tranthib</div>
-                </td>
-                <td>
-                    <span class="text-strong">8,930</span>
-                </td>
-                <td>32</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>Apr 20, 2023</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View Server">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Settings">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M9 1v2m0 12v2M1 9h2m12 0h2m-2.7-5.3l-1.4 1.4M5.1 12.9l-1.4 1.4m0-10.6l1.4 1.4m7.8 7.8l1.4 1.4"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Suspend">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="7"/>
-                                <path d="M9 5v4M9 12v1"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><input type="checkbox" class="checkbox server-checkbox"></td>
-                <td>
-                    <div class="cell-user">
-                        <div class="avatar server-avatar">ML</div>
-                        <div class="cell-user-info">
-                            <span class="cell-user-name">Music Lovers</span>
-                            <span class="cell-user-email">Share and discover music</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="cell-user-name">@leminhc</div>
-                </td>
-                <td>
-                    <span class="text-strong">7,210</span>
-                </td>
-                <td>28</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>May 10, 2023</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View Server">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Settings">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M9 1v2m0 12v2M1 9h2m12 0h2m-2.7-5.3l-1.4 1.4M5.1 12.9l-1.4 1.4m0-10.6l1.4 1.4m7.8 7.8l1.4 1.4"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Suspend">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="7"/>
-                                <path d="M9 5v4M9 12v1"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><input type="checkbox" class="checkbox server-checkbox"></td>
-                <td>
-                    <div class="cell-user">
-                        <div class="avatar server-avatar">SG</div>
-                        <div class="cell-user-info">
-                            <span class="cell-user-name">Study Group</span>
-                            <span class="cell-user-email">Educational community</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="cell-user-name">@phamhuongd</div>
-                </td>
-                <td>
-                    <span class="text-strong">5,890</span>
-                </td>
-                <td>22</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td>Jun 01, 2023</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View Server">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Settings">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M9 1v2m0 12v2M1 9h2m12 0h2m-2.7-5.3l-1.4 1.4M5.1 12.9l-1.4 1.4m0-10.6l1.4 1.4m7.8 7.8l1.4 1.4"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Suspend">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="7"/>
-                                <path d="M9 5v4M9 12v1"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><input type="checkbox" class="checkbox server-checkbox"></td>
-                <td>
-                    <div class="cell-user">
-                        <div class="avatar server-avatar">AF</div>
-                        <div class="cell-user-info">
-                            <span class="cell-user-name">Anime Fans VN</span>
-                            <span class="cell-user-email">Vietnamese anime community</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="cell-user-name">@hoangvane</div>
-                </td>
-                <td>
-                    <span class="text-strong">4,520</span>
-                </td>
-                <td>35</td>
-                <td><span class="badge badge-warning">Inactive</span></td>
-                <td>Jul 15, 2023</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View Server">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Settings">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M9 1v2m0 12v2M1 9h2m12 0h2m-2.7-5.3l-1.4 1.4M5.1 12.9l-1.4 1.4m0-10.6l1.4 1.4m7.8 7.8l1.4 1.4"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Suspend">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="7"/>
-                                <path d="M9 5v4M9 12v1"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><input type="checkbox" class="checkbox server-checkbox"></td>
-                <td>
-                    <div class="cell-user">
-                        <div class="avatar server-avatar">SC</div>
-                        <div class="cell-user-info">
-                            <span class="cell-user-name">Spam Community</span>
-                            <span class="cell-user-email">Suspended for TOS violation</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="cell-user-name">@banned_user</div>
-                </td>
-                <td>
-                    <span class="text-strong">523</span>
-                </td>
-                <td>12</td>
-                <td><span class="badge badge-danger">Suspended</span></td>
-                <td>Aug 20, 2023</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View Server">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-success btn-sm btn-icon" title="Restore">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M5 9l3 3 5-5"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon text-danger" title="Delete">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M3 5h12M7 5V3h4v2m1 0v10a1 1 0 01-1 1H7a1 1 0 01-1-1V5"/>
-                            </svg>
-                        </button>
-                    </div>
+                <td colspan="10" class="text-center py-8">
+                    <div class="loading-spinner"></div>
+                    <p class="text-muted mt-2">Loading servers...</p>
                 </td>
             </tr>
             </tbody>
@@ -568,7 +321,7 @@
     </div>
 </div>
 
-<!-- New Server Detail Modal (Horizontal) -->
+<!-- New Server Detail Modal (Horizontal) - Figma Style -->
 <div class="admin-modal-backdrop" id="server-detail-modal" style="display:none;">
     <div class="admin-modal server-detail-horizontal">
         <button class="admin-modal-close" data-action="close-modal">
@@ -579,12 +332,12 @@
             <!-- Left Sidebar -->
             <div class="server-detail-sidebar">
                 <div class="server-profile">
-                    <div class="server-avatar-large" id="detail-server-avatar">VG</div>
+                    <div class="server-avatar-large" id="detail-server-avatar">??</div>
                     <h2 class="server-profile-name" id="detail-server-name">Server Name</h2>
-                    <p class="server-profile-desc" id="detail-server-desc">No description</p>
+                    <p class="server-profile-desc" id="detail-server-desc">Server description...</p>
                     <div class="server-badges" id="detail-server-badges">
-                        <span class="badge badge-success">Active</span>
-                        <span class="badge badge-ghost">Private</span>
+                        <span class="figma-badge in-progress">Active</span>
+                        <span class="figma-badge locked">Public</span>
                     </div>
                 </div>
                 
@@ -592,85 +345,144 @@
                     <div class="sidebar-stat">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5"/></svg>
                         <span id="detail-member-count">0</span>
-                        <span class="stat-label">Members</span>
+                        <span class="stat-label">MEMBERS</span>
                     </div>
                     <div class="sidebar-stat">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
                         <span id="detail-channel-count">0</span>
-                        <span class="stat-label">Channels</span>
+                        <span class="stat-label">CHANNELS</span>
                     </div>
                     <div class="sidebar-stat">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
                         <span id="detail-role-count">0</span>
-                        <span class="stat-label">Roles</span>
+                        <span class="stat-label">ROLES</span>
                     </div>
                     <div class="sidebar-stat">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6v8H4V6M2 6h12M6 6V4h4v2"/></svg>
                         <span id="detail-report-count">0</span>
-                        <span class="stat-label">Reports</span>
+                        <span class="stat-label">REPORTS</span>
                     </div>
                 </div>
             </div>
             
             <!-- Right Content -->
             <div class="server-detail-content">
+                <!-- Figma-style Tabs with Icons -->
                 <div class="horizontal-tabs" id="server-modal-tabs">
-                    <button class="tab-btn active" data-tab="overview">Overview</button>
-                    <button class="tab-btn" data-tab="reports">Reports <span class="tab-badge" id="tab-reports-count" style="display:none;">0</span></button>
-                    <button class="tab-btn" data-tab="audit-log">Audit Log</button>
-                    <button class="tab-btn" data-tab="actions">Admin Actions</button>
+                    <button class="tab-btn active" data-tab="overview">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg>
+                        Overview
+                    </button>
+                    <button class="tab-btn" data-tab="reports">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6v8H4V6M2 6h12M6 6V4h4v2"/></svg>
+                        Reports
+                        <span class="tab-badge" id="tab-reports-count" style="display:none;">0</span>
+                    </button>
+                    <button class="tab-btn" data-tab="audit-log">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+                        Audit Log
+                    </button>
+                    <button class="tab-btn" data-tab="actions">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="1"/><circle cx="8" cy="3" r="1"/><circle cx="8" cy="13" r="1"/></svg>
+                        Admin Actions
+                    </button>
                 </div>
                 
                 <div class="server-tab-body">
                     <!-- Overview Tab -->
                     <div class="admin-tab-content active" data-tab-content="overview">
                         <div class="detail-section">
-                            <h4 class="section-title">Server Information</h4>
+                            <h4 class="section-title">SERVER INFORMATION</h4>
                             <div class="info-grid">
                                 <div class="info-item">
-                                    <span class="info-label">Server ID</span>
-                                    <span class="info-value" id="detail-server-id">#0</span>
+                                    <span class="info-label">SERVER ID</span>
+                                    <span class="info-value" id="detail-server-id">--</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">Created At</span>
+                                    <span class="info-label">CREATED</span>
                                     <span class="info-value" id="detail-created-at">--</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">Last Activity</span>
+                                    <span class="info-label">LAST ACTIVITY</span>
                                     <span class="info-value" id="detail-last-activity">--</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">Max Members</span>
-                                    <span class="info-value" id="detail-max-members">100,000</span>
+                                    <span class="info-label">MAX MEMBERS</span>
+                                    <span class="info-value" id="detail-max-members">--</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">MESSAGE VOLUME</span>
+                                    <span class="info-value" id="detail-message-volume">--</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">SERVER BOOST</span>
+                                    <span class="info-value" id="detail-boost-level">Level 0</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="detail-section">
-                            <h4 class="section-title">Owner</h4>
+                            <h4 class="section-title">SERVER OWNER</h4>
                             <div class="owner-card">
-                                <img class="owner-avatar" id="detail-owner-avatar" src="/images/default-avatar.png" alt="Owner">
+                                <div class="owner-avatar" id="detail-owner-avatar">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5"/></svg>
+                                </div>
                                 <div class="owner-info">
-                                    <span class="owner-name" id="detail-owner-name">--</span>
+                                    <span class="owner-name" id="detail-owner-name">Owner</span>
                                     <span class="owner-email" id="detail-owner-email">--</span>
                                 </div>
-                                <button class="btn btn-ghost btn-sm" id="btn-view-owner">View Profile</button>
+                                <button class="btn btn-ghost btn-sm" id="btn-view-owner">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/></svg>
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <div class="reports-summary">
+                                <div class="reports-summary-left">
+                                    <span class="reports-summary-count" id="detail-total-reports">0</span>
+                                    <span class="reports-summary-label">Total Reports</span>
+                                </div>
+                                <span class="figma-badge rejected" id="detail-reports-status">No Reports</span>
                             </div>
                         </div>
                         
                         <div class="detail-section" id="detail-lock-info" style="display:none;">
-                            <h4 class="section-title text-warning">Lock Information</h4>
-                            <div class="alert-box warning">
-                                <p><strong>Locked At:</strong> <span id="detail-locked-at">--</span></p>
-                                <p><strong>Reason:</strong> <span id="detail-lock-reason">--</span></p>
+                            <h4 class="section-title" style="color: #F59E0B;">LOCK INFORMATION</h4>
+                            <div class="info-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="info-item" style="background: rgba(245, 158, 11, 0.05);">
+                                    <span class="info-label">LOCKED AT</span>
+                                    <span class="info-value" id="detail-locked-at">--</span>
+                                </div>
+                                <div class="info-item" style="background: rgba(245, 158, 11, 0.05);">
+                                    <span class="info-label">REASON</span>
+                                    <span class="info-value" id="detail-lock-reason">--</span>
+                                </div>
                             </div>
                         </div>
                         
                         <div class="detail-section" id="detail-suspend-info" style="display:none;">
-                            <h4 class="section-title text-danger">Suspension Information</h4>
-                            <div class="alert-box danger">
-                                <p><strong>Suspended At:</strong> <span id="detail-suspended-at">--</span></p>
-                                <p><strong>Reason:</strong> <span id="detail-suspend-reason">--</span></p>
+                            <h4 class="section-title" style="color: #EF4444;">SUSPENSION INFORMATION</h4>
+                            <div class="info-grid" style="grid-template-columns: repeat(2, 1fr);">
+                                <div class="info-item" style="background: rgba(239, 68, 68, 0.05);">
+                                    <span class="info-label">SUSPENDED AT</span>
+                                    <span class="info-value" id="detail-suspended-at">--</span>
+                                </div>
+                                <div class="info-item" style="background: rgba(239, 68, 68, 0.05);">
+                                    <span class="info-label">REASON</span>
+                                    <span class="info-value" id="detail-suspend-reason">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Audit Log Preview in Overview -->
+                        <div class="detail-section">
+                            <div class="empty-state" id="overview-audit-empty">
+                                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="24" cy="24" r="18"/><path d="M24 14v10l6 6"/>
+                                </svg>
+                                <p>No audit log entries yet</p>
                             </div>
                         </div>
                     </div>
@@ -805,17 +617,24 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M14 5l7 7-7 7"/></svg>
             </div>
             <h3>Transfer Ownership</h3>
-            <p>Transfer ownership of <strong id="transfer-server-name">Server</strong></p>
+            <p>Transfer ownership to a new user</p>
         </div>
         <div class="action-modal-body">
+            <div class="action-target-card action-target-info">
+                <div class="server-avatar" id="transfer-avatar">??</div>
+                <div class="action-target-info">
+                    <span class="action-target-name" id="transfer-server-name">Server Name</span>
+                    <span class="action-target-meta" id="transfer-server-meta">0 members</span>
+                </div>
+            </div>
             <p class="info-text">💡 This will transfer all ownership rights to the new user. The current owner will become a regular member.</p>
             <div class="form-group">
                 <label class="form-label required">New Owner User ID</label>
                 <input type="text" id="transfer-user-id" class="form-input" placeholder="Enter user ID">
             </div>
             <div class="form-group">
-                <label class="form-label">Reason (optional)</label>
-                <textarea id="transfer-reason" class="form-textarea" rows="2" placeholder="Reason for transfer..."></textarea>
+                <label class="form-label required">Reason for transfer</label>
+                <textarea id="transfer-reason" class="form-textarea" rows="2" placeholder="Reason for transfer..." required></textarea>
             </div>
         </div>
         <div class="action-modal-footer">
@@ -833,17 +652,24 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M6 6v12a2 2 0 002 2h8a2 2 0 002-2V6M9 6V4h6v2"/></svg>
             </div>
             <h3>Delete Server</h3>
-            <p>You are about to delete <strong id="delete-server-name">Server</strong></p>
+            <p>This action is permanent and cannot be undone</p>
         </div>
         <div class="action-modal-body">
+            <div class="action-target-card action-target-danger">
+                <div class="server-avatar" id="delete-avatar">??</div>
+                <div class="action-target-info">
+                    <span class="action-target-name" id="delete-server-name">Server Name</span>
+                    <span class="action-target-meta" id="delete-server-meta">0 members</span>
+                </div>
+            </div>
             <p class="danger-text">🚨 <strong>This action is IRREVERSIBLE!</strong> All server data, channels, messages, and members will be permanently deleted.</p>
+            <div class="form-group">
+                <label class="form-label required">Reason for deletion</label>
+                <textarea id="delete-reason" class="form-textarea" rows="2" placeholder="Reason for deletion..." required></textarea>
+            </div>
             <div class="form-group">
                 <label class="form-label required">Type the server name to confirm</label>
                 <input type="text" id="confirm-delete-input" class="form-input" placeholder="Enter server name exactly">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Reason (optional)</label>
-                <textarea id="delete-reason" class="form-textarea" rows="2" placeholder="Reason for deletion..."></textarea>
             </div>
         </div>
         <div class="action-modal-footer">

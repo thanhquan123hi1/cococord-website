@@ -53,6 +53,17 @@ public class Server {
 
     @Column(nullable = false)
     @Builder.Default
+    private Boolean isSuspended = false;
+
+    @Column(length = 500)
+    private String suspendReason;
+
+    private LocalDateTime suspendedAt;
+
+    private LocalDateTime suspendedUntil;
+
+    @Column(nullable = false)
+    @Builder.Default
     private Integer maxMembers = 100000;
 
     @CreationTimestamp

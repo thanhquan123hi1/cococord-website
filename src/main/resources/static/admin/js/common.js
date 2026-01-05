@@ -384,6 +384,70 @@
         body: JSON.stringify(data) 
       }),
       delete: (endpoint) => apiRequest(endpoint, { method: 'DELETE' })
+    },
+
+    // WebSocket for admin realtime updates
+    websocket: {
+      stompClient: null,
+      subscriptions: {},
+      
+      connect: function(onConnect) {
+        if (this.stompClient && this.stompClient.connected) {
+          if (onConnect) onConnect();
+          return;
+        }
+        
+        const socket = new SockJS('/ws');
+        this.stompClient = Stomp.over(socket);
+        this.stompClient.debug = null; // Disable debug logs
+        
+        this.stompClient.connect({}, () => {
+          console.log('[Admin WebSocket] Connected');
+          if (onConnect) onConnect();
+        }, (error) => {
+          console.error('[Admin WebSocket] Connection error:', error);
+          // Try to reconnect after 5 seconds
+          setTimeout(() => this.connect(onConnect), 5000);
+        });
+      },
+      
+      subscribe: function(topic, callback) {
+        if (!this.stompClient || !this.stompClient.connected) {
+          this.connect(() => this.subscribe(topic, callback));
+          return;
+        }
+        
+        if (this.subscriptions[topic]) {
+          this.subscriptions[topic].unsubscribe();
+        }
+        
+        this.subscriptions[topic] = this.stompClient.subscribe(topic, (message) => {
+          try {
+            const data = JSON.parse(message.body);
+            callback(data);
+          } catch (e) {
+            console.error('[Admin WebSocket] Parse error:', e);
+          }
+        });
+        
+        console.log('[Admin WebSocket] Subscribed to', topic);
+      },
+      
+      unsubscribe: function(topic) {
+        if (this.subscriptions[topic]) {
+          this.subscriptions[topic].unsubscribe();
+          delete this.subscriptions[topic];
+        }
+      },
+      
+      disconnect: function() {
+        if (this.stompClient) {
+          Object.values(this.subscriptions).forEach(sub => sub.unsubscribe());
+          this.subscriptions = {};
+          this.stompClient.disconnect();
+          this.stompClient = null;
+        }
+      }
     }
   };
 
