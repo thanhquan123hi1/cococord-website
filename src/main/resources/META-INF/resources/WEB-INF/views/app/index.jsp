@@ -659,33 +659,24 @@
     </div>
   </div>
 </div>
-<script src="${pageContext.request.contextPath}/js/app-home.js?v=clean_v1"></script>
+<script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105"></script>
 
 <script>
     (function() {
-        console.log("[View] Triggering AppHome...");
-
-        // Hàm thử chạy init
         function tryRun() {
             if (typeof window.forceInitAppHome === 'function') {
-                console.log("[View] Executing forceInitAppHome directly.");
                 window.forceInitAppHome();
                 return true;
             }
             return false;
         }
 
-        // 1. Thử chạy ngay (Trường hợp Script đã có sẵn trong bộ nhớ/Cache)
         if (!tryRun()) {
-            console.warn("[View] forceInitAppHome missing. Hot-reloading script...");
-            
-            // 2. Nếu chưa có (Trường hợp Hot-reload hoặc Cache cũ), tải lại thủ công
+            // Hot-reload if script is cached/missing
             var script = document.createElement('script');
-            script.src = '${pageContext.request.contextPath}/js/app-home.js?v=' + new Date().getTime(); // Thêm timestamp để ép tải mới
-            script.onload = function() {
-                console.log("[View] Script reloaded. Executing now.");
-                tryRun(); // Chạy ngay khi tải xong
-            };
+            // Timestamp to bypass cache
+            script.src = '${pageContext.request.contextPath}/js/app-home.js?v=' + new Date().getTime();
+            script.onload = tryRun;
             document.body.appendChild(script);
         }
     })();

@@ -697,54 +697,39 @@ function getAppContextPath() {
 }
 
 function updateGlobalSidebarActiveState() {
-  console.log("[Sidebar] Updating active state...");
-  
-  // 1. Tìm danh sách server (Thử cả 2 ID để chắc chắn)
   const serverList = document.getElementById("globalServerList") || document.getElementById("serverList");
-  
-  // 2. Tìm nút Home (Thử cả ID và Class)
   let homeBtn = document.getElementById("homeBtn");
+  
   if (!homeBtn && serverList) {
       homeBtn = serverList.querySelector(".home-btn");
   }
 
-  // 3. XÓA SẠCH trạng thái Active cũ (Quan trọng: Xóa trên mọi phần tử có class active)
+  // Clear old active states
   if (serverList) {
-    const activeItems = serverList.querySelectorAll(".active");
-    activeItems.forEach(el => {
+    serverList.querySelectorAll(".active").forEach(el => {
         el.classList.remove("active");
         el.removeAttribute("aria-current");
     });
   }
-  
-  // Xóa active của nút Home (nếu nó nằm ngoài serverList)
   if (homeBtn) homeBtn.classList.remove("active");
 
-  // 4. Xác định trạng thái hiện tại
+  // Determine current state
   const urlParams = new URLSearchParams(window.location.search);
   const serverId = urlParams.get("serverId");
   const path = window.location.pathname;
   
-  // Logic: Là trang chủ nếu đường dẫn chứa /app VÀ không có serverId
-  // (Thêm check path === "/" hoặc "/app" để bao quát hơn)
   const isHome = (path === "/app" || path.startsWith("/app/")) && !serverId;
   const isChat = (path.includes("/chat") || !!serverId);
 
-  console.log(`[Sidebar] State: isHome=${isHome}, serverId=${serverId}`);
-
-  // 5. Gán trạng thái Active mới
+  // Set new active state
   if (isHome) {
-    if (homeBtn) {
-        homeBtn.classList.add("active");
-    }
+    if (homeBtn) homeBtn.classList.add("active");
     return;
   }
 
   if (isChat && serverId && serverList) {
     const activeItem = serverList.querySelector(`[data-server-id="${serverId}"]`);
-    if (activeItem) {
-        activeItem.classList.add("active");
-    }
+    if (activeItem) activeItem.classList.add("active");
   }
 }
 

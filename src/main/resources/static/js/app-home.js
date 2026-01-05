@@ -2688,67 +2688,49 @@
       await openDM(userId);
     },
   };
+
   // ==========================================
-  // FIX: CLEAN INIT LOGIC
-  // Chỉ định nghĩa hàm, KHÔNG tự chạy, KHÔNG lắng nghe sự kiện thừa
+  // APP HOME INITIALIZATION
   // ==========================================
+
   function forceInit() {
       console.log('%c[AppHome] FORCE INIT', 'background: purple; color: white');
       const root = document.getElementById("cococordHome");
       if (!root) return;
       
-      // 1. Reset trạng thái
       isInitializing = false; 
 
-      // 2. Xóa các event cũ (nếu có) để tránh double click
-      // (Mẹo: Clone node để xóa sạch mọi event listener rác, nhưng cẩn thận mất state)
-      // Ở đây ta dùng cách gán đè sự kiện Capture
-      
       const sidebarNav = root.querySelector(".sidebar-nav");
       if (sidebarNav) {
-          console.log("[AppHome] Attaching CAPTURE event to Sidebar");
-          
-          // Dùng sự kiện ở cấp cha (Delegation) với useCapture = true
           sidebarNav.addEventListener('click', (e) => {
-              // Tìm thẻ a.nav-item gần nhất
               const navItem = e.target.closest('.nav-item');
-              
               if (navItem) {
-                  console.log("[AppHome] Clicked Sidebar Item:", navItem.getAttribute("data-view"));
-                  
-                  // CHẶN ĐỨNG MỌI THỨ KHÁC
                   e.preventDefault();
                   e.stopPropagation();
-                  e.stopImmediatePropagation(); // Kể cả các listener khác trên cùng element cũng chặn luôn
-                  
-                  // Xử lý Logic
-                  const view = navItem.getAttribute("data-view");
-                  
+                  e.stopImmediatePropagation(); 
+
                   // Cập nhật giao diện Active
                   root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                   navItem.classList.add('active');
 
                   // Chuyển view
+                  const view = navItem.getAttribute("data-view");
                   if (view && typeof switchMainView === 'function') {
                       switchMainView(view);
                   }
               }
-          }, true); // <--- TRUE là tham số quan trọng nhất: Chạy trước tất cả mọi người
+          }, true); 
       }
 
-      // 3. Gán sự kiện cho các nút chức năng khác (Add Friend, v.v.)
       try {
           if (typeof wireEvents === 'function') {
               wireEvents(); 
           }
       } catch (e) { console.error(e); }
       
-      // 4. Tải dữ liệu
       if (typeof init === 'function') {
-          init().catch(err => console.error("Init failed:", err));
+          init().catch(err => console.error("AppHome init failed:", err));
       }
   }
-
-  // Public hàm
   window.forceInitAppHome = forceInit;
 })();
