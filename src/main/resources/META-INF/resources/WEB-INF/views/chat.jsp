@@ -20,6 +20,11 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
   />
   <link
     rel="stylesheet"
+    href="${pageContext.request.contextPath}/css/voice-pip.css"
+    data-cococord-page-style="1"
+  />
+  <link
+    rel="stylesheet"
     href="${pageContext.request.contextPath}/css/markdown.css"
     data-cococord-page-style="1"
   />
@@ -461,6 +466,21 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 
     <!-- Voice Channel View (Hidden by default) -->
     <div class="voice-channel-view" id="voiceChannelView">
+      <div class="voice-channel-header">
+        <div class="voice-channel-title">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          </svg>
+          <span id="voiceChannelName">Voice Channel</span>
+        </div>
+        <div class="voice-channel-actions">
+          <button class="voice-channel-action-btn" id="voiceBtnMinimize" title="Thu nhỏ (PIP)" data-tooltip="Thu nhỏ">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 14h6v6H4zm16-4V4h-6v6h6z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
       <div class="voice-participants-area">
         <div
           class="voice-participants-grid"
@@ -745,6 +765,52 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
   </div>
 </div>
 
+<!-- Picture-in-Picture Voice Window -->
+<div class="voice-pip-window" id="voicePipWindow">
+  <div class="voice-pip-header" id="voicePipHeader">
+    <div class="voice-pip-title">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+      </svg>
+      <span class="voice-pip-channel-name" id="voicePipChannelName">Voice Channel</span>
+    </div>
+    <div class="voice-pip-actions">
+      <button class="voice-pip-btn voice-pip-btn-expand" id="voicePipExpand" title="Mở rộng">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+      </button>
+      <button class="voice-pip-btn voice-pip-btn-close" id="voicePipClose" title="Rời phòng">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <div class="voice-pip-content" id="voicePipContent">
+    <!-- Participants will be rendered here -->
+  </div>
+  
+  <div class="voice-pip-controls">
+    <button class="voice-pip-control-btn" id="voicePipMute" title="Tắt tiếng">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+      </svg>
+    </button>
+    <button class="voice-pip-control-btn" id="voicePipDeafen" title="Tắt nghe">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/>
+      </svg>
+    </button>
+    <button class="voice-pip-control-btn disconnect" id="voicePipDisconnect" title="Rời phòng">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.51-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
 <!-- PeerJS for WebRTC Voice Chat -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -758,6 +824,7 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
 <script src="${pageContext.request.contextPath}/js/virtual-scroll.js?v=20260104"></script>
 <script src="${pageContext.request.contextPath}/js/markdown-renderer.js?v=20260104"></script>
 <script src="${pageContext.request.contextPath}/js/voice-manager.js?v=20260102b"></script>
+<script src="${pageContext.request.contextPath}/js/voice-pip.js?v=20260105"></script>
 <script src="${pageContext.request.contextPath}/js/chat-input-manager.js?v=20260105"></script>
 <script src="${pageContext.request.contextPath}/js/header-toolbar.js?v=20260105"></script>
 <script src="${pageContext.request.contextPath}/js/server-settings.js?v=20260105"></script>

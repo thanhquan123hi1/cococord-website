@@ -3180,6 +3180,11 @@
         voiceParticipantsMap.forEach(p => participants.push(p));
         
         renderVoiceParticipants(participants);
+        
+        // Update PIP if minimized
+        if (window.PIPVoiceManager && window.PIPVoiceManager.isMinimized) {
+            window.PIPVoiceManager.renderPIPParticipants();
+        }
     }
     
     function callPeer(peerId, userId, username) {
@@ -3355,6 +3360,19 @@
                 ? '<i class="bi bi-volume-mute-fill"></i>' 
                 : '<i class="bi bi-headphones"></i>';
             el.deafenBtn.title = isDeafened ? 'Bật nghe' : 'Tắt nghe';
+        }
+        
+        // Update PIP button states
+        if (window.PIPVoiceManager && window.PIPVoiceManager.isMinimized) {
+            const pipMuteBtn = document.getElementById('voicePipMute');
+            const pipDeafenBtn = document.getElementById('voicePipDeafen');
+            
+            if (pipMuteBtn) {
+                pipMuteBtn.classList.toggle('active', isMuted);
+            }
+            if (pipDeafenBtn) {
+                pipDeafenBtn.classList.toggle('active', isDeafened);
+            }
         }
     }
     

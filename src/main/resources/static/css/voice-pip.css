@@ -1,0 +1,382 @@
+/* ==================== PICTURE-IN-PICTURE VOICE WINDOW ==================== */
+
+/* Mini Voice Window - Floating */
+.voice-pip-window {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 360px;
+    max-width: calc(100vw - 40px);
+    background: #1E1F22;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    cursor: move;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.voice-pip-window.show {
+    display: flex;
+}
+
+.voice-pip-window.dragging {
+    transition: none;
+    cursor: grabbing;
+    opacity: 0.9;
+}
+
+/* PIP Header */
+.voice-pip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(43, 45, 49, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: move;
+    user-select: none;
+}
+
+.voice-pip-header:active {
+    cursor: grabbing;
+}
+
+.voice-pip-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f2f3f5;
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+}
+
+.voice-pip-title svg {
+    width: 16px;
+    height: 16px;
+    color: #23a559;
+    flex-shrink: 0;
+}
+
+.voice-pip-channel-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voice-pip-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.voice-pip-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: #b5bac1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.voice-pip-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #dcddde;
+}
+
+.voice-pip-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.voice-pip-btn-expand:hover {
+    color: #5865f2;
+}
+
+.voice-pip-btn-close:hover {
+    color: #f23f43;
+    background: rgba(242, 63, 67, 0.15);
+}
+
+/* PIP Content */
+.voice-pip-content {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Participant in PIP */
+.voice-pip-participant {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: #2B2D31;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.voice-pip-participant.speaking {
+    border-color: #23a559;
+    background: rgba(35, 165, 89, 0.05);
+}
+
+.voice-pip-participant-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.voice-pip-participant.speaking .voice-pip-participant-avatar {
+    border-color: #23a559;
+}
+
+.voice-pip-participant-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.voice-pip-participant.speaking .voice-pip-participant-avatar-placeholder {
+    border-color: #23a559;
+}
+
+.voice-pip-participant-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.voice-pip-participant-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #f2f3f5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voice-pip-participant-status {
+    font-size: 11px;
+    color: #949ba4;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.voice-pip-participant-icons {
+    display: flex;
+    gap: 4px;
+}
+
+.voice-pip-participant-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b5bac1;
+}
+
+.voice-pip-participant-icon.muted {
+    color: #f23f43;
+}
+
+.voice-pip-participant-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Video thumbnail in PIP */
+.voice-pip-participant.has-video {
+    flex-direction: column;
+    padding: 0;
+    background: #000;
+}
+
+.voice-pip-video-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.voice-pip-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.voice-pip-video-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* PIP Controls Footer */
+.voice-pip-controls {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(43, 45, 49, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.voice-pip-control-btn {
+    flex: 1;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+    color: #b5bac1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.voice-pip-control-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #dcddde;
+}
+
+.voice-pip-control-btn.active {
+    background: rgba(242, 63, 67, 0.2);
+    color: #f23f43;
+}
+
+.voice-pip-control-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.voice-pip-control-btn.disconnect {
+    background: #f23f43;
+    color: white;
+}
+
+.voice-pip-control-btn.disconnect:hover {
+    background: #d83c3e;
+}
+
+/* Resize Handles */
+.voice-pip-resize-handle {
+    position: absolute;
+    background: transparent;
+    z-index: 10;
+}
+
+.voice-pip-resize-handle.right {
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+}
+
+.voice-pip-resize-handle.bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    cursor: ns-resize;
+}
+
+.voice-pip-resize-handle.corner {
+    right: 0;
+    bottom: 0;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+}
+
+/* Collapsed mini mode */
+.voice-pip-window.collapsed {
+    width: 240px;
+}
+
+.voice-pip-window.collapsed .voice-pip-content {
+    max-height: 200px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .voice-pip-window {
+        width: 300px;
+        bottom: 70px;
+        right: 12px;
+    }
+    
+    .voice-pip-window.collapsed {
+        width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .voice-pip-window {
+        width: calc(100vw - 24px);
+        left: 12px;
+        right: 12px;
+        bottom: 60px;
+    }
+}
+
+/* Animation */
+@keyframes pip-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.voice-pip-window.show {
+    animation: pip-slide-in 0.3s ease-out;
+}
