@@ -28,6 +28,10 @@ public class UpdateUserSettingsRequest {
     @Size(max = 190, message = "Bio (About Me) cannot exceed 190 characters")
     private String bio;
 
+    @Size(max = 20, message = "Phone number cannot exceed 20 characters")
+    @Pattern(regexp = "^[+]?[0-9\\s\\-()]*$", message = "Invalid phone number format")
+    private String phone;
+
     @Size(max = 20, message = "Pronouns cannot exceed 20 characters")
     private String pronouns;
 

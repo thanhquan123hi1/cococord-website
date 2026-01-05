@@ -62,6 +62,9 @@ public class Message {
 
     private String threadId;
 
+    // Metadata (for stickers, etc.)
+    private String metadata;
+
     // Attachments (images, files, videos)
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
@@ -119,6 +122,7 @@ public class Message {
         FILE,
         AUDIO,
         VIDEO,
+        STICKER,
         SYSTEM, // System messages (user joined, left, etc.)
         ANNOUNCEMENT
     }

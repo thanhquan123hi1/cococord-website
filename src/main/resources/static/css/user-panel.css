@@ -5,41 +5,41 @@
 
 /* CSS Variables for theming */
 :root {
-  --background-primary: #1a1a1e;
-  --background-secondary: #1d1d1e;
-  --background-secondary-alt: #232428;
-  --background-tertiary: #121214;
-  --background-floating: #111214;
-  --background-modifier-hover: rgba(79, 84, 92, 0.4);
-  --background-modifier-active: rgba(79, 84, 92, 0.6);
-  --background-modifier-accent: rgba(79, 84, 92, 0.48);
-  --header-primary: #f2f3f5;
-  --header-secondary: #b5bac1;
-  --text-normal: #dbdee1;
-  --text-muted: #949ba4;
-  --interactive-normal: #b5bac1;
-  --interactive-hover: #dbdee1;
-  --interactive-active: #fff;
-  --brand-experiment: #5865f2;
-  --status-online: #23a559;
-  --status-idle: #f0b232;
-  --status-dnd: #f23f43;
-  --status-offline: #80848e;
-  --danger: #f23f43;
+  --up-background-primary: #1e1f22;
+  --up-background-secondary: #2b2d31;
+  --up-background-secondary-alt: #232428;
+  --up-background-tertiary: #1e1f22;
+  --up-background-floating: #111214;
+  --up-background-modifier-hover: rgba(79, 84, 92, 0.4);
+  --up-background-modifier-active: rgba(79, 84, 92, 0.6);
+  --up-background-modifier-accent: rgba(79, 84, 92, 0.48);
+  --up-header-primary: #f2f3f5;
+  --up-header-secondary: #b5bac1;
+  --up-text-normal: #dbdee1;
+  --up-text-muted: #949ba4;
+  --up-interactive-normal: #b5bac1;
+  --up-interactive-hover: #dbdee1;
+  --up-interactive-active: #fff;
+  --up-brand-experiment: #5865f2;
+  --up-status-online: #23a55a;
+  --up-status-idle: #f0b232;
+  --up-status-dnd: #f23f43;
+  --up-status-offline: #80848e;
+  --up-danger: #f23f43;
 }
 
 /* ============================================
    Main User Panel (Bottom-left)
    ============================================ */
-.user-panel {
+.user-area {
   position: relative;
   width: 100%;
-  background: var(--background-secondary-alt);
-  padding: 0 12px;
-  height: 64px;
+  background: var(--up-background-secondary-alt);
+  height: 52px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  border-top: 1px solid var(--up-background-primary);
 }
 
 .user-panel-content {
@@ -47,12 +47,13 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 12px;
-  padding: 12px 8px;
+  gap: 8px;
+  padding: 0 8px;
+  height: 100%;
 }
 
 /* ============================================
-   Left Section: Avatar + Info
+   Left Section: Avatar + Info (Status Trigger)
    ============================================ */
 .user-panel-left {
   display: flex;
@@ -67,15 +68,16 @@
   transition: background-color 0.15s ease;
 }
 
-.user-panel-left:hover {
-  background: var(--background-modifier-hover);
+.user-panel-left:hover,
+.user-panel-left.status-menu-open {
+  background: var(--up-background-modifier-hover);
 }
 
 /* Avatar Wrapper */
 .user-avatar-wrapper {
   position: relative;
-  width: 35px;
-  height: 35px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
   flex-shrink: 0;
   border-radius: 50%;
@@ -92,7 +94,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: var(--brand-experiment);
+  background: var(--up-brand-experiment);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,25 +107,25 @@
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 3px solid var(--background-secondary-alt);
-  background: var(--status-offline);
+  border: 3px solid var(--up-background-secondary-alt);
+  background: var(--up-status-offline);
 }
 
 .status-indicator.status-online {
-  background: var(--status-online);
+  background: var(--up-status-online);
 }
 .status-indicator.status-idle {
-  background: var(--status-idle);
+  background: var(--up-status-idle);
 }
 .status-indicator.status-do_not_disturb {
-  background: var(--status-dnd);
+  background: var(--up-status-dnd);
 }
 .status-indicator.status-offline,
 .status-indicator.status-invisible {
-  background: var(--status-offline);
+  background: var(--up-status-offline);
 }
 
 /* User Info (Name & Status) */
@@ -134,14 +136,13 @@
   display: flex;
   align-items: flex-start !important;
   flex-direction: column;
-  padding-left: 1% !important;
 }
 
 /* Prevent global `.user-info:hover` rules (from other CSS files) from
    applying inside the user panel. Only `.user-panel-left:hover` should
    control the hover highlight. */
-.user-panel .user-info,
-.user-panel .user-info:hover {
+.user-area .user-info,
+.user-area .user-info:hover {
   background: transparent !important;
   background-color: transparent !important;
 }
@@ -149,7 +150,7 @@
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--header-primary);
+  color: var(--up-header-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -157,12 +158,89 @@
 }
 
 .user-status-text {
-  font-size: 10px;
-  color: var(--header-secondary);
+  font-size: 12px;
+  color: var(--up-header-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 16px;
+  line-height: 14px;
+}
+
+/* Custom Status Display */
+.user-custom-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.custom-status-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.custom-status-emoji {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.custom-status-text {
+  font-size: 12px;
+  color: var(--up-header-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 14px;
+}
+
+.custom-status-expiry {
+  display: flex;
+  align-items: center;
+  color: var(--up-interactive-normal);
+  flex-shrink: 0;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.custom-status-expiry:hover {
+  opacity: 1;
+}
+
+.custom-status-expiry svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Clear Status Button */
+.clear-status-btn {
+  background: transparent;
+  border: none;
+  color: var(--up-interactive-normal);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.user-panel-left:hover .clear-status-btn {
+  opacity: 0.7;
+}
+
+.clear-status-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--up-status-danger);
 }
 
 /* ============================================
@@ -171,36 +249,37 @@
 .panel-buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
 .panel-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
   background: transparent;
   border: none;
-  color: var(--interactive-normal);
+  color: var(--up-interactive-normal);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
   position: relative;
 }
 
 .panel-btn:hover {
-  background: var(--background-modifier-hover);
+  background: var(--up-background-modifier-hover);
+  color: var(--up-interactive-hover);
 }
 
 .panel-btn:active {
-  background: var(--background-modifier-active);
+  background: var(--up-background-modifier-active);
 }
 
 /* Active state for mute/deafen (red color) */
 .panel-btn.active {
-  color: var(--danger);
+  color: var(--up-danger);
   background: transparent;
 }
 
@@ -209,13 +288,281 @@
 }
 
 .panel-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 /* Strikethrough line for muted/deafened icons */
 .panel-btn.active svg line {
-  stroke: var(--danger);
+  stroke: var(--up-danger);
+}
+
+/* ============================================
+   Status Picker Menu - Discord Style
+   ============================================ */
+.status-picker-menu {
+  position: absolute;
+  left: calc(100% + 8px);
+  bottom: 0;
+  width: 300px;
+  background: #111214;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10001;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px);
+  transition: all 0.15s ease;
+  overflow: hidden;
+}
+
+.status-picker-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.status-picker-header {
+  padding: 12px 12px 8px;
+  border-bottom: none;
+}
+
+.status-picker-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--up-header-secondary);
+  letter-spacing: 0.02em;
+}
+
+.status-picker-list {
+  padding: 4px 8px;
+}
+
+.status-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--up-interactive-normal);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.status-picker-item:hover {
+  background: #4752c4;
+  color: #fff;
+}
+
+.status-picker-item.active {
+  background: rgba(79, 84, 92, 0.4);
+}
+
+.status-picker-item.active:hover {
+  background: #4752c4;
+}
+
+.status-picker-icon {
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.status-picker-icon svg {
+  width: 10px;
+  height: 10px;
+}
+
+.status-picker-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-picker-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.status-picker-check {
+  width: 20px;
+  height: 20px;
+  color: var(--up-status-online);
+  flex-shrink: 0;
+}
+
+.status-picker-separator {
+  height: 1px;
+  background: #2e3035;
+  margin: 4px 12px;
+}
+
+.status-picker-custom,
+.status-picker-clear {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 16px);
+  margin: 0 8px 8px;
+  padding: 10px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--up-interactive-normal);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.status-picker-custom:hover {
+  background: #4752c4;
+  color: #fff;
+}
+
+.status-picker-clear:hover {
+  background: rgba(242, 63, 67, 0.15);
+  color: var(--up-danger);
+}
+
+.status-picker-custom-icon,
+.status-picker-clear-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+/* Legacy status dropdown styles (keeping for compatibility) */
+.status-dropdown {
+  position: absolute;
+  left: calc(100% + 8px);
+  bottom: 0;
+  width: 200px;
+  background: var(--up-background-floating);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.24);
+  z-index: 10001;
+  padding: 6px 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px);
+  transition: all 0.15s ease;
+}
+
+.status-dropdown.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.status-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--up-interactive-normal);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.status-dropdown-item:hover {
+  background: var(--up-brand-experiment);
+  color: #fff;
+}
+
+.status-dropdown-item.active {
+  background: var(--up-background-modifier-active);
+}
+
+.status-dropdown-icon {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dropdown-icon.online {
+  background: var(--up-status-online);
+}
+
+.status-dropdown-icon.idle {
+  background: var(--up-status-idle);
+}
+
+.status-dropdown-icon.dnd {
+  background: var(--up-status-dnd);
+}
+
+/* DND icon with inner white bar */
+.status-dropdown-icon.dnd::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 2px;
+  background: var(--up-background-floating);
+  border-radius: 1px;
+}
+
+.status-dropdown-icon.invisible {
+  background: transparent;
+  border: 2px solid var(--up-status-offline);
+  box-sizing: border-box;
+}
+
+.status-dropdown-separator {
+  height: 1px;
+  background: var(--up-background-modifier-accent);
+  margin: 4px 0;
+}
+
+.status-dropdown-custom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--up-interactive-normal);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.status-dropdown-custom:hover {
+  background: var(--up-brand-experiment);
+  color: #fff;
 }
 
 /* ============================================
@@ -224,7 +571,7 @@
 .user-popout {
   position: fixed;
   width: 300px;
-  background: var(--background-floating);
+  background: var(--up-background-floating);
   border-radius: 8px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.24);
   z-index: 10000;
@@ -261,7 +608,7 @@
 /* Popout Banner */
 .popout-banner {
   height: 60px;
-  background: var(--brand-experiment);
+  background: var(--up-brand-experiment);
 }
 
 /* Popout Avatar Section */
@@ -281,9 +628,9 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 6px solid var(--background-floating);
+  border: 6px solid var(--up-background-floating);
   object-fit: cover;
-  background: var(--background-secondary);
+  background: var(--up-background-secondary);
   box-sizing: border-box;
 }
 
@@ -291,8 +638,8 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 6px solid var(--background-floating);
-  background: var(--brand-experiment);
+  border: 6px solid var(--up-background-floating);
+  background: var(--up-brand-experiment);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -309,23 +656,23 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 4px solid var(--background-floating);
-  background: var(--status-offline);
+  border: 4px solid var(--up-background-floating);
+  background: var(--up-status-offline);
   box-sizing: border-box;
 }
 
 .popout-status-badge.status-online {
-  background: var(--status-online);
+  background: var(--up-status-online);
 }
 .popout-status-badge.status-idle {
-  background: var(--status-idle);
+  background: var(--up-status-idle);
 }
 .popout-status-badge.status-do_not_disturb {
-  background: var(--status-dnd);
+  background: var(--up-status-dnd);
 }
 .popout-status-badge.status-offline,
 .popout-status-badge.status-invisible {
-  background: var(--status-offline);
+  background: var(--up-status-offline);
 }
 
 /* Popout Body */
@@ -348,7 +695,7 @@
 .popout-name {
   font-size: 20px;
   font-weight: 700;
-  color: var(--header-primary);
+  color: var(--up-header-primary);
   line-height: 24px;
 }
 
@@ -365,7 +712,7 @@
 
 .popout-username {
   font-size: 14px;
-  color: var(--header-secondary);
+  color: var(--up-header-secondary);
   margin-top: 2px;
   line-height: 18px;
 }
@@ -378,7 +725,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: var(--background-secondary);
+  background: var(--up-background-secondary);
   border-radius: 8px;
   margin-top: 12px;
   transition: background-color 0.15s ease;
@@ -395,7 +742,7 @@
 }
 
 .popout-custom-status-box.popout-custom-status-placeholder .popout-custom-text {
-  color: var(--brand-experiment);
+  color: var(--up-brand-experiment);
   font-weight: 500;
 }
 
@@ -407,7 +754,7 @@
 
 .popout-custom-text {
   font-size: 14px;
-  color: var(--text-normal);
+  color: var(--up-text-normal);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -417,7 +764,7 @@
 /* Separator */
 .popout-separator {
   height: 1px;
-  background: var(--background-modifier-accent);
+  background: var(--up-background-modifier-accent);
   margin: 12px 0;
 }
 
@@ -437,7 +784,7 @@
   background: transparent;
   border: none;
   border-radius: 4px;
-  color: var(--interactive-normal);
+  color: var(--up-interactive-normal);
   font-size: 14px;
   font-weight: 500;
   text-align: left;
@@ -446,12 +793,12 @@
 }
 
 .popout-menu-item:hover {
-  background: var(--background-modifier-hover);
-  color: var(--interactive-hover);
+  background: var(--up-background-modifier-hover);
+  color: var(--up-interactive-hover);
 }
 
 .popout-menu-item:active {
-  background: var(--background-modifier-active);
+  background: var(--up-background-modifier-active);
 }
 
 .popout-menu-item svg {
@@ -470,18 +817,18 @@
 /* Menu Separator */
 .popout-menu-separator {
   height: 1px;
-  background: var(--background-modifier-accent);
+  background: var(--up-background-modifier-accent);
   margin: 4px 0;
 }
 
 /* Danger Button (Logout) */
 .popout-menu-item.popout-menu-danger {
-  color: var(--danger);
+  color: var(--up-danger);
 }
 
 .popout-menu-item.popout-menu-danger:hover {
   background: rgba(242, 63, 67, 0.1);
-  color: var(--danger);
+  color: var(--up-danger);
 }
 
 .popout-menu-item.popout-menu-danger svg {
@@ -500,12 +847,12 @@
 }
 
 .user-popout::-webkit-scrollbar-thumb {
-  background: var(--background-tertiary);
+  background: var(--up-background-tertiary);
   border-radius: 4px;
 }
 
 .user-popout::-webkit-scrollbar-thumb:hover {
-  background: var(--background-modifier-hover);
+  background: var(--up-background-modifier-hover);
 }
 
 /* ============================================
@@ -517,10 +864,18 @@
     left: 16px !important;
     right: 16px !important;
   }
+  
+  .status-dropdown {
+    position: fixed;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 60px !important;
+    width: auto;
+  }
 }
 
 @media (max-width: 768px) {
-  .user-panel {
+  .user-area {
     width: 100%;
   }
 
@@ -535,3 +890,323 @@
 }
 
 /* Tooltip intentionally disabled: hover should only brighten background. */
+
+/* ============================================
+   Custom Status Modal
+   ============================================ */
+.custom-status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.custom-status-modal-overlay.closing {
+  animation: fadeOut 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.custom-status-modal {
+  background: #313338;
+  border-radius: 8px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.custom-status-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.custom-status-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #f2f3f5;
+}
+
+.custom-status-modal-close {
+  background: transparent;
+  border: none;
+  color: #b5bac1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.custom-status-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.custom-status-modal-body {
+  padding: 16px;
+}
+
+.custom-status-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.custom-status-emoji-btn {
+  width: 44px;
+  height: 44px;
+  background: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.custom-status-emoji-btn:hover {
+  background: #2b2d31;
+}
+
+.custom-status-input {
+  flex: 1;
+  height: 44px;
+  background: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 16px;
+  color: #dbdee1;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.custom-status-input::placeholder {
+  color: #72767d;
+}
+
+.custom-status-input:focus {
+  box-shadow: 0 0 0 2px #5865f2;
+}
+
+.custom-status-duration-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-status-divider {
+  height: 1px;
+  background: #2e3035;
+  margin: 16px 0;
+}
+
+.custom-status-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-status-status-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-status-status-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1e1f22;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  color: #b5bac1;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1;
+  min-width: 0;
+}
+
+.custom-status-status-btn:hover {
+  background: #2b2d31;
+  color: #fff;
+}
+
+.custom-status-status-btn.active {
+  border-color: #5865f2;
+  background: rgba(88, 101, 242, 0.15);
+  color: #fff;
+}
+
+.custom-status-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.custom-status-status-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-status-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #b5bac1;
+  letter-spacing: 0.02em;
+}
+
+.custom-status-select {
+  height: 40px;
+  background: #1e1f22;
+  border: none;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #dbdee1;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23b5bac1'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 36px;
+  transition: all 0.15s ease;
+}
+
+.custom-status-select:hover {
+  background-color: #2b2d31;
+}
+
+.custom-status-select:focus {
+  box-shadow: 0 0 0 2px #5865f2;
+}
+
+.custom-status-select option {
+  background: #1e1f22;
+  color: #dbdee1;
+}
+
+.custom-status-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+  background: #2b2d31;
+  border-radius: 0 0 8px 8px;
+}
+
+.custom-status-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.custom-status-btn-cancel {
+  background: transparent;
+  color: #fff;
+}
+
+.custom-status-btn-cancel:hover {
+  text-decoration: underline;
+}
+
+.custom-status-btn-clear {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.custom-status-btn-clear:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.custom-status-btn-save {
+  background: #5865f2;
+  color: #fff;
+}
+
+.custom-status-btn-save:hover {
+  background: #4752c4;
+}
+
+/* Emoji Quick Picker */
+.emoji-quick-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: #111214;
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.emoji-quick-item {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+}
+
+.emoji-quick-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

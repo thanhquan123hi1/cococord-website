@@ -1,6 +1,7 @@
 package vn.cococord.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,10 +17,15 @@ public class SendMessageRequest {
     @NotNull(message = "Channel ID is required")
     private Long channelId;
 
-    @NotBlank(message = "Content cannot be empty")
-    private String content;
+    private String content; // Optional if attachments are present
 
     private String parentMessageId; // For replies
 
     private String threadId; // For thread messages
+
+    private String type; // Message type (TEXT, STICKER, etc.)
+
+    private String metadata; // Additional metadata (JSON string for stickers, etc.)
+
+    private List<AttachmentRequest> attachments; // File attachments
 }

@@ -10,18 +10,18 @@
 
 /* ==================== VOICE CONNECTED STATUS (Bottom-Left Integration) ==================== */
 .voice-connected-bar {
-    position: absolute;
+    position: relative;
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(180deg, transparent 0%, rgba(30, 31, 34, 0.95) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: #1a1b1e;
     padding: 0;
     display: none;
     flex-direction: column;
     z-index: 100;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid #111214;
+    border-bottom: 1px solid #111214;
+    margin-top: auto;
 }
 
 .voice-connected-bar.show {
@@ -29,16 +29,17 @@
 }
 
 .voice-connected-info {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    padding: 10px 12px;
-    gap: 10px;
+    padding: 10px 12px 8px;
+    gap: 12px;
 }
 
 .voice-connected-status {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    gap: 4px;
     min-width: 0;
 }
 
@@ -66,39 +67,39 @@
 
 .voice-connected-channel {
     font-size: 11px;
-    color: var(--text-muted, #949ba4);
+    color: #9ca3af;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-top: 2px;
 }
 
+.voice-connected-channel #voiceChannelName {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.voice-connected-channel #voiceServerName {
+    font-size: 10px;
+    color: #9ca3af;
+}
+
 .voice-signal-bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    margin-left: auto;
+    display: none;
 }
-
-.voice-signal-bars span {
-    width: 4px;
-    background: #23a559;
-    border-radius: 2px;
-    transition: height 0.2s ease;
-}
-
-.voice-signal-bars span:nth-child(1) { height: 4px; }
-.voice-signal-bars span:nth-child(2) { height: 8px; }
-.voice-signal-bars span:nth-child(3) { height: 12px; }
 
 .voice-disconnect-btn {
     background: transparent;
     border: none;
     padding: 8px;
     cursor: pointer;
-    color: var(--text-muted, #949ba4);
-    border-radius: 12px;
+    color: #949ba4;
+    border-radius: 8px;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .voice-disconnect-btn:hover {
@@ -115,7 +116,7 @@
 /* Compact voice controls in sidebar */
 .voice-controls {
     display: flex;
-    padding: 8px 12px 12px;
+    padding: 4px 12px 8px;
     gap: 6px;
 }
 
@@ -156,7 +157,7 @@
     display: none;
     flex-direction: column;
     height: 100%;
-    background: #1E1F22;
+    background: #000000;
     position: relative;
 }
 
@@ -229,23 +230,22 @@
     overflow: hidden;
     position: relative;
     padding-bottom: 100px; /* Space for floating dock */
+    background: #000000;
 }
 
 .voice-participants-grid {
     flex: 1;
-    display: grid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     gap: 12px;
     padding: 24px;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    align-content: center;
-    justify-content: center;
     overflow-y: auto;
-    max-width: 1400px;
-    margin: 0 auto;
     width: 100%;
+    height: 100%;
 }
 
-/* Single participant: 80% width, centered, 16:9 */
+/* Single participant: Dominant view (75vh height, 16:9 aspect ratio, max 800px) */
 .voice-participants-grid[data-count="1"] {
     display: flex;
     justify-content: center;
@@ -254,9 +254,18 @@
 }
 
 .voice-participants-grid[data-count="1"] .voice-participant-tile {
-    width: 80%;
-    max-width: 1000px;
+    height: 75vh;
+    max-height: 800px;
+    width: auto;
     aspect-ratio: 16/9;
+}
+
+/* 2+ participants: Use grid layout */
+.voice-participants-grid[data-count]:not([data-count="1"]) {
+    display: grid;
+    align-content: center;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* 2 participants side by side */
@@ -313,31 +322,32 @@
     transition: all 0.2s ease;
 }
 
-/* Speaking state: 2px glow border with animation */
+/* Speaking state: Strong green border glow (border-2 border-green-500 equivalent) */
 .voice-participant-tile.speaking {
-    border-color: #23a559;
+    border-color: #22c55e;
+    border-width: 2px;
     box-shadow: 
-        0 0 0 1px rgba(35, 165, 89, 0.3),
-        0 0 20px rgba(35, 165, 89, 0.4),
-        0 0 40px rgba(35, 165, 89, 0.2),
-        inset 0 0 20px rgba(35, 165, 89, 0.05);
+        0 0 0 2px rgba(34, 197, 94, 1),
+        0 0 20px rgba(34, 197, 94, 0.6),
+        0 0 40px rgba(34, 197, 94, 0.4),
+        inset 0 0 20px rgba(34, 197, 94, 0.08);
     animation: voice-glow-pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes voice-glow-pulse {
     0%, 100% { 
         box-shadow: 
-            0 0 0 1px rgba(35, 165, 89, 0.3),
-            0 0 20px rgba(35, 165, 89, 0.4),
-            0 0 40px rgba(35, 165, 89, 0.2),
-            inset 0 0 20px rgba(35, 165, 89, 0.05);
+            0 0 0 2px rgba(34, 197, 94, 1),
+            0 0 20px rgba(34, 197, 94, 0.6),
+            0 0 40px rgba(34, 197, 94, 0.4),
+            inset 0 0 20px rgba(34, 197, 94, 0.08);
     }
     50% { 
         box-shadow: 
-            0 0 0 2px rgba(35, 165, 89, 0.5),
-            0 0 30px rgba(35, 165, 89, 0.6),
-            0 0 60px rgba(35, 165, 89, 0.3),
-            inset 0 0 30px rgba(35, 165, 89, 0.1);
+            0 0 0 2px rgba(34, 197, 94, 1),
+            0 0 30px rgba(34, 197, 94, 0.8),
+            0 0 60px rgba(34, 197, 94, 0.5),
+            inset 0 0 30px rgba(34, 197, 94, 0.12);
     }
 }
 
@@ -398,34 +408,23 @@
     z-index: 2; /* Above gradient background */
 }
 
-/* Animated gradient background when camera is off */
+/* Subtle gradient background when camera is off (bg-gradient-to-b from-gray-700 to-gray-800) */
 .voice-participant-tile:not(.camera-on):not(.screen-sharing)::before {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
-        135deg,
-        #1E1F22 0%,
-        #2B2D31 25%,
-        #363940 50%,
-        #2B2D31 75%,
-        #1E1F22 100%
+        to bottom,
+        #374151 0%,
+        #1f2937 100%
     );
-    background-size: 400% 400%;
-    animation: gradient-shift 8s ease infinite;
     z-index: 0;
 }
 
-@keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* Avatar display (when camera is off) - LARGER */
+/* Avatar display (when camera is off) - 128px (w-32 h-32) */
 .voice-participant-avatar {
-    width: 120px;
-    height: 120px;
+    width: 128px;
+    height: 128px;
     border-radius: 50%;
     object-fit: cover;
     border: 4px solid rgba(255, 255, 255, 0.1);
@@ -436,22 +435,22 @@
 }
 
 .voice-participant-tile.speaking .voice-participant-avatar {
-    border-color: #23a559;
+    border-color: #22c55e;
     box-shadow: 
-        0 0 0 4px rgba(35, 165, 89, 0.2),
+        0 0 0 4px rgba(34, 197, 94, 0.4),
         0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .voice-participant-avatar-placeholder {
-    width: 120px;
-    height: 120px;
+    width: 128px;
+    height: 128px;
     border-radius: 50%;
     background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 48px;
+    font-size: 52px;
     font-weight: 700;
     border: 4px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -461,9 +460,9 @@
 }
 
 .voice-participant-tile.speaking .voice-participant-avatar-placeholder {
-    border-color: #23a559;
+    border-color: #22c55e;
     box-shadow: 
-        0 0 0 4px rgba(35, 165, 89, 0.2),
+        0 0 0 4px rgba(34, 197, 94, 0.4),
         0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
@@ -496,7 +495,7 @@
 /* Participant info overlay - above video */
 .voice-participant-info {
     position: absolute;
-    bottom: 12px;
+    bottom: 16px;
     left: 12px;
     right: 12px;
     display: flex;
@@ -509,14 +508,15 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
     color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .voice-participant-name svg {

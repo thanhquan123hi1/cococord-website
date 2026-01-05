@@ -1,12 +1,12 @@
 package vn.cococord.dto.response;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,6 +24,7 @@ public class ChatMessageResponse {
     private String type;
     private String parentMessageId;
     private String threadId;
+    private String metadata; // Additional metadata (JSON string for stickers, etc.)
     private List<AttachmentResponse> attachments;
     private List<Long> mentionedUserIds;
     private Boolean isEdited;

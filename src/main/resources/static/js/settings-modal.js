@@ -449,15 +449,31 @@
                         </div>
 
                         <div class="settings-form-group">
-                            <label class="settings-form-label">BANNER COLOR</label>
-                            <input type="color" class="settings-form-input" value="#5865f2" style="height: 40px; padding: 4px;">
+                            <label class="settings-form-label">BANNER</label>
+                            <div class="settings-banner-upload">
+                                <div class="settings-banner-preview" style="${user.bannerUrl ? `background-image: url('${this.escapeHtml(user.bannerUrl)}')` : "background: linear-gradient(135deg, #5865f2 0%, #eb459e 100%)"}; height: 100px; background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 8px;"></div>
+                                <div class="settings-banner-actions">
+                                    <button class="settings-avatar-change-btn" id="changeBannerBtn">Change Banner</button>
+                                    ${user.bannerUrl ? '<button class="settings-avatar-remove-btn" id="removeBannerBtn">Remove Banner</button>' : ''}
+                                </div>
+                            </div>
                         </div>
 
                         <div class="settings-form-group">
                             <label class="settings-form-label">ABOUT ME</label>
-                            <textarea class="settings-form-textarea" placeholder="Tell everyone a little about yourself" id="profileBio">${this.escapeHtml(
+                            <textarea class="settings-form-textarea" placeholder="Tell everyone a little about yourself" id="profileBio" maxlength="190">${this.escapeHtml(
                               bio
                             )}</textarea>
+                            <div class="settings-form-hint" style="font-size: 12px; color: #b5bac1; margin-top: 4px;">
+                                <span id="bioCharCount">${bio.length}</span>/190
+                            </div>
+                        </div>
+
+                        <!-- Save Changes Button -->
+                        <div class="settings-form-actions" id="profileSaveActions" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #3f4147;">
+                            <button class="settings-save-btn" id="profileSaveBtn">Save Changes</button>
+                            <button class="settings-cancel-btn" id="profileCancelBtn">Cancel</button>
+                            <span class="settings-save-hint" style="font-size: 12px; color: #b5bac1; margin-left: 8px;">Changes will auto-save when you click outside</span>
                         </div>
                     </div>
 
@@ -491,7 +507,7 @@
                                 )}</span>
                             </div>
                         </div>
-                        <div style="padding: 0 12px 12px; font-size: 13px; color: #b5bac1;">
+                        <div style="padding: 0 12px 12px; font-size: 13px; color: #b5bac1;" id="profileBioPreview">
                             ${bio ? this.escapeHtml(bio) : "No bio yet."}
                         </div>
                     </div>
@@ -503,6 +519,10 @@
      * Render Privacy & Safety section
      */
     renderPrivacySafety: function () {
+      const user = this.currentUser || {};
+      const allowDMs = user.allowDirectMessages !== false;
+      const allowFriendRequests = user.allowFriendRequests !== false;
+
       return `
                 <div class="settings-header">
                     <h1>Privacy & Safety</h1>
@@ -529,7 +549,7 @@
                         <p>This setting is applied when you join a new server. It does not apply to existing servers.</p>
                     </div>
                     <label class="settings-toggle">
-                        <input type="checkbox" checked>
+                        <input type="checkbox" id="allowDirectMessagesToggle" ${allowDMs ? 'checked' : ''}>
                         <span class="settings-toggle-slider"></span>
                     </label>
                 </div>
@@ -549,30 +569,11 @@
                 
                 <div class="settings-toggle-row">
                     <div class="settings-toggle-info">
-                        <h4>Everyone</h4>
+                        <h4>Allow friend requests</h4>
+                        <p>Control who can send you friend requests.</p>
                     </div>
                     <label class="settings-toggle">
-                        <input type="checkbox" checked>
-                        <span class="settings-toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="settings-toggle-row">
-                    <div class="settings-toggle-info">
-                        <h4>Friends of Friends</h4>
-                    </div>
-                    <label class="settings-toggle">
-                        <input type="checkbox" checked>
-                        <span class="settings-toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="settings-toggle-row">
-                    <div class="settings-toggle-info">
-                        <h4>Server Members</h4>
-                    </div>
-                    <label class="settings-toggle">
-                        <input type="checkbox" checked>
+                        <input type="checkbox" id="allowFriendRequestsToggle" ${allowFriendRequests ? 'checked' : ''}>
                         <span class="settings-toggle-slider"></span>
                     </label>
                 </div>
@@ -583,6 +584,10 @@
      * Render Appearance section
      */
     renderAppearance: function () {
+      const user = this.currentUser || {};
+      const theme = (user.theme || 'DARK').toUpperCase();
+      const messageDisplay = (user.messageDisplay || 'COZY').toUpperCase();
+
       return `
                 <div class="settings-header">
                     <h1>Appearance</h1>
@@ -595,7 +600,7 @@
                         <h4>Dark</h4>
                     </div>
                     <label class="settings-toggle">
-                        <input type="radio" name="theme" value="dark" checked>
+                        <input type="radio" name="theme" value="DARK" ${theme === 'DARK' ? 'checked' : ''}>
                         <span class="settings-toggle-slider"></span>
                     </label>
                 </div>
@@ -605,7 +610,7 @@
                         <h4>Light</h4>
                     </div>
                     <label class="settings-toggle">
-                        <input type="radio" name="theme" value="light">
+                        <input type="radio" name="theme" value="LIGHT" ${theme === 'LIGHT' ? 'checked' : ''}>
                         <span class="settings-toggle-slider"></span>
                     </label>
                 </div>
@@ -618,7 +623,7 @@
                         <p>Modern display with larger avatars.</p>
                     </div>
                     <label class="settings-toggle">
-                        <input type="radio" name="messageDisplay" value="cozy" checked>
+                        <input type="radio" name="messageDisplay" value="COZY" ${messageDisplay === 'COZY' ? 'checked' : ''}>
                         <span class="settings-toggle-slider"></span>
                     </label>
                 </div>
@@ -629,7 +634,7 @@
                         <p>Classic IRC-style display with smaller text.</p>
                     </div>
                     <label class="settings-toggle">
-                        <input type="radio" name="messageDisplay" value="compact">
+                        <input type="radio" name="messageDisplay" value="COMPACT" ${messageDisplay === 'COMPACT' ? 'checked' : ''}>
                         <span class="settings-toggle-slider"></span>
                     </label>
                 </div>
@@ -990,6 +995,126 @@
      * Attach content-specific event listeners
      */
     attachContentListeners: function () {
+      // Theme Radio Buttons
+      const themeRadios = this.modalElement.querySelectorAll('input[name="theme"]');
+      themeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            this.handleThemeChange(e.target.value);
+          }
+        });
+      });
+
+      // Message Display Radio Buttons
+      const messageDisplayRadios = this.modalElement.querySelectorAll('input[name="messageDisplay"]');
+      messageDisplayRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            this.handleMessageDisplayChange(e.target.value);
+          }
+        });
+      });
+
+      // Privacy: Allow Direct Messages Toggle
+      const allowDMsToggle = document.getElementById('allowDirectMessagesToggle');
+      if (allowDMsToggle) {
+        allowDMsToggle.addEventListener('change', (e) => {
+          this.handlePrivacyChange('allowDirectMessages', e.target.checked);
+        });
+      }
+
+      // Privacy: Allow Friend Requests Toggle
+      const allowFriendRequestsToggle = document.getElementById('allowFriendRequestsToggle');
+      if (allowFriendRequestsToggle) {
+        allowFriendRequestsToggle.addEventListener('change', (e) => {
+          this.handlePrivacyChange('allowFriendRequests', e.target.checked);
+        });
+      }
+
+      // Avatar Upload
+      const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+      if (changeAvatarBtn) {
+        changeAvatarBtn.addEventListener("click", () => {
+          this.handleAvatarUpload();
+        });
+      }
+
+      // Avatar Remove
+      const removeAvatarBtn = document.getElementById("removeAvatarBtn");
+      if (removeAvatarBtn) {
+        removeAvatarBtn.addEventListener("click", () => {
+          this.handleAvatarRemove();
+        });
+      }
+
+      // Banner Upload
+      const changeBannerBtn = document.getElementById("changeBannerBtn");
+      if (changeBannerBtn) {
+        changeBannerBtn.addEventListener("click", () => {
+          this.handleBannerUpload();
+        });
+      }
+
+      // Banner Remove
+      const removeBannerBtn = document.getElementById("removeBannerBtn");
+      if (removeBannerBtn) {
+        removeBannerBtn.addEventListener("click", () => {
+          this.handleBannerRemove();
+        });
+      }
+
+      // Profile Display Name
+      const profileDisplayName = document.getElementById("profileDisplayName");
+      if (profileDisplayName) {
+        let originalDisplayName = profileDisplayName.value;
+        
+        profileDisplayName.addEventListener('input', () => {
+          this.showProfileSaveButton();
+        });
+        
+        profileDisplayName.addEventListener('blur', async () => {
+          if (profileDisplayName.value !== originalDisplayName) {
+            await this.handleProfileFieldSave('displayName', profileDisplayName.value);
+            originalDisplayName = profileDisplayName.value;
+          }
+        });
+      }
+
+      // Profile Bio
+      const profileBio = document.getElementById("profileBio");
+      if (profileBio) {
+        let originalBio = profileBio.value;
+        
+        profileBio.addEventListener('input', (e) => {
+          this.showProfileSaveButton();
+          this.updateBioPreview(e.target.value);
+          this.updateBioCharCount(e.target.value.length);
+        });
+        
+        profileBio.addEventListener('blur', async () => {
+          if (profileBio.value !== originalBio) {
+            await this.handleProfileFieldSave('bio', profileBio.value);
+            originalBio = profileBio.value;
+          }
+        });
+      }
+
+      // Profile Save Button
+      const profileSaveBtn = document.getElementById("profileSaveBtn");
+      if (profileSaveBtn) {
+        profileSaveBtn.addEventListener('click', async () => {
+          await this.handleProfileSave();
+        });
+      }
+
+      // Profile Cancel Button
+      const profileCancelBtn = document.getElementById("profileCancelBtn");
+      if (profileCancelBtn) {
+        profileCancelBtn.addEventListener('click', () => {
+          this.handleProfileCancel();
+        });
+      }
+
       // Edit User Profile button
       const editProfileBtn = document.getElementById("editUserProfileBtn");
       if (editProfileBtn) {
@@ -1050,6 +1175,359 @@
       );
       if (navItem) {
         navItem.click();
+      }
+    },
+
+    /**
+     * Handle Avatar Upload
+     */
+    handleAvatarUpload: function () {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+
+      input.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          this.showToast("Image size must be less than 5MB", true);
+          return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          this.showToast("Please select a valid image file", true);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const token = localStorage.getItem("accessToken");
+          const response = await fetch("/api/users/me/avatar", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            this.currentUser.avatarUrl = data.avatarUrl;
+            
+            // Update avatar in modal immediately
+            const avatarPreview = document.querySelector(".settings-avatar-preview");
+            const avatarPlaceholder = document.querySelector(".settings-avatar-preview-placeholder");
+            if (avatarPreview) {
+              avatarPreview.src = data.avatarUrl;
+            } else if (avatarPlaceholder) {
+              const container = avatarPlaceholder.parentElement;
+              container.innerHTML = `<img src="${this.escapeHtml(data.avatarUrl)}" alt="Avatar" class="settings-avatar-preview">`;
+            }
+
+            // Update preview card avatar
+            const previewAvatar = document.querySelector(".settings-profile-avatar");
+            const previewPlaceholder = document.querySelector(".settings-profile-avatar-placeholder");
+            if (previewAvatar) {
+              previewAvatar.src = data.avatarUrl;
+            } else if (previewPlaceholder) {
+              const wrapper = previewPlaceholder.parentElement;
+              const status = previewPlaceholder.nextElementSibling;
+              previewPlaceholder.remove();
+              wrapper.insertAdjacentHTML('afterbegin', `<img src="${this.escapeHtml(data.avatarUrl)}" alt="Avatar" class="settings-profile-avatar" style="width: 56px; height: 56px; border-width: 4px;">`);
+            }
+
+            this.showToast("Avatar updated successfully!");
+          } else {
+            const error = await response.json();
+            this.showToast(error.message || "Failed to upload avatar", true);
+          }
+        } catch (error) {
+          console.error("Avatar upload error:", error);
+          this.showToast("An error occurred while uploading avatar", true);
+        }
+      });
+
+      input.click();
+    },
+
+    /**
+     * Handle Avatar Remove
+     */
+    handleAvatarRemove: function () {
+      // TODO: Implement avatar removal if backend supports it
+      this.showToast("Avatar removal not yet implemented", true);
+    },
+
+    /**
+     * Handle Banner Upload
+     */
+    handleBannerUpload: function () {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+
+      input.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file size (max 8MB)
+        if (file.size > 8 * 1024 * 1024) {
+          this.showToast("Banner size must be less than 8MB", true);
+          return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          this.showToast("Please select a valid image file", true);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const token = localStorage.getItem("accessToken");
+          const response = await fetch("/api/users/me/banner", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            this.currentUser.bannerUrl = data.bannerUrl;
+            
+            // Update banner preview in editor
+            const bannerPreview = document.querySelector(".settings-banner-preview");
+            if (bannerPreview) {
+              bannerPreview.style.backgroundImage = `url('${data.bannerUrl}')`;
+            }
+
+            // Update preview card banner
+            const profileBanner = document.querySelector(".settings-profile-banner");
+            if (profileBanner) {
+              profileBanner.style.backgroundImage = `url('${data.bannerUrl}')`;
+            }
+
+            this.showToast("Banner updated successfully!");
+          } else {
+            const error = await response.json();
+            this.showToast(error.message || "Failed to upload banner", true);
+          }
+        } catch (error) {
+          console.error("Banner upload error:", error);
+          this.showToast("An error occurred while uploading banner", true);
+        }
+      });
+
+      input.click();
+    },
+
+    /**
+     * Handle Banner Remove
+     */
+    handleBannerRemove: function () {
+      // TODO: Implement banner removal if backend supports it
+      this.showToast("Banner removal not yet implemented", true);
+    },
+
+    /**
+     * Handle Theme Change
+     */
+    handleThemeChange: async function (theme) {
+      try {
+        // Update document.body class
+        document.body.classList.remove('theme-dark', 'theme-light');
+        document.body.classList.add(`theme-${theme.toLowerCase()}`);
+
+        // Update currentUser
+        this.currentUser.theme = theme;
+
+        // Background API sync
+        await this.updateUserSettings({ theme: theme });
+      } catch (error) {
+        console.error('Theme change error:', error);
+        this.showToast('Failed to update theme', true);
+      }
+    },
+
+    /**
+     * Handle Message Display Change
+     */
+    handleMessageDisplayChange: async function (messageDisplay) {
+      try {
+        // Update currentUser
+        this.currentUser.messageDisplay = messageDisplay;
+
+        // Background API sync
+        await this.updateUserSettings({ messageDisplay: messageDisplay });
+      } catch (error) {
+        console.error('Message display change error:', error);
+        this.showToast('Failed to update message display', true);
+      }
+    },
+
+    /**
+     * Handle Privacy Setting Change
+     */
+    handlePrivacyChange: async function (setting, value) {
+      try {
+        // Update currentUser
+        this.currentUser[setting] = value;
+
+        // Background API sync
+        const payload = {};
+        payload[setting] = value;
+        await this.updateUserSettings(payload);
+      } catch (error) {
+        console.error(`Privacy change error (${setting}):`, error);
+        this.showToast(`Failed to update ${setting.replace(/([A-Z])/g, ' $1').toLowerCase()}`, true);
+      }
+    },
+
+    /**
+     * Show Profile Save Button
+     */
+    showProfileSaveButton: function () {
+      const saveActions = document.getElementById('profileSaveActions');
+      if (saveActions) {
+        saveActions.style.display = 'block';
+      }
+    },
+
+    /**
+     * Hide Profile Save Button
+     */
+    hideProfileSaveButton: function () {
+      const saveActions = document.getElementById('profileSaveActions');
+      if (saveActions) {
+        saveActions.style.display = 'none';
+      }
+    },
+
+    /**
+     * Update Bio Preview in Real-time
+     */
+    updateBioPreview: function (bio) {
+      const previewElement = document.getElementById('profileBioPreview');
+      if (previewElement) {
+        previewElement.textContent = bio || 'No bio yet.';
+      }
+    },
+
+    /**
+     * Update Bio Character Count
+     */
+    updateBioCharCount: function (count) {
+      const charCountElement = document.getElementById('bioCharCount');
+      if (charCountElement) {
+        charCountElement.textContent = count;
+      }
+    },
+
+    /**
+     * Handle Profile Field Save (Auto-save on blur)
+     */
+    handleProfileFieldSave: async function (field, value) {
+      try {
+        const payload = {};
+        payload[field] = value;
+        
+        await this.updateUserSettings(payload);
+        this.currentUser[field] = value;
+        
+        this.hideProfileSaveButton();
+      } catch (error) {
+        console.error(`Profile field save error (${field}):`, error);
+        this.showToast(`Failed to save ${field}`, true);
+      }
+    },
+
+    /**
+     * Handle Profile Save (Manual save button)
+     */
+    handleProfileSave: async function () {
+      try {
+        const displayNameInput = document.getElementById('profileDisplayName');
+        const bioInput = document.getElementById('profileBio');
+        
+        const payload = {};
+        
+        if (displayNameInput && displayNameInput.value !== this.currentUser.displayName) {
+          payload.displayName = displayNameInput.value;
+        }
+        
+        if (bioInput && bioInput.value !== this.currentUser.bio) {
+          payload.bio = bioInput.value;
+        }
+        
+        if (Object.keys(payload).length > 0) {
+          await this.updateUserSettings(payload);
+          Object.assign(this.currentUser, payload);
+          this.showToast('Profile updated successfully!');
+        }
+        
+        this.hideProfileSaveButton();
+      } catch (error) {
+        console.error('Profile save error:', error);
+        this.showToast('Failed to save profile changes', true);
+      }
+    },
+
+    /**
+     * Handle Profile Cancel
+     */
+    handleProfileCancel: function () {
+      const displayNameInput = document.getElementById('profileDisplayName');
+      const bioInput = document.getElementById('profileBio');
+      
+      if (displayNameInput) {
+        displayNameInput.value = this.currentUser.displayName || this.currentUser.username || '';
+      }
+      
+      if (bioInput) {
+        bioInput.value = this.currentUser.bio || '';
+        this.updateBioPreview(this.currentUser.bio || '');
+        this.updateBioCharCount((this.currentUser.bio || '').length);
+      }
+      
+      this.hideProfileSaveButton();
+    },
+
+    /**
+     * Update User Settings (Background API Call)
+     */
+    updateUserSettings: async function (settings) {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch('/api/users/me/settings', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(settings)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Optionally merge updated data back
+          Object.assign(this.currentUser, data);
+          return data;
+        } else {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to update settings');
+        }
+      } catch (error) {
+        console.error('Update settings error:', error);
+        throw error;
       }
     },
 

@@ -1705,6 +1705,36 @@ html, body {
     text-decoration: underline;
 }
 
+/* GIF and media rendering */
+.message-gif {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 4px 0;
+    display: block;
+}
+
+.message-content img.message-gif,
+.message-content video.message-gif {
+    max-width: 400px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    margin: 4px 0;
+    display: block;
+}
+
+/* Sticker rendering */
+.message-content .message-sticker {
+    max-width: 160px;
+    max-height: 160px;
+    width: auto;
+    height: auto;
+    display: block;
+    margin: 4px 0;
+}
+
 /* ==================== COMPOSER ==================== */
 .composer {
     padding: 0 16px 24px;
