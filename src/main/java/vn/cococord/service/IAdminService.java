@@ -108,7 +108,27 @@ public interface IAdminService {
     /**
      * Delete a server (admin can delete any server)
      */
-    void deleteServer(Long serverId, String adminUsername);
+    void deleteServer(Long serverId, String reason, String adminUsername);
+
+    /**
+     * Transfer server ownership to another user
+     */
+    void transferServerOwnership(Long serverId, Long newOwnerId, String reason, String adminUsername);
+
+    /**
+     * Get server statistics for admin dashboard
+     */
+    Map<String, Object> getServerStats();
+
+    /**
+     * Get audit log for a specific server
+     */
+    Page<AdminAuditLogResponse> getServerAuditLog(Long serverId, Pageable pageable);
+
+    /**
+     * Get reports related to a specific server
+     */
+    Page<AdminReportResponse> getServerReports(Long serverId, Pageable pageable);
 
     // ================== Report Management ==================
 

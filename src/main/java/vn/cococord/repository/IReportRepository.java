@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.cococord.entity.mysql.Report;
+import vn.cococord.entity.mysql.Server;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +27,8 @@ public interface IReportRepository extends JpaRepository<Report, Long> {
     @Query("SELECT r FROM Report r WHERE r.reportedServer.id = :serverId")
     List<Report> findByReportedServerId(@Param("serverId") Long serverId);
 
+    Page<Report> findByReportedServer(Server server, Pageable pageable);
+
     long countByStatus(Report.ReportStatus status);
 
     long countByCreatedAtAfter(LocalDateTime date);
@@ -35,4 +38,7 @@ public interface IReportRepository extends JpaRepository<Report, Long> {
 
     @Query("SELECT COUNT(r) FROM Report r WHERE r.status = 'PENDING'")
     long countPending();
+
+    @Query("SELECT COUNT(DISTINCT r.reportedServer.id) FROM Report r WHERE r.status = 'PENDING' AND r.reportedServer IS NOT NULL")
+    long countDistinctServersByStatusPending();
 }

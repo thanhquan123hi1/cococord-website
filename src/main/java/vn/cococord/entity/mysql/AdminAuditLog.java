@@ -66,7 +66,7 @@ public class AdminAuditLog {
         USER_ROLE_CHANGE, USER_DELETE,
 
         // Server management
-        SERVER_VIEW, SERVER_LOCK, SERVER_UNLOCK, SERVER_DELETE,
+        SERVER_VIEW, SERVER_LOCK, SERVER_UNLOCK, SERVER_DELETE, SERVER_TRANSFER,
 
         // Report management
         REPORT_VIEW, REPORT_RESOLVE, REPORT_REJECT,

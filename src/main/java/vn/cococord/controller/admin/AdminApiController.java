@@ -169,9 +169,43 @@ public class AdminApiController {
     @DeleteMapping("/servers/{serverId}")
     public ResponseEntity<MessageResponse> deleteServer(
             @PathVariable Long serverId,
+            @RequestParam(required = false) String reason,
             @AuthenticationPrincipal UserDetails userDetails) {
-        adminService.deleteServer(serverId, userDetails.getUsername());
+        adminService.deleteServer(serverId, reason, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Server deleted successfully"));
+    }
+
+    @PostMapping("/servers/{serverId}/transfer")
+    public ResponseEntity<MessageResponse> transferServerOwnership(
+            @PathVariable Long serverId,
+            @RequestParam Long newOwnerId,
+            @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        adminService.transferServerOwnership(serverId, newOwnerId, reason, userDetails.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Server ownership transferred successfully"));
+    }
+
+    @GetMapping("/servers/stats")
+    public ResponseEntity<Map<String, Object>> getServerStats() {
+        return ResponseEntity.ok(adminService.getServerStats());
+    }
+
+    @GetMapping("/servers/{serverId}/audit-log")
+    public ResponseEntity<Page<AdminAuditLogResponse>> getServerAuditLog(
+            @PathVariable Long serverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(adminService.getServerAuditLog(serverId, pageable));
+    }
+
+    @GetMapping("/servers/{serverId}/reports")
+    public ResponseEntity<Page<AdminReportResponse>> getServerReports(
+            @PathVariable Long serverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(adminService.getServerReports(serverId, pageable));
     }
 
     // ================== Report Management ==================

@@ -1,0 +1,671 @@
+/**
+ * CoCoCord Admin - Server Management Styles
+ * Styles specific to the Server Management page
+ */
+
+/* ========================================
+   STAT CARDS (Inspired by Figma design)
+   ======================================== */
+
+.admin-stat-card.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-stat-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--admin-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stat-icon-blue {
+  background: rgba(79, 80, 127, 0.12);
+  color: var(--admin-primary);
+}
+
+.stat-icon-green {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--color-success);
+}
+
+.stat-icon-purple {
+  background: rgba(168, 85, 247, 0.12);
+  color: var(--color-purple);
+}
+
+.stat-icon-red {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger);
+}
+
+.stat-icon-orange {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--admin-muted);
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--admin-text);
+  line-height: 1.2;
+}
+
+/* ========================================
+   BULK ACTIONS BAR
+   ======================================== */
+
+.admin-bulk-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--admin-surface-accent);
+  border-radius: var(--admin-radius-lg);
+  margin: 0 var(--space-4) var(--space-4);
+}
+
+.bulk-info {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--admin-primary);
+}
+
+.bulk-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ========================================
+   SERVER DETAIL MODAL
+   ======================================== */
+
+.server-detail-modal {
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.server-detail-modal .admin-modal-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.server-header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.server-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.server-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--admin-radius-xl);
+  background: linear-gradient(135deg, var(--admin-primary), var(--color-purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.server-description {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: var(--space-1) 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-header-badges {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.modal-header-content {
+  flex: 1;
+}
+
+/* Quick Stats Grid */
+.server-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.quick-stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+}
+
+.quick-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--admin-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quick-stat-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.quick-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quick-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--admin-text);
+  line-height: 1.2;
+}
+
+.quick-stat-label {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+/* Server Details Section */
+.server-details-section {
+  margin-bottom: var(--space-5);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--admin-muted);
+  margin: 0 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-title svg {
+  width: 16px;
+  height: 16px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius);
+}
+
+.detail-label {
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+
+.detail-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+/* Owner Card */
+.owner-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+}
+
+.owner-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--admin-radius-full);
+  object-fit: cover;
+  background: var(--admin-surface);
+}
+
+.owner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.owner-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--admin-text);
+}
+
+.owner-email {
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+
+/* Lock Info Section */
+.lock-info-section {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+}
+
+.lock-info-section .section-title {
+  color: var(--color-danger);
+}
+
+.lock-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lock-details .detail-row {
+  background: transparent;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.lock-details .detail-row:last-child {
+  border-bottom: none;
+}
+
+/* ========================================
+   REPORTS LIST
+   ======================================== */
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.report-item {
+  padding: var(--space-4);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-border-light);
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.report-type {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.report-content {
+  font-size: 14px;
+  color: var(--admin-text);
+  line-height: 1.5;
+  margin-bottom: var(--space-2);
+}
+
+.report-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+/* ========================================
+   AUDIT LOG TIMELINE
+   ======================================== */
+
+.audit-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--admin-border-light);
+  margin-left: var(--space-4);
+}
+
+.audit-item {
+  display: flex;
+  gap: var(--space-3);
+  position: relative;
+  margin-left: calc(-1 * var(--space-4) - 9px);
+}
+
+.audit-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--admin-radius-full);
+  background: var(--admin-surface);
+  border: 2px solid var(--admin-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.audit-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.audit-icon-danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.audit-icon-warning {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.audit-icon-success {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.audit-icon-info {
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+  background: rgba(79, 80, 127, 0.1);
+}
+
+.audit-content {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--space-1);
+}
+
+.audit-text {
+  font-size: 14px;
+  color: var(--admin-text);
+  line-height: 1.5;
+}
+
+.audit-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+/* ========================================
+   ACTION PANELS
+   ======================================== */
+
+.action-panel {
+  padding: var(--space-5);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: var(--space-4);
+}
+
+.action-panel:last-child {
+  margin-bottom: 0;
+}
+
+.action-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.action-title svg {
+  width: 18px;
+  height: 18px;
+}
+
+.action-description {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0 0 var(--space-4);
+  line-height: 1.5;
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Danger Zone */
+.danger-zone {
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.danger-zone .action-title {
+  color: var(--color-danger);
+}
+
+/* ========================================
+   QUICK LOCK MODAL
+   ======================================== */
+
+.quick-lock-server-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: var(--space-4);
+}
+
+.quick-lock-server-info .server-avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+.quick-lock-server-info .server-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--admin-text);
+}
+
+.quick-lock-server-info .server-meta {
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+
+/* ========================================
+   CONFIRM DELETE MODAL
+   ======================================== */
+
+.confirm-message {
+  font-size: 15px;
+  color: var(--admin-text);
+  margin-bottom: var(--space-4);
+}
+
+.warning-box {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: var(--space-4);
+}
+
+.warning-box svg {
+  color: var(--color-danger);
+  flex-shrink: 0;
+}
+
+.warning-box strong {
+  display: block;
+  font-size: 14px;
+  color: var(--color-danger);
+  margin-bottom: var(--space-1);
+}
+
+.warning-box p {
+  font-size: 13px;
+  color: var(--admin-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.empty-state svg {
+  color: var(--admin-muted);
+  opacity: 0.5;
+  margin-bottom: var(--space-3);
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0;
+}
+
+/* ========================================
+   OWNER LINK
+   ======================================== */
+
+.owner-link {
+  color: var(--admin-primary);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.owner-link:hover {
+  text-decoration: underline;
+}
+
+/* ========================================
+   SERVER AVATAR SMALL (Table)
+   ======================================== */
+
+.server-avatar-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--admin-surface-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--admin-primary);
+  flex-shrink: 0;
+}
+
+/* ========================================
+   TAB BADGE
+   ======================================== */
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--color-danger);
+  color: white;
+  border-radius: var(--admin-radius-full);
+  margin-left: var(--space-1);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .server-quick-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-bulk-actions-bar {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  
+  .bulk-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
