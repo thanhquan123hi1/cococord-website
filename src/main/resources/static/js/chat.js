@@ -297,7 +297,6 @@
 
         // Check if VirtualScroller is available
         if (typeof VirtualScroller === 'undefined') {
-            console.warn('[Chat] VirtualScroller not loaded, using fallback');
             return;
         }
 
@@ -313,8 +312,6 @@
                 }
             }
         });
-
-        console.log('[Chat] VirtualScroller initialized');
     }
 
     /**
@@ -328,7 +325,6 @@
 
         // Check if ChatInputManager is available
         if (typeof ChatInputManager === 'undefined') {
-            console.warn('[Chat] ChatInputManager not loaded, using fallback');
             return;
         }
 
@@ -365,8 +361,6 @@
                 await sendStickerMessage(stickerId, stickerUrl);
             }
         });
-
-        console.log('[Chat] ChatInputManager initialized');
     }
 
     /**
@@ -374,7 +368,6 @@
      */
     function sendTextMessage(text) {
         if (!stompClient || !stompClient.connected) {
-            console.warn('[Chat] WebSocket not connected');
             return;
         }
         
@@ -421,8 +414,6 @@
             }
             
             cancelReply();
-            
-            console.log('[Chat] Files uploaded successfully');
         } catch (error) {
             console.error('[Chat] File upload failed:', error);
             showToast('Không thể tải file lên: ' + error.message, 'error');
@@ -434,7 +425,6 @@
      */
     async function sendGifMessage(gifUrl, gifData) {
         if (!stompClient || !stompClient.connected) {
-            console.warn('[Chat] WebSocket not connected');
             return;
         }
         
@@ -456,7 +446,6 @@
      */
     async function sendStickerMessage(stickerId, stickerUrl) {
         if (!stompClient || !stompClient.connected) {
-            console.warn('[Chat] WebSocket not connected');
             return;
         }
         
@@ -511,7 +500,6 @@
 
         // Check if HeaderToolbar is available
         if (typeof HeaderToolbar === 'undefined') {
-            console.warn('[Chat] HeaderToolbar not loaded, using fallback');
             return;
         }
 
@@ -559,11 +547,8 @@
             // Handle create category
             onCreateCategory: () => {
                 // Category creation is handled by the existing modal
-                console.log('[Chat] Create category triggered');
             }
         });
-
-        console.log('[Chat] HeaderToolbar initialized');
     }
 
     /**
@@ -577,14 +562,12 @@
 
         // Check if ServerSettingsManager is available
         if (typeof ServerSettingsManager === 'undefined') {
-            console.warn('[Chat] ServerSettingsManager not loaded');
             return;
         }
 
         serverSettingsManager = new ServerSettingsManager({
             // On settings saved callback
             onSave: (data) => {
-                console.log('[Chat] Server settings saved:', data);
                 // Reload server data after save
                 if (activeServerId) {
                     loadServerData(activeServerId);
@@ -593,7 +576,6 @@
             
             // On server deleted callback
             onDeleteServer: () => {
-                console.log('[Chat] Server deleted');
                 // Clear active server and redirect to home
                 activeServerId = null;
                 activeChannelId = null;
@@ -617,8 +599,6 @@
                 showToast(error, 'error');
             }
         });
-
-        console.log('[Chat] ServerSettingsManager initialized');
     }
 
     /**
@@ -745,8 +725,6 @@
             if (membersSidebar) membersSidebar.classList.remove('show');
             if (mobileOverlay) mobileOverlay.classList.remove('show');
         };
-
-        console.log('[Chat] Mobile sidebar toggle initialized');
     }
 
     // ==================== RENDER FUNCTIONS ====================
@@ -1596,7 +1574,6 @@
         serverChannelsSubscription = stompClient.subscribe(`/topic/server/${serverId}/channels`, async (message) => {
             try {
                 const payload = JSON.parse(message.body);
-                console.log('Channel update:', payload);
                 // Reload channels and re-render
                 await loadChannels(serverId);
                 renderChannelList();
@@ -1609,7 +1586,6 @@
         serverCategoriesSubscription = stompClient.subscribe(`/topic/server/${serverId}/categories`, async (message) => {
             try {
                 const payload = JSON.parse(message.body);
-                console.log('Category update:', payload);
                 // Reload channels (includes categories) and re-render
                 await loadChannels(serverId);
                 renderChannelList();
@@ -1620,86 +1596,60 @@
     }
 
     async function selectServer(serverId) {
-        console.log('%c[DEBUG] Bắt đầu selectServer với ID: ' + serverId, 'color: yellow; font-weight: bold;');
-        
         try {
             activeServerId = serverId;
             
-            // 1. Cập nhật URL
+            // Update URL
             const newUrl = `/chat?serverId=${serverId}`;
-            console.log('[DEBUG] 1. Cập nhật URL:', newUrl);
             history.pushState({ serverId }, '', newUrl);
 
-            // 2. Cập nhật tên Server tạm thời
-            console.log('[DEBUG] 2. Tìm thông tin server trong mảng servers (size=' + servers.length + ')');
+            // Update server name
             const server = servers.find(s => String(s.id) === String(serverId));
             if (el.serverName) {
                 el.serverName.textContent = server ? (server.name || 'Server') : 'Server...';
-            } else {
-                console.error('[DEBUG] LỖI: Không tìm thấy phần tử el.serverName');
             }
 
-            // 3. Update sidebar active
-            console.log('[DEBUG] 3. Update global active state');
+            // Update sidebar active state
             updateGlobalServerListActive();
             clearMessages();
 
-            // 4. Tải dữ liệu từ API
-            console.log('[DEBUG] 4. Bắt đầu gọi API (Channels, Members)...');
-            
-            // Tách lẻ từng promise để biết cái nào lỗi/treo
+            // Load data from API
             try {
-                console.log('[DEBUG] ... Đang tải Channels...');
                 await loadChannels(serverId);
-                console.log('[DEBUG] -> Tải Channels XONG. Số lượng:', channels.length);
             } catch (err) {
-                console.error('[DEBUG] -> LỖI tải Channels:', err);
+                console.error('[Chat] Failed to load channels:', err);
                 throw err;
             }
 
             try {
-                console.log('[DEBUG] ... Đang tải Members...');
                 await loadMembers(serverId);
-                console.log('[DEBUG] -> Tải Members XONG. Số lượng:', members.length);
             } catch (err) {
-                 console.error('[DEBUG] -> LỖI tải Members:', err);
-                 // Không throw lỗi member để code vẫn chạy tiếp
+                // Don't throw member error to allow code to continue
             }
             
             try {
-                console.log('[DEBUG] ... Đang subscribe socket...');
                 await subscribeToServerUpdates(serverId);
-                console.log('[DEBUG] -> Subscribe XONG.');
             } catch (err) {
-                console.error('[DEBUG] -> LỖI Subscribe:', err);
+                // Continue even if subscription fails
             }
 
-            // 5. Render giao diện
-            console.log('[DEBUG] 5. Render danh sách kênh...');
+            // Render UI
             renderChannelList();
-            console.log('[DEBUG] 6. Render danh sách thành viên...');
             renderMembersList();
 
-            // 6. Chọn kênh mặc định
+            // Select default channel
             const nextChannelId = channels.length ? channels[0].id : null;
-            console.log('[DEBUG] 7. Kênh tiếp theo sẽ chọn:', nextChannelId);
             
             if (nextChannelId != null) {
-                console.log('[DEBUG] -> Đang gọi selectChannel...');
                 await selectChannel(nextChannelId);
-                console.log('[DEBUG] -> selectChannel hoàn tất.');
             } else {
-                console.log('[DEBUG] -> Không có kênh nào. Hiển thị Empty State.');
                 if(el.channelName) el.channelName.textContent = 'Chọn kênh';
                 if(el.chatComposer) el.chatComposer.style.display = 'none';
                 if(el.chatEmpty) el.chatEmpty.style.display = 'block';
             }
-            
-            console.log('%c[DEBUG] selectServer HOÀN TẤT THÀNH CÔNG', 'color: green; font-weight: bold;');
 
         } catch (e) {
-            console.error('%c[DEBUG] CRITICAL ERROR trong selectServer:', 'color: red; font-weight: bold;', e);
-            alert('Lỗi tải server: ' + e.message); // Hiện alert để bạn dễ thấy
+            console.error('[Chat] Error loading server:', e);
         }
     }
 
@@ -2536,7 +2486,6 @@
             });
             
             peer.on('open', (id) => {
-                console.log('PeerJS connected with ID:', id);
                 resolve(peer);
             });
             
@@ -2554,7 +2503,6 @@
             });
             
             peer.on('disconnected', () => {
-                console.log('PeerJS disconnected, attempting to reconnect...');
                 peer?.reconnect();
             });
         });
@@ -2879,7 +2827,6 @@
         switch (type) {
             case 'USER_JOINED':
                 if (peerId && peerId !== peer?.id) {
-                    console.log('User joined voice, calling:', username);
                     callPeer(peerId, userId, username);
 
                     voiceParticipantsMap.set(peerId, {
@@ -3034,12 +2981,10 @@
         const call = peer.call(peerId, localStream);
         
         call.on('stream', (remoteStream) => {
-            console.log('Received stream from:', username);
             playRemoteStream(remoteStream, peerId);
         });
         
         call.on('close', () => {
-            console.log('Call closed with:', username);
             removeRemoteStream(peerId);
             voiceConnections.delete(peerId);
         });
@@ -3056,7 +3001,6 @@
         call.answer(localStream);
         
         call.on('stream', (remoteStream) => {
-            console.log('Received incoming stream');
             playRemoteStream(remoteStream, call.peer);
         });
         
@@ -3209,9 +3153,6 @@
     
     function updateVoiceParticipants(participants) {
         // Update UI to show who's in voice channel
-        // This could update a participants list in the channel sidebar
-        console.log('Voice participants:', participants);
-        
         // Update participants map then re-render (self always uses local state)
         if (!participants || !Array.isArray(participants)) return;
 
@@ -4027,7 +3968,6 @@
     const serverId = urlParams.get('serverId');
 
     if (serverId) {
-        console.log("Auto-selecting server:", serverId);
         selectServer(Number(serverId));
         
         const serverItem = document.querySelector(`.server-item[data-server-id="${serverId}"]`);

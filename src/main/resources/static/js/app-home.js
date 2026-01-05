@@ -2638,6 +2638,7 @@
       
       isInitializing = false; 
 
+      // Set up sidebar navigation with capture phase listener
       const sidebarNav = root.querySelector(".sidebar-nav");
       if (sidebarNav) {
           sidebarNav.addEventListener('click', (e) => {
@@ -2647,27 +2648,30 @@
                   e.stopPropagation();
                   e.stopImmediatePropagation(); 
 
-                  // Cập nhật giao diện Active
+                  // Update active state
                   root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                   navItem.classList.add('active');
 
-                  // Chuyển view
+                  // Switch view
                   const view = navItem.getAttribute("data-view");
                   if (view && typeof switchMainView === 'function') {
                       switchMainView(view);
                   }
               }
-          }, true); 
+          }, true); // Capture phase
       }
 
+      // Wire events and initialize
       try {
           if (typeof wireEvents === 'function') {
               wireEvents(); 
           }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+          console.error('[AppHome] Wire events failed:', e);
+      }
       
       if (typeof init === 'function') {
-          init().catch(err => console.error("AppHome init failed:", err));
+          init().catch(err => console.error('[AppHome] Init failed:', err));
       }
   }
   window.forceInitAppHome = forceInit;

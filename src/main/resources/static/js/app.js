@@ -649,30 +649,6 @@ function getAppContextPath() {
   }
 }
 
-function updateGlobalSidebarActiveState(serverId = null) {
-  // Clear ALL active states from both containers
-  const allServerItems = document.querySelectorAll('#globalServerList .server-icon, #serverList .server-icon');
-  allServerItems.forEach(item => item.classList.remove('active'));
-  
-  // Also clear home button
-  const homeButtons = document.querySelectorAll('.home-btn, [data-home-btn]');
-  homeButtons.forEach(btn => btn.classList.remove('active'));
-  
-  if (serverId) {
-      // Activate specific server
-      const serverItem = document.querySelector(`[data-server-id="${serverId}"]`);
-      if (serverItem) {
-          serverItem.classList.add('active');
-      }
-  } else {
-      // Activate home button for /app path
-      const homeBtn = document.querySelector('.home-btn, [data-home-btn]');
-      if (homeBtn) {
-          homeBtn.classList.add('active');
-      }
-  }
-}
-
 function extractServerIdFromPath(path) {
   const regex = /\/chat\?serverId=(\d+)/;
   const match = path.match(regex);
@@ -687,9 +663,9 @@ function updateGlobalSidebarActiveState() {
       homeBtn = serverList.querySelector(".home-btn");
   }
 
-  // Clear old active states
+  // Clear ALL active states from both containers
   if (serverList) {
-    serverList.querySelectorAll(".active").forEach(el => {
+    serverList.querySelectorAll(".server-item.active, .home-btn.active").forEach(el => {
         el.classList.remove("active");
         el.removeAttribute("aria-current");
     });
@@ -874,7 +850,7 @@ async function spaNavigate(url, opts = {}) {
       history.pushState({}, "", targetUrl.pathname + targetUrl.search + targetUrl.hash);
     }
 
-    updateGlobalSidebarActiveState(extractServerIdFromPath(path));
+    updateGlobalSidebarActiveState();
     
     document.dispatchEvent(
       new CustomEvent("cococord:page:loaded", {

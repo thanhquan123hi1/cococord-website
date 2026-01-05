@@ -174,20 +174,19 @@
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     
     <!-- Custom JS for App -->
-    <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/auth.js?v=20260105_release"></script>
 
-    <script src="/js/app.js?v=20250105_release"></script>
-    <script src="/js/app-home.js?v=20250105_release"></script>
-    <script src="/js/server-sidebar.js?v=20250105_release"></script>
-    <script src="/js/chat.js?v=20250105_release"></script>
-    <script src="/js/chat-input-manager.js?v=20250105_release"></script>
-    <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260103a"></script>
-    <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
+    <script src="${pageContext.request.contextPath}/js/app.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/chat.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/chat-input-manager.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260105_release"></script>
     <!-- Quick Switcher Modal -->
-    <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260102"></script>
+    <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260105_release"></script>
     <!-- Notification system with global call subscription -->
-    <script src="${pageContext.request.contextPath}/js/notification.js?v=20260103a"></script>
-    <!-- /app home logic (safe: guarded by #cococordHome presence) -->
+    <script src="${pageContext.request.contextPath}/js/notification.js?v=20260105_release"></script>
    
 
     <%

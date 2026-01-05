@@ -659,25 +659,10 @@
     </div>
   </div>
 </div>
-<script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105"></script>
+<script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105_release"></script>
 
 <script>
-    (function() {
-        function tryRun() {
-            if (typeof window.forceInitAppHome === 'function') {
-                window.forceInitAppHome();
-                return true;
-            }
-            return false;
-        }
-
-        if (!tryRun()) {
-            // Hot-reload if script is cached/missing
-            var script = document.createElement('script');
-            // Timestamp to bypass cache
-            script.src = '${pageContext.request.contextPath}/js/app-home.js?v=' + new Date().getTime();
-            script.onload = tryRun;
-            document.body.appendChild(script);
-        }
-    })();
+    if (typeof window.forceInitAppHome === 'function') {
+        window.forceInitAppHome();
+    }
 </script>
