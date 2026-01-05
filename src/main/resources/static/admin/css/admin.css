@@ -19,6 +19,7 @@
 @import url('tables.css');
 @import url('modals.css');
 @import url('charts.css');
+@import url('user-detail-modal.css');
 
 /* Page-Specific Styles */
 @import url('reports.css');
@@ -26,6 +27,7 @@
 @import url('roles.css');
 @import url('audit.css');
 @import url('settings.css');
+@import url('servers.css');
 
 /* States & Animations */
 @import url('skeleton.css');

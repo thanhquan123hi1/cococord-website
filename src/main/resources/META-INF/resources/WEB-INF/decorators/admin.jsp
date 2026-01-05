@@ -15,6 +15,10 @@
 
     <!-- Admin CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/admin/css/admin.css">
+
+    <!-- Realtime (SockJS + STOMP) -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 <body class="admin-body">
 <div class="admin-layout">
@@ -252,7 +256,9 @@
 
 <!-- Page-specific modules - loaded once, activated by router -->
 <script src="${pageContext.request.contextPath}/admin/js/dashboard.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/presence.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/users.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/user-detail-modal.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/servers.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/reports.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/messages.js" defer></script>

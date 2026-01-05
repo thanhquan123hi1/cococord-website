@@ -1,0 +1,1075 @@
+/**
+ * CoCoCord Admin UI - User Detail Modal
+ * Full-featured User Detail Popup with horizontal 3-column layout
+ * Based on SnowUI Dashboard Design System
+ */
+
+/* ========================================
+   USER DETAIL MODAL - OVERLAY & CONTAINER
+   ======================================== */
+
+.user-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: var(--space-6);
+  opacity: 1;
+  animation: udmFadeIn 0.2s ease-out;
+  transition: opacity 0.2s ease-out;
+}
+
+.user-detail-backdrop.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes udmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes udmSlideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.98); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+.user-detail-modal {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-2xl);
+  width: 100%;
+  max-width: 1200px;
+  min-width: 900px;
+  height: 85vh;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: udmSlideUp 0.25s ease-out;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px var(--admin-border-light);
+}
+
+.user-detail-backdrop.closing .user-detail-modal {
+  opacity: 0;
+  transform: translateY(12px) scale(0.99);
+}
+
+/* ========================================
+   MODAL HEADER (STICKY)
+   ======================================== */
+
+.udm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--admin-border-light);
+  background: var(--admin-surface);
+  flex-shrink: 0;
+}
+
+.udm-header-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.udm-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--admin-radius-full);
+  background: var(--admin-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.udm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.udm-avatar span {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.udm-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.udm-user-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.udm-user-email {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0;
+}
+
+.udm-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.udm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--admin-radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.udm-badge-active {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.udm-badge-banned {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.udm-badge-admin {
+  background: linear-gradient(135deg, #4F507F 0%, #6B6D9E 100%);
+  color: white;
+}
+
+.udm-badge-mod {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.udm-badge-user {
+  background: var(--admin-hover);
+  color: var(--admin-text-secondary);
+}
+
+.udm-badge-verified {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.udm-badge-unverified {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.udm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.udm-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--admin-radius-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--admin-muted);
+  transition: all var(--transition-fast);
+}
+
+.udm-close-btn:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.udm-close-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========================================
+   TAB NAVIGATION
+   ======================================== */
+
+.udm-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--admin-border-light);
+  background: var(--admin-surface);
+  flex-shrink: 0;
+}
+
+.udm-tab {
+  padding: var(--space-3) var(--space-4);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--admin-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.udm-tab:hover {
+  color: var(--admin-text);
+}
+
+.udm-tab.active {
+  color: var(--admin-primary);
+}
+
+.udm-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--admin-primary);
+  border-radius: 2px 2px 0 0;
+}
+
+.udm-tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.udm-tab-danger {
+  color: var(--color-danger);
+}
+
+.udm-tab-danger:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border-radius: var(--admin-radius-md);
+}
+
+.udm-tab-danger.active::after {
+  background: var(--color-danger);
+}
+
+/* ========================================
+   CONTENT AREA - 3 COLUMN LAYOUT
+   ======================================== */
+
+.udm-content {
+  flex: 1;
+  overflow: hidden;
+  display: none;
+}
+
+.udm-content.active {
+  display: flex;
+}
+
+.udm-columns {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Column styling */
+.udm-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.udm-col-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+.udm-col-left {
+  background: var(--admin-surface-2);
+  border-right: 1px solid var(--admin-border-light);
+}
+
+.udm-col-center {
+  background: var(--admin-surface);
+}
+
+.udm-col-right {
+  background: var(--admin-surface-2);
+  border-left: 1px solid var(--admin-border-light);
+}
+
+/* ========================================
+   SECTION HEADERS
+   ======================================== */
+
+.udm-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--admin-muted);
+  margin: 0 0 var(--space-3) 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--admin-border-light);
+}
+
+.udm-section-title-lg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ========================================
+   INFO LIST (READ-ONLY DATA)
+   ======================================== */
+
+.udm-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.udm-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.udm-info-label {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.udm-info-value {
+  font-size: 14px;
+  color: var(--admin-text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.udm-info-value.mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 13px;
+  color: var(--admin-text-secondary);
+}
+
+/* ========================================
+   STATS GRID
+   ======================================== */
+
+.udm-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.udm-stat-item {
+  background: var(--admin-surface);
+  padding: var(--space-3);
+  border-radius: var(--admin-radius-md);
+  text-align: center;
+}
+
+.udm-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.udm-stat-label {
+  font-size: 11px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+/* ========================================
+   AUDIT SUMMARY CARDS
+   ======================================== */
+
+.udm-audit-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.udm-summary-card {
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.udm-summary-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.udm-summary-label {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+.udm-summary-card.danger .udm-summary-value {
+  color: var(--color-danger);
+}
+
+/* ========================================
+   AUDIT LOG TIMELINE
+   ======================================== */
+
+.udm-audit-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--admin-border-light);
+}
+
+.udm-audit-filter {
+  padding: var(--space-2) var(--space-3);
+  padding-right: var(--space-6);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 13px;
+  color: var(--admin-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 140px;
+  position: relative;
+  z-index: 10;
+}
+
+.udm-audit-filter:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+}
+
+.udm-audit-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.udm-log-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--admin-border-light);
+  position: relative;
+}
+
+.udm-log-item:last-child {
+  border-bottom: none;
+}
+
+.udm-log-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--admin-radius-full);
+  background: var(--admin-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.udm-log-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--admin-muted);
+}
+
+.udm-log-icon.success { background: var(--color-success-bg); }
+.udm-log-icon.success svg { color: var(--color-success); }
+
+.udm-log-icon.warning { background: var(--color-warning-bg); }
+.udm-log-icon.warning svg { color: var(--color-warning); }
+
+.udm-log-icon.danger { background: var(--color-danger-bg); }
+.udm-log-icon.danger svg { color: var(--color-danger); }
+
+.udm-log-icon.info { background: var(--color-info-bg); }
+.udm-log-icon.info svg { color: var(--color-info); }
+
+.udm-log-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.udm-log-title {
+  font-size: 14px;
+  color: var(--admin-text);
+  margin: 0;
+}
+
+.udm-log-time {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+/* ========================================
+   STATUS PANEL (TAB 1 - RIGHT COLUMN)
+   ======================================== */
+
+.udm-status-panel {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+}
+
+.udm-status-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.udm-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--admin-radius-full);
+  background: var(--color-success);
+}
+
+.udm-status-dot.banned {
+  background: var(--color-danger);
+}
+
+.udm-status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.udm-ban-details {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--admin-border-light);
+}
+
+.udm-ban-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.udm-ban-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.udm-ban-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+.udm-ban-value {
+  font-size: 14px;
+  color: var(--admin-text);
+}
+
+/* ========================================
+   TAB 2: MANAGEMENT - USER SUMMARY (LEFT)
+   ======================================== */
+
+.udm-user-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-4);
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+}
+
+.udm-user-summary .udm-avatar {
+  width: 72px;
+  height: 72px;
+  margin-bottom: var(--space-3);
+}
+
+.udm-user-summary .udm-avatar span {
+  font-size: 24px;
+}
+
+.udm-user-summary-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin: 0;
+}
+
+.udm-user-summary-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ========================================
+   TAB 2: BAN / UNBAN FORM (CENTER)
+   ======================================== */
+
+.udm-ban-form {
+  max-width: 500px;
+}
+
+.udm-form-group {
+  margin-bottom: var(--space-5);
+}
+
+.udm-form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--admin-text);
+  margin-bottom: var(--space-2);
+}
+
+.udm-form-label.required::after {
+  content: ' *';
+  color: var(--color-danger);
+}
+
+.udm-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.udm-radio-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.udm-radio-item:hover {
+  background: var(--admin-hover);
+}
+
+.udm-radio-item input[type="radio"] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.udm-radio-content {
+  flex: 1;
+}
+
+.udm-radio-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.udm-radio-desc {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+.udm-duration-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-left: 24px;
+}
+
+.udm-duration-input {
+  width: 80px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  text-align: center;
+}
+
+.udm-duration-input:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(79, 80, 127, 0.1);
+}
+
+.udm-duration-select {
+  padding: var(--space-2) var(--space-3);
+  padding-right: var(--space-6);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 100px;
+}
+
+.udm-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--space-3);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.udm-textarea:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(79, 80, 127, 0.1);
+}
+
+.udm-textarea::placeholder {
+  color: var(--admin-placeholder);
+}
+
+.udm-form-hint {
+  font-size: 12px;
+  color: var(--admin-muted);
+  margin-top: var(--space-1);
+}
+
+.udm-form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--admin-border-light);
+}
+
+.udm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.udm-btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.udm-btn-danger:hover {
+  background: #dc3535;
+}
+
+.udm-btn-success {
+  background: var(--color-success);
+  color: white;
+}
+
+.udm-btn-success:hover {
+  background: #0ea66e;
+}
+
+.udm-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+}
+
+.udm-btn-secondary:hover {
+  background: var(--admin-hover);
+}
+
+.udm-btn-primary {
+  background: var(--admin-primary);
+  color: white;
+}
+
+.udm-btn-primary:hover {
+  background: var(--admin-primary-hover);
+}
+
+/* Current Ban Info (when user is banned) */
+.udm-current-ban {
+  background: var(--color-danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.udm-current-ban-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.udm-current-ban-header svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-danger);
+}
+
+.udm-current-ban-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.udm-current-ban-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.udm-current-ban-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.udm-current-ban-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+.udm-current-ban-value {
+  font-size: 14px;
+  color: var(--admin-text);
+}
+
+.udm-current-ban-reason {
+  grid-column: 1 / -1;
+  margin-top: var(--space-2);
+}
+
+/* ========================================
+   TAB 2: ROLE CHANGE (RIGHT COLUMN)
+   ======================================== */
+
+.udm-role-form {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  padding: var(--space-4);
+}
+
+.udm-role-select {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  padding-right: var(--space-8);
+  background: var(--admin-surface-2);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 14px;
+  color: var(--admin-text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  margin-bottom: var(--space-4);
+}
+
+.udm-role-select:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+}
+
+.udm-role-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-warning-bg);
+  border-radius: var(--admin-radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.udm-role-warning svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-warning);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.udm-role-warning-text {
+  font-size: 12px;
+  color: var(--admin-text-secondary);
+  line-height: 1.5;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.udm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.udm-empty-state svg {
+  width: 48px;
+  height: 48px;
+  color: var(--admin-muted);
+  opacity: 0.5;
+  margin-bottom: var(--space-4);
+}
+
+.udm-empty-state p {
+  font-size: 14px;
+  color: var(--admin-muted);
+  margin: 0;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 1200px) {
+  .user-detail-modal {
+    min-width: auto;
+    max-width: 95vw;
+  }
+  
+  .udm-columns {
+    grid-template-columns: 220px 1fr 240px;
+  }
+}
+
+@media (max-width: 992px) {
+  .udm-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .udm-col-left,
+  .udm-col-right {
+    border: none;
+    border-bottom: 1px solid var(--admin-border-light);
+  }
+  
+  .user-detail-modal {
+    height: auto;
+    max-height: 90vh;
+  }
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+.udm-col-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.udm-col-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.udm-col-scroll::-webkit-scrollbar-thumb {
+  background: var(--admin-border);
+  border-radius: 3px;
+}
+
+.udm-col-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-muted);
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+
+.udm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.udm-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--admin-border);
+  border-top-color: var(--admin-primary);
+  border-radius: 50%;
+  animation: udmSpin 0.8s linear infinite;
+}
+
+@keyframes udmSpin {
+  to { transform: rotate(360deg); }
+}

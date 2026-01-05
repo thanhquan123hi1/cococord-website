@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Detail Modal - CoCoCord Admin Demo</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/buttons.css">
+    <link rel="stylesheet" href="css/forms.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/user-detail-modal.css">
+    
+    <style>
+        body {
+            font-family: var(--admin-font);
+            background: var(--admin-bg);
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .demo-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--admin-text);
+            margin-bottom: 8px;
+        }
+        
+        .demo-subtitle {
+            font-size: 14px;
+            color: var(--admin-muted);
+            margin-bottom: 32px;
+        }
+        
+        .demo-section {
+            background: var(--admin-surface);
+            border-radius: var(--admin-radius-2xl);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .demo-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--admin-text);
+            margin-bottom: 16px;
+        }
+        
+        .demo-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .demo-btn {
+            padding: 12px 24px;
+            border-radius: var(--admin-radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+        }
+        
+        .demo-btn-primary {
+            background: var(--admin-primary);
+            color: white;
+        }
+        
+        .demo-btn-primary:hover {
+            background: var(--admin-primary-hover);
+        }
+        
+        .demo-btn-secondary {
+            background: var(--admin-surface-2);
+            color: var(--admin-text);
+            border: 1px solid var(--admin-border);
+        }
+        
+        .demo-btn-secondary:hover {
+            background: var(--admin-hover);
+        }
+        
+        .demo-user-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--admin-surface-2);
+            border-radius: var(--admin-radius-lg);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .demo-user-card:hover {
+            background: var(--admin-hover);
+        }
+        
+        .demo-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--admin-radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .demo-user-info {
+            flex: 1;
+        }
+        
+        .demo-user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--admin-text);
+        }
+        
+        .demo-user-email {
+            font-size: 13px;
+            color: var(--admin-muted);
+        }
+        
+        .demo-user-badges {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .demo-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .demo-badge-active { background: rgba(16,185,129,0.1); color: #10B981; }
+        .demo-badge-banned { background: rgba(239,68,68,0.1); color: #EF4444; }
+        .demo-badge-admin { background: linear-gradient(135deg, #4F507F, #6B6D9E); color: white; }
+        .demo-badge-mod { background: rgba(59,130,246,0.1); color: #3B82F6; }
+        .demo-badge-user { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.6); }
+        
+        .demo-users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 16px;
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--admin-text);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--admin-hover);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+    
+    <div class="demo-container">
+        <h1 class="demo-title">User Detail Modal</h1>
+        <p class="demo-subtitle">CoCoCord Admin Dashboard - User Management Component</p>
+        
+        <!-- Quick Demo Buttons -->
+        <div class="demo-section">
+            <h3 class="demo-section-title">Quick Demo</h3>
+            <div class="demo-buttons">
+                <button class="demo-btn demo-btn-primary" onclick="openActiveUser()">
+                    Open Active User
+                </button>
+                <button class="demo-btn demo-btn-secondary" style="background: rgba(239,68,68,0.1); color: #EF4444; border-color: #EF4444;" onclick="openBannedUser()">
+                    Open Banned User
+                </button>
+                <button class="demo-btn demo-btn-secondary" onclick="openAdminUser()">
+                    Open Admin User
+                </button>
+            </div>
+        </div>
+        
+        <!-- Sample Users -->
+        <div class="demo-section">
+            <h3 class="demo-section-title">Sample Users (Click to open)</h3>
+            <div class="demo-users-grid">
+                <!-- Active User -->
+                <div class="demo-user-card" onclick="openActiveUser()">
+                    <div class="demo-user-avatar" style="background: #5865F2;">JD</div>
+                    <div class="demo-user-info">
+                        <div class="demo-user-name">John Doe</div>
+                        <div class="demo-user-email">john.doe@example.com</div>
+                    </div>
+                    <div class="demo-user-badges">
+                        <span class="demo-badge demo-badge-active">Active</span>
+                        <span class="demo-badge demo-badge-user">USER</span>
+                    </div>
+                </div>
+                
+                <!-- Banned User -->
+                <div class="demo-user-card" onclick="openBannedUser()">
+                    <div class="demo-user-avatar" style="background: #ED4245;">BU</div>
+                    <div class="demo-user-info">
+                        <div class="demo-user-name">Bad User</div>
+                        <div class="demo-user-email">baduser@spam.com</div>
+                    </div>
+                    <div class="demo-user-badges">
+                        <span class="demo-badge demo-badge-banned">Banned</span>
+                        <span class="demo-badge demo-badge-user">USER</span>
+                    </div>
+                </div>
+                
+                <!-- Admin User -->
+                <div class="demo-user-card" onclick="openAdminUser()">
+                    <div class="demo-user-avatar" style="background: #4F507F;">AD</div>
+                    <div class="demo-user-info">
+                        <div class="demo-user-name">Admin User</div>
+                        <div class="demo-user-email">admin@cococord.vn</div>
+                    </div>
+                    <div class="demo-user-badges">
+                        <span class="demo-badge demo-badge-active">Active</span>
+                        <span class="demo-badge demo-badge-admin">ADMIN</span>
+                    </div>
+                </div>
+                
+                <!-- Moderator User -->
+                <div class="demo-user-card" onclick="openModUser()">
+                    <div class="demo-user-avatar" style="background: #3B82F6;">MO</div>
+                    <div class="demo-user-info">
+                        <div class="demo-user-name">Moderator</div>
+                        <div class="demo-user-email">mod@cococord.vn</div>
+                    </div>
+                    <div class="demo-user-badges">
+                        <span class="demo-badge demo-badge-active">Active</span>
+                        <span class="demo-badge demo-badge-mod">MOD</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features -->
+        <div class="demo-section">
+            <h3 class="demo-section-title">Features</h3>
+            <ul style="color: var(--admin-text-secondary); font-size: 14px; line-height: 1.8; padding-left: 20px;">
+                <li>📊 <strong>Tab 1: Thông tin & Audit Log</strong> - View user info, stats, activity timeline</li>
+                <li>🔒 <strong>Tab 2: Quản trị</strong> - Ban/Unban user, change roles</li>
+                <li>📱 <strong>Responsive 3-column layout</strong> - Adapts to different screen sizes</li>
+                <li>🎨 <strong>SnowUI-inspired design</strong> - Clean, modern aesthetic</li>
+                <li>🌙 <strong>Dark mode support</strong> - Toggle theme in top right</li>
+                <li>⌨️ <strong>Keyboard support</strong> - Press ESC to close</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Include the User Detail Modal JS -->
+    <script src="js/user-detail-modal.js"></script>
+    
+    <script>
+        // Sample user data
+        const sampleUsers = {
+            active: {
+                id: 12345,
+                username: 'john_doe',
+                displayName: 'John Doe',
+                email: 'john.doe@example.com',
+                role: 'USER',
+                emailVerified: true,
+                isBanned: false,
+                banInfo: null,
+                createdAt: '2025-11-15T09:00:00',
+                lastLogin: '2026-01-05T08:30:00',
+                stats: {
+                    serversJoined: 5,
+                    serversCreated: 2,
+                    banCount: 0,
+                    messageCount: 1284
+                }
+            },
+            banned: {
+                id: 67890,
+                username: 'bad_user',
+                displayName: 'Bad User',
+                email: 'baduser@spam.com',
+                role: 'USER',
+                emailVerified: false,
+                isBanned: true,
+                banInfo: {
+                    type: 'temporary',
+                    reason: 'Spam và quấy rối người dùng khác',
+                    expiresAt: '2026-01-10T00:00:00',
+                    bannedBy: 'Admin'
+                },
+                createdAt: '2025-12-01T10:00:00',
+                lastLogin: '2026-01-02T15:30:00',
+                stats: {
+                    serversJoined: 12,
+                    serversCreated: 0,
+                    banCount: 3,
+                    messageCount: 456
+                }
+            },
+            admin: {
+                id: 1,
+                username: 'admin',
+                displayName: 'Admin User',
+                email: 'admin@cococord.vn',
+                role: 'ADMIN',
+                emailVerified: true,
+                isBanned: false,
+                banInfo: null,
+                createdAt: '2024-01-01T00:00:00',
+                lastLogin: '2026-01-05T10:00:00',
+                stats: {
+                    serversJoined: 50,
+                    serversCreated: 10,
+                    banCount: 0,
+                    messageCount: 5000
+                }
+            },
+            mod: {
+                id: 999,
+                username: 'moderator',
+                displayName: 'Moderator',
+                email: 'mod@cococord.vn',
+                role: 'MODERATOR',
+                emailVerified: true,
+                isBanned: false,
+                banInfo: null,
+                createdAt: '2025-06-15T00:00:00',
+                lastLogin: '2026-01-05T09:45:00',
+                stats: {
+                    serversJoined: 20,
+                    serversCreated: 3,
+                    banCount: 0,
+                    messageCount: 2500
+                }
+            }
+        };
+        
+        function openActiveUser() {
+            UserDetailModal.open(sampleUsers.active);
+        }
+        
+        function openBannedUser() {
+            UserDetailModal.open(sampleUsers.banned);
+        }
+        
+        function openAdminUser() {
+            UserDetailModal.open(sampleUsers.admin);
+        }
+        
+        function openModUser() {
+            UserDetailModal.open(sampleUsers.mod);
+        }
+        
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            document.querySelector('.theme-toggle').textContent = next === 'dark' ? '☀️ Toggle Theme' : '🌙 Toggle Theme';
+        }
+    </script>
+</body>
+</html>

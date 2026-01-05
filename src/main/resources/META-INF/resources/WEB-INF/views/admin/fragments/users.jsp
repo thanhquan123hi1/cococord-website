@@ -97,6 +97,11 @@
             </div>
             <div class="admin-toolbar-right">
                 <div class="admin-filter-group">
+                    <select class="admin-select" id="filter-presence">
+                        <option value="">Tất cả (Online/Offline)</option>
+                        <option value="online">Online</option>
+                        <option value="offline">Offline</option>
+                    </select>
                     <select class="admin-select" id="filter-status">
                         <option value="">All Status</option>
                         <option value="active">Active</option>
@@ -165,10 +170,10 @@
                             <th class="sortable" data-sort="id" style="width: 80px;">ID</th>
                             <th class="sortable" data-sort="username">User</th>
                             <th class="sortable" data-sort="role" style="width: 120px;">Role</th>
-                            <th class="sortable" data-sort="status" style="width: 100px;">Status</th>
+                            <th class="sortable" data-sort="status" style="width: 120px;">Tình trạng</th>
                             <th class="sortable" data-sort="createdAt" style="width: 120px;">Joined</th>
                             <th class="sortable" data-sort="lastLogin" style="width: 140px;">Last Login</th>
-                            <th class="th-actions" style="width: 180px;">Actions</th>
+                            <th style="width: 140px;">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body">
@@ -190,6 +195,11 @@
         <!-- Pagination -->
         <div class="admin-card-footer">
             <div class="admin-pagination">
+                <div class="pagination-info" id="realtime-filter-summary">
+                    Hiển thị <span id="realtime-visible-count">0</span> / <span id="realtime-total-count">0</span> người dùng
+                    • Online: <span id="realtime-online-count">0</span>
+                    • Offline: <span id="realtime-offline-count">0</span>
+                </div>
                 <div class="pagination-info">
                     Showing <span id="pagination-from">0</span>-<span id="pagination-to">0</span> 
                     of <span id="pagination-total">0</span> users
@@ -635,19 +645,12 @@
                     <option value="30d">30 Days</option>
                 </select>
             </div>
-            
-            <!-- Ban Reason (Required) -->
-            <div class="form-group">
-                <label class="form-label required">Reason (shown to user)</label>
-                <textarea class="admin-input" id="quick-ban-reason" rows="2" 
-                    placeholder="Enter the reason for this ban..." required></textarea>
-            </div>
-            
+
             <!-- Admin Note (Optional) -->
             <div class="form-group">
-                <label class="form-label">Admin Note <span class="optional-tag">(optional)</span></label>
+                <label class="form-label">Ghi chú ban <span class="optional-tag">(optional)</span></label>
                 <textarea class="admin-input" id="quick-ban-admin-note" rows="2" 
-                    placeholder="Internal note visible only to admins..."></textarea>
+                    placeholder="Ghi chú nội bộ (chỉ admin thấy)..."></textarea>
             </div>
         </div>
         <div class="admin-modal-footer">
@@ -656,6 +659,37 @@
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M4 12L12 4"/></svg>
                 Ban User
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- ACTIVE NOW MODAL -->
+<!-- ================================== -->
+<div class="admin-modal-backdrop glass-backdrop" id="active-now-modal" style="display: none;">
+    <div class="admin-modal admin-modal-md glass-modal">
+        <div class="admin-modal-header">
+            <h3 class="admin-modal-title">Active Now</h3>
+            <button class="admin-btn admin-btn-icon admin-modal-close" data-action="close-active-now">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4l8 8M12 4l-8 8"/>
+                </svg>
+            </button>
+        </div>
+        <div class="admin-modal-body">
+            <div class="admin-search" style="margin-bottom: 12px;">
+                <svg class="admin-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="7" cy="7" r="4"/>
+                    <path d="M10 10l4 4"/>
+                </svg>
+                <input type="text" placeholder="Tìm theo tên hoặc email" aria-label="Search online users" id="active-now-search-input">
+            </div>
+            <div id="active-now-list" class="active-now-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button class="admin-btn admin-btn-ghost" data-action="close-active-now">Close</button>
         </div>
     </div>
 </div>

@@ -22,6 +22,9 @@ public interface IAdminAuditLogRepository extends JpaRepository<AdminAuditLog, L
     @Query("SELECT a FROM AdminAuditLog a WHERE a.targetType = :targetType AND a.targetId = :targetId ORDER BY a.createdAt DESC")
     List<AdminAuditLog> findByTarget(@Param("targetType") String targetType, @Param("targetId") Long targetId);
 
+    @Query("SELECT a FROM AdminAuditLog a WHERE a.targetType = :targetType AND a.targetId = :targetId ORDER BY a.createdAt DESC")
+    Page<AdminAuditLog> findByTargetTypeAndTargetId(@Param("targetType") String targetType, @Param("targetId") Long targetId, Pageable pageable);
+
     @Query("SELECT a FROM AdminAuditLog a WHERE a.createdAt BETWEEN :start AND :end ORDER BY a.createdAt DESC")
     Page<AdminAuditLog> findByDateRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
             Pageable pageable);

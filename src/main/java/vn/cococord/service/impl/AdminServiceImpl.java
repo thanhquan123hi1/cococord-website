@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import vn.cococord.dto.request.AdminReportActionRequest;
 import vn.cococord.dto.request.AdminRoleRequest;
 import vn.cococord.dto.request.AdminSettingsRequest;
+import vn.cococord.dto.request.AdminCreateUserRequest;
 import vn.cococord.dto.response.*;
 import vn.cococord.entity.mongodb.Message;
 import vn.cococord.entity.mysql.*;
@@ -27,6 +29,7 @@ import vn.cococord.exception.BadRequestException;
 import vn.cococord.exception.ResourceNotFoundException;
 import vn.cococord.repository.*;
 import vn.cococord.service.IAdminService;
+import vn.cococord.service.IEmailService;
 
 @Service
 @RequiredArgsConstructor
@@ -37,10 +40,13 @@ public class AdminServiceImpl implements IAdminService {
 
     private final IUserRepository userRepository;
     private final IServerRepository serverRepository;
+    private final IServerMemberRepository serverMemberRepository;
     private final IReportRepository reportRepository;
     private final IMessageRepository messageRepository;
     private final IAdminAuditLogRepository auditLogRepository;
     private final ISystemSettingsRepository settingsRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final IEmailService emailService;
 
     // ================== Dashboard ==================
 
@@ -310,6 +316,64 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
+    public UserProfileResponse createUser(AdminCreateUserRequest request, String adminUsername) {
+        if (request == null) {
+            throw new BadRequestException("Invalid request");
+        }
+
+        String username = request.getUsername() != null ? request.getUsername().trim() : null;
+        String email = request.getEmail() != null ? request.getEmail().trim() : null;
+
+        if (username == null || username.isEmpty()) {
+            throw new BadRequestException("Vui lòng nhập tên đăng nhập");
+        }
+        if (email == null || email.isEmpty()) {
+            throw new BadRequestException("Vui lòng nhập email");
+        }
+
+        if (userRepository.existsByUsername(username)) {
+            throw new BadRequestException("Tên đăng nhập đã tồn tại");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new BadRequestException("Email đã được đăng ký");
+        }
+
+        Role role;
+        try {
+            role = Role.valueOf(request.getRole().trim().toUpperCase());
+        } catch (Exception e) {
+            throw new BadRequestException("Vai trò không hợp lệ");
+        }
+
+        User admin = getUserByUsername(adminUsername);
+
+        User user = User.builder()
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .displayName(username)
+                .role(role)
+                .isEmailVerified(Boolean.TRUE.equals(request.getEmailVerified()))
+                .build();
+
+        userRepository.save(user);
+
+        logAdminAction(AdminAuditLog.AdminActionType.USER_CREATE,
+                "Created user " + user.getUsername() + " with role " + user.getRole(),
+                "USER", user.getId(), user.getUsername(), null, admin.getUsername(), null);
+
+        if (Boolean.TRUE.equals(request.getSendWelcomeEmail())) {
+            try {
+                emailService.sendWelcomeEmail(user.getEmail(), user.getDisplayName());
+            } catch (Exception e) {
+                log.error("Failed to send welcome email to {}", user.getEmail(), e);
+            }
+        }
+
+        return mapUserToResponse(user);
+    }
+
+    @Override
     public void banUser(Long userId, String reason, String duration, String adminUsername) {
         User admin = getUserByUsername(adminUsername);
         User user = getUserByIdInternal(userId);
@@ -523,18 +587,95 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
-    public void deleteServer(Long serverId, String adminUsername) {
+    public void deleteServer(Long serverId, String reason, String adminUsername) {
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
 
         String serverName = server.getName();
+        String details = "Deleted server " + serverName;
+        if (reason != null && !reason.trim().isEmpty()) {
+            details += " for: " + reason;
+        }
+        
         serverRepository.delete(server);
 
         logAdminAction(AdminAuditLog.AdminActionType.SERVER_DELETE,
-                "Deleted server " + serverName,
+                details,
                 "SERVER", serverId, serverName, null, adminUsername, null);
 
         log.info("Admin {} deleted server {}", adminUsername, serverName);
+    }
+
+    @Override
+    public void transferServerOwnership(Long serverId, Long newOwnerId, String reason, String adminUsername) {
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+
+        User newOwner = userRepository.findById(newOwnerId)
+                .orElseThrow(() -> new ResourceNotFoundException("New owner not found"));
+
+        String oldOwnerName = server.getOwner().getUsername();
+        String newOwnerName = newOwner.getUsername();
+
+        server.setOwner(newOwner);
+        serverRepository.save(server);
+
+        String details = "Transferred server " + server.getName() + " from @" + oldOwnerName + " to @" + newOwnerName;
+        if (reason != null && !reason.trim().isEmpty()) {
+            details += " for: " + reason;
+        }
+
+        logAdminAction(AdminAuditLog.AdminActionType.SERVER_TRANSFER,
+                details,
+                "SERVER", serverId, server.getName(), null, adminUsername, null);
+
+        log.info("Admin {} transferred server {} from {} to {}", adminUsername, server.getName(), oldOwnerName, newOwnerName);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getServerStats() {
+        long totalServers = serverRepository.count();
+        long lockedServers = serverRepository.countByIsLockedTrue();
+        long activeServers = totalServers - lockedServers;
+        
+        // Calculate total members across all servers
+        long totalMembers = serverMemberRepository.count();
+        
+        // Count flagged servers (servers with pending reports)
+        long flaggedServers = reportRepository.countDistinctServersByStatusPending();
+
+        return Map.of(
+                "totalServers", totalServers,
+                "activeServers", activeServers,
+                "lockedServers", lockedServers,
+                "totalMembers", totalMembers,
+                "flaggedServers", flaggedServers
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminAuditLogResponse> getServerAuditLog(Long serverId, Pageable pageable) {
+        // Verify server exists
+        serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+        
+        // Get audit logs for this server
+        Page<AdminAuditLog> logs = auditLogRepository.findByTargetTypeAndTargetId("SERVER", serverId, pageable);
+        return logs.map(this::mapAuditLogToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminReportResponse> getServerReports(Long serverId, Pageable pageable) {
+        // Verify server exists
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+        
+        // Get reports for this server
+        Page<Report> reports = reportRepository.findByReportedServer(server, pageable);
+        return reports.map(this::mapReportToResponse);
     }
 
     // ================== Report Management ==================
@@ -909,8 +1050,19 @@ public class AdminServiceImpl implements IAdminService {
                 .bannerUrl(server.getBannerUrl())
                 .ownerId(server.getOwner().getId())
                 .ownerUsername(server.getOwner().getUsername())
+                .ownerEmail(server.getOwner().getEmail())
+                .ownerAvatarUrl(server.getOwner().getAvatarUrl())
+                .isPublic(server.getIsPublic())
+                .maxMembers(server.getMaxMembers())
                 .memberCount(server.getMembers() != null ? server.getMembers().size() : 0)
+                .channelCount(server.getChannels() != null ? server.getChannels().size() : 0)
+                .roleCount(server.getRoles() != null ? server.getRoles().size() : 0)
+                .isLocked(server.getIsLocked())
+                .lockReason(server.getLockReason())
+                .lockedAt(server.getLockedAt())
+                .lastActivityAt(server.getUpdatedAt())
                 .createdAt(server.getCreatedAt())
+                .updatedAt(server.getUpdatedAt())
                 .build();
     }
 
