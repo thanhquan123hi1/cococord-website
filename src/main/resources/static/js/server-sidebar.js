@@ -232,14 +232,24 @@
     const urlParams = new URLSearchParams(window.location.search);
     const serverId = urlParams.get("serverId");
 
-    el.serverList.querySelectorAll(".server-item").forEach((item) => {
+    // Xóa active cũ
+    el.serverList.querySelectorAll(".server-item, .home-btn").forEach((item) => {
       item.classList.remove("active");
     });
 
+    // Logic mới:
     if (currentPath === "/messages") {
       const homeBtn = el.serverList.querySelector(".home-btn");
       if (homeBtn) homeBtn.classList.add("active");
-    } else if (serverId) {
+    } 
+    // THÊM ĐOẠN NÀY: Xử lý trang Home (/app)
+    else if (currentPath === "/app" || currentPath.startsWith("/app/")) {
+       if (!serverId) { // Chỉ active Home nếu không có serverId
+           const homeBtn = el.serverList.querySelector(".home-btn") || document.getElementById("homeBtn");
+           if (homeBtn) homeBtn.classList.add("active");
+       }
+    }
+    else if (serverId) {
       const serverItem = el.serverList.querySelector(
         `[data-server-id="${serverId}"]`
       );

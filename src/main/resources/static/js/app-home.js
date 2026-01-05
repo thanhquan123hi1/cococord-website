@@ -2,14 +2,11 @@
 
 (() => {
   "use strict";
+  let isInitializing = false;
 
   const state = {
     currentUser: null,
-    // Single source of truth for relationships keyed by otherUserId.
-    // Shape: { [userId]: { userId, username, displayName, avatarUrl, relationshipStatus, requestId } }
     friendsState: {},
-
-    // Initial snapshots (used only to build friendsState on first load / fallback)
     friends: [],
     requests: [],
     blocked: [],
@@ -2346,8 +2343,15 @@
   function render() {
     renderDmList();
     renderFriendsList();
+    console.log('[AppHome] Rendering interface...');
+    document.querySelectorAll(".tab").forEach((b) => {
+          b.onclick = () => { // Dùng onclick trực tiếp để chắc chắn chạy
+              setActiveTab(b.dataset.tab);
+          };
+  });
+  const btnAdd = document.getElementById("addFriendBtn");
+      if(btnAdd) btnAdd.onclick = showAddFriendView;
   }
-
   async function initPresence() {
     const store = window.CoCoCordPresence;
     if (!store || typeof store.ensureConnected !== "function") return;
@@ -2437,29 +2441,49 @@
   }
 
   async function init() {
-    // Listen for global incoming call events (from notification.js) ASAP.
-    // Guard to avoid attaching duplicate listeners when init() reruns.
-    if (!window.__cococordIncomingCallListenerAttached) {
-      window.__cococordIncomingCallListenerAttached = true;
-      window.addEventListener("incomingCall", (e) => {
-        const evt = e.detail;
-        if (evt && evt.type === "CALL_START") {
-          handleGlobalIncomingCall(evt);
-        }
-      });
-    }
+    if (isInitializing) return;
+    isInitializing = true;
+    
+    console.log('[AppHome] Init started');
 
-    wireEvents();
-    await loadCurrentUser();
-    await Promise.all([
-      loadFriends(),
-      loadRequests(),
-      loadBlocked(),
-      loadDmSidebar(),
-    ]);
-    rebuildFriendsStateFromSnapshots();
-    render();
+    try {
+      const navItems = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
+        navItems.forEach(item => {
+            item.onclick = (e) => {
+                e.preventDefault();
+                switchMainView(item.getAttribute('data-view'));
+            };
+        });
+      if (!window.__cococordIncomingCallListenerAttached) {
+        window.__cococordIncomingCallListenerAttached = true;
+        window.addEventListener("incomingCall", (e) => {
+          const evt = e.detail;
+          if (evt && evt.type === "CALL_START") {
+            handleGlobalIncomingCall(evt);
+          }
+        });
+      }
 
+      wireEvents();
+      await loadCurrentUser();
+      await Promise.all([
+        console.log('[HOME-DEBUG] Đang load friends...'),
+        loadFriends(),
+        console.log('[HOME-DEBUG] Đang load requests...'),
+        loadRequests(),
+        console.log('[HOME-DEBUG] Đang load blocked users...'),
+        loadBlocked(),
+        console.log('[HOME-DEBUG] Đang load DM sidebar...'),
+        loadDmSidebar(),
+      ]);
+      console.log('[HOME-DEBUG] Đã load xong tất cả dữ liệu cần thiết.');
+      rebuildFriendsStateFromSnapshots();
+      console.log('[HOME-DEBUG] Đang render...');
+      render();
+  } catch (err) {
+    console.error('[HOME-DEBUG] Exception trong init:', err);
+    throw err;
+  }
     // Friends realtime updates (no polling)
     await initFriendsRealtime();
 
@@ -2511,7 +2535,30 @@
     // Initialize primary sidebar resize
     initPrimarySidebarResize();
   }
+  window.reInitAppHome = function() {
+      console.log('[AppHome] reInitAppHome called!');
+      // Tìm phần tử gốc của trang Home để chắc chắn đang ở đúng trang
+      const homeRoot = document.getElementById("cococordHome");
+      if (!homeRoot) return;
 
+      // Chạy lại toàn bộ logic khởi tạo của bạn (Hàm init gốc)
+      // Lưu ý: Bạn cần đảm bảo hàm init() hoặc wireEvents() của bạn được gọi ở đây
+      // Trong file gốc của bạn, logic nằm trong init().
+      
+      // Gọi lại init() gốc (bạn cần copy hàm init đầy đủ vào đây)
+      // Hoặc đơn giản hơn: Reload lại script nếu cần thiết (hacky)
+      
+      // Cách fix chuẩn: Gọi hàm wireEvents() để gắn lại sự kiện click
+      if (typeof wireEvents === 'function') {
+          console.log('[AppHome] Re-wiring events...');
+          wireEvents(); 
+      }
+      
+      // Nếu cần render lại
+      if (typeof render === 'function') {
+           render();
+      }
+  };
   // ==================== PRIMARY SIDEBAR RESIZE ====================
   function initPrimarySidebarResize() {
     const resizer = document.getElementById("primarySidebarResizer");
@@ -2613,25 +2660,7 @@
     });
   }
 
-  let lastRootEl = null;
-
-  function maybeInit() {
-    const root = document.getElementById("cococordHome");
-    if (!root) return;
-    if (root === lastRootEl) return;
-    lastRootEl = root;
-    init().catch((e) => console.error("App home init failed", e));
-  }
-
-  // Run on initial page load
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", maybeInit);
-  } else {
-    maybeInit();
-  }
-
-  // Run again when app.js swaps page content without reloading
-  document.addEventListener("cococord:page:loaded", maybeInit);
+  
 
   // ===== Expose API for Quick Switcher =====
   window.AppHome = {
@@ -2659,4 +2688,67 @@
       await openDM(userId);
     },
   };
+  // ==========================================
+  // FIX: CLEAN INIT LOGIC
+  // Chỉ định nghĩa hàm, KHÔNG tự chạy, KHÔNG lắng nghe sự kiện thừa
+  // ==========================================
+  function forceInit() {
+      console.log('%c[AppHome] FORCE INIT', 'background: purple; color: white');
+      const root = document.getElementById("cococordHome");
+      if (!root) return;
+      
+      // 1. Reset trạng thái
+      isInitializing = false; 
+
+      // 2. Xóa các event cũ (nếu có) để tránh double click
+      // (Mẹo: Clone node để xóa sạch mọi event listener rác, nhưng cẩn thận mất state)
+      // Ở đây ta dùng cách gán đè sự kiện Capture
+      
+      const sidebarNav = root.querySelector(".sidebar-nav");
+      if (sidebarNav) {
+          console.log("[AppHome] Attaching CAPTURE event to Sidebar");
+          
+          // Dùng sự kiện ở cấp cha (Delegation) với useCapture = true
+          sidebarNav.addEventListener('click', (e) => {
+              // Tìm thẻ a.nav-item gần nhất
+              const navItem = e.target.closest('.nav-item');
+              
+              if (navItem) {
+                  console.log("[AppHome] Clicked Sidebar Item:", navItem.getAttribute("data-view"));
+                  
+                  // CHẶN ĐỨNG MỌI THỨ KHÁC
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.stopImmediatePropagation(); // Kể cả các listener khác trên cùng element cũng chặn luôn
+                  
+                  // Xử lý Logic
+                  const view = navItem.getAttribute("data-view");
+                  
+                  // Cập nhật giao diện Active
+                  root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                  navItem.classList.add('active');
+
+                  // Chuyển view
+                  if (view && typeof switchMainView === 'function') {
+                      switchMainView(view);
+                  }
+              }
+          }, true); // <--- TRUE là tham số quan trọng nhất: Chạy trước tất cả mọi người
+      }
+
+      // 3. Gán sự kiện cho các nút chức năng khác (Add Friend, v.v.)
+      try {
+          if (typeof wireEvents === 'function') {
+              wireEvents(); 
+          }
+      } catch (e) { console.error(e); }
+      
+      // 4. Tải dữ liệu
+      if (typeof init === 'function') {
+          init().catch(err => console.error("Init failed:", err));
+      }
+  }
+
+  // Public hàm
+  window.forceInitAppHome = forceInit;
 })();

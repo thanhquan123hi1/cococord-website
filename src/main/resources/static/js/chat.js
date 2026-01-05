@@ -1620,56 +1620,86 @@
     }
 
     async function selectServer(serverId) {
-        activeServerId = serverId;
+        console.log('%c[DEBUG] Bắt đầu selectServer với ID: ' + serverId, 'color: yellow; font-weight: bold;');
         
-        // Cập nhật URL (SPA-style, không reload)
-        const newUrl = `/chat?serverId=${serverId}&channelId=${channelId}`;
-        history.pushState({ serverId }, '', newUrl);
+        try {
+            activeServerId = serverId;
+            
+            // 1. Cập nhật URL
+            const newUrl = `/chat?serverId=${serverId}`;
+            console.log('[DEBUG] 1. Cập nhật URL:', newUrl);
+            history.pushState({ serverId }, '', newUrl);
 
-        const server = servers.find(s => String(s.id) === String(serverId));
-        el.serverName.textContent = server ? (server.name || 'Server') : 'Server';
-
-        // Cập nhật active state trên global sidebar
-        updateGlobalServerListActive();
-        clearMessages();
-
-        // Load data with error handling and retry
-        let retryCount = 0;
-        const maxRetries = 2;
-        
-        while (retryCount <= maxRetries) {
-            try {
-                await Promise.all([
-                    loadChannels(serverId),
-                    loadMembers(serverId),
-                    subscribeToServerUpdates(serverId)
-                ]);
-                break; // Success, exit retry loop
-            } catch (e) {
-                console.error(`Failed to load server data (attempt ${retryCount + 1}):`, e);
-                retryCount++;
-                if (retryCount > maxRetries) {
-                    console.error('Max retries reached, server data may be incomplete');
-                    // Set empty arrays to prevent undefined errors
-                    if (!channels || !channels.length) channels = [];
-                    if (!members || !members.length) members = [];
-                }
-                // Wait before retry
-                await new Promise(resolve => setTimeout(resolve, 500));
+            // 2. Cập nhật tên Server tạm thời
+            console.log('[DEBUG] 2. Tìm thông tin server trong mảng servers (size=' + servers.length + ')');
+            const server = servers.find(s => String(s.id) === String(serverId));
+            if (el.serverName) {
+                el.serverName.textContent = server ? (server.name || 'Server') : 'Server...';
+            } else {
+                console.error('[DEBUG] LỖI: Không tìm thấy phần tử el.serverName');
             }
-        }
-        
-        renderChannelList();
-        renderMembersList();
 
-        const nextChannelId = channels.length ? channels[0].id : null;
-        if (nextChannelId != null) {
-            await selectChannel(nextChannelId);
-        } else {
-            // No channels - show empty state
-            el.channelName.textContent = 'Chọn kênh';
-            el.chatComposer.style.display = 'none';
-            el.chatEmpty.style.display = 'block';
+            // 3. Update sidebar active
+            console.log('[DEBUG] 3. Update global active state');
+            updateGlobalServerListActive();
+            clearMessages();
+
+            // 4. Tải dữ liệu từ API
+            console.log('[DEBUG] 4. Bắt đầu gọi API (Channels, Members)...');
+            
+            // Tách lẻ từng promise để biết cái nào lỗi/treo
+            try {
+                console.log('[DEBUG] ... Đang tải Channels...');
+                await loadChannels(serverId);
+                console.log('[DEBUG] -> Tải Channels XONG. Số lượng:', channels.length);
+            } catch (err) {
+                console.error('[DEBUG] -> LỖI tải Channels:', err);
+                throw err;
+            }
+
+            try {
+                console.log('[DEBUG] ... Đang tải Members...');
+                await loadMembers(serverId);
+                console.log('[DEBUG] -> Tải Members XONG. Số lượng:', members.length);
+            } catch (err) {
+                 console.error('[DEBUG] -> LỖI tải Members:', err);
+                 // Không throw lỗi member để code vẫn chạy tiếp
+            }
+            
+            try {
+                console.log('[DEBUG] ... Đang subscribe socket...');
+                await subscribeToServerUpdates(serverId);
+                console.log('[DEBUG] -> Subscribe XONG.');
+            } catch (err) {
+                console.error('[DEBUG] -> LỖI Subscribe:', err);
+            }
+
+            // 5. Render giao diện
+            console.log('[DEBUG] 5. Render danh sách kênh...');
+            renderChannelList();
+            console.log('[DEBUG] 6. Render danh sách thành viên...');
+            renderMembersList();
+
+            // 6. Chọn kênh mặc định
+            const nextChannelId = channels.length ? channels[0].id : null;
+            console.log('[DEBUG] 7. Kênh tiếp theo sẽ chọn:', nextChannelId);
+            
+            if (nextChannelId != null) {
+                console.log('[DEBUG] -> Đang gọi selectChannel...');
+                await selectChannel(nextChannelId);
+                console.log('[DEBUG] -> selectChannel hoàn tất.');
+            } else {
+                console.log('[DEBUG] -> Không có kênh nào. Hiển thị Empty State.');
+                if(el.channelName) el.channelName.textContent = 'Chọn kênh';
+                if(el.chatComposer) el.chatComposer.style.display = 'none';
+                if(el.chatEmpty) el.chatEmpty.style.display = 'block';
+            }
+            
+            console.log('%c[DEBUG] selectServer HOÀN TẤT THÀNH CÔNG', 'color: green; font-weight: bold;');
+
+        } catch (e) {
+            console.error('%c[DEBUG] CRITICAL ERROR trong selectServer:', 'color: red; font-weight: bold;', e);
+            alert('Lỗi tải server: ' + e.message); // Hiện alert để bạn dễ thấy
         }
     }
 
@@ -3997,12 +4027,8 @@
     const serverId = urlParams.get('serverId');
 
     if (serverId) {
-        console.log("Detected serverId from URL:", serverId);
-        if (typeof loadServerDetails === 'function') {
-            loadServerDetails(serverId);
-        } else {
-            console.error("Hàm loadServerDetails chưa được định nghĩa trong chat.js!");
-        }
+        console.log("Auto-selecting server:", serverId);
+        selectServer(Number(serverId));
         
         const serverItem = document.querySelector(`.server-item[data-server-id="${serverId}"]`);
         if (serverItem) serverItem.classList.add('active');

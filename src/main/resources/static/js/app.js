@@ -697,77 +697,103 @@ function getAppContextPath() {
 }
 
 function updateGlobalSidebarActiveState() {
-  const homeBtn = document.getElementById("homeBtn");
-  const serverList = document.getElementById("globalServerList");
+  console.log("[Sidebar] Updating active state...");
+  
+  // 1. Tìm danh sách server (Thử cả 2 ID để chắc chắn)
+  const serverList = document.getElementById("globalServerList") || document.getElementById("serverList");
+  
+  // 2. Tìm nút Home (Thử cả ID và Class)
+  let homeBtn = document.getElementById("homeBtn");
+  if (!homeBtn && serverList) {
+      homeBtn = serverList.querySelector(".home-btn");
+  }
 
-  serverList
-    ?.querySelectorAll(".server-item.active")
-    .forEach((el) => el.classList.remove("active"));
+  // 3. XÓA SẠCH trạng thái Active cũ (Quan trọng: Xóa trên mọi phần tử có class active)
+  if (serverList) {
+    const activeItems = serverList.querySelectorAll(".active");
+    activeItems.forEach(el => {
+        el.classList.remove("active");
+        el.removeAttribute("aria-current");
+    });
+  }
+  
+  // Xóa active của nút Home (nếu nó nằm ngoài serverList)
   if (homeBtn) homeBtn.classList.remove("active");
 
+  // 4. Xác định trạng thái hiện tại
   const urlParams = new URLSearchParams(window.location.search);
   const serverId = urlParams.get("serverId");
-  const isChat = window.location.pathname.endsWith("/chat");
-  const isHome = window.location.pathname.endsWith("/app") && !serverId;
+  const path = window.location.pathname;
+  
+  // Logic: Là trang chủ nếu đường dẫn chứa /app VÀ không có serverId
+  // (Thêm check path === "/" hoặc "/app" để bao quát hơn)
+  const isHome = (path === "/app" || path.startsWith("/app/")) && !serverId;
+  const isChat = (path.includes("/chat") || !!serverId);
 
-  if (isHome && homeBtn) {
-    homeBtn.classList.add("active");
+  console.log(`[Sidebar] State: isHome=${isHome}, serverId=${serverId}`);
+
+  // 5. Gán trạng thái Active mới
+  if (isHome) {
+    if (homeBtn) {
+        homeBtn.classList.add("active");
+    }
     return;
   }
 
   if (isChat && serverId && serverList) {
-    const activeItem = serverList.querySelector(
-      `[data-server-id="${serverId}"]`
-    );
-    if (activeItem) activeItem.classList.add("active");
+    const activeItem = serverList.querySelector(`[data-server-id="${serverId}"]`);
+    if (activeItem) {
+        activeItem.classList.add("active");
+    }
   }
 }
 
 async function runScriptsInElement(container) {
   if (!container) return;
+  console.log('[SPA-DEBUG] runScriptsInElement: Bắt đầu quét script trong container');
 
   const existingScriptSrc = new Set(
     Array.from(document.querySelectorAll("script[src]")).map((s) => {
-      try {
-        return new URL(
-          s.getAttribute("src"),
-          window.location.origin
-        ).toString();
-      } catch {
-        return s.getAttribute("src");
-      }
+      try { return new URL(s.getAttribute("src"), window.location.origin).toString(); } 
+      catch { return s.getAttribute("src"); }
     })
   );
 
   const scripts = Array.from(container.querySelectorAll("script"));
+  console.log(`[SPA-DEBUG] Tìm thấy ${scripts.length} thẻ script mới.`);
+
   for (const script of scripts) {
     const src = script.getAttribute("src");
     if (src) {
       let absSrc = src;
-      try {
-        absSrc = new URL(src, window.location.origin).toString();
-      } catch {
-        /* ignore */
-      }
+      try { absSrc = new URL(src, window.location.origin).toString(); } catch {}
 
       if (!existingScriptSrc.has(absSrc)) {
+        console.log('[SPA-DEBUG] -> Đang tải script mới:', src);
         await new Promise((resolve) => {
           const el = document.createElement("script");
           el.src = src;
           el.async = false;
-          el.onload = resolve;
-          el.onerror = resolve;
+          el.onload = () => {
+              console.log('[SPA-DEBUG] -> Script tải xong:', src);
+              resolve();
+          };
+          el.onerror = (e) => {
+              console.error('[SPA-DEBUG] -> Script lỗi tải:', src, e);
+              resolve();
+          };
           document.body.appendChild(el);
         });
         existingScriptSrc.add(absSrc);
+      } else {
+        console.log('[SPA-DEBUG] -> Script đã tồn tại, bỏ qua:', src);
       }
     } else if (script.textContent && script.textContent.trim()) {
+      console.log('[SPA-DEBUG] -> Chạy inline script');
       const el = document.createElement("script");
       el.textContent = script.textContent;
       document.body.appendChild(el);
     }
-
-    // Remove inert script tag from injected HTML
     script.remove();
   }
 }
@@ -841,9 +867,11 @@ let _spaNavToken = 0;
 
 async function spaNavigate(url, opts = {}) {
   const { pushState = true } = opts;
+  console.log('%c[SPA-DEBUG] Bắt đầu điều hướng tới:', 'color: cyan; font-weight: bold;', url);
 
   const pageArea = document.querySelector(".page-content-area");
   if (!pageArea) {
+    console.warn('[SPA-DEBUG] Không tìm thấy .page-content-area, fallback sang load thường.');
     window.location.href = url;
     return;
   }
@@ -859,17 +887,11 @@ async function spaNavigate(url, opts = {}) {
   if (isSame) return;
 
   try {
-    // Abort any in-flight navigation to keep transitions smooth
-    if (_spaNavController) {
-      try {
-        _spaNavController.abort();
-      } catch {
-        /* ignore */
-      }
-    }
+    if (_spaNavController) try { _spaNavController.abort(); } catch {}
     _spaNavController = new AbortController();
     const myToken = ++_spaNavToken;
 
+    console.log('[SPA-DEBUG] Fetching content...');
     const res = await fetch(targetUrl.toString(), {
       headers: { "X-Requested-With": "XMLHttpRequest" },
       credentials: "same-origin",
@@ -879,41 +901,35 @@ async function spaNavigate(url, opts = {}) {
 
     const html = await res.text();
     if (myToken !== _spaNavToken) return;
+    
+    console.log('[SPA-DEBUG] Content received. Parsing HTML...');
     const doc = new DOMParser().parseFromString(html, "text/html");
     const newArea = doc.querySelector(".page-content-area");
 
-    // If the server returns an undecorated fragment (no SiteMesh wrapper),
-    // fall back to using the response body instead of doing a full reload.
-    const nextHtml = newArea
-      ? newArea.innerHTML
-      : doc.body
-      ? doc.body.innerHTML
-      : html;
+    const nextHtml = newArea ? newArea.innerHTML : (doc.body ? doc.body.innerHTML : html);
     pageArea.innerHTML = nextHtml;
+    console.log('[SPA-DEBUG] DOM Updated. Syncing styles & scripts...');
+
     if (myToken !== _spaNavToken) return;
-    await syncHeadStylesFromDoc(doc);
+    // await syncHeadStylesFromDoc(doc); // Có thể comment dòng này nếu nghi ngờ lỗi CSS
     await runScriptsInElement(pageArea);
 
     if (doc.title) document.title = doc.title;
     if (pushState) {
-      history.pushState(
-        {},
-        "",
-        targetUrl.pathname + targetUrl.search + targetUrl.hash
-      );
+      history.pushState({}, "", targetUrl.pathname + targetUrl.search + targetUrl.hash);
     }
 
-    updateGlobalSidebarActiveState();
+    updateGlobalSidebarActiveState(); // Giữ nguyên hàm này nếu có
+    
+    console.log('[SPA-DEBUG] Dispatching event: cococord:page:loaded');
     document.dispatchEvent(
       new CustomEvent("cococord:page:loaded", {
         detail: { url: targetUrl.toString() },
       })
     );
   } catch (e) {
-    if (e && (e.name === "AbortError" || String(e).includes("AbortError"))) {
-      return;
-    }
-    console.warn("SPA navigate failed, fallback to full navigation", e);
+    if (e?.name === "AbortError") return;
+    console.error("[SPA-DEBUG] Navigation Error:", e);
     window.location.href = url;
   }
 }

@@ -175,16 +175,16 @@
     
     <!-- Custom JS for App -->
     <script src="${pageContext.request.contextPath}/js/auth.js?v=20260101f"></script>
-    <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260101f"></script>
+    <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=fix_sidebar_v1"></script>
     <script src="${pageContext.request.contextPath}/js/user-panel.js?v=20260103a"></script>
-    <script src="${pageContext.request.contextPath}/js/app.js?v=20260103b"></script>
+    <script src="${pageContext.request.contextPath}/js/app.js?v=fix_sidebar_v1"></script>
     <script src="${pageContext.request.contextPath}/js/settings-modal.js?v=20260102"></script>
     <!-- Quick Switcher Modal -->
     <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260102"></script>
     <!-- Notification system with global call subscription -->
     <script src="${pageContext.request.contextPath}/js/notification.js?v=20260103a"></script>
     <!-- /app home logic (safe: guarded by #cococordHome presence) -->
-    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260103a"></script>
+   
 
     <%
         if (sitemeshContent != null) {
