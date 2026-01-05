@@ -358,10 +358,10 @@ public class MessageServiceImpl implements IMessageService {
         if (message.getAttachments() != null) {
             attachments = message.getAttachments().stream()
                     .map(att -> ChatMessageResponse.AttachmentResponse.builder()
-                            .url(att.getFileUrl())
-                            .filename(att.getFileName())
-                            .contentType(att.getFileType())
-                            .size(att.getFileSize())
+                            .fileUrl(att.getFileUrl())
+                            .fileName(att.getFileName())
+                            .fileType(att.getFileType())
+                            .fileSize(att.getFileSize())
                             .build())
                     .collect(Collectors.toList());
         }

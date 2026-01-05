@@ -378,46 +378,69 @@
 
     /**
      * Send text-only message via WebSocket
+     * @returns {Promise<void>}
      */
-    function sendTextMessage(text) {
+    async function sendTextMessage(text) {
         if (!stompClient || !stompClient.connected) {
-            return;
+            throw new Error('WebSocket not connected');
         }
         
-        cancelReply();
+        console.log('[Chat] Sending text message:', text);
         
-        stompClient.send(
-            '/app/chat.sendMessage',
-            {},
-            JSON.stringify({ channelId: activeChannelId, content: text })
-        );
-        
-        el.chatInput.value = '';
+        try {
+            stompClient.send(
+                '/app/chat.sendMessage',
+                {},
+                JSON.stringify({ channelId: activeChannelId, content: text })
+            );
+            
+            // Clear input ONLY after successful send
+            el.chatInput.value = '';
+            cancelReply();
+            
+            console.log('[Chat] Text message sent successfully');
+        } catch (error) {
+            console.error('[Chat] Failed to send text message:', error);
+            throw error;
+        }
     }
 
     /**
      * Upload files and send message with attachments
      */
     async function uploadAndSendFiles(files, text) {
+        if (!files || files.length === 0) {
+            console.warn('[Chat] uploadAndSendFiles called with no files');
+            return;
+        }
+
+        console.log(`[Chat] Uploading ${files.length} file(s)...`, files);
+
         try {
             // Upload each file individually and collect URLs
             const uploadedFiles = [];
             
             for (const file of files) {
+                console.log(`[Chat] Uploading file: ${file.name} (${file.size} bytes, ${file.type})`);
+                
                 const formData = new FormData();
                 formData.append('file', file);
                 
                 const response = await fetchWithAuth(`/api/upload`, {
                     method: 'POST',
                     body: formData
+                    // DO NOT set Content-Type - let browser set multipart boundary
                 });
 
                 if (!response.ok) {
                     const error = await response.json().catch(() => ({}));
-                    throw new Error(error.message || 'Upload failed');
+                    console.error('[Chat] Upload failed response:', error);
+                    throw new Error(error.message || `Upload failed for ${file.name}`);
                 }
                 
                 const fileData = await response.json();
+                console.log(`[Chat] File uploaded successfully:`, fileData);
+                
                 uploadedFiles.push({
                     fileName: fileData.fileName || file.name,
                     fileUrl: fileData.fileUrl,
@@ -425,6 +448,8 @@
                     fileSize: file.size
                 });
             }
+            
+            console.log(`[Chat] All files uploaded. Sending message with ${uploadedFiles.length} attachment(s)...`);
             
             // Send message with attachments via WebSocket
             if (stompClient && stompClient.connected) {
@@ -437,6 +462,9 @@
                         attachments: uploadedFiles
                     })
                 );
+                console.log('[Chat] Message with attachments sent successfully');
+            } else {
+                throw new Error('WebSocket not connected');
             }
 
             // Clear input and attachments ONLY after successful upload and send
@@ -449,6 +477,8 @@
         } catch (error) {
             console.error('[Chat] File upload error:', error);
             showToast('Không thể tải file lên: ' + error.message, 'error');
+            // Don't clear attachments on error - let user retry
+            throw error;
         }
     }
 
@@ -660,6 +690,51 @@
                 : escapeHtml(rawContent);
         }
 
+        // Render attachments if any
+        let attachmentsHtml = '';
+        if (msg.attachments && msg.attachments.length > 0) {
+            attachmentsHtml = '<div class="message-attachments">';
+            
+            msg.attachments.forEach(att => {
+                const fileUrl = escapeHtml(att.fileUrl);
+                const fileName = escapeHtml(att.fileName);
+                const fileType = att.fileType || '';
+                const fileSize = formatFileSize(att.fileSize || 0);
+                
+                if (fileType.startsWith('image/')) {
+                    attachmentsHtml += `
+                        <div class="attachment-item">
+                            <a href="${fileUrl}" target="_blank" rel="noopener noreferrer">
+                                <img src="${fileUrl}" alt="${fileName}" class="attachment-image" loading="lazy">
+                            </a>
+                        </div>
+                    `;
+                } else if (fileType.startsWith('video/')) {
+                    attachmentsHtml += `
+                        <div class="attachment-item">
+                            <video src="${fileUrl}" controls class="attachment-video"></video>
+                        </div>
+                    `;
+                } else {
+                    // Generic file
+                    attachmentsHtml += `
+                        <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="attachment-file">
+                            <div class="attachment-file-icon">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div class="attachment-file-info">
+                                <span class="attachment-file-name" title="${fileName}">${fileName}</span>
+                                <span class="attachment-file-size">${fileSize}</span>
+                            </div>
+                            <i class="bi bi-download" style="margin-left: auto; color: var(--text-muted);"></i>
+                        </a>
+                    `;
+                }
+            });
+            
+            attachmentsHtml += '</div>';
+        }
+
         return `
             <div class="message-row" data-message-id="${msg.id}" data-user-id="${msg.userId || msg.senderId || ''}" data-username="${msg.username || ''}">
                 <div class="message-avatar">
@@ -671,10 +746,22 @@
                         <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
                         ${msg.editedAt ? '<span class="message-edited">(đã chỉnh sửa)</span>' : ''}
                     </div>
-                    <div class="message-content markdown-content">${htmlContent}</div>
+                    <div class="message-content markdown-content">
+                        ${htmlContent}
+                        ${attachmentsHtml}
+                    </div>
                 </div>
             </div>
         `;
+    }
+
+    // Helper to format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     // ==================== MOBILE RESPONSIVENESS ====================
@@ -3910,27 +3997,65 @@
         // el.membersToggleBtn?.addEventListener('click', toggleMembersSidebar);
         
         // Chat composer - handle submit with ChatInputManager for file attachments
+        let isSubmitting = false; // Prevent multiple simultaneous submits
+        
         el.chatComposer?.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (isSubmitting) {
+                console.log('[Chat] Already submitting, ignoring duplicate submit');
+                return;
+            }
+            
+            isSubmitting = true;
+            console.log('[Chat] ========== FORM SUBMIT START ==========');
             
             // Stop typing indicator immediately
             sendStopTypingNotification();
             
             const text = (el.chatInput.value || '').trim();
             
-            // Check for file attachments from ChatInputManager
+            // Check for file attachments from ChatInputManager - SNAPSHOT FILES BEFORE SENDING
             const hasFiles = chatInputManager && chatInputManager.hasAttachments();
             const files = hasFiles ? chatInputManager.getAttachedFiles() : [];
             
-            if (!text && !hasFiles) return;
-            if (!activeChannelId) return;
+            console.log('[Chat] Form submit - text:', `"${text}"`, 'hasFiles:', hasFiles, 'files.length:', files.length);
+            console.log('[Chat] Files array:', files.map(f => f.name));
+            
+            if (!text && !hasFiles) {
+                console.log('[Chat] No text and no files, aborting');
+                isSubmitting = false;
+                return;
+            }
+            
+            if (!activeChannelId) {
+                console.log('[Chat] No active channel, aborting');
+                isSubmitting = false;
+                return;
+            }
 
-            // If we have files, use the upload flow
-            if (hasFiles) {
-                await uploadAndSendFiles(files, text);
-            } else if (text) {
-                // Just send text message
-                sendTextMessage(text);
+            try {
+                // If we have files, use the upload flow
+                if (hasFiles && files.length > 0) {
+                    console.log('[Chat] Starting file upload flow with', files.length, 'file(s)');
+                    // CRITICAL: Wait for upload to complete before clearing anything
+                    await uploadAndSendFiles(files, text);
+                    console.log('[Chat] File upload flow completed successfully');
+                    // Clearing happens inside uploadAndSendFiles after success
+                } else if (text) {
+                    console.log('[Chat] Starting text-only message flow');
+                    // CRITICAL: Wait for text message to send before clearing
+                    await sendTextMessage(text);
+                    console.log('[Chat] Text message flow completed successfully');
+                    // Clearing happens inside sendTextMessage after success
+                }
+            } catch (error) {
+                console.error('[Chat] Send message error:', error);
+                showToast('Không thể gửi tin nhắn: ' + error.message, 'error');
+                // DON'T clear on error - preserve user's input and attachments
+            } finally {
+                isSubmitting = false;
+                console.log('[Chat] ========== FORM SUBMIT END ==========');
             }
         });
         
