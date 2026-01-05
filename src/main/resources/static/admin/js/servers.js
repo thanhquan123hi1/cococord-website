@@ -1,7 +1,6 @@
 /**
  * CoCoCord Admin - Servers Page JavaScript
- * Handles server table, filters, search, modals and admin actions
- * Updated with full detail modal and admin actions
+ * Horizontal layout modal, Context Menu, Action Modals
  */
 
 var AdminServers = window.AdminServers || (function() {
@@ -22,6 +21,7 @@ var AdminServers = window.AdminServers || (function() {
 
   let serversData = [];
   let currentServer = null;
+  let contextMenuServer = null;
   let pagination = {
     page: 0,
     size: 15,
@@ -40,6 +40,8 @@ var AdminServers = window.AdminServers || (function() {
     server: (id) => `/api/admin/servers/${id}`,
     lock: (id) => `/api/admin/servers/${id}/lock`,
     unlock: (id) => `/api/admin/servers/${id}/unlock`,
+    suspend: (id) => `/api/admin/servers/${id}/suspend`,
+    unsuspend: (id) => `/api/admin/servers/${id}/unsuspend`,
     transfer: (id) => `/api/admin/servers/${id}/transfer`,
     serverAudit: (id) => `/api/admin/servers/${id}/audit-log`,
     serverReports: (id) => `/api/admin/servers/${id}/reports`
@@ -57,8 +59,9 @@ var AdminServers = window.AdminServers || (function() {
     initSelectAll();
     initBulkActions();
     initModalTabs();
-    initModalActions();
     initModals();
+    initContextMenu();
+    initActionModals();
     initPagination();
     initStatCardClicks();
     
@@ -179,20 +182,19 @@ var AdminServers = window.AdminServers || (function() {
     
     tbody.innerHTML = servers.map(server => {
       const isLocked = server.isLocked || server.locked || false;
-      const status = isLocked ? 'Locked' : 'Active';
-      const statusClass = isLocked ? 'danger' : 'success';
+      const isSuspended = server.isSuspended || server.suspended || false;
+      const status = isSuspended ? 'Suspended' : (isLocked ? 'Locked' : 'Active');
+      const statusClass = isSuspended ? 'warning' : (isLocked ? 'danger' : 'success');
       
       return `
-      <tr data-id="${server.id}">
+      <tr data-id="${server.id}" class="server-row" data-server='${JSON.stringify(server).replace(/'/g, "\\'")}'>
         <td>
-          <input type="checkbox" class="server-checkbox admin-checkbox" value="${server.id}">
+          <input type="checkbox" class="server-checkbox admin-checkbox" value="${server.id}" onclick="event.stopPropagation();">
         </td>
         <td class="text-muted">#${server.id}</td>
         <td>
           <div class="user-cell">
-            <div class="server-avatar-sm" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--admin-primary);width:36px;height:36px;border-radius:10px;">
-              ${getInitials(server.name)}
-            </div>
+            <div class="server-avatar-sm">${getInitials(server.name)}</div>
             <div class="user-info">
               <span class="cell-user-name">${escapeHtml(server.name)}</span>
               <span class="cell-user-email">${escapeHtml(server.description || 'No description')}</span>
@@ -288,9 +290,28 @@ var AdminServers = window.AdminServers || (function() {
   // ========================================
 
   function attachTableListeners() {
+    // Row click for detail modal (left click)
+    document.querySelectorAll('.server-row').forEach(row => {
+      row.addEventListener('click', function(e) {
+        // Don't trigger if clicking on checkbox or action buttons
+        if (e.target.closest('.server-checkbox') || e.target.closest('.admin-btn')) return;
+        
+        const server = JSON.parse(this.dataset.server);
+        if (server) showServerDetailModal(server);
+      });
+      
+      // Right-click for context menu
+      row.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        const server = JSON.parse(this.dataset.server);
+        if (server) showContextMenu(e, server);
+      });
+    });
+
     // View buttons
     document.querySelectorAll('[data-action="view"]').forEach(btn => {
-      btn.onclick = function() {
+      btn.onclick = function(e) {
+        e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
         if (server) showServerDetailModal(server);
@@ -299,16 +320,18 @@ var AdminServers = window.AdminServers || (function() {
 
     // Lock buttons
     document.querySelectorAll('[data-action="lock"]').forEach(btn => {
-      btn.onclick = function() {
+      btn.onclick = function(e) {
+        e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) showQuickLockModal(server);
+        if (server) showLockModal(server);
       };
     });
 
     // Unlock buttons
     document.querySelectorAll('[data-action="unlock"]').forEach(btn => {
-      btn.onclick = async function() {
+      btn.onclick = async function(e) {
+        e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
         if (confirm(`Are you sure you want to unlock "${server?.name || 'this server'}"?`)) {
@@ -319,10 +342,11 @@ var AdminServers = window.AdminServers || (function() {
 
     // Delete buttons
     document.querySelectorAll('[data-action="delete"]').forEach(btn => {
-      btn.onclick = function() {
+      btn.onclick = function(e) {
+        e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) showConfirmDeleteModal(server);
+        if (server) showDeleteModal(server);
       };
     });
 
@@ -339,6 +363,117 @@ var AdminServers = window.AdminServers || (function() {
     document.getElementById('btn-export-servers')?.addEventListener('click', function() {
       AdminUtils?.showToast?.('Export feature coming soon', 'info');
     });
+  }
+
+  // ========================================
+  // Context Menu
+  // ========================================
+
+  function initContextMenu() {
+    // Hide context menu on any click outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.server-context-menu')) {
+        hideContextMenu();
+      }
+    });
+
+    // Hide on scroll
+    document.addEventListener('scroll', hideContextMenu, true);
+
+    // Hide on escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') hideContextMenu();
+    });
+
+    // Context menu item clicks
+    document.getElementById('ctx-view-details')?.addEventListener('click', function() {
+      if (contextMenuServer) showServerDetailModal(contextMenuServer);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-lock')?.addEventListener('click', function() {
+      if (contextMenuServer) showLockModal(contextMenuServer);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-unlock')?.addEventListener('click', async function() {
+      if (contextMenuServer && confirm(`Are you sure you want to unlock "${contextMenuServer.name}"?`)) {
+        await unlockServer(contextMenuServer.id);
+      }
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-suspend')?.addEventListener('click', function() {
+      if (contextMenuServer) showSuspendModal(contextMenuServer);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-unsuspend')?.addEventListener('click', async function() {
+      if (contextMenuServer && confirm(`Are you sure you want to unsuspend "${contextMenuServer.name}"?`)) {
+        await unsuspendServer(contextMenuServer.id);
+      }
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-delete')?.addEventListener('click', function() {
+      if (contextMenuServer) showDeleteModal(contextMenuServer);
+      hideContextMenu();
+    });
+
+    document.getElementById('ctx-audit-log')?.addEventListener('click', function() {
+      if (contextMenuServer) {
+        showServerDetailModal(contextMenuServer);
+        setTimeout(() => switchModalTab('audit-log'), 100);
+      }
+      hideContextMenu();
+    });
+  }
+
+  function showContextMenu(e, server) {
+    contextMenuServer = server;
+    const menu = document.getElementById('server-context-menu');
+    if (!menu) return;
+
+    const isLocked = server.isLocked || server.locked || false;
+    const isSuspended = server.isSuspended || server.suspended || false;
+
+    // Update context menu header with server info
+    const headerTitle = document.getElementById('ctx-server-name');
+    const headerSubtitle = document.getElementById('ctx-server-id');
+    if (headerTitle) headerTitle.textContent = server.name || 'Unknown Server';
+    if (headerSubtitle) headerSubtitle.textContent = `ID: #${server.id}`;
+
+    // Show/hide lock/unlock options
+    const lockItem = document.getElementById('ctx-lock');
+    const unlockItem = document.getElementById('ctx-unlock');
+    if (lockItem) lockItem.style.display = isLocked ? 'none' : 'flex';
+    if (unlockItem) unlockItem.style.display = isLocked ? 'flex' : 'none';
+
+    // Show/hide suspend/unsuspend options
+    const suspendItem = document.getElementById('ctx-suspend');
+    const unsuspendItem = document.getElementById('ctx-unsuspend');
+    if (suspendItem) suspendItem.style.display = isSuspended ? 'none' : 'flex';
+    if (unsuspendItem) unsuspendItem.style.display = isSuspended ? 'flex' : 'none';
+
+    // Position menu
+    const menuWidth = 200;
+    const menuHeight = 250;
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // Keep menu in viewport
+    if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 10;
+    if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 10;
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+  }
+
+  function hideContextMenu() {
+    const menu = document.getElementById('server-context-menu');
+    if (menu) menu.style.display = 'none';
+    contextMenuServer = null;
   }
 
   // ========================================
@@ -402,6 +537,35 @@ var AdminServers = window.AdminServers || (function() {
     } catch (error) {
       console.error('[AdminServers] Failed to transfer ownership:', error);
       AdminUtils?.showToast?.('Failed to transfer ownership', 'danger');
+      return false;
+    }
+  }
+
+  async function suspendServer(serverId, reason) {
+    try {
+      const params = new URLSearchParams();
+      if (reason) params.append('reason', reason);
+      
+      await AdminUtils.api.post(`${API.suspend(serverId)}?${params}`);
+      AdminUtils?.showToast?.('Server suspended successfully', 'warning');
+      await Promise.all([fetchStats(), fetchServers()]);
+      return true;
+    } catch (error) {
+      console.error('[AdminServers] Failed to suspend server:', error);
+      AdminUtils?.showToast?.('Failed to suspend server', 'danger');
+      return false;
+    }
+  }
+
+  async function unsuspendServer(serverId) {
+    try {
+      await AdminUtils.api.post(API.unsuspend(serverId));
+      AdminUtils?.showToast?.('Server unsuspended successfully', 'success');
+      await Promise.all([fetchStats(), fetchServers()]);
+      return true;
+    } catch (error) {
+      console.error('[AdminServers] Failed to unsuspend server:', error);
+      AdminUtils?.showToast?.('Failed to unsuspend server', 'danger');
       return false;
     }
   }
@@ -557,50 +721,182 @@ var AdminServers = window.AdminServers || (function() {
     const bar = document.getElementById('bulk-actions-bar');
     const countEl = document.getElementById('selected-count');
     
-    if (bar) bar.style.display = selected.length > 0 ? 'flex' : 'none';
+    if (bar) {
+      bar.classList.toggle('visible', selected.length > 0);
+    }
     if (countEl) countEl.textContent = selected.length;
   }
 
-  function initBulkActions() {
-    document.querySelectorAll('[data-bulk-action]').forEach(btn => {
-      btn.onclick = async function() {
-        const action = this.dataset.bulkAction;
-        const selected = Array.from(document.querySelectorAll('.server-checkbox:checked')).map(cb => cb.value);
-        
-        if (selected.length === 0) return;
+  function getSelectedServerIds() {
+    return Array.from(document.querySelectorAll('.server-checkbox:checked')).map(cb => cb.value);
+  }
 
-        if (action === 'lock') {
-          const reason = prompt('Enter reason for locking these servers:');
-          if (reason !== null) {
-            for (const id of selected) {
-              await lockServer(id, reason);
-            }
-          }
-        } else if (action === 'unlock') {
-          if (confirm(`Are you sure you want to unlock ${selected.length} servers?`)) {
-            for (const id of selected) {
-              await unlockServer(id);
-            }
-          }
-        } else if (action === 'delete') {
-          if (confirm(`WARNING: Are you sure you want to delete ${selected.length} servers? This cannot be undone!`)) {
-            const reason = prompt('Enter reason for deletion:');
-            if (reason !== null) {
-              for (const id of selected) {
-                await deleteServer(id, reason);
-              }
-            }
-          }
-        }
-        
-        document.getElementById('select-all-servers').checked = false;
-        updateBulkActionsBar();
-      };
+  function initBulkActions() {
+    // Bulk Lock button
+    document.querySelector('[data-bulk-action="lock"]')?.addEventListener('click', function() {
+      const selected = getSelectedServerIds();
+      if (selected.length === 0) return;
+      showBulkLockModal(selected.length);
+    });
+
+    // Bulk Unlock button
+    document.querySelector('[data-bulk-action="unlock"]')?.addEventListener('click', function() {
+      const selected = getSelectedServerIds();
+      if (selected.length === 0) return;
+      showBulkUnlockModal(selected.length);
+    });
+
+    // Bulk Delete button
+    document.querySelector('[data-bulk-action="delete"]')?.addEventListener('click', function() {
+      const selected = getSelectedServerIds();
+      if (selected.length === 0) return;
+      showBulkDeleteModal(selected.length);
+    });
+
+    // Bulk Lock Modal handlers
+    document.querySelector('[data-action="close-bulk-lock-modal"]')?.addEventListener('click', hideBulkLockModal);
+    document.getElementById('btn-confirm-bulk-lock')?.addEventListener('click', async function() {
+      const selected = getSelectedServerIds();
+      const reason = document.getElementById('bulk-lock-reason')?.value?.trim();
+      
+      if (!reason) {
+        AdminUtils?.showToast?.('Please enter a reason for locking', 'warning');
+        return;
+      }
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Locking...';
+      
+      for (const id of selected) {
+        await lockServer(id, reason);
+      }
+      
+      hideBulkLockModal();
+      clearBulkSelection();
+      AdminUtils?.showToast?.(`${selected.length} servers locked successfully`, 'success');
+    });
+
+    // Bulk Unlock Modal handlers
+    document.querySelector('[data-action="close-bulk-unlock-modal"]')?.addEventListener('click', hideBulkUnlockModal);
+    document.getElementById('btn-confirm-bulk-unlock')?.addEventListener('click', async function() {
+      const selected = getSelectedServerIds();
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Unlocking...';
+      
+      for (const id of selected) {
+        await unlockServer(id);
+      }
+      
+      hideBulkUnlockModal();
+      clearBulkSelection();
+      AdminUtils?.showToast?.(`${selected.length} servers unlocked successfully`, 'success');
+    });
+
+    // Bulk Delete Modal handlers
+    document.querySelector('[data-action="close-bulk-delete-modal"]')?.addEventListener('click', hideBulkDeleteModal);
+    
+    // Enable/disable bulk delete button based on confirmation input
+    document.getElementById('confirm-bulk-delete-input')?.addEventListener('input', function() {
+      const confirmBtn = document.getElementById('btn-confirm-bulk-delete');
+      if (confirmBtn) {
+        confirmBtn.disabled = this.value !== 'DELETE';
+      }
+    });
+    
+    document.getElementById('btn-confirm-bulk-delete')?.addEventListener('click', async function() {
+      const selected = getSelectedServerIds();
+      const reason = document.getElementById('bulk-delete-reason')?.value?.trim();
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="loading-spinner-sm"></span> Deleting...';
+      
+      for (const id of selected) {
+        await deleteServer(id, reason);
+      }
+      
+      hideBulkDeleteModal();
+      clearBulkSelection();
+      AdminUtils?.showToast?.(`${selected.length} servers deleted permanently`, 'success');
     });
   }
 
+  function clearBulkSelection() {
+    document.querySelectorAll('.server-checkbox:checked').forEach(cb => cb.checked = false);
+    const selectAll = document.getElementById('select-all-servers');
+    if (selectAll) selectAll.checked = false;
+    updateBulkActionsBar();
+  }
+
+  // Bulk Lock Modal
+  function showBulkLockModal(count) {
+    const modal = document.getElementById('bulk-lock-modal');
+    if (!modal) return;
+    document.getElementById('bulk-lock-count').textContent = count;
+    document.getElementById('bulk-lock-reason').value = '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-bulk-lock');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Lock Selected Servers';
+    }
+  }
+
+  function hideBulkLockModal() {
+    const modal = document.getElementById('bulk-lock-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // Bulk Unlock Modal
+  function showBulkUnlockModal(count) {
+    const modal = document.getElementById('bulk-unlock-modal');
+    if (!modal) return;
+    document.getElementById('bulk-unlock-count').textContent = count;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-bulk-unlock');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Unlock Selected Servers';
+    }
+  }
+
+  function hideBulkUnlockModal() {
+    const modal = document.getElementById('bulk-unlock-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // Bulk Delete Modal
+  function showBulkDeleteModal(count) {
+    const modal = document.getElementById('bulk-delete-modal');
+    if (!modal) return;
+    document.getElementById('bulk-delete-count').textContent = count;
+    document.getElementById('confirm-bulk-delete-input').value = '';
+    document.getElementById('bulk-delete-reason').value = '';
+    document.getElementById('btn-confirm-bulk-delete').disabled = true;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Reset button state
+    const btn = document.getElementById('btn-confirm-bulk-delete');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Delete Selected Servers';
+    }
+  }
+
+  function hideBulkDeleteModal() {
+    const modal = document.getElementById('bulk-delete-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
   // ========================================
-  // Server Detail Modal
+  // Server Detail Modal (Horizontal Layout)
   // ========================================
 
   function showServerDetailModal(server) {
@@ -608,49 +904,91 @@ var AdminServers = window.AdminServers || (function() {
     const modal = document.getElementById('server-detail-modal');
     if (!modal) return;
 
-    // Populate header
-    document.getElementById('modal-server-avatar').textContent = getInitials(server.name);
-    document.getElementById('modal-server-name').textContent = server.name;
-    document.getElementById('modal-server-description').textContent = server.description || 'No description';
+    const isLocked = server.isLocked || server.locked || false;
+    const isSuspended = server.isSuspended || server.suspended || false;
+
+    // Sidebar - Server Profile
+    const avatarEl = document.getElementById('detail-server-avatar');
+    if (avatarEl) avatarEl.textContent = getInitials(server.name);
     
-    const statusEl = document.getElementById('modal-server-status');
-    const isLocked = server.isLocked || server.locked;
-    statusEl.textContent = isLocked ? 'Locked' : 'Active';
-    statusEl.className = `badge badge-${isLocked ? 'danger' : 'success'}`;
-    
-    document.getElementById('modal-server-visibility').textContent = server.isPublic ? 'Public' : 'Private';
+    document.getElementById('detail-server-name')?.textContent && 
+      (document.getElementById('detail-server-name').textContent = server.name);
+    document.getElementById('detail-server-desc')?.textContent &&
+      (document.getElementById('detail-server-desc').textContent = server.description || 'No description');
 
-    // Quick stats
-    document.getElementById('modal-member-count').textContent = AdminUtils?.formatNumber?.(server.memberCount || 0);
-    document.getElementById('modal-channel-count').textContent = server.channelCount || 0;
-    document.getElementById('modal-role-count').textContent = server.roleCount || 0;
-    document.getElementById('modal-report-count').textContent = '0'; // Will be updated
-
-    // Details
-    document.getElementById('modal-server-id').textContent = '#' + server.id;
-    document.getElementById('modal-created-at').textContent = formatDateTime(server.createdAt);
-    document.getElementById('modal-last-activity').textContent = formatDateTime(server.lastActivityAt || server.updatedAt);
-    document.getElementById('modal-max-members').textContent = AdminUtils?.formatNumber?.(server.maxMembers || 100000);
-
-    // Owner
-    const ownerAvatar = document.getElementById('modal-owner-avatar');
-    ownerAvatar.src = server.ownerAvatarUrl || '/images/default-avatar.png';
-    ownerAvatar.onerror = () => ownerAvatar.src = '/images/default-avatar.png';
-    document.getElementById('modal-owner-name').textContent = server.ownerUsername || '--';
-    document.getElementById('modal-owner-email').textContent = server.ownerEmail || '--';
-
-    // Lock info
-    const lockSection = document.getElementById('lock-info-section');
-    if (isLocked) {
-      lockSection.style.display = 'block';
-      document.getElementById('modal-locked-at').textContent = formatDateTime(server.lockedAt);
-      document.getElementById('modal-lock-reason').textContent = server.lockReason || 'No reason provided';
-    } else {
-      lockSection.style.display = 'none';
+    // Server Badges
+    const badgesEl = document.getElementById('detail-server-badges');
+    if (badgesEl) {
+      let badgesHtml = '';
+      if (isSuspended) {
+        badgesHtml += '<span class="badge badge-warning">Suspended</span>';
+      } else if (isLocked) {
+        badgesHtml += '<span class="badge badge-danger">Locked</span>';
+      } else {
+        badgesHtml += '<span class="badge badge-success">Active</span>';
+      }
+      badgesHtml += server.isPublic ? '<span class="badge badge-info">Public</span>' : '<span class="badge badge-ghost">Private</span>';
+      badgesEl.innerHTML = badgesHtml;
     }
 
-    // Update lock action panel
-    updateLockActionPanel(isLocked);
+    // Sidebar Stats
+    document.getElementById('detail-member-count')?.textContent &&
+      (document.getElementById('detail-member-count').textContent = AdminUtils?.formatNumber?.(server.memberCount || 0));
+    document.getElementById('detail-channel-count')?.textContent &&
+      (document.getElementById('detail-channel-count').textContent = server.channelCount || 0);
+    document.getElementById('detail-role-count')?.textContent &&
+      (document.getElementById('detail-role-count').textContent = server.roleCount || 0);
+    document.getElementById('detail-report-count')?.textContent &&
+      (document.getElementById('detail-report-count').textContent = '0');
+
+    // Overview Tab - Server Info
+    document.getElementById('detail-server-id')?.textContent &&
+      (document.getElementById('detail-server-id').textContent = '#' + server.id);
+    document.getElementById('detail-created-at')?.textContent &&
+      (document.getElementById('detail-created-at').textContent = formatDateTime(server.createdAt));
+    document.getElementById('detail-last-activity')?.textContent &&
+      (document.getElementById('detail-last-activity').textContent = formatDateTime(server.lastActivityAt || server.updatedAt));
+    document.getElementById('detail-max-members')?.textContent &&
+      (document.getElementById('detail-max-members').textContent = AdminUtils?.formatNumber?.(server.maxMembers || 100000));
+
+    // Owner Info
+    const ownerAvatarEl = document.getElementById('detail-owner-avatar');
+    if (ownerAvatarEl) {
+      ownerAvatarEl.src = server.ownerAvatarUrl || '/images/default-avatar.png';
+      ownerAvatarEl.onerror = () => ownerAvatarEl.src = '/images/default-avatar.png';
+    }
+    document.getElementById('detail-owner-name')?.textContent &&
+      (document.getElementById('detail-owner-name').textContent = server.ownerUsername || '--');
+    document.getElementById('detail-owner-email')?.textContent &&
+      (document.getElementById('detail-owner-email').textContent = server.ownerEmail || '--');
+
+    // Lock Info Section
+    const lockInfoSection = document.getElementById('detail-lock-info');
+    if (lockInfoSection) {
+      if (isLocked) {
+        lockInfoSection.style.display = 'block';
+        document.getElementById('detail-locked-at')?.textContent &&
+          (document.getElementById('detail-locked-at').textContent = formatDateTime(server.lockedAt));
+        document.getElementById('detail-lock-reason')?.textContent &&
+          (document.getElementById('detail-lock-reason').textContent = server.lockReason || 'No reason provided');
+      } else {
+        lockInfoSection.style.display = 'none';
+      }
+    }
+
+    // Suspend Info Section
+    const suspendInfoSection = document.getElementById('detail-suspend-info');
+    if (suspendInfoSection) {
+      if (isSuspended) {
+        suspendInfoSection.style.display = 'block';
+        document.getElementById('detail-suspended-at')?.textContent &&
+          (document.getElementById('detail-suspended-at').textContent = formatDateTime(server.suspendedAt));
+        document.getElementById('detail-suspend-reason')?.textContent &&
+          (document.getElementById('detail-suspend-reason').textContent = server.suspendReason || 'No reason provided');
+      } else {
+        suspendInfoSection.style.display = 'none';
+      }
+    }
 
     // Reset to overview tab
     switchModalTab('overview');
@@ -659,7 +997,7 @@ var AdminServers = window.AdminServers || (function() {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    // Load reports count
+    // Load additional data
     loadServerReportsCount(server.id);
   }
 
@@ -708,7 +1046,7 @@ var AdminServers = window.AdminServers || (function() {
   // ========================================
 
   function initModalTabs() {
-    document.querySelectorAll('#server-modal-tabs .admin-tab').forEach(tab => {
+    document.querySelectorAll('#server-modal-tabs .tab-btn').forEach(tab => {
       tab.addEventListener('click', function() {
         switchModalTab(this.dataset.tab);
       });
@@ -717,7 +1055,7 @@ var AdminServers = window.AdminServers || (function() {
 
   function switchModalTab(tabName) {
     // Update tab buttons
-    document.querySelectorAll('#server-modal-tabs .admin-tab').forEach(t => {
+    document.querySelectorAll('#server-modal-tabs .tab-btn').forEach(t => {
       t.classList.toggle('active', t.dataset.tab === tabName);
     });
     
@@ -820,116 +1158,163 @@ var AdminServers = window.AdminServers || (function() {
   }
 
   // ========================================
-  // Modal Actions
+  // Modal Tab Data Loading
+  // ========================================  // ========================================
+  // Action Modals (Lock, Suspend, Transfer, Delete)
   // ========================================
 
-  function initModalActions() {
-    // Lock/Unlock toggle
-    document.getElementById('btn-toggle-lock')?.addEventListener('click', async function() {
+  function initActionModals() {
+    // Lock Modal
+    document.getElementById('btn-confirm-lock')?.addEventListener('click', async function() {
       if (!currentServer) return;
-      
-      const isLocked = currentServer.isLocked || currentServer.locked;
-      
-      if (isLocked) {
-        if (await unlockServer(currentServer.id)) {
-          currentServer.isLocked = false;
-          updateLockActionPanel(false);
-          document.getElementById('lock-info-section').style.display = 'none';
-          const statusEl = document.getElementById('modal-server-status');
-          statusEl.textContent = 'Active';
-          statusEl.className = 'badge badge-success';
-        }
-      } else {
-        const reason = document.getElementById('lock-reason-input')?.value?.trim();
-        if (!reason) {
-          AdminUtils?.showToast?.('Please enter a reason for locking', 'warning');
-          return;
-        }
-        if (await lockServer(currentServer.id, reason)) {
-          currentServer.isLocked = true;
-          currentServer.lockReason = reason;
-          currentServer.lockedAt = new Date().toISOString();
-          updateLockActionPanel(true);
-          document.getElementById('lock-info-section').style.display = 'block';
-          document.getElementById('modal-locked-at').textContent = formatDateTime(currentServer.lockedAt);
-          document.getElementById('modal-lock-reason').textContent = reason;
-          const statusEl = document.getElementById('modal-server-status');
-          statusEl.textContent = 'Locked';
-          statusEl.className = 'badge badge-danger';
-        }
-      }
-    });
-
-    // Transfer ownership
-    document.getElementById('btn-transfer-ownership')?.addEventListener('click', async function() {
-      if (!currentServer) return;
-      
-      const newOwnerId = document.getElementById('transfer-user-id')?.value?.trim();
-      const reason = document.getElementById('transfer-reason')?.value?.trim();
-      
-      if (!newOwnerId) {
-        AdminUtils?.showToast?.('Please enter a user ID', 'warning');
+      const reason = document.getElementById('lock-reason')?.value?.trim();
+      if (!reason) {
+        AdminUtils?.showToast?.('Please enter a reason', 'warning');
         return;
       }
-      
-      if (!confirm(`Are you sure you want to transfer ownership of "${currentServer.name}" to user #${newOwnerId}?`)) {
-        return;
-      }
-      
-      if (await transferOwnership(currentServer.id, newOwnerId, reason)) {
+      if (await lockServer(currentServer.id, reason)) {
+        closeModal('lock-modal');
         closeModal('server-detail-modal');
       }
     });
 
-    // Delete server
-    document.getElementById('btn-delete-server')?.addEventListener('click', function() {
+    // Suspend Modal
+    document.getElementById('btn-confirm-suspend')?.addEventListener('click', async function() {
       if (!currentServer) return;
-      showConfirmDeleteModal(currentServer);
+      const reason = document.getElementById('suspend-reason')?.value?.trim();
+      if (!reason) {
+        AdminUtils?.showToast?.('Please enter a reason', 'warning');
+        return;
+      }
+      if (await suspendServer(currentServer.id, reason)) {
+        closeModal('suspend-modal');
+        closeModal('server-detail-modal');
+      }
     });
 
-    // View owner profile
-    document.getElementById('btn-view-owner')?.addEventListener('click', function() {
-      if (!currentServer?.ownerId) return;
-      AdminUtils?.showToast?.('Navigate to user profile (TODO)', 'info');
+    // Transfer Modal
+    document.getElementById('btn-confirm-transfer')?.addEventListener('click', async function() {
+      if (!currentServer) return;
+      const newOwnerId = document.getElementById('transfer-user-id')?.value?.trim();
+      const reason = document.getElementById('transfer-reason')?.value?.trim();
+      if (!newOwnerId) {
+        AdminUtils?.showToast?.('Please enter a user ID', 'warning');
+        return;
+      }
+      if (!confirm(`Transfer "${currentServer.name}" to user #${newOwnerId}?`)) return;
+      if (await transferOwnership(currentServer.id, newOwnerId, reason)) {
+        closeModal('transfer-modal');
+        closeModal('server-detail-modal');
+      }
+    });
+
+    // Delete Modal
+    document.getElementById('confirm-delete-input')?.addEventListener('input', function() {
+      const btn = document.getElementById('btn-confirm-delete');
+      if (btn && currentServer) {
+        btn.disabled = this.value !== currentServer.name;
+      }
+    });
+
+    document.getElementById('btn-confirm-delete')?.addEventListener('click', async function() {
+      if (!currentServer || this.disabled) return;
+      const reason = document.getElementById('delete-reason')?.value?.trim() || 'Admin deletion';
+      if (await deleteServer(currentServer.id, reason)) {
+        closeModal('delete-modal');
+        closeModal('server-detail-modal');
+      }
+    });
+
+    // Close buttons for action modals
+    document.querySelectorAll('[data-action="close-lock-modal"]').forEach(btn => {
+      btn.onclick = () => closeModal('lock-modal');
+    });
+    document.querySelectorAll('[data-action="close-suspend-modal"]').forEach(btn => {
+      btn.onclick = () => closeModal('suspend-modal');
+    });
+    document.querySelectorAll('[data-action="close-transfer-modal"]').forEach(btn => {
+      btn.onclick = () => closeModal('transfer-modal');
+    });
+    document.querySelectorAll('[data-action="close-delete-modal"]').forEach(btn => {
+      btn.onclick = () => closeModal('delete-modal');
+    });
+
+    // Action card buttons in Admin Actions tab
+    document.getElementById('btn-open-lock-modal')?.addEventListener('click', function() {
+      if (currentServer) showLockModal(currentServer);
+    });
+    document.getElementById('btn-open-suspend-modal')?.addEventListener('click', function() {
+      if (currentServer) showSuspendModal(currentServer);
+    });
+    document.getElementById('btn-open-transfer-modal')?.addEventListener('click', function() {
+      if (currentServer) showTransferModal(currentServer);
+    });
+    document.getElementById('btn-open-delete-modal')?.addEventListener('click', function() {
+      if (currentServer) showDeleteModal(currentServer);
     });
   }
 
-  // ========================================
-  // Quick Lock Modal
-  // ========================================
-
-  function showQuickLockModal(server) {
-    const modal = document.getElementById('quick-lock-modal');
+  function showLockModal(server) {
+    currentServer = server;
+    const modal = document.getElementById('lock-modal');
     if (!modal) return;
 
+    document.getElementById('lock-server-name')?.textContent &&
+      (document.getElementById('lock-server-name').textContent = server.name);
+    document.getElementById('lock-reason').value = '';
+
+    modal.style.display = 'flex';
+  }
+
+  function showSuspendModal(server) {
     currentServer = server;
-    document.getElementById('quick-lock-avatar').textContent = getInitials(server.name);
-    document.getElementById('quick-lock-server-name').textContent = server.name;
-    document.getElementById('quick-lock-server-meta').textContent = `${server.memberCount || 0} members`;
-    document.getElementById('quick-lock-reason').value = '';
+    const modal = document.getElementById('suspend-modal');
+    if (!modal) return;
+
+    document.getElementById('suspend-server-name')?.textContent &&
+      (document.getElementById('suspend-server-name').textContent = server.name);
+    document.getElementById('suspend-reason').value = '';
+
+    modal.style.display = 'flex';
+  }
+
+  function showTransferModal(server) {
+    currentServer = server;
+    const modal = document.getElementById('transfer-modal');
+    if (!modal) return;
+
+    document.getElementById('transfer-server-name')?.textContent &&
+      (document.getElementById('transfer-server-name').textContent = server.name);
+    document.getElementById('transfer-user-id').value = '';
+    document.getElementById('transfer-reason').value = '';
+
+    modal.style.display = 'flex';
+  }
+
+  function showDeleteModal(server) {
+    currentServer = server;
+    const modal = document.getElementById('delete-modal');
+    if (!modal) return;
+
+    document.getElementById('delete-server-name')?.textContent &&
+      (document.getElementById('delete-server-name').textContent = server.name);
+    document.getElementById('confirm-delete-input').value = '';
+    document.getElementById('delete-reason').value = '';
+    document.getElementById('btn-confirm-delete').disabled = true;
 
     modal.style.display = 'flex';
   }
 
   // ========================================
-  // Confirm Delete Modal
+  // Confirm Delete Modal (Legacy - kept for compatibility)
   // ========================================
 
   function showConfirmDeleteModal(server) {
-    const modal = document.getElementById('confirm-delete-modal');
-    if (!modal) return;
+    showDeleteModal(server);
+  }
 
-    currentServer = server;
-    document.getElementById('confirm-delete-server-name').textContent = server.name;
-    document.getElementById('confirm-delete-input').value = '';
-    document.getElementById('btn-confirm-delete').disabled = true;
-
-    // Enable button when name matches
-    document.getElementById('confirm-delete-input').oninput = function() {
-      document.getElementById('btn-confirm-delete').disabled = this.value !== server.name;
-    };
-
-    modal.style.display = 'flex';
+  function showQuickLockModal(server) {
+    showLockModal(server);
   }
 
   // ========================================
@@ -937,59 +1322,23 @@ var AdminServers = window.AdminServers || (function() {
   // ========================================
 
   function initModals() {
-    // Close buttons
+    // Close button for detail modal
     document.querySelectorAll('[data-action="close-modal"]').forEach(btn => {
       btn.onclick = () => closeModal('server-detail-modal');
     });
-    
-    document.querySelectorAll('[data-action="close-quick-lock"]').forEach(btn => {
-      btn.onclick = () => closeModal('quick-lock-modal');
-    });
-    
-    document.querySelectorAll('[data-action="close-confirm-delete"]').forEach(btn => {
-      btn.onclick = () => closeModal('confirm-delete-modal');
-    });
 
-    // Quick lock confirm
-    document.getElementById('btn-confirm-quick-lock')?.addEventListener('click', async function() {
-      if (!currentServer) return;
-      
-      const reason = document.getElementById('quick-lock-reason')?.value?.trim();
-      if (!reason) {
-        AdminUtils?.showToast?.('Please enter a reason', 'warning');
-        return;
-      }
-      
-      if (await lockServer(currentServer.id, reason)) {
-        closeModal('quick-lock-modal');
-      }
-    });
-
-    // Confirm delete
-    document.getElementById('btn-confirm-delete')?.addEventListener('click', async function() {
-      if (!currentServer) return;
-      
-      const reason = document.getElementById('delete-reason')?.value?.trim() || 'Admin deletion';
-      
-      if (await deleteServer(currentServer.id, reason)) {
-        closeModal('confirm-delete-modal');
-        closeModal('server-detail-modal');
-      }
-    });
-
-    // Backdrop clicks
-    ['server-detail-modal', 'quick-lock-modal', 'confirm-delete-modal'].forEach(id => {
+    // Backdrop clicks - close on clicking outside modal content
+    const allModals = ['server-detail-modal', 'lock-modal', 'suspend-modal', 'transfer-modal', 'delete-modal'];
+    allModals.forEach(id => {
       document.getElementById(id)?.addEventListener('click', function(e) {
         if (e.target === this) closeModal(id);
       });
     });
 
-    // Escape key
+    // Escape key closes all modals
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        closeModal('confirm-delete-modal');
-        closeModal('quick-lock-modal');
-        closeModal('server-detail-modal');
+        allModals.forEach(id => closeModal(id));
       }
     });
   }

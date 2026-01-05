@@ -596,7 +596,7 @@ public class AdminServiceImpl implements IAdminService {
         if (reason != null && !reason.trim().isEmpty()) {
             details += " for: " + reason;
         }
-        
+
         serverRepository.delete(server);
 
         logAdminAction(AdminAuditLog.AdminActionType.SERVER_DELETE,
@@ -629,7 +629,8 @@ public class AdminServiceImpl implements IAdminService {
                 details,
                 "SERVER", serverId, server.getName(), null, adminUsername, null);
 
-        log.info("Admin {} transferred server {} from {} to {}", adminUsername, server.getName(), oldOwnerName, newOwnerName);
+        log.info("Admin {} transferred server {} from {} to {}", adminUsername, server.getName(), oldOwnerName,
+                newOwnerName);
     }
 
     @Override
@@ -638,10 +639,10 @@ public class AdminServiceImpl implements IAdminService {
         long totalServers = serverRepository.count();
         long lockedServers = serverRepository.countByIsLockedTrue();
         long activeServers = totalServers - lockedServers;
-        
+
         // Calculate total members across all servers
         long totalMembers = serverMemberRepository.count();
-        
+
         // Count flagged servers (servers with pending reports)
         long flaggedServers = reportRepository.countDistinctServersByStatusPending();
 
@@ -650,8 +651,7 @@ public class AdminServiceImpl implements IAdminService {
                 "activeServers", activeServers,
                 "lockedServers", lockedServers,
                 "totalMembers", totalMembers,
-                "flaggedServers", flaggedServers
-        );
+                "flaggedServers", flaggedServers);
     }
 
     @Override
@@ -660,7 +660,7 @@ public class AdminServiceImpl implements IAdminService {
         // Verify server exists
         serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
-        
+
         // Get audit logs for this server
         Page<AdminAuditLog> logs = auditLogRepository.findByTargetTypeAndTargetId("SERVER", serverId, pageable);
         return logs.map(this::mapAuditLogToResponse);
@@ -672,7 +672,7 @@ public class AdminServiceImpl implements IAdminService {
         // Verify server exists
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
-        
+
         // Get reports for this server
         Page<Report> reports = reportRepository.findByReportedServer(server, pageable);
         return reports.map(this::mapReportToResponse);

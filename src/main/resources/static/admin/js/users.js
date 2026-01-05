@@ -70,6 +70,7 @@ var AdminUsers = window.AdminUsers || (function() {
     initSorting();
     initSelectAll();
     initBulkActions();
+    initBulkRoleModal();
     initStatCards();
     initModal();
     initAddUserModal();
@@ -87,6 +88,28 @@ var AdminUsers = window.AdminUsers || (function() {
     ]);
     
     console.log('[AdminUsers] Initialized');
+  }
+
+  function initBulkRoleModal() {
+    const modal = document.getElementById('bulk-role-modal');
+    if (!modal) return;
+
+    // Close buttons (X + Cancel)
+    document.querySelectorAll('[data-action="close-bulk-role-modal"]').forEach((btn) => {
+      btn.addEventListener('click', () => closeModal('bulk-role-modal'));
+    });
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal('bulk-role-modal');
+    });
+
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const isOpen = modal.style.display !== 'none' && modal.style.display !== '';
+      if (isOpen) closeModal('bulk-role-modal');
+    });
   }
 
   // ========================================

@@ -82,6 +82,16 @@
 
     <!-- Servers List (Search + Bulk Actions + Table) -->
     <div class="admin-card admin-servers-card">
+        <div class="servers-card-header">
+            <h2 class="servers-card-title">Servers</h2>
+            <button class="servers-card-more" type="button" aria-label="More options">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+                    <circle cx="8" cy="3" r="1" fill="currentColor" stroke="none" />
+                    <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" />
+                    <circle cx="8" cy="13" r="1" fill="currentColor" stroke="none" />
+                </svg>
+            </button>
+        </div>
         <div class="admin-toolbar admin-servers-toolbar">
             <div class="admin-toolbar-left">
                 <div class="admin-search admin-search-lg">
@@ -202,326 +212,513 @@
 </div>
 
 <!-- ================================== -->
-<!-- SERVER DETAIL MODAL -->
+<!-- CONTEXT MENU (Right Click) -->
+<!-- ================================== -->
+<div class="server-context-menu" id="server-context-menu" style="display: none;">
+    <div class="context-menu-item" data-action="view-details">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/></svg>
+        View Details
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="lock-server">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+        Lock Server
+    </div>
+    <div class="context-menu-item" data-action="unlock-server" style="display: none;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M11 7V5a3 3 0 00-5-2"/></svg>
+        Unlock Server
+    </div>
+    <div class="context-menu-item text-warning" data-action="suspend-server">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
+        Suspend Server
+    </div>
+    <div class="context-menu-item text-success" data-action="unsuspend-server" style="display: none;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M6 8l2 2 4-4"/></svg>
+        Unsuspend Server
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="view-audit">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        View Audit Log
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item text-danger" data-action="delete-server">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg>
+        Force Delete
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- SERVER DETAIL MODAL (Horizontal Layout) -->
 <!-- ================================== -->
 <div class="admin-modal-backdrop glass-backdrop" id="server-detail-modal" style="display: none;">
-    <div class="admin-modal admin-modal-lg glass-modal server-detail-modal">
-        <div class="admin-modal-header">
-            <div class="modal-header-content">
-                <div class="server-header-info">
-                    <div class="server-avatar" id="modal-server-avatar">??</div>
-                    <div class="server-header-text">
-                        <h3 class="admin-modal-title" id="modal-server-name">Server Name</h3>
-                        <p class="server-description" id="modal-server-description">Server description...</p>
+    <div class="admin-modal admin-modal-xl glass-modal server-detail-modal server-detail-horizontal">
+        <!-- Close Button -->
+        <button class="admin-modal-close" data-action="close-modal">&times;</button>
+        
+        <div class="server-detail-layout">
+            <!-- ====== LEFT SIDEBAR (30-35%) ====== -->
+            <div class="server-detail-sidebar">
+                <!-- Server Icon & Name -->
+                <div class="server-profile">
+                    <div class="server-avatar-large" id="modal-server-avatar">??</div>
+                    <h2 class="server-profile-name" id="modal-server-name">Server Name</h2>
+                    <p class="server-profile-desc" id="modal-server-description">Server description...</p>
+                </div>
+                
+                <!-- Status Badges -->
+                <div class="server-badges">
+                    <div class="server-badge-item">
+                        <span class="badge badge-lg" id="modal-server-status">Active</span>
+                    </div>
+                    <div class="server-badge-item">
+                        <span class="badge badge-lg badge-ghost" id="modal-server-visibility">Public</span>
+                    </div>
+                    <div class="server-badge-item" id="risk-badge-item" style="display: none;">
+                        <span class="badge badge-lg" id="modal-server-risk">Low Risk</span>
                     </div>
                 </div>
-                <div class="server-header-badges">
-                    <span class="badge" id="modal-server-status">Active</span>
-                    <span class="badge badge-ghost" id="modal-server-visibility">Public</span>
-                </div>
-            </div>
-            <button class="admin-modal-close" data-action="close-modal">&times;</button>
-        </div>
-        
-        <!-- Modal Tabs -->
-        <div class="admin-modal-tabs" id="server-modal-tabs">
-            <button class="admin-tab active" data-tab="overview">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
-                    <rect x="2" y="2" width="12" height="12" rx="2"/>
-                    <path d="M5 6h6M5 10h4"/>
-                </svg>
-                Overview
-            </button>
-            <button class="admin-tab" data-tab="reports">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
-                    <path d="M4 2v12"/>
-                    <path d="M4 3h9l-2 3 2 3H4"/>
-                </svg>
-                Reports
-                <span class="tab-badge" id="tab-reports-count" style="display: none;">0</span>
-            </button>
-            <button class="admin-tab" data-tab="audit-log">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
-                    <circle cx="8" cy="8" r="6"/>
-                    <path d="M8 5v3l2 2"/>
-                </svg>
-                Audit Log
-            </button>
-            <button class="admin-tab" data-tab="actions">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
-                    <circle cx="8" cy="8" r="1"/>
-                    <circle cx="8" cy="3" r="1"/>
-                    <circle cx="8" cy="13" r="1"/>
-                </svg>
-                Admin Actions
-            </button>
-        </div>
-        
-        <div class="admin-modal-body">
-            <!-- Tab Content: Overview -->
-            <div class="admin-tab-content active" data-tab-content="overview">
-                <!-- Quick Stats Grid -->
-                <div class="server-quick-stats">
-                    <div class="quick-stat-card">
-                        <div class="quick-stat-icon stat-icon-blue">
+                
+                <!-- Quick Stats -->
+                <div class="server-sidebar-stats">
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-icon stat-icon-blue">
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="10" cy="6" r="3"/>
-                                <path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                                <circle cx="10" cy="6" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
                             </svg>
                         </div>
-                        <div class="quick-stat-content">
-                            <div class="quick-stat-value" id="modal-member-count">0</div>
-                            <div class="quick-stat-label">Members</div>
+                        <div class="sidebar-stat-info">
+                            <span class="sidebar-stat-value" id="modal-member-count">0</span>
+                            <span class="sidebar-stat-label">Members</span>
                         </div>
                     </div>
-                    <div class="quick-stat-card">
-                        <div class="quick-stat-icon stat-icon-purple">
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-icon stat-icon-purple">
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M3 5h14M3 10h14M3 15h14"/>
                             </svg>
                         </div>
-                        <div class="quick-stat-content">
-                            <div class="quick-stat-value" id="modal-channel-count">0</div>
-                            <div class="quick-stat-label">Channels</div>
+                        <div class="sidebar-stat-info">
+                            <span class="sidebar-stat-value" id="modal-channel-count">0</span>
+                            <span class="sidebar-stat-label">Channels</span>
                         </div>
                     </div>
-                    <div class="quick-stat-card">
-                        <div class="quick-stat-icon stat-icon-green">
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-icon stat-icon-green">
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="10" cy="10" r="7"/>
-                                <path d="M10 6v4l3 2"/>
+                                <circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/>
                             </svg>
                         </div>
-                        <div class="quick-stat-content">
-                            <div class="quick-stat-value" id="modal-role-count">0</div>
-                            <div class="quick-stat-label">Roles</div>
+                        <div class="sidebar-stat-info">
+                            <span class="sidebar-stat-value" id="modal-role-count">0</span>
+                            <span class="sidebar-stat-label">Roles</span>
                         </div>
                     </div>
-                    <div class="quick-stat-card">
-                        <div class="quick-stat-icon stat-icon-orange">
+                    <div class="sidebar-stat">
+                        <div class="sidebar-stat-icon stat-icon-orange">
                             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M4 2v12"/>
-                                <path d="M4 3h10l-2 3 2 3H4"/>
+                                <path d="M4 2v12"/><path d="M4 3h10l-2 3 2 3H4"/>
                             </svg>
                         </div>
-                        <div class="quick-stat-content">
-                            <div class="quick-stat-value" id="modal-report-count">0</div>
-                            <div class="quick-stat-label">Reports</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Server Details Section -->
-                <div class="server-details-section">
-                    <h4 class="section-title">Server Information</h4>
-                    <div class="details-grid">
-                        <div class="detail-row">
-                            <span class="detail-label">Server ID</span>
-                            <span class="detail-value" id="modal-server-id">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Created</span>
-                            <span class="detail-value" id="modal-created-at">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Last Activity</span>
-                            <span class="detail-value" id="modal-last-activity">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Max Members</span>
-                            <span class="detail-value" id="modal-max-members">--</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Owner Section -->
-                <div class="server-details-section">
-                    <h4 class="section-title">Server Owner</h4>
-                    <div class="owner-card">
-                        <img class="owner-avatar" id="modal-owner-avatar" src="" alt="Owner">
-                        <div class="owner-info">
-                            <div class="owner-name" id="modal-owner-name">--</div>
-                            <div class="owner-email" id="modal-owner-email">--</div>
-                        </div>
-                        <button class="admin-btn admin-btn-sm admin-btn-ghost" id="btn-view-owner">
-                            View Profile
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Lock Info (shown when locked) -->
-                <div class="server-details-section lock-info-section" id="lock-info-section" style="display: none;">
-                    <h4 class="section-title text-danger">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
-                            <rect x="3" y="7" width="10" height="7" rx="1"/>
-                            <path d="M5 7V5a3 3 0 016 0v2"/>
-                        </svg>
-                        Server is Locked
-                    </h4>
-                    <div class="lock-details">
-                        <div class="detail-row">
-                            <span class="detail-label">Locked At</span>
-                            <span class="detail-value" id="modal-locked-at">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Reason</span>
-                            <span class="detail-value" id="modal-lock-reason">--</span>
+                        <div class="sidebar-stat-info">
+                            <span class="sidebar-stat-value" id="modal-report-count">0</span>
+                            <span class="sidebar-stat-label">Reports</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Tab Content: Reports -->
-            <div class="admin-tab-content" data-tab-content="reports">
-                <div class="reports-list" id="server-reports-list">
-                    <div class="empty-state">
-                        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                            <path d="M12 6v36"/>
-                            <path d="M12 8h26l-6 8 6 8H12"/>
+            <!-- ====== RIGHT CONTENT (65-70%) ====== -->
+            <div class="server-detail-content">
+                <!-- Tabs -->
+                <div class="admin-modal-tabs horizontal-tabs" id="server-modal-tabs">
+                    <button class="admin-tab active" data-tab="overview">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                            <rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 10h4"/>
                         </svg>
-                        <p>No reports for this server</p>
-                    </div>
-                </div>
-                <button class="admin-btn admin-btn-ghost admin-btn-block" id="load-more-reports" style="display: none;">
-                    Load More Reports
-                </button>
-            </div>
-            
-            <!-- Tab Content: Audit Log -->
-            <div class="admin-tab-content" data-tab-content="audit-log">
-                <div class="audit-timeline" id="server-audit-log">
-                    <div class="empty-state">
-                        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                            <circle cx="24" cy="24" r="18"/>
-                            <path d="M24 14v10l6 6"/>
+                        Overview
+                    </button>
+                    <button class="admin-tab" data-tab="reports">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                            <path d="M4 2v12"/><path d="M4 3h9l-2 3 2 3H4"/>
                         </svg>
-                        <p>No audit log entries yet</p>
-                    </div>
-                </div>
-                <button class="admin-btn admin-btn-ghost admin-btn-block" id="load-more-audit" style="display: none;">
-                    Load More
-                </button>
-            </div>
-            
-            <!-- Tab Content: Admin Actions -->
-            <div class="admin-tab-content" data-tab-content="actions">
-                <!-- Server Lock/Unlock -->
-                <div class="action-panel" id="lock-action-panel">
-                    <h4 class="action-title">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
-                            <rect x="3" y="7" width="10" height="7" rx="1"/>
-                            <path d="M5 7V5a3 3 0 016 0v2"/>
+                        Reports
+                        <span class="tab-badge" id="tab-reports-count" style="display: none;">0</span>
+                    </button>
+                    <button class="admin-tab" data-tab="audit-log">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                            <circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/>
                         </svg>
-                        <span id="lock-action-title">Lock Server</span>
-                    </h4>
-                    <p class="action-description" id="lock-action-desc">
-                        Locking a server will prevent all members from accessing it. The server will be hidden from public listings.
-                    </p>
-                    <div class="form-group">
-                        <label class="form-label">Reason</label>
-                        <textarea class="admin-input" id="lock-reason-input" rows="2" placeholder="Enter reason for locking..."></textarea>
-                    </div>
-                    <div class="action-buttons">
-                        <button class="admin-btn admin-btn-warning" id="btn-toggle-lock">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
-                            <span id="btn-lock-text">Lock Server</span>
-                        </button>
-                    </div>
+                        Audit Log
+                    </button>
+                    <button class="admin-tab" data-tab="actions">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                            <circle cx="8" cy="8" r="1"/><circle cx="8" cy="3" r="1"/><circle cx="8" cy="13" r="1"/>
+                        </svg>
+                        Admin Actions
+                    </button>
                 </div>
                 
-                <!-- Transfer Ownership -->
-                <div class="action-panel">
-                    <h4 class="action-title">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
-                            <circle cx="5" cy="6" r="2"/>
-                            <path d="M2 12c0-2 1.5-3 3-3"/>
-                            <circle cx="11" cy="6" r="2"/>
-                            <path d="M14 12c0-2-1.5-3-3-3"/>
-                            <path d="M7 8h2M8 7v2"/>
-                        </svg>
-                        Transfer Ownership
-                    </h4>
-                    <p class="action-description">Transfer server ownership to another user. The current owner will become a regular member.</p>
-                    <div class="form-group">
-                        <label class="form-label required">New Owner (User ID)</label>
-                        <input type="number" class="admin-input" id="transfer-user-id" placeholder="Enter user ID...">
+                <div class="server-tab-body">
+                    <!-- Tab Content: Overview -->
+                    <div class="admin-tab-content active" data-tab-content="overview">
+                        <!-- Server Details Section -->
+                        <div class="server-details-section">
+                            <h4 class="section-title">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+                                    <rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 10h4"/>
+                                </svg>
+                                Server Information
+                            </h4>
+                            <div class="details-grid details-grid-3">
+                                <div class="detail-card">
+                                    <span class="detail-label">Server ID</span>
+                                    <span class="detail-value" id="modal-server-id">--</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Created</span>
+                                    <span class="detail-value" id="modal-created-at">--</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Last Activity</span>
+                                    <span class="detail-value" id="modal-last-activity">--</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Max Members</span>
+                                    <span class="detail-value" id="modal-max-members">--</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Message Volume</span>
+                                    <span class="detail-value" id="modal-message-volume">--</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-label">Server Boost</span>
+                                    <span class="detail-value" id="modal-boost-level">Level 0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Owner Section -->
+                        <div class="server-details-section">
+                            <h4 class="section-title">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+                                    <circle cx="8" cy="5" r="3"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/>
+                                </svg>
+                                Server Owner
+                            </h4>
+                            <div class="owner-card-horizontal">
+                                <img class="owner-avatar" id="modal-owner-avatar" src="" alt="Owner">
+                                <div class="owner-info">
+                                    <div class="owner-name" id="modal-owner-name">--</div>
+                                    <div class="owner-email" id="modal-owner-email">--</div>
+                                </div>
+                                <button class="admin-btn admin-btn-sm admin-btn-primary" id="btn-view-owner">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                                        <circle cx="8" cy="8" r="3"/><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/>
+                                    </svg>
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Lock Info (shown when locked) -->
+                        <div class="server-details-section lock-info-section" id="lock-info-section" style="display: none;">
+                            <h4 class="section-title text-danger">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+                                    <rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/>
+                                </svg>
+                                Server is Locked
+                            </h4>
+                            <div class="lock-details-card">
+                                <div class="lock-detail-row">
+                                    <span class="detail-label">Locked At</span>
+                                    <span class="detail-value" id="modal-locked-at">--</span>
+                                </div>
+                                <div class="lock-detail-row">
+                                    <span class="detail-label">Reason</span>
+                                    <span class="detail-value lock-reason-text" id="modal-lock-reason">--</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Reason</label>
-                        <textarea class="admin-input" id="transfer-reason" rows="2" placeholder="Enter reason for transfer..."></textarea>
-                    </div>
-                    <div class="action-buttons">
-                        <button class="admin-btn admin-btn-primary" id="btn-transfer-ownership">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8M9 5l3 3-3 3"/></svg>
-                            Transfer Ownership
+                    
+                    <!-- Tab Content: Reports -->
+                    <div class="admin-tab-content" data-tab-content="reports">
+                        <div class="reports-header">
+                            <div class="reports-summary">
+                                <span class="reports-summary-count" id="reports-total-count">0</span>
+                                <span class="reports-summary-label">Total Reports</span>
+                            </div>
+                            <div class="reports-status-filter">
+                                <span class="badge" id="reports-status-badge">No Reports</span>
+                            </div>
+                        </div>
+                        <div class="reports-list" id="server-reports-list">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                                    <path d="M12 6v36"/><path d="M12 8h26l-6 8 6 8H12"/>
+                                </svg>
+                                <p>No reports for this server</p>
+                            </div>
+                        </div>
+                        <button class="admin-btn admin-btn-ghost admin-btn-block" id="btn-go-reports" style="display: none;">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                                <path d="M4 8h8M9 5l3 3-3 3"/>
+                            </svg>
+                            Go to Reports Page
                         </button>
                     </div>
-                </div>
-                
-                <!-- Danger Zone -->
-                <div class="action-panel danger-zone">
-                    <h4 class="action-title text-danger">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
-                            <path d="M8 1L1 14h14L8 1zM8 5v4M8 11v1"/>
-                        </svg>
-                        Danger Zone
-                    </h4>
-                    <p class="action-description text-danger">These actions are irreversible. Please be careful.</p>
-                    <div class="form-group">
-                        <label class="form-label required">Reason for Deletion</label>
-                        <textarea class="admin-input" id="delete-reason" rows="2" placeholder="Enter reason for deletion..."></textarea>
-                    </div>
-                    <div class="action-buttons">
-                        <button class="admin-btn admin-btn-danger" id="btn-delete-server">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg>
-                            Force Delete Server
+                    
+                    <!-- Tab Content: Audit Log -->
+                    <div class="admin-tab-content" data-tab-content="audit-log">
+                        <div class="audit-timeline" id="server-audit-log">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                                    <circle cx="24" cy="24" r="18"/><path d="M24 14v10l6 6"/>
+                                </svg>
+                                <p>No audit log entries yet</p>
+                            </div>
+                        </div>
+                        <button class="admin-btn admin-btn-ghost admin-btn-block" id="load-more-audit" style="display: none;">
+                            Load More
                         </button>
+                    </div>
+                    
+                    <!-- Tab Content: Admin Actions -->
+                    <div class="admin-tab-content" data-tab-content="actions">
+                        <div class="admin-actions-grid">
+                            <!-- Lock/Unlock Action -->
+                            <div class="action-card" id="lock-action-card">
+                                <div class="action-card-icon action-icon-warning">
+                                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="4" y="9" width="12" height="9" rx="1.5"/><path d="M6 9V6a4 4 0 018 0v3"/>
+                                    </svg>
+                                </div>
+                                <div class="action-card-content">
+                                    <h4 class="action-card-title" id="lock-action-title">Lock Server</h4>
+                                    <p class="action-card-desc" id="lock-action-desc">Prevent all members from accessing this server.</p>
+                                </div>
+                                <button class="admin-btn admin-btn-warning action-card-btn" id="btn-open-lock-modal">
+                                    <span id="btn-lock-text">Lock</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Suspend Action -->
+                            <div class="action-card" id="suspend-action-card">
+                                <div class="action-card-icon action-icon-orange">
+                                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <circle cx="10" cy="10" r="8"/><path d="M7 7l6 6M13 7l-6 6"/>
+                                    </svg>
+                                </div>
+                                <div class="action-card-content">
+                                    <h4 class="action-card-title" id="suspend-action-title">Suspend Server</h4>
+                                    <p class="action-card-desc" id="suspend-action-desc">Temporarily disable this server with an expiry time.</p>
+                                </div>
+                                <button class="admin-btn admin-btn-warning action-card-btn" id="btn-open-suspend-modal">
+                                    <span id="btn-suspend-text">Suspend</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Transfer Ownership -->
+                            <div class="action-card">
+                                <div class="action-card-icon action-icon-blue">
+                                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <circle cx="6" cy="7" r="2.5"/><path d="M3 14c0-2.5 1.5-4 3-4"/>
+                                        <circle cx="14" cy="7" r="2.5"/><path d="M17 14c0-2.5-1.5-4-3-4"/>
+                                        <path d="M9 10h2M10 9v2"/>
+                                    </svg>
+                                </div>
+                                <div class="action-card-content">
+                                    <h4 class="action-card-title">Transfer Ownership</h4>
+                                    <p class="action-card-desc">Transfer server ownership to another user.</p>
+                                </div>
+                                <button class="admin-btn admin-btn-primary action-card-btn" id="btn-open-transfer-modal">
+                                    Transfer
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Server (Danger) -->
+                            <div class="action-card action-card-danger">
+                                <div class="action-card-icon action-icon-danger">
+                                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M4 5h12M8 5V3h4v2M6 5v11h8V5"/>
+                                    </svg>
+                                </div>
+                                <div class="action-card-content">
+                                    <h4 class="action-card-title">Force Delete Server</h4>
+                                    <p class="action-card-desc">Permanently delete this server and all data.</p>
+                                </div>
+                                <button class="admin-btn admin-btn-danger action-card-btn" id="btn-open-delete-modal">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="admin-modal-footer">
-            <button class="admin-btn admin-btn-ghost" data-action="close-modal">Close</button>
         </div>
     </div>
 </div>
 
 <!-- ================================== -->
-<!-- QUICK LOCK MODAL -->
+<!-- LOCK SERVER MODAL -->
 <!-- ================================== -->
 <div class="admin-modal-backdrop glass-backdrop" id="quick-lock-modal" style="display: none;">
-    <div class="admin-modal admin-modal-sm glass-modal">
-        <div class="admin-modal-header">
-            <h3 class="admin-modal-title">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" style="margin-right: 8px; vertical-align: -3px;">
-                    <rect x="3" y="7" width="10" height="7" rx="1"/>
-                    <path d="M5 7V5a3 3 0 016 0v2"/>
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-warning">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
-                <span id="quick-lock-title">Lock Server</span>
-            </h3>
-            <button class="admin-modal-close" data-action="close-quick-lock">&times;</button>
+            </div>
+            <h3 class="action-modal-title" id="quick-lock-title">Lock Server</h3>
+            <p class="action-modal-subtitle">This action will restrict all member access</p>
         </div>
+        <button class="admin-modal-close" data-action="close-quick-lock">&times;</button>
+        
         <div class="admin-modal-body">
-            <div class="quick-lock-server-info">
+            <div class="action-target-card">
                 <div class="server-avatar" id="quick-lock-avatar">??</div>
-                <div>
-                    <div class="server-name" id="quick-lock-server-name">Server Name</div>
-                    <div class="server-meta" id="quick-lock-server-meta">0 members</div>
+                <div class="action-target-info">
+                    <span class="action-target-name" id="quick-lock-server-name">Server Name</span>
+                    <span class="action-target-meta" id="quick-lock-server-meta">0 members</span>
                 </div>
             </div>
+            
             <div class="form-group">
-                <label class="form-label required">Reason</label>
+                <label class="form-label required">Reason for locking</label>
                 <textarea class="admin-input" id="quick-lock-reason" rows="3" 
-                    placeholder="Enter the reason for locking this server..." required></textarea>
-                <small class="form-hint">This reason will be logged in the audit log.</small>
+                    placeholder="Explain why this server is being locked..." required></textarea>
+                <small class="form-hint">This will be recorded in the audit log and shown to users.</small>
             </div>
         </div>
+        
         <div class="admin-modal-footer">
             <button class="admin-btn admin-btn-ghost" data-action="close-quick-lock">Cancel</button>
             <button class="admin-btn admin-btn-warning" id="btn-confirm-quick-lock">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 016 0v2"/>
+                </svg>
                 Lock Server
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- SUSPEND SERVER MODAL -->
+<!-- ================================== -->
+<div class="admin-modal-backdrop glass-backdrop" id="suspend-modal" style="display: none;">
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-orange">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 8l8 8M16 8l-8 8"/>
+                </svg>
+            </div>
+            <h3 class="action-modal-title">Suspend Server</h3>
+            <p class="action-modal-subtitle">Temporarily disable this server</p>
+        </div>
+        <button class="admin-modal-close" data-action="close-suspend">&times;</button>
+        
+        <div class="admin-modal-body">
+            <div class="action-target-card">
+                <div class="server-avatar" id="suspend-avatar">??</div>
+                <div class="action-target-info">
+                    <span class="action-target-name" id="suspend-server-name">Server Name</span>
+                    <span class="action-target-meta" id="suspend-server-meta">0 members</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">Suspension Duration</label>
+                <select class="admin-select" id="suspend-duration">
+                    <option value="1h">1 Hour</option>
+                    <option value="6h">6 Hours</option>
+                    <option value="12h">12 Hours</option>
+                    <option value="1d" selected>1 Day</option>
+                    <option value="3d">3 Days</option>
+                    <option value="7d">7 Days</option>
+                    <option value="30d">30 Days</option>
+                    <option value="custom">Custom...</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="custom-duration-group" style="display: none;">
+                <label class="form-label">Custom End Time</label>
+                <input type="datetime-local" class="admin-input" id="suspend-custom-time">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">Reason for suspension</label>
+                <textarea class="admin-input" id="suspend-reason" rows="3" 
+                    placeholder="Explain why this server is being suspended..." required></textarea>
+            </div>
+        </div>
+        
+        <div class="admin-modal-footer">
+            <button class="admin-btn admin-btn-ghost" data-action="close-suspend">Cancel</button>
+            <button class="admin-btn admin-btn-warning" id="btn-confirm-suspend">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/>
+                </svg>
+                Suspend Server
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================== -->
+<!-- TRANSFER OWNERSHIP MODAL -->
+<!-- ================================== -->
+<div class="admin-modal-backdrop glass-backdrop" id="transfer-modal" style="display: none;">
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-blue">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="7" cy="8" r="3"/>
+                    <path d="M3 18c0-3 2-5 4-5"/>
+                    <circle cx="17" cy="8" r="3"/>
+                    <path d="M21 18c0-3-2-5-4-5"/>
+                    <path d="M10 12h4M12 10v4"/>
+                </svg>
+            </div>
+            <h3 class="action-modal-title">Transfer Ownership</h3>
+            <p class="action-modal-subtitle">Reassign this server to a different owner</p>
+        </div>
+        <button class="admin-modal-close" data-action="close-transfer">&times;</button>
+        
+        <div class="admin-modal-body">
+            <div class="action-target-card">
+                <div class="server-avatar" id="transfer-avatar">??</div>
+                <div class="action-target-info">
+                    <span class="action-target-name" id="transfer-server-name">Server Name</span>
+                    <span class="action-target-meta">Current owner: <span id="transfer-current-owner">--</span></span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">New Owner (User ID)</label>
+                <input type="number" class="admin-input" id="transfer-user-id" placeholder="Enter user ID...">
+                <small class="form-hint">The current owner will become a regular member.</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">Reason for transfer</label>
+                <textarea class="admin-input" id="transfer-reason" rows="3" 
+                    placeholder="Explain why ownership is being transferred..." required></textarea>
+            </div>
+        </div>
+        
+        <div class="admin-modal-footer">
+            <button class="admin-btn admin-btn-ghost" data-action="close-transfer">Cancel</button>
+            <button class="admin-btn admin-btn-primary" id="btn-confirm-transfer">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <path d="M4 8h8M9 5l3 3-3 3"/>
+                </svg>
+                Transfer Ownership
             </button>
         </div>
     </div>
@@ -531,38 +728,62 @@
 <!-- CONFIRM DELETE MODAL -->
 <!-- ================================== -->
 <div class="admin-modal-backdrop glass-backdrop" id="confirm-delete-modal" style="display: none;">
-    <div class="admin-modal admin-modal-sm glass-modal">
-        <div class="admin-modal-header">
-            <h3 class="admin-modal-title text-danger">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18" style="margin-right: 8px; vertical-align: -3px;">
-                    <path d="M8 1L1 14h14L8 1zM8 5v4M8 11v1"/>
+    <div class="admin-modal admin-modal-sm glass-modal action-modal">
+        <div class="action-modal-header action-header-danger">
+            <div class="action-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2L2 20h20L12 2z"/>
+                    <path d="M12 9v4M12 17v.01"/>
                 </svg>
-                Confirm Deletion
-            </h3>
-            <button class="admin-modal-close" data-action="close-confirm-delete">&times;</button>
+            </div>
+            <h3 class="action-modal-title">Delete Server</h3>
+            <p class="action-modal-subtitle">This action is permanent and cannot be undone</p>
         </div>
+        <button class="admin-modal-close" data-action="close-confirm-delete">&times;</button>
+        
         <div class="admin-modal-body">
-            <p class="confirm-message">
-                Are you sure you want to permanently delete <strong id="confirm-delete-server-name">this server</strong>?
-            </p>
-            <div class="warning-box">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                    <path d="M8 1L1 14h14L8 1zM8 5v4M8 11v1"/>
-                </svg>
-                <div>
-                    <strong>This action cannot be undone.</strong>
-                    <p>All channels, messages, roles, and member data will be permanently deleted.</p>
+            <div class="action-target-card action-target-danger">
+                <div class="server-avatar" id="delete-avatar">??</div>
+                <div class="action-target-info">
+                    <span class="action-target-name" id="delete-server-name">Server Name</span>
+                    <span class="action-target-meta" id="delete-server-meta">0 members · 0 channels</span>
                 </div>
             </div>
+            
+            <div class="warning-box warning-box-danger">
+                <div class="warning-icon">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M10 2L2 17h16L10 2zM10 7v4M10 13v.01"/>
+                    </svg>
+                </div>
+                <div class="warning-content">
+                    <strong>This will permanently delete:</strong>
+                    <ul>
+                        <li>All channels and messages</li>
+                        <li>All roles and permissions</li>
+                        <li>All member data and history</li>
+                    </ul>
+                </div>
+            </div>
+            
             <div class="form-group">
-                <label class="form-label required">Type the server name to confirm</label>
+                <label class="form-label required">Reason for deletion</label>
+                <textarea class="admin-input" id="delete-reason" rows="2" 
+                    placeholder="Enter reason for deletion..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label required">Type <strong id="confirm-delete-server-name-label">server name</strong> to confirm</label>
                 <input type="text" class="admin-input" id="confirm-delete-input" placeholder="Enter server name...">
             </div>
         </div>
+        
         <div class="admin-modal-footer">
             <button class="admin-btn admin-btn-ghost" data-action="close-confirm-delete">Cancel</button>
             <button class="admin-btn admin-btn-danger" id="btn-confirm-delete" disabled>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                    <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/>
+                </svg>
                 Delete Permanently
             </button>
         </div>
