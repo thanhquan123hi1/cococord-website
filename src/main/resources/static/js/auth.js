@@ -76,31 +76,24 @@ async function fetchWithAuth(url, options = {}) {
 // Refresh access token
 async function refreshAccessToken() {
     const refreshToken = getRefreshToken();
-    
     if (!refreshToken) {
         return false;
     }
+    const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refreshToken })
+    });
 
-    try {
-        const response = await fetch('/api/auth/refresh', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ refreshToken })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('accessToken', data.accessToken);
-            // Cập nhật cookie cho server-side rendering
-            setCookie('accessToken', data.accessToken, 7);
-            return true;
-        }
-    } catch (error) {
-        console.error('Error refreshing token:', error);
+    if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('accessToken', data.accessToken);
+        // Cập nhật cookie cho server-side rendering
+        setCookie('accessToken', data.accessToken, 7);
+        return true;
     }
-
     return false;
 }
 
@@ -109,20 +102,15 @@ async function logout() {
     const refreshToken = getRefreshToken();
     
     if (refreshToken) {
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ refreshToken })
-            });
-        } catch (error) {
-            console.error('Error during logout:', error);
-        }
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ refreshToken })
+        });
     }
 
-    // Clear local storage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userId');
@@ -131,10 +119,8 @@ async function logout() {
     localStorage.removeItem('displayName');
     localStorage.removeItem('avatarUrl');
     
-    // Clear cookie (for server-side rendering)
     clearCookie('accessToken');
 
-    // Redirect to login
     window.location.href = '/login';
 }
 
