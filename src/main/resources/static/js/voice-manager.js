@@ -380,7 +380,6 @@
         }
 
         shouldOfferTo(remoteUserId) {
-            // deterministic anti-glare: larger userId becomes offerer
             const myId = Number(this.currentUser?.id);
             const otherId = Number(remoteUserId);
             if (!Number.isFinite(myId) || !Number.isFinite(otherId)) return false;
@@ -427,7 +426,11 @@
 
             // If we are offerer, start negotiation
             if (this.shouldOfferTo(remoteUserId)) {
-                this.createAndSendOffer(remoteUserId).catch((e) => LOG.error('Offer failed', e));
+                console.log(`[WebRTC] I (id=${this.currentUser.id}) am offering to ${remoteUserId}`);
+                this.createAndSendOffer(remoteUserId).catch(e => console.error('Offer failed', e));
+            } else {
+                console.log(`[WebRTC] I (id=${this.currentUser.id}) will wait for offer from ${remoteUserId}`);
+                // Không làm gì cả, ngồi đợi bên kia gửi Offer tới
             }
         }
 
@@ -506,37 +509,37 @@
 
         async handleIce(fromUserId, candidate) {
             const pc = this.peerConnections.get(fromUserId);
+            
+            // Nếu chưa có kết nối hoặc kết nối chưa thiết lập Remote Description
             if (!pc || !pc.remoteDescription) {
+                console.warn(`[WebRTC] Buffering ICE from ${fromUserId} (PC not ready)`);
                 const list = this.pendingIce.get(fromUserId) || [];
                 list.push(candidate);
                 this.pendingIce.set(fromUserId, list);
-                LOG.debug('ICE buffered', { fromUserId });
                 return;
             }
-
+            
             try {
                 await pc.addIceCandidate(candidate);
-                LOG.debug('ICE added', { fromUserId });
             } catch (e) {
-                LOG.warn('ICE add failed', { fromUserId, err: e?.message });
+                console.error('Error adding ICE:', e);
             }
         }
 
         async flushPendingIce(fromUserId) {
             const pc = this.peerConnections.get(fromUserId);
-            if (!pc || !pc.remoteDescription) return;
-
-            const list = this.pendingIce.get(fromUserId);
-            if (!list?.length) return;
-
-            this.pendingIce.delete(fromUserId);
-
-            for (const c of list) {
-                try {
-                    await pc.addIceCandidate(c);
-                } catch (e) { /* ignore */ }
+            const candidates = this.pendingIce.get(fromUserId);
+            if (pc && candidates && candidates.length > 0) {
+                console.log(`[WebRTC] Flushing ${candidates.length} buffered ICEs for ${fromUserId}`);
+                for (const cand of candidates) {
+                    try {
+                        await pc.addIceCandidate(cand);
+                    } catch (e) {
+                        console.error('Error flushing ICE:', e);
+                    }
+                }
+                this.pendingIce.delete(fromUserId);
             }
-            LOG.debug('ICE flush', { fromUserId, count: list.length });
         }
 
         sendIce(remoteUserId, candidate) {
@@ -604,54 +607,45 @@
         }
 
         async toggleScreenShare() {
-            if (this.screenOn) {
-                this.stopScreenShare();
-                this.upsertUser({ userId: this.currentUser.id, screenOn: false });
+            if (this.screenStream) {
+                // Tắt share: Quay về Camera (hoặc tắt video nếu ko bật cam)
+                this.stopScreenShare(); // Hàm tự viết để stop track
+                
+                // Lấy stream camera (nếu đang bật cam)
+                const newStream = (this.localStream && this.camOn) ? this.localStream : null;
+                const newVideoTrack = newStream ? newStream.getVideoTracks()[0] : null;
+
+                this.replaceVideoTrackForAllPeers(newVideoTrack);
                 this.sendState({ screenOn: false });
-                this.render();
-                this.emitStateChange();
-                return;
-            }
+            } else {
+                // Bật share
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                    this.screenStream = stream;
+                    const screenTrack = stream.getVideoTracks()[0];
 
-            try {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false });
-                const screenTrack = screenStream.getVideoTracks?.()[0];
-                if (!screenTrack) {
-                    try { screenStream.getTracks().forEach(t => t.stop()); } catch (e) { /* ignore */ }
-                    return;
+                    // Sự kiện khi người dùng ấn nút "Stop sharing" của trình duyệt
+                    screenTrack.onended = () => this.toggleScreenShare();
+
+                    // THAY THẾ TRACK (Magic happens here)
+                    this.replaceVideoTrackForAllPeers(screenTrack);
+                    this.sendState({ screenOn: true });
+                } catch (e) {
+                    console.error('Error sharing screen:', e);
                 }
-
-                // turn off camera if enabled
-                if (this.cameraTrack) this.cameraTrack.enabled = false;
-                this.camOn = false;
-
-                this.screenStream = screenStream;
-                this.screenOn = true;
-
-                // Replace video track for all RTCRtpSenders
-                for (const pc of this.peerConnections.values()) {
-                    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-                    if (sender) {
-                        await sender.replaceTrack(screenTrack);
+            }
+        }
+        replaceVideoTrackForAllPeers(newTrack) {
+            for (const pc of this.peerConnections.values()) {
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) {
+                    if (newTrack) {
+                        sender.replaceTrack(newTrack);
                     } else {
-                        try { pc.addTrack(screenTrack, screenStream); } catch (e) { /* ignore */ }
+                        // Nếu không có track mới (ví dụ tắt share và không bật cam), có thể disable
+                        // sender.replaceTrack(null); 
                     }
                 }
-
-                screenTrack.onended = () => {
-                    this.stopScreenShare();
-                    this.upsertUser({ userId: this.currentUser.id, screenOn: false });
-                    this.sendState({ screenOn: false });
-                    this.render();
-                    this.emitStateChange();
-                };
-
-                this.upsertUser({ userId: this.currentUser.id, camOn: false, screenOn: true });
-                this.sendState({ camOn: false, screenOn: true });
-                this.render();
-                this.emitStateChange();
-            } catch (e) {
-                // user cancelled or browser blocked
             }
         }
 
@@ -978,6 +972,40 @@
 
         getUsers() {
             return Array.from(this.users.values());
+        }
+        // --- CÁC HÀM BỔ SUNG CẦN THÊM VÀO ---
+
+        // Hàm dừng chia sẻ màn hình
+        stopScreenShare() {
+            if (this.screenStream) {
+                try {
+                    this.screenStream.getTracks().forEach(t => t.stop());
+                } catch (e) { /* ignore */ }
+                this.screenStream = null;
+            }
+        }
+
+        // Hàm thay thế track video cho tất cả kết nối (giúp chuyển đổi mượt mà)
+        replaceVideoTrackForAllPeers(newTrack) {
+            if (!this.peerConnections) return;
+            
+            for (const pc of this.peerConnections.values()) {
+                try {
+                    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+                    if (sender) {
+                        if (newTrack) {
+                            sender.replaceTrack(newTrack);
+                        } else {
+                            // Nếu không có track mới (ví dụ tắt cam), vẫn giữ sender nhưng replace null?
+                            // Hoặc có thể thay bằng dummy track đen nếu cần.
+                            // Ở đây ta cứ replace là được.
+                            sender.replaceTrack(newTrack);
+                        }
+                    }
+                } catch (e) {
+                    console.error('[WebRTC] Replace track failed:', e);
+                }
+            }
         }
     }
 
