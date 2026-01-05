@@ -62,6 +62,14 @@ public class MessageServiceImpl implements IMessageService {
             throw new UnauthorizedException("You don't have access to this channel");
         }
 
+        // Validate that either content or attachments is present
+        boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
+        boolean hasAttachments = request.getAttachments() != null && !request.getAttachments().isEmpty();
+        
+        if (!hasContent && !hasAttachments) {
+            throw new IllegalArgumentException("Message must have either content or attachments");
+        }
+
         User user = getUserByUsername(username);
 
         Message message = convertToEntity(
@@ -71,8 +79,8 @@ public class MessageServiceImpl implements IMessageService {
                 user.getDisplayName(),
                 user.getAvatarUrl());
 
-        // Detect mentions and save mentioned user IDs
-        List<Long> mentionedUserIds = extractMentionedUserIds(request.getContent());
+        // Detect mentions and save mentioned user IDs (only if content exists)
+        List<Long> mentionedUserIds = hasContent ? extractMentionedUserIds(request.getContent()) : new ArrayList<>();
         message.setMentionedUserIds(mentionedUserIds);
 
         message = messageRepository.save(message);
@@ -297,6 +305,20 @@ public class MessageServiceImpl implements IMessageService {
     @Override
     public Message convertToEntity(SendMessageRequest request, Long userId, String username, String displayName,
             String avatarUrl) {
+        // Convert AttachmentRequest to Message.Attachment
+        List<Message.Attachment> attachments = new ArrayList<>();
+        if (request.getAttachments() != null && !request.getAttachments().isEmpty()) {
+            attachments = request.getAttachments().stream()
+                    .map(attReq -> Message.Attachment.builder()
+                            .id(java.util.UUID.randomUUID().toString())
+                            .fileName(attReq.getFileName())
+                            .fileUrl(attReq.getFileUrl())
+                            .fileType(attReq.getFileType())
+                            .fileSize(attReq.getFileSize())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
         return Message.builder()
                 .channelId(request.getChannelId())
                 .userId(userId)
@@ -307,6 +329,7 @@ public class MessageServiceImpl implements IMessageService {
                 .type(Message.MessageType.TEXT)
                 .parentMessageId(request.getParentMessageId())
                 .threadId(request.getThreadId())
+                .attachments(attachments)
                 .mentionedUserIds(new ArrayList<>())
                 .mentionedRoleIds(new ArrayList<>())
                 .mentionEveryone(false)

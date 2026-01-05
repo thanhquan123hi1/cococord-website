@@ -82,11 +82,11 @@
             'p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre',
             'blockquote', 'ul', 'ol', 'li', 'a', 'span', 'div',
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'table',
-            'thead', 'tbody', 'tr', 'th', 'td'
+            'thead', 'tbody', 'tr', 'th', 'td', 'img', 'video'
         ];
 
         // Whitelist các attributes an toàn
-        const allowedAttrs = ['class', 'href', 'title', 'data-language'];
+        const allowedAttrs = ['class', 'href', 'title', 'data-language', 'src', 'alt', 'loading', 'controls', 'loop', 'autoplay', 'muted', 'onerror'];
 
         const doc = new DOMParser().parseFromString(html, 'text/html');
         const allElements = doc.body.querySelectorAll('*');
@@ -116,9 +116,63 @@
                 el.setAttribute('target', '_blank');
                 el.setAttribute('rel', 'noopener noreferrer');
             }
+
+            // Xử lý đặc biệt cho thẻ <img> và <video>
+            if (el.tagName === 'IMG' || el.tagName === 'VIDEO') {
+                const src = el.getAttribute('src');
+                // Chỉ cho phép http/https sources
+                if (src && !src.match(/^https?:\/\//i)) {
+                    el.remove();
+                }
+            }
         });
 
         return doc.body.innerHTML;
+    }
+
+    /**
+     * Kiểm tra và render GIF/media URLs
+     * @param {string} content - Nội dung cần kiểm tra
+     * @returns {string|null} - HTML cho GIF/media hoặc null nếu không phải media URL
+     */
+    function renderMediaUrl(content) {
+        const trimmed = content.trim();
+        
+        // Regex patterns for media URLs
+        const gifPattern = /^(https?:\/\/.*\.(gif|webp))(\?.*)?$/i;
+        const videoPattern = /^(https?:\/\/.*\.mp4)(\?.*)?$/i;
+        const tenorPattern = /^https?:\/\/(tenor\.com|media\.tenor\.com)\/.*/i;
+        const giphyPattern = /^https?:\/\/(giphy\.com|media\.giphy\.com|i\.giphy\.com)\/.*/i;
+        
+        // Check if content is ONLY a URL (no other text)
+        const urlOnlyPattern = /^https?:\/\/[^\s]+$/i;
+        if (!urlOnlyPattern.test(trimmed)) {
+            return null; // Has other text, not a standalone media URL
+        }
+        
+        // Check for direct GIF/WEBP URLs
+        if (gifPattern.test(trimmed)) {
+            return `<img src="${escapeHtml(trimmed)}" class="message-gif" alt="GIF" loading="lazy" />`;
+        }
+        
+        // Check for MP4 videos
+        if (videoPattern.test(trimmed)) {
+            return `<video src="${escapeHtml(trimmed)}" class="message-gif" controls loop autoplay muted></video>`;
+        }
+        
+        // Check for Tenor URLs
+        if (tenorPattern.test(trimmed)) {
+            // Tenor URLs often work directly as images
+            return `<img src="${escapeHtml(trimmed)}" class="message-gif" alt="Tenor GIF" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<a href=&quot;${escapeHtml(trimmed)}&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;>${escapeHtml(trimmed)}</a>';" />`;
+        }
+        
+        // Check for Giphy URLs
+        if (giphyPattern.test(trimmed)) {
+            // Giphy URLs work directly as images
+            return `<img src="${escapeHtml(trimmed)}" class="message-gif" alt="Giphy GIF" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<a href=&quot;${escapeHtml(trimmed)}&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;>${escapeHtml(trimmed)}</a>';" />`;
+        }
+        
+        return null;
     }
 
     /**
@@ -129,6 +183,12 @@
     function renderMessageContent(rawContent) {
         if (!rawContent || typeof rawContent !== 'string') {
             return '';
+        }
+
+        // Check if content is a standalone media URL (GIF/video)
+        const mediaHtml = renderMediaUrl(rawContent);
+        if (mediaHtml) {
+            return mediaHtml;
         }
 
         // Nếu marked chưa được khởi tạo, thử khởi tạo

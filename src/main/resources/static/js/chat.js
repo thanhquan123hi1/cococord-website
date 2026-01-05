@@ -350,9 +350,12 @@
             onSendMessage: async (text, files) => {
                 if (!activeChannelId) return;
                 
-                // If there are files, upload them first
-                if (files && files.length > 0) {
-                    await uploadAndSendFiles(files, text);
+                // Get files from manager if not provided
+                const filesToSend = files || (chatInputManager ? chatInputManager.getAttachedFiles() : []);
+                
+                // If there are files, upload them with the message
+                if (filesToSend && filesToSend.length > 0) {
+                    await uploadAndSendFiles(filesToSend, text);
                 } else if (text.trim()) {
                     // Just send text message via WebSocket
                     sendTextMessage(text);
@@ -397,27 +400,46 @@
      */
     async function uploadAndSendFiles(files, text) {
         try {
-            // Create FormData for file upload
-            const formData = new FormData();
-            formData.append('channelId', activeChannelId);
-            if (text) formData.append('content', text);
+            // Upload each file individually and collect URLs
+            const uploadedFiles = [];
             
-            files.forEach((file, index) => {
-                formData.append('files', file);
-            });
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetchWithAuth(`/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
 
-            // Upload files to server
-            const response = await fetchWithAuth(`/api/messages/upload`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.message || 'Upload failed');
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || 'Upload failed');
+                }
+                
+                const fileData = await response.json();
+                uploadedFiles.push({
+                    fileName: fileData.fileName || file.name,
+                    fileUrl: fileData.fileUrl,
+                    fileType: file.type,
+                    fileSize: file.size
+                });
+            }
+            
+            // Send message with attachments via WebSocket
+            if (stompClient && stompClient.connected) {
+                stompClient.send(
+                    '/app/chat.sendMessage',
+                    {},
+                    JSON.stringify({
+                        channelId: activeChannelId,
+                        content: text || '',
+                        attachments: uploadedFiles
+                    })
+                );
             }
 
-            // Clear input after successful upload
+            // Clear input and attachments ONLY after successful upload and send
             el.chatInput.value = '';
             if (chatInputManager) {
                 chatInputManager.clearAttachments();
@@ -425,6 +447,7 @@
             
             cancelReply();
         } catch (error) {
+            console.error('[Chat] File upload error:', error);
             showToast('Không thể tải file lên: ' + error.message, 'error');
         }
     }

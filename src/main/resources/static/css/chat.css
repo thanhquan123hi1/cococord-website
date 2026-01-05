@@ -1238,6 +1238,26 @@ body {
   word-wrap: break-word;
 }
 
+/* GIF and media rendering in chat */
+#chatApp .message-content .message-gif {
+  max-width: 400px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  margin: 4px 0;
+  display: block;
+}
+
+#chatApp .message-content img.message-gif,
+#chatApp .message-content video.message-gif {
+  max-width: 400px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  margin: 4px 0;
+  display: block;
+}
+
 /* ==================== CHAT COMPOSER ==================== */
 #chatApp .chat-composer {
   padding: 0 16px 24px;

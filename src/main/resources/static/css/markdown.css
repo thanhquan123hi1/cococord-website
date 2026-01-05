@@ -195,6 +195,26 @@
     color: #ffffff;
 }
 
+/* ===== GIF AND MEDIA RENDERING ===== */
+.markdown-content .message-gif {
+    max-width: 400px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    margin: 4px 0;
+    display: block;
+}
+
+.markdown-content img.message-gif,
+.markdown-content video.message-gif {
+    max-width: 400px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    margin: 4px 0;
+    display: block;
+}
+
 /* ===== TABLES ===== */
 .markdown-content table {
     border-collapse: collapse;
