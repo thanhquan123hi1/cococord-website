@@ -2178,20 +2178,8 @@
         showContextMenu(e.clientX, e.clientY, items);
     }
 
-    // Context menu for server icons
-    function showServerContextMenu(e, serverItem) {
-        e.preventDefault();
-        contextTargetServer = serverItem;
-        
-        const items = [
-            { action: 'invite-friends', icon: 'bi bi-person-plus', label: 'Mời bạn bè' },
-            { action: 'server-settings', icon: 'bi bi-gear', label: 'Cài đặt Server' },
-            { divider: true },
-            { action: 'leave-server', icon: 'bi bi-box-arrow-left', label: 'Rời Server', danger: true }
-        ];
-        
-        showContextMenu(e.clientX, e.clientY, items);
-    }
+    // REMOVED: showServerContextMenu()
+    // Server menu now only uses dropdown on left-click (toggleServerDropdown)
 
     // ==================== MODALS ====================
     function showCreateServerModal() {
@@ -3939,22 +3927,8 @@
             }
         });
         
-        // Context menu - for global server sidebar (in decorator)
-        const globalServerList = document.getElementById('globalServerList');
-        globalServerList?.addEventListener('contextmenu', (e) => {
-            const serverItem = e.target.closest('.server-item');
-            if (serverItem && serverItem.dataset.serverId) {
-                showServerContextMenu(e, serverItem);
-            }
-        });
-        
-        // Also handle local server list if exists
-        el.serverList?.addEventListener('contextmenu', (e) => {
-            const serverItem = e.target.closest('.server-item');
-            if (serverItem && serverItem.dataset.serverId) {
-                showServerContextMenu(e, serverItem);
-            }
-        });
+        // REMOVED: Context menu for server items (right-click)
+        // Now only using dropdown menu on left-click
         
         // Hide context menu on click anywhere
         document.addEventListener('click', (e) => {

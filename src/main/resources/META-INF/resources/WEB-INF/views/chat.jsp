@@ -142,10 +142,9 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
           id="voiceBarDisconnect"
           title="Ngắt kết nối"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"
-            />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+            <line x1="23" y1="1" x2="1" y2="23"/>
           </svg>
         </button>
       </div>
@@ -422,7 +421,7 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
         autocomplete="off"
         style="display: none"
       >
-        <div class="composer-attachments">
+        <div class="composer-box">
           <button
             type="button"
             class="composer-btn"
@@ -431,8 +430,6 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
           >
             <i class="bi bi-plus-circle"></i>
           </button>
-        </div>
-        <div class="composer-box">
           <input
             class="composer-input"
             id="chatInput"
@@ -578,19 +575,19 @@ decorator, chỉ cần Channel Sidebar + Main Content + Members Sidebar --%>
           </div>
         </div>
       </div>
-      <div class="members-section">
-        <div class="members-category" id="onlineMembersSection">
-          <span class="category-title"
-            >TRỰC TUYẾN — <span id="onlineCount">0</span></span
-          >
-          <div class="members-list" id="onlineMembersList"></div>
-        </div>
-        <div class="members-category" id="offlineMembersSection">
-          <span class="category-title"
-            >NGOẠI TUYẾN — <span id="offlineCount">0</span></span
-          >
-          <div class="members-list" id="offlineMembersList"></div>
-        </div>
+    </div>
+    <div class="members-section">
+      <div class="members-category" id="onlineMembersSection">
+        <span class="category-title"
+          >TRỰC TUYẾN — <span id="onlineCount">0</span></span
+        >
+        <div class="members-list" id="onlineMembersList"></div>
+      </div>
+      <div class="members-category" id="offlineMembersSection">
+        <span class="category-title"
+          >NGOẠI TUYẾN — <span id="offlineCount">0</span></span
+        >
+        <div class="members-list" id="offlineMembersList"></div>
       </div>
     </div>
   </aside>

@@ -1242,13 +1242,7 @@ body {
 #chatApp .chat-composer {
   padding: 0 16px 24px;
   flex-shrink: 0;
-}
-
-#chatApp .composer-attachments {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
 }
 
 #chatApp .composer-box {
@@ -1256,13 +1250,15 @@ body {
   align-items: center;
   background-color: var(--bg-secondary);
   border-radius: 8px;
-  padding: 0 16px;
+  padding: 0 12px;
+  min-height: 44px;
   position: relative;
+  gap: 8px;
 }
 
 #chatApp .composer-btn {
   width: 32px;
-  height: 44px;
+  height: 32px;
   border: none;
   background: transparent;
   color: var(--interactive-normal);
@@ -1272,6 +1268,7 @@ body {
   justify-content: center;
   font-size: 20px;
   transition: color 0.1s;
+  flex-shrink: 0;
 }
 
 #chatApp .composer-btn:hover {
@@ -1286,7 +1283,6 @@ body {
   color: var(--text-normal);
   font-size: 16px;
   padding: 11px 0;
-  margin: 0 8px;
 }
 
 #chatApp .composer-input::placeholder {
@@ -1295,7 +1291,8 @@ body {
 
 #chatApp .composer-tools {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  align-items: center;
 }
 
 /* ==================== MEMBERS SIDEBAR ==================== */

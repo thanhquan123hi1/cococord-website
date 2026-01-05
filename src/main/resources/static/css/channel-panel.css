@@ -466,9 +466,11 @@
 /* ===== VOICE CONNECTED BAR ===== */
 .voice-connected-bar {
   display: none;
-  background-color: #232428;
-  padding: var(--space-2) var(--space-3);
-  border-top: 1px solid rgba(0, 0, 0, 0.24);
+  background-color: #1a1b1e;
+  padding: 12px 12px;
+  border-top: 1px solid #111214;
+  border-bottom: 1px solid #111214;
+  margin-top: auto;
 }
 
 .voice-connected-bar.visible {
