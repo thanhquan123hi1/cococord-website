@@ -19,8 +19,8 @@ import vn.cococord.dto.request.VoiceSignalAnswerRequest;
 import vn.cococord.dto.request.VoiceSignalIceRequest;
 import vn.cococord.dto.request.VoiceSignalOfferRequest;
 import vn.cococord.dto.request.VoiceStateUpdateRequest;
-import vn.cococord.entity.voice.VoiceMemberState;
 import vn.cococord.entity.mysql.User;
+import vn.cococord.entity.voice.VoiceMemberState;
 import vn.cococord.service.IUserService;
 import vn.cococord.service.IVoiceRoomRegistry;
 
