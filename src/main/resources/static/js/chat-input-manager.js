@@ -583,7 +583,8 @@
         
         _sendSticker(sticker) {
             if (this.onSendSticker) {
-                this.onSendSticker(sticker);
+                // Pass sticker ID and URL as separate parameters
+                this.onSendSticker(sticker.id, sticker.url);
             }
             this._hidePopover();
         }

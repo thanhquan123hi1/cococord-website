@@ -23,5 +23,9 @@ public class SendMessageRequest {
 
     private String threadId; // For thread messages
 
+    private String type; // Message type (TEXT, STICKER, etc.)
+
+    private String metadata; // Additional metadata (JSON string for stickers, etc.)
+
     private List<AttachmentRequest> attachments; // File attachments
 }

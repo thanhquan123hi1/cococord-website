@@ -646,11 +646,19 @@
         const displayName = msg.displayName || msg.username || 'User';
         const initial = displayName.trim().charAt(0).toUpperCase();
         
-        // Render markdown content
-        const rawContent = msg.content || '';
-        const htmlContent = window.CocoCordMarkdown 
-            ? window.CocoCordMarkdown.render(rawContent)
-            : escapeHtml(rawContent);
+        // Render content based on message type
+        let htmlContent = '';
+        if (msg.type === 'STICKER') {
+            // Render sticker as image
+            const stickerUrl = msg.content || '';
+            htmlContent = `<img src="${escapeHtml(stickerUrl)}" class="message-sticker" alt="Sticker" loading="lazy" />`;
+        } else {
+            // Render markdown content for regular messages
+            const rawContent = msg.content || '';
+            htmlContent = window.CocoCordMarkdown 
+                ? window.CocoCordMarkdown.render(rawContent)
+                : escapeHtml(rawContent);
+        }
 
         return `
             <div class="message-row" data-message-id="${msg.id}" data-user-id="${msg.userId || msg.senderId || ''}" data-username="${msg.username || ''}">

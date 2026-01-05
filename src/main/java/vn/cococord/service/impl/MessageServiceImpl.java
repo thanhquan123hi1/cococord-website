@@ -319,6 +319,16 @@ public class MessageServiceImpl implements IMessageService {
                     .collect(Collectors.toList());
         }
 
+        // Parse message type from request, default to TEXT
+        Message.MessageType messageType = Message.MessageType.TEXT;
+        if (request.getType() != null && !request.getType().isEmpty()) {
+            try {
+                messageType = Message.MessageType.valueOf(request.getType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid message type: {}, defaulting to TEXT", request.getType());
+            }
+        }
+
         return Message.builder()
                 .channelId(request.getChannelId())
                 .userId(userId)
@@ -326,9 +336,10 @@ public class MessageServiceImpl implements IMessageService {
                 .displayName(displayName)
                 .avatarUrl(avatarUrl)
                 .content(request.getContent())
-                .type(Message.MessageType.TEXT)
+                .type(messageType)
                 .parentMessageId(request.getParentMessageId())
                 .threadId(request.getThreadId())
+                .metadata(request.getMetadata())
                 .attachments(attachments)
                 .mentionedUserIds(new ArrayList<>())
                 .mentionedRoleIds(new ArrayList<>())
@@ -367,6 +378,7 @@ public class MessageServiceImpl implements IMessageService {
                 .type(message.getType() != null ? message.getType().name() : "TEXT")
                 .parentMessageId(message.getParentMessageId())
                 .threadId(message.getThreadId())
+                .metadata(message.getMetadata())
                 .attachments(attachments)
                 .mentionedUserIds(message.getMentionedUserIds())
                 .isEdited(message.getIsEdited())
