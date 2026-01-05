@@ -602,5 +602,11 @@
         </div>
       </div>
     </section>
+
+    <script>
+      if (typeof window.forceInitAppHome === 'function') {
+          window.forceInitAppHome();
+      }
+    </script>
   </body>
 </html>

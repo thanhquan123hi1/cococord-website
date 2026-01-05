@@ -52,7 +52,7 @@
     ];
 
     // Tenor API Key (free tier)
-    const TENOR_API_KEY = 'AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ'; // Replace with your key
+    const TENOR_API_KEY = 'AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ';
 
     // ==================== ChatInputManager CLASS ====================
     class ChatInputManager {
@@ -98,8 +98,6 @@
             this._createPopover();
             this._bindEvents();
             this._setupDragAndDrop();
-            
-            console.log('[ChatInputManager] Initialized');
         }
 
         // ==================== FILE ATTACHMENT ====================
@@ -119,7 +117,6 @@
             this.previewContainer.className = 'attachment-preview-container';
             this.previewContainer.style.display = 'none';
             
-            // Insert before composer-box
             const composerBox = this.composerEl.querySelector('.composer-box');
             if (composerBox) {
                 this.composerEl.insertBefore(this.previewContainer, composerBox);
@@ -130,19 +127,16 @@
             const fileArray = Array.from(files);
             
             for (const file of fileArray) {
-                // Check max files
                 if (this.attachedFiles.length >= MAX_FILES) {
                     this._showToast(`Tối đa ${MAX_FILES} file`, 'warning');
                     break;
                 }
                 
-                // Check file size
                 if (file.size > MAX_FILE_SIZE) {
                     this._showToast(`File "${file.name}" vượt quá ${MAX_FILE_SIZE / 1024 / 1024}MB`, 'error');
                     continue;
                 }
                 
-                // Check file type
                 const isAllowed = Object.values(ALLOWED_FILE_TYPES).flat().includes(file.type);
                 if (!isAllowed) {
                     this._showToast(`Loại file "${file.type}" không được hỗ trợ`, 'error');
@@ -153,12 +147,10 @@
                 this._renderFilePreview(file);
             }
             
-            // Show preview container
             if (this.attachedFiles.length > 0) {
                 this.previewContainer.style.display = 'flex';
             }
             
-            // Reset file input
             this.fileInput.value = '';
         }
 
@@ -182,7 +174,6 @@
                 }
                 previewItem.appendChild(media);
             } else {
-                // Non-media file icon
                 const icon = document.createElement('div');
                 icon.className = 'preview-file-icon';
                 icon.innerHTML = this._getFileIcon(file.type);
@@ -194,13 +185,11 @@
                 previewItem.appendChild(name);
             }
             
-            // File size
             const size = document.createElement('div');
             size.className = 'preview-file-size';
             size.textContent = this._formatFileSize(file.size);
             previewItem.appendChild(size);
             
-            // Remove button
             const removeBtn = document.createElement('button');
             removeBtn.className = 'preview-remove-btn';
             removeBtn.innerHTML = '<i class="bi bi-x"></i>';
@@ -216,13 +205,11 @@
             
             const previewItem = this.previewContainer.querySelector(`[data-file-name="${fileName}"]`);
             if (previewItem) {
-                // Revoke object URL if media
                 const media = previewItem.querySelector('img, video');
                 if (media) URL.revokeObjectURL(media.src);
                 previewItem.remove();
             }
             
-            // Hide container if empty
             if (this.attachedFiles.length === 0) {
                 this.previewContainer.style.display = 'none';
             }
@@ -248,7 +235,6 @@
             this.popover.className = 'chat-input-popover';
             this.popover.style.display = 'none';
             
-            // Tabs
             const tabsContainer = document.createElement('div');
             tabsContainer.className = 'popover-tabs';
             
@@ -269,18 +255,15 @@
             
             this.popover.appendChild(tabsContainer);
             
-            // Content containers
             const contentContainer = document.createElement('div');
             contentContainer.className = 'popover-content';
             
-            // Emoji tab content
             const emojiContent = document.createElement('div');
             emojiContent.className = 'popover-tab-content';
             emojiContent.id = 'emojiTabContent';
             emojiContent.appendChild(this._createEmojiPicker());
             contentContainer.appendChild(emojiContent);
             
-            // GIF tab content
             const gifContent = document.createElement('div');
             gifContent.className = 'popover-tab-content';
             gifContent.id = 'gifTabContent';
@@ -288,7 +271,6 @@
             gifContent.appendChild(this._createGifPicker());
             contentContainer.appendChild(gifContent);
             
-            // Sticker tab content
             const stickerContent = document.createElement('div');
             stickerContent.className = 'popover-tab-content';
             stickerContent.id = 'stickerTabContent';
@@ -304,7 +286,6 @@
             const container = document.createElement('div');
             container.className = 'emoji-picker';
             
-            // Search
             const searchBox = document.createElement('div');
             searchBox.className = 'emoji-search-box';
             const searchInput = document.createElement('input');
@@ -315,20 +296,18 @@
             searchBox.appendChild(searchInput);
             container.appendChild(searchBox);
             
-            // Categories
             const categoriesNav = document.createElement('div');
             categoriesNav.className = 'emoji-categories-nav';
             Object.keys(EMOJI_CATEGORIES).forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = 'emoji-category-btn';
-                btn.textContent = EMOJI_CATEGORIES[cat][0]; // First emoji as icon
+                btn.textContent = EMOJI_CATEGORIES[cat][0];
                 btn.title = cat;
                 btn.addEventListener('click', () => this._scrollToEmojiCategory(cat));
                 categoriesNav.appendChild(btn);
             });
             container.appendChild(categoriesNav);
             
-            // Emoji grid
             const emojiGrid = document.createElement('div');
             emojiGrid.className = 'emoji-grid-container';
             emojiGrid.id = 'emojiGridContainer';
@@ -367,7 +346,6 @@
             const container = document.createElement('div');
             container.className = 'gif-picker';
             
-            // Search
             const searchBox = document.createElement('div');
             searchBox.className = 'gif-search-box';
             const searchInput = document.createElement('input');
@@ -379,12 +357,10 @@
             searchBox.appendChild(searchInput);
             container.appendChild(searchBox);
             
-            // GIF grid
             const gifGrid = document.createElement('div');
             gifGrid.className = 'gif-grid';
             gifGrid.id = 'gifGrid';
             
-            // Trending GIFs placeholder
             this._loadTrendingGifs(gifGrid);
             
             container.appendChild(gifGrid);
@@ -418,17 +394,14 @@
         }
 
         _switchTab(tabId) {
-            // Update tab buttons
             this.popover.querySelectorAll('.popover-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.tab === tabId);
             });
             
-            // Update content visibility
             document.getElementById('emojiTabContent').style.display = tabId === 'emoji' ? 'block' : 'none';
             document.getElementById('gifTabContent').style.display = tabId === 'gif' ? 'block' : 'none';
             document.getElementById('stickerTabContent').style.display = tabId === 'sticker' ? 'block' : 'none';
             
-            // Focus search input for GIF tab
             if (tabId === 'gif') {
                 const gifSearch = document.getElementById('gifSearchInput');
                 if (gifSearch) setTimeout(() => gifSearch.focus(), 100);
@@ -441,7 +414,6 @@
                 return;
             }
             
-            // Position popover above the anchor element
             const rect = anchorEl.getBoundingClientRect();
             const popoverHeight = 400;
             const popoverWidth = 400;
@@ -449,7 +421,6 @@
             let left = rect.left - popoverWidth + rect.width;
             let top = rect.top - popoverHeight - 10;
             
-            // Adjust if going off screen
             if (left < 10) left = 10;
             if (top < 10) top = rect.bottom + 10;
             
@@ -460,7 +431,6 @@
             this._switchTab(tab);
             this.activePopover = this.popover;
             
-            // Close on outside click
             setTimeout(() => {
                 document.addEventListener('click', this._handleOutsideClick);
             }, 0);
@@ -495,7 +465,6 @@
             this.inputEl.focus();
             this.inputEl.setSelectionRange(start + emoji.length, start + emoji.length);
             
-            // Dispatch input event
             this.inputEl.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
@@ -515,7 +484,6 @@
                     if (visible) hasVisible = true;
                 });
                 
-                // Hide category if no matching emojis
                 section.style.display = hasVisible || !normalizedQuery ? '' : 'none';
             });
         }
@@ -533,7 +501,6 @@
             container.innerHTML = '<div class="gif-loading">Đang tải GIF...</div>';
             
             try {
-                // Using Tenor API v2
                 const response = await fetch(
                     `https://tenor.googleapis.com/v2/featured?key=${TENOR_API_KEY}&client_key=cococord&limit=20`
                 );
@@ -543,7 +510,7 @@
                 const data = await response.json();
                 this._renderGifs(container, data.results || []);
             } catch (error) {
-                console.error('Failed to load trending GIFs:', error);
+                console.error('[ChatInputManager] Failed to load trending GIFs:', error);
                 container.innerHTML = '<div class="gif-error">Không thể tải GIF. Vui lòng thử lại.</div>';
             }
         }
@@ -571,7 +538,7 @@
                     const data = await response.json();
                     this._renderGifs(container, data.results || []);
                 } catch (error) {
-                    console.error('GIF search failed:', error);
+                    console.error('[ChatInputManager] GIF search failed:', error);
                     container.innerHTML = '<div class="gif-error">Tìm kiếm thất bại</div>';
                 }
             }, 500);
@@ -589,7 +556,6 @@
                 const gifItem = document.createElement('div');
                 gifItem.className = 'gif-item';
                 
-                // Use tinygif for preview, gif for full
                 const previewUrl = gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
                 const fullUrl = gif.media_formats?.gif?.url;
                 
@@ -607,24 +573,18 @@
         }
 
         _sendGif(url, gifData) {
-            console.log('[ChatInputManager] Send GIF:', url);
-            
             if (this.onSendGif) {
                 this.onSendGif(url, gifData);
             }
-            
             this._hidePopover();
         }
 
         // ==================== STICKER ACTIONS ====================
         
         _sendSticker(sticker) {
-            console.log('[ChatInputManager] Send Sticker:', sticker);
-            
             if (this.onSendSticker) {
                 this.onSendSticker(sticker);
             }
-            
             this._hidePopover();
         }
 
@@ -668,21 +628,18 @@
         // ==================== EVENT BINDING ====================
         
         _bindEvents() {
-            // File attach button
             if (this.attachBtn) {
                 this.attachBtn.addEventListener('click', () => {
                     this.fileInput.click();
                 });
             }
             
-            // File input change
             this.fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length > 0) {
                     this._handleFileSelect(e.target.files);
                 }
             });
             
-            // Emoji button
             if (this.emojiBtn) {
                 this.emojiBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -690,7 +647,6 @@
                 });
             }
             
-            // GIF button
             if (this.gifBtn) {
                 this.gifBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -698,7 +654,6 @@
                 });
             }
             
-            // Sticker button
             if (this.stickerBtn) {
                 this.stickerBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -706,7 +661,6 @@
                 });
             }
             
-            // Paste handling for images
             if (this.inputEl) {
                 this.inputEl.addEventListener('paste', (e) => {
                     const items = e.clipboardData?.items;
@@ -728,6 +682,7 @@
         
         /**
          * Get attached files
+         * @returns {File[]}
          */
         getAttachedFiles() {
             return this.attachedFiles;
@@ -744,6 +699,7 @@
 
         /**
          * Check if there are attachments
+         * @returns {boolean}
          */
         hasAttachments() {
             return this.attachedFiles.length > 0;
@@ -763,7 +719,6 @@
         // ==================== UTILITY ====================
         
         _showToast(message, type = 'info') {
-            // Simple toast notification
             const toast = document.createElement('div');
             toast.className = `chat-toast chat-toast-${type}`;
             toast.textContent = message;

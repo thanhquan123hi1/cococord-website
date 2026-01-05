@@ -649,6 +649,36 @@ function getAppContextPath() {
   }
 }
 
+function updateGlobalSidebarActiveState(serverId = null) {
+  // Clear ALL active states from both containers
+  const allServerItems = document.querySelectorAll('#globalServerList .server-icon, #serverList .server-icon');
+  allServerItems.forEach(item => item.classList.remove('active'));
+  
+  // Also clear home button
+  const homeButtons = document.querySelectorAll('.home-btn, [data-home-btn]');
+  homeButtons.forEach(btn => btn.classList.remove('active'));
+  
+  if (serverId) {
+      // Activate specific server
+      const serverItem = document.querySelector(`[data-server-id="${serverId}"]`);
+      if (serverItem) {
+          serverItem.classList.add('active');
+      }
+  } else {
+      // Activate home button for /app path
+      const homeBtn = document.querySelector('.home-btn, [data-home-btn]');
+      if (homeBtn) {
+          homeBtn.classList.add('active');
+      }
+  }
+}
+
+function extractServerIdFromPath(path) {
+  const regex = /\/chat\?serverId=(\d+)/;
+  const match = path.match(regex);
+  return match ? match[1] : null;
+}
+
 function updateGlobalSidebarActiveState() {
   const serverList = document.getElementById("globalServerList") || document.getElementById("serverList");
   let homeBtn = document.getElementById("homeBtn");
@@ -844,7 +874,7 @@ async function spaNavigate(url, opts = {}) {
       history.pushState({}, "", targetUrl.pathname + targetUrl.search + targetUrl.hash);
     }
 
-    updateGlobalSidebarActiveState(); // Giữ nguyên hàm này nếu có
+    updateGlobalSidebarActiveState(extractServerIdFromPath(path));
     
     document.dispatchEvent(
       new CustomEvent("cococord:page:loaded", {
