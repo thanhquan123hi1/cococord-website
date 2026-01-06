@@ -611,11 +611,17 @@
 
     async function ensureLocalMedia(video) {
         if (state.localStream) {
-            log('Using existing local stream');
+            log('✅ Using existing local stream');
+            log('📊 Existing stream tracks:', state.localStream.getTracks().map(t => ({
+                kind: t.kind,
+                enabled: t.enabled,
+                readyState: t.readyState,
+                label: t.label
+            })));
             return state.localStream;
         }
 
-        log('Requesting user media:', { audio: true, video });
+        log('🎤 Requesting user media:', { audio: true, video });
 
         try {
             state.localStream = await navigator.mediaDevices.getUserMedia({
@@ -623,15 +629,36 @@
                 video: video ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false
             });
 
+            log('✅ getUserMedia successful!');
+            log('📊 New stream tracks:', state.localStream.getTracks().map(t => ({
+                kind: t.kind,
+                enabled: t.enabled,
+                readyState: t.readyState,
+                label: t.label
+            })));
+
+            // Verify tracks are enabled
+            state.localStream.getTracks().forEach(track => {
+                if (!track.enabled) {
+                    error('❌ Track is disabled:', track.kind);
+                }
+                if (track.readyState !== 'live') {
+                    error('❌ Track is not live:', track.kind, track.readyState);
+                }
+            });
+
             // Attach to local video element if video call
             const localVideo = document.getElementById('callLocalVideo');
             if (localVideo && video) {
                 attachStreamToVideo(localVideo, state.localStream, { muted: true });
+                log('✅ Local video attached to DOM');
             }
 
             return state.localStream;
         } catch (err) {
-            error('Failed to get user media:', err);
+            error('❌ Failed to get user media:', err);
+            error('Error name:', err.name);
+            error('Error message:', err.message);
             throw err;
         }
     }
@@ -724,30 +751,9 @@
             state.outgoing = false;
             
             // Show active call view immediately
+            // OFFER was already sent in startCall(), we just wait for ANSWER now
             showActiveCallView(state.video);
-            
-            // Now send OFFER since callee is ready and subscribed
-            log('Callee is ready, now creating and sending OFFER');
-            try {
-                const offer = await state.pc.createOffer({
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: state.video
-                });
-                await state.pc.setLocalDescription(offer);
-                
-                log('Sending OFFER to callee');
-                sendSignal({
-                    roomId: state.roomId,
-                    callId: state.callId,
-                    type: 'OFFER',
-                    sdp: offer.sdp,
-                    video: state.video
-                });
-                log('OFFER sent, waiting for ANSWER from callee');
-            } catch (err) {
-                error('Failed to create/send offer:', err);
-                endCall(true);
-            }
+            log('Active view shown, waiting for ANSWER from callee');
         } else {
             log('Received accept in unexpected state, ignoring');
         }
@@ -780,6 +786,14 @@
             displayName: evt.fromDisplayName || evt.fromUsername,
             avatarUrl: evt.fromAvatarUrl
         };
+
+        // Buffer the OFFER if included in CALL_START
+        if (evt.sdp) {
+            log('📩 OFFER included in CALL_START, buffering for when user accepts');
+            state.pendingOffer = evt;
+        } else {
+            log('⚠️ No OFFER in CALL_START, will wait for separate OFFER message');
+        }
 
         // Fetch target user info if not provided
         if (!state.targetUser.avatarUrl) {
@@ -822,35 +836,30 @@
             return;
         }
 
-        log('Ready to process offer - will create peer connection and answer if needed');
+        log('Ready to process offer');
 
-        // Create peer connection if not exists
+        // Peer connection and media MUST already be set up by acceptIncomingCall()
         if (!state.pc) {
-            log('Creating peer connection for offer handling');
-            state.pc = createPeerConnection();
-            if (!state.pc) {
-                error('Failed to create peer connection');
-                endCall(true);
-                return;
-            }
-            
-            // Get local media and add tracks (only if we just created PC)
-            try {
-                log('Getting local media for answer');
-                const stream = await ensureLocalMedia(state.video);
-                stream.getTracks().forEach(track => {
-                    if (!state.pc.getSenders().find(s => s.track === track)) {
-                        state.pc.addTrack(track, stream);
-                        log('Added track to peer connection:', track.kind);
-                    }
-                });
-            } catch (err) {
-                error('Failed to get local media:', err);
-                endCall(true);
-                return;
-            }
-        } else {
-            log('Peer connection already exists, skipping media setup');
+            error('❌ CRITICAL: No peer connection when processing OFFER! This should not happen.');
+            error('handleOffer should only be called AFTER acceptIncomingCall sets up PC and media');
+            endCall(true);
+            return;
+        }
+
+        // Verify tracks are already added
+        const senders = state.pc.getSenders();
+        const audioSender = senders.find(s => s.track?.kind === 'audio');
+        const videoSender = senders.find(s => s.track?.kind === 'video');
+        log('📊 Peer connection state before setRemoteDescription:');
+        log('  - Audio track added:', !!audioSender);
+        log('  - Video track added:', !!videoSender);
+        log('  - Total senders:', senders.length);
+        
+        if (!audioSender) {
+            error('❌ No audio track in peer connection! Check acceptIncomingCall()');
+        }
+        if (state.video && !videoSender) {
+            error('❌ No video track in peer connection! Check acceptIncomingCall()');
         }
 
         // Set remote description (the offer)
@@ -997,12 +1006,32 @@
         // Get local media first
         try {
             const stream = await ensureLocalMedia(video);
+            log('🎥 Local stream tracks:', stream.getTracks().map(t => `${t.kind} (${t.label})`));
             stream.getTracks().forEach(track => {
                 state.pc.addTrack(track, stream);
+                log('✅ Added track to peer connection:', track.kind);
             });
         } catch (err) {
             error('Failed to get local media:', err);
             showToast('Không thể truy cập micro/camera', 'error');
+            resetCallState();
+            return false;
+        }
+
+        // Create OFFER immediately after adding tracks (WebRTC standard flow)
+        try {
+            log('Creating OFFER immediately after addTrack...');
+            const offer = await state.pc.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: video
+            });
+            await state.pc.setLocalDescription(offer);
+            log('✅ Local description (offer) set successfully');
+            log('📝 SDP has video:', offer.sdp.includes('m=video'));
+            log('📝 SDP has audio:', offer.sdp.includes('m=audio'));
+        } catch (err) {
+            error('Failed to create offer:', err);
+            showToast('Không thể tạo offer', 'error');
             resetCallState();
             return false;
         }
@@ -1014,17 +1043,17 @@
         // Subscribe to room topic for this call
         subscribeToRoomTopic(state.roomId);
 
-        // Send CALL_START to notify the other user
+        // Send CALL_START with the OFFER included
         sendSignal({
             roomId: state.roomId,
             callId: state.callId,
             type: 'CALL_START',
+            sdp: state.pc.localDescription.sdp,
             video: video,
             targetUserId: targetUserId
         });
 
-        // Don't send OFFER yet - wait for CALL_ACCEPT to ensure callee is subscribed
-        log('CALL_START sent, waiting for CALL_ACCEPT before sending OFFER');
+        log('CALL_START with OFFER sent, waiting for ANSWER from callee');
 
         return true;
     }
@@ -1060,16 +1089,25 @@
             }
         }
 
-        // Get local media
+        // Get local media and add tracks FIRST
         try {
-            log('Getting local media for callee');
+            log('🎥 Getting local media for callee (receiver)...');
             const stream = await ensureLocalMedia(state.video);
+            log('🎥 Callee stream tracks:', stream.getTracks().map(t => `${t.kind} (${t.label})`));
+            
             stream.getTracks().forEach(track => {
                 if (!state.pc.getSenders().find(s => s.track === track)) {
                     state.pc.addTrack(track, stream);
+                    log('✅ Callee added track:', track.kind);
                 }
             });
-            log('Local media added successfully');
+            
+            // Verify all tracks are added
+            const senders = state.pc.getSenders();
+            log('📊 Callee peer connection ready:');
+            log('  - Audio track:', !!senders.find(s => s.track?.kind === 'audio'));
+            log('  - Video track:', !!senders.find(s => s.track?.kind === 'video'));
+            log('  - Total senders:', senders.length);
         } catch (err) {
             error('Failed to get local media:', err);
             showToast('Không thể truy cập micro/camera', 'error');
@@ -1077,14 +1115,14 @@
             return;
         }
 
-        // Process pending offer if we have one
+        // NOW process pending offer (PC and tracks are ready)
         log('Checking for pending offer:', !!state.pendingOffer);
         if (state.pendingOffer) {
-            log('Processing pending offer');
+            log('📩 Processing pending OFFER from CALL_START');
             await handleOffer(state.pendingOffer);
             state.pendingOffer = null;
         } else {
-            log('No pending offer, will wait for OFFER to arrive');
+            log('⚠️ No pending offer, will wait for OFFER to arrive');
         }
 
         showActiveCallView(state.video);
