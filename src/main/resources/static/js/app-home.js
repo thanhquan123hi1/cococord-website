@@ -26,6 +26,9 @@
   let dmSubscription = null;
   let callSubscription = null;
 
+  // Prevent double-send
+  let isSendingMessage = false;
+
   // ==================== CALL (WebRTC + WebSocket signaling) ====================
   const call = {
     active: false,
@@ -46,7 +49,7 @@
 
     pendingOfferSdp: null,
     pendingCandidates: [],
-    
+
     // Prevent double click
     startingCall: false,
   };
@@ -471,19 +474,19 @@
 
   function endCall({ sendHangup } = { sendHangup: true }) {
     console.log('[AppHome] 🛑 endCall() called, sendHangup:', sendHangup);
-    
+
     // Delegate to global CallManager
     if (window.CoCoCordCallManager) {
       window.CoCoCordCallManager.endCall(sendHangup);
     }
-    
+
     // Also hide any legacy overlay on this page
     hideCallOverlay();
   }
 
   async function acceptIncomingCall() {
     console.log('[AppHome] ✅ acceptIncomingCall() called');
-    
+
     // Delegate to global CallManager
     if (window.CoCoCordCallManager) {
       await window.CoCoCordCallManager.acceptIncomingCall();
@@ -492,7 +495,7 @@
 
   function declineIncomingCall() {
     console.log('[AppHome] ❌ declineIncomingCall() called');
-    
+
     // Delegate to global CallManager
     if (window.CoCoCordCallManager) {
       window.CoCoCordCallManager.declineIncomingCall();
@@ -501,52 +504,52 @@
 
   async function startOutgoingCall({ video }) {
     console.log('[AppHome] 🎤📹 startOutgoingCall() called, video:', video);
-    
+
     // Prevent double click
     if (call.startingCall) {
       console.log('[AppHome] Already starting a call, ignoring double click');
       return;
     }
     call.startingCall = true;
-    
+
     try {
       // Delegate to global CallManager
       if (!window.CoCoCordCallManager) {
         console.error('[AppHome] CoCoCordCallManager not loaded');
         return;
       }
-      
+
       const roomId = getCallRoomId();
       if (!roomId) {
         console.warn('[AppHome] Cannot start call: missing roomId');
         return;
       }
-      
+
       const targetUserId = getActiveDmTargetUserId();
       if (!targetUserId) {
         console.warn('[AppHome] Cannot start call: missing targetUserId');
         return;
       }
-      
+
       const targetUser = state.activeDmUser ? {
         id: state.activeDmUser.id,
         username: state.activeDmUser.username,
         displayName: state.activeDmUser.displayName || state.activeDmUser.username,
         avatarUrl: state.activeDmUser.avatarUrl
       } : null;
-      
+
       if (!targetUser) {
         console.warn('[AppHome] Cannot start call: missing activeDmUser');
         return;
       }
-      
+
       console.log('[AppHome] Calling CallManager.startCall() with:', {
         targetUserId,
         roomId,
         targetUser: targetUser.username,
         video
       });
-      
+
       const success = await window.CoCoCordCallManager.startCall(targetUserId, roomId, targetUser, video);
       console.log('[AppHome] CallManager.startCall() returned:', success);
       if (!success) {
@@ -739,9 +742,8 @@
           call.incomingPending = true;
           showCallOverlay({
             video: call.video,
-            title: `Cuộc gọi đến: ${otherUserName()} • ${
-              call.video ? "Video Call" : "Voice Call"
-            }`,
+            title: `Cuộc gọi đến: ${otherUserName()} • ${call.video ? "Video Call" : "Voice Call"
+              }`,
             showPrompt: true,
             promptText: "Chọn Chấp nhận hoặc Từ chối để tiếp tục.",
             showAccept: true,
@@ -773,9 +775,8 @@
         // Once connected, hide prompt
         showCallOverlay({
           video: call.video,
-          title: `${otherUserName()} • ${
-            call.video ? "Video Call" : "Voice Call"
-          }`,
+          title: `${otherUserName()} • ${call.video ? "Video Call" : "Voice Call"
+            }`,
           showPrompt: false,
           showAccept: false,
           showDecline: false,
@@ -894,7 +895,7 @@
 
   async function loadFriends() {
     state.friends = (await apiJson("/api/friends", { method: "GET" })) || [];
-    
+
     // Hide friends list skeleton after loading
     const friendsSkeleton = document.getElementById('friendsListSkeleton');
     if (friendsSkeleton) {
@@ -916,7 +917,7 @@
   async function loadDmSidebar() {
     state.dmItems =
       (await apiJson("/api/direct-messages/sidebar", { method: "GET" })) || [];
-    
+
     // Hide DM list skeleton after loading
     const dmSkeleton = document.getElementById('dmListSkeleton');
     if (dmSkeleton) {
@@ -939,9 +940,8 @@
     const items = (state.dmItems || [])
       .filter((it) => {
         if (!q) return true;
-        const key = `${it.displayName || ""} ${
-          it.username || ""
-        }`.toLowerCase();
+        const key = `${it.displayName || ""} ${it.username || ""
+          }`.toLowerCase();
         return key.includes(q);
       })
       .slice(0, 50);
@@ -956,24 +956,22 @@
         const avatar = it.avatarUrl
           ? `<img src="${escapeHtml(it.avatarUrl)}" alt="">`
           : `<span>${escapeHtml(
-              (it.displayName || it.username || "U").charAt(0).toUpperCase()
-            )}</span>`;
+            (it.displayName || it.username || "U").charAt(0).toUpperCase()
+          )}</span>`;
         const unread = Number(it.unreadCount || 0);
         const unreadText = unread > 99 ? "99+" : String(unread);
         return `
                     <div class="dm-row" role="listitem" data-dm-group-id="${escapeHtml(
-                      it.dmGroupId
-                    )}" data-user-id="${escapeHtml(it.userId)}">
-                        <div class="avatar">${avatar}<span class="status-dot ${
-          isOnline(it) ? "online" : ""
-        }"></span></div>
+          it.dmGroupId
+        )}" data-user-id="${escapeHtml(it.userId)}">
+                        <div class="avatar">${avatar}<span class="status-dot ${isOnline(it) ? "online" : ""
+          }"></span></div>
                         <span class="dm-name">${escapeHtml(
-                          it.displayName || it.username || "Unknown"
-                        )}</span>
+            it.displayName || it.username || "Unknown"
+          )}</span>
                         <div class="dm-right">
-                            <span class="unread-pill ${
-                              unread > 0 ? "show" : ""
-                            }">${escapeHtml(unreadText)}</span>
+                            <span class="unread-pill ${unread > 0 ? "show" : ""
+          }">${escapeHtml(unreadText)}</span>
                         </div>
                     </div>
                 `;
@@ -1045,8 +1043,8 @@
         state.activeTab === "online"
           ? "Không có bạn bè nào trực tuyến"
           : listRelationshipsByStatus(["FRIEND"]).length === 0
-          ? "Bạn chưa có bạn bè nào"
-          : "Không tìm thấy bạn bè";
+            ? "Bạn chưa có bạn bè nào"
+            : "Không tìm thấy bạn bè";
       container.innerHTML = emptyState(emptyMsg);
       return;
     }
@@ -1055,48 +1053,46 @@
       state.activeTab === "online" ? "TRỰC TUYẾN" : "TẤT CẢ BẠN BÈ";
 
     container.innerHTML = `
-            <div class="friend-group-header">${headerText} — ${
-      list.length
-    }</div>
+            <div class="friend-group-header">${headerText} — ${list.length
+      }</div>
             ${list
-              .map((f) => {
-                const friendId = userIdOf(f);
-                const avatar = f.avatarUrl
-                  ? `<img src="${escapeHtml(f.avatarUrl)}" alt="">`
-                  : `<span>${escapeHtml(
-                      displayName(f).charAt(0).toUpperCase()
-                    )}</span>`;
-                const subtitle =
-                  statusText(f) || (isOnline(f) ? "Đang trực tuyến" : "");
-                return `
+        .map((f) => {
+          const friendId = userIdOf(f);
+          const avatar = f.avatarUrl
+            ? `<img src="${escapeHtml(f.avatarUrl)}" alt="">`
+            : `<span>${escapeHtml(
+              displayName(f).charAt(0).toUpperCase()
+            )}</span>`;
+          const subtitle =
+            statusText(f) || (isOnline(f) ? "Đang trực tuyến" : "");
+          return `
                         <div class="friend-row" data-user-id="${escapeHtml(
-                          friendId
-                        )}">
+            friendId
+          )}">
                             <div class="friend-left">
-                                <div class="avatar">${avatar}<span class="status-dot ${
-                  isOnline(f) ? "online" : ""
-                }"></span></div>
+                                <div class="avatar">${avatar}<span class="status-dot ${isOnline(f) ? "online" : ""
+            }"></span></div>
                                 <div class="friend-meta">
                                     <div class="friend-title">${escapeHtml(
-                                      displayName(f)
-                                    )}</div>
+              displayName(f)
+            )}</div>
                                     <div class="friend-subtitle">${escapeHtml(
-                                      subtitle
-                                    )}</div>
+              subtitle
+            )}</div>
                                 </div>
                             </div>
                             <div class="friend-actions">
                                 <button class="icon-btn" type="button" title="Nhắn tin" data-action="chat" data-user-id="${escapeHtml(
-                                  friendId
-                                )}"><i class="bi bi-chat-fill"></i></button>
+              friendId
+            )}"><i class="bi bi-chat-fill"></i></button>
                                 <button class="icon-btn" type="button" title="Thêm" data-action="more" data-user-id="${escapeHtml(
-                                  friendId
-                                )}"><i class="bi bi-three-dots-vertical"></i></button>
+              friendId
+            )}"><i class="bi bi-three-dots-vertical"></i></button>
                             </div>
                         </div>
                     `;
-              })
-              .join("")}
+        })
+        .join("")}
         `;
 
     container.querySelectorAll('button[data-action="chat"]').forEach((btn) => {
@@ -1143,11 +1139,10 @@
 
     const filtered = q
       ? requests.filter((r) => {
-          const key = `${r.username || ""} ${r.displayName || ""} ${
-            r.relationshipStatus || ""
+        const key = `${r.username || ""} ${r.displayName || ""} ${r.relationshipStatus || ""
           }`.toLowerCase();
-          return key.includes(q);
-        })
+        return key.includes(q);
+      })
       : requests;
 
     if (!filtered.length) {
@@ -1158,53 +1153,52 @@
     container.innerHTML = `
             <div class="friend-group-header">ĐANG CHỜ — ${filtered.length}</div>
             ${filtered
-              .map((r) => {
-                const isSentByMe =
-                  normalizeRelationshipStatus(r.relationshipStatus) ===
-                  "OUTGOING_REQUEST";
-                const name = r.displayName || r.username || "Unknown";
-                const subtitle = isSentByMe
-                  ? "Đã gửi yêu cầu"
-                  : "Yêu cầu kết bạn";
-                const reqId = r.requestId;
+        .map((r) => {
+          const isSentByMe =
+            normalizeRelationshipStatus(r.relationshipStatus) ===
+            "OUTGOING_REQUEST";
+          const name = r.displayName || r.username || "Unknown";
+          const subtitle = isSentByMe
+            ? "Đã gửi yêu cầu"
+            : "Yêu cầu kết bạn";
+          const reqId = r.requestId;
 
-                return `
+          return `
                         <div class="friend-row" data-request-id="${escapeHtml(
-                          reqId
-                        )}">
+            reqId
+          )}">
                             <div class="friend-left">
                                 <div class="avatar"><span>${escapeHtml(
-                                  String(name).charAt(0).toUpperCase()
-                                )}</span></div>
+            String(name).charAt(0).toUpperCase()
+          )}</span></div>
                                 <div class="friend-meta">
                                     <div class="friend-title">${escapeHtml(
-                                      name
-                                    )}</div>
+            name
+          )}</div>
                                     <div class="friend-subtitle">${escapeHtml(
-                                      subtitle
-                                    )}</div>
+            subtitle
+          )}</div>
                                 </div>
                             </div>
                             <div class="friend-actions">
-                                ${
-                                  isSentByMe
-                                    ? `<button class="icon-btn" type="button" title="Hủy" data-action="cancel" data-request-id="${escapeHtml(
-                                        reqId
-                                      )}"><i class="bi bi-x-lg"></i></button>`
-                                    : `
+                                ${isSentByMe
+              ? `<button class="icon-btn" type="button" title="Hủy" data-action="cancel" data-request-id="${escapeHtml(
+                reqId
+              )}"><i class="bi bi-x-lg"></i></button>`
+              : `
                                         <button class="icon-btn" type="button" title="Chấp nhận" data-action="accept" data-request-id="${escapeHtml(
-                                          reqId
-                                        )}"><i class="bi bi-check-lg"></i></button>
+                reqId
+              )}"><i class="bi bi-check-lg"></i></button>
                                         <button class="icon-btn" type="button" title="Từ chối" data-action="decline" data-request-id="${escapeHtml(
-                                          reqId
-                                        )}"><i class="bi bi-x-lg"></i></button>
+                reqId
+              )}"><i class="bi bi-x-lg"></i></button>
                                       `
-                                }
+            }
                             </div>
                         </div>
                     `;
-              })
-              .join("")}
+        })
+        .join("")}
         `;
 
     container.querySelectorAll("button[data-request-id]").forEach((btn) => {
@@ -1317,9 +1311,9 @@
 
     const filtered = q
       ? blocked.filter((u) => {
-          const key = `${displayName(u)} ${u.username || ""}`.toLowerCase();
-          return key.includes(q);
-        })
+        const key = `${displayName(u)} ${u.username || ""}`.toLowerCase();
+        return key.includes(q);
+      })
       : blocked;
 
     if (!filtered.length) {
@@ -1330,35 +1324,35 @@
     container.innerHTML = `
             <div class="friend-group-header">BỊ CHẶN — ${filtered.length}</div>
             ${filtered
-              .map((u) => {
-                const userId = userIdOf(u);
-                const avatar = u.avatarUrl
-                  ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">`
-                  : `<span>${escapeHtml(
-                      displayName(u).charAt(0).toUpperCase()
-                    )}</span>`;
-                return `
+        .map((u) => {
+          const userId = userIdOf(u);
+          const avatar = u.avatarUrl
+            ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">`
+            : `<span>${escapeHtml(
+              displayName(u).charAt(0).toUpperCase()
+            )}</span>`;
+          return `
                         <div class="friend-row" data-user-id="${escapeHtml(
-                          userId
-                        )}">
+            userId
+          )}">
                             <div class="friend-left">
                                 <div class="avatar">${avatar}</div>
                                 <div class="friend-meta">
                                     <div class="friend-title">${escapeHtml(
-                                      displayName(u)
-                                    )}</div>
+            displayName(u)
+          )}</div>
                                     <div class="friend-subtitle">Đã bị chặn</div>
                                 </div>
                             </div>
                             <div class="friend-actions">
                                 <button class="icon-btn" type="button" title="Bỏ chặn" data-action="unblock" data-user-id="${escapeHtml(
-                                  userId
-                                )}"><i class="bi bi-x-lg"></i></button>
+            userId
+          )}"><i class="bi bi-x-lg"></i></button>
                             </div>
                         </div>
                     `;
-              })
-              .join("")}
+        })
+        .join("")}
         `;
 
     container
@@ -1584,9 +1578,8 @@
 
       // Show success feedback briefly before switching tab
       if (hint) {
-        hint.textContent = `Đã gửi lời mời kết bạn tới ${
-          target.displayName || target.username
-        }!`;
+        hint.textContent = `Đã gửi lời mời kết bạn tới ${target.displayName || target.username
+          }!`;
         hint.className = "add-friend-hint success";
       }
       if (input) input.value = "";
@@ -1748,10 +1741,10 @@
       const avatar = msg.senderAvatarUrl
         ? `<img src="${escapeHtml(msg.senderAvatarUrl)}" alt="">`
         : `<span>${escapeHtml(
-            (msg.senderDisplayName || msg.senderUsername || "U")
-              .charAt(0)
-              .toUpperCase()
-          )}</span>`;
+          (msg.senderDisplayName || msg.senderUsername || "U")
+            .charAt(0)
+            .toUpperCase()
+        )}</span>`;
       const time = formatMessageTime(createdAt);
       const senderName =
         msg.senderDisplayName || msg.senderUsername || "Unknown";
@@ -1770,26 +1763,25 @@
         !isDeleted && isOwn
           ? `<div class="dm-message-actions">
                        <button class="msg-action-btn" type="button" title="Xóa tin nhắn" data-action="delete" data-msg-id="${escapeHtml(
-                         msg.id
-                       )}">
+            msg.id
+          )}">
                            <i class="bi bi-trash"></i>
                        </button>
                    </div>`
           : "";
 
       parts.push(`
-                <div class="dm-message-row ${
-                  isDeleted ? "deleted" : ""
-                }" data-msg-id="${escapeHtml(msg.id)}">
+                <div class="dm-message-row ${isDeleted ? "deleted" : ""
+        }" data-msg-id="${escapeHtml(msg.id)}">
                     <div class="avatar">${avatar}</div>
                     <div class="dm-message-content">
                         <div class="dm-message-header">
                             <span class="dm-sender-name">${escapeHtml(
-                              senderName
-                            )}</span>
+          senderName
+        )}</span>
                             <span class="dm-message-time">${escapeHtml(
-                              time
-                            )}</span>
+          time
+        )}</span>
                         </div>
                         ${contentHtml}
                     </div>
@@ -1875,7 +1867,7 @@
    */
   function renderTextWithMarkdown(content) {
     if (!content || !content.trim()) return '';
-    return window.CocoCordMarkdown 
+    return window.CocoCordMarkdown
       ? window.CocoCordMarkdown.render(content)
       : escapeHtml(content);
   }
@@ -1885,19 +1877,19 @@
    */
   function renderGifContent(url, metadata) {
     if (!url) return '';
-    
+
     // Parse metadata
     let gifData = null;
     if (metadata) {
       try {
         gifData = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
-      } catch (_) {}
+      } catch (_) { }
     }
-    
+
     // Check if mp4/webm (Tenor/Giphy often use video)
     const isMp4 = url.toLowerCase().includes('.mp4');
     const isWebm = url.toLowerCase().includes('.webm');
-    
+
     if (isMp4 || isWebm) {
       return `<video src="${escapeHtml(url)}" class="message-gif" autoplay loop muted playsinline></video>`;
     } else {
@@ -1911,12 +1903,12 @@
   function renderDmAttachments(msg) {
     // Try to parse attachments from metadata if not directly available
     let attachments = msg.attachments;
-    
+
     if (!attachments?.length && msg.metadata) {
       try {
         const meta = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata;
         attachments = meta?.files || [];
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // Also check attachmentUrls
@@ -1957,7 +1949,7 @@
     const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
     const videoExts = ['mp4', 'webm', 'ogg', 'mov'];
     const audioExts = ['mp3', 'wav', 'ogg', 'm4a'];
-    
+
     if (imageExts.includes(ext)) return 'image/' + ext;
     if (videoExts.includes(ext)) return 'video/' + ext;
     if (audioExts.includes(ext)) return 'audio/' + ext;
@@ -2055,8 +2047,8 @@
     const label = formatDateSeparatorLabel(timestamp);
     return `
             <div class="dm-date-separator" role="separator" aria-label="${escapeHtml(
-              label
-            )}">
+      label
+    )}">
                 <span>${escapeHtml(label)}</span>
             </div>
         `;
@@ -2071,8 +2063,8 @@
     const text = msg?.content || "";
     return `
             <div class="dm-system-row" data-msg-id="${escapeHtml(
-              msg?.id || ""
-            )}">
+      msg?.id || ""
+    )}">
                 <div class="dm-system-message">
                     <i class="bi ${escapeHtml(icon)}"></i>
                     <span>${escapeHtml(text)}</span>
@@ -2097,11 +2089,21 @@
         dmSubscription = stompClient.subscribe(
           `/topic/dm/${state.activeDmGroupId}`,
           (message) => {
+            console.log('[APP-WS-MSG] 📡 WebSocket message received on /topic/dm/' + state.activeDmGroupId);
             const msg = JSON.parse(message.body);
-            if (!state.dmMessages.find((m) => m.id === msg.id)) {
-              state.dmMessages.push(msg);
-              renderDmMessages();
+            console.log('[APP-WS-MSG] 📦 Parsed message:', { msgId: msg?.id, content: msg?.content?.substring(0, 50), sender: msg?.senderUsername });
+
+            // Check for duplicate BEFORE adding
+            const exists = state.dmMessages.find((m) => m.id === msg.id);
+            if (exists) {
+              console.warn('[APP-WS-MSG] ⚠️ DUPLICATE VIA WEBSOCKET! Message ID already exists, ignoring:', msg.id);
+              return;
             }
+
+            console.log('[APP-WS-MSG] 📝 Adding WebSocket message to state (POTENTIAL DUPLICATE SOURCE #2), current count:', state.dmMessages.length);
+            state.dmMessages.push(msg);
+            console.log('[APP-WS-MSG] ✅ Message added, new count:', state.dmMessages.length);
+            renderDmMessages();
           }
         );
 
@@ -2111,7 +2113,7 @@
           (message) => {
             const evt = JSON.parse(message.body);
             handleCallSignal(evt);
-            
+
           }
         );
       },
@@ -2127,19 +2129,19 @@
     if (callSubscription) {
       try {
         callSubscription.unsubscribe();
-      } catch (_) {}
+      } catch (_) { }
       callSubscription = null;
     }
     if (dmSubscription) {
       try {
         dmSubscription.unsubscribe();
-      } catch (_) {}
+      } catch (_) { }
       dmSubscription = null;
     }
     if (stompClient) {
       try {
         stompClient.disconnect();
-      } catch (_) {}
+      } catch (_) { }
       stompClient = null;
     }
   }
@@ -2149,6 +2151,16 @@
     const content = (input?.value || "").trim();
     if (!content || !state.activeDmGroupId) return;
 
+    // Prevent double-send
+    if (isSendingMessage) {
+      console.warn('[APP-MSG-SEND] ⚠️ Already sending a message, ignoring duplicate call');
+      return;
+    }
+
+    console.log('[APP-MSG-SEND] 🚀 Sending message via REST API:', { content: content.substring(0, 50), dmGroupId: state.activeDmGroupId });
+
+    isSendingMessage = true;
+
     try {
       const message = await apiJson(
         `/api/direct-messages/${encodeURIComponent(
@@ -2156,7 +2168,7 @@
         )}/messages`,
         {
           method: "POST",
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             content,
             attachmentUrls: [],
             type: 'TEXT',
@@ -2164,18 +2176,27 @@
           }),
         }
       );
+
+      console.log('[APP-MSG-SEND] ✅ REST API response received:', { msgId: message?.id, content: message?.content?.substring(0, 50) });
+
       if (input) input.value = "";
       // Message will arrive via WebSocket, but add optimistically if not duplicate
       if (message && !state.dmMessages.find((m) => m.id === message.id)) {
+        console.log('[APP-MSG-SEND] 📝 Adding message from REST response (POTENTIAL DUPLICATE SOURCE #1)');
         state.dmMessages.push(message);
         renderDmMessages();
+      } else if (message) {
+        console.warn('[APP-MSG-SEND] ⚠️ Message already exists, not adding from REST response');
       }
     } catch (err) {
+      console.error('[APP-MSG-SEND] ❌ Error:', err);
       if (window.ToastManager) {
         ToastManager.error(err?.message || "Không thể gửi tin nhắn");
       } else {
         alert(err?.message || "Không thể gửi tin nhắn");
       }
+    } finally {
+      isSendingMessage = false;
     }
   }
 
@@ -2184,7 +2205,7 @@
 
   function initChatInputManager() {
     if (chatInputManager) {
-      try { chatInputManager.destroy(); } catch (_) {}
+      try { chatInputManager.destroy(); } catch (_) { }
     }
 
     if (typeof ChatInputManager === 'undefined') {
@@ -2228,8 +2249,8 @@
         await sendDmRichMessage(stickerUrl, 'STICKER', { stickerId });
       },
       // Typing events (optional - can implement later)
-      onTypingStart: () => {},
-      onTypingEnd: () => {}
+      onTypingStart: () => { },
+      onTypingEnd: () => { }
     });
 
     console.log('[AppHome] ChatInputManager initialized successfully');
@@ -2240,6 +2261,8 @@
    */
   async function sendDmMessageWithType(content, type, metadata = null) {
     if (!state.activeDmGroupId || !content?.trim()) return;
+
+    console.log('[APP-MSG-TYPE] 🚀 Sending message via REST API:', { type, content: content.substring(0, 50), dmGroupId: state.activeDmGroupId });
 
     try {
       const message = await apiJson(
@@ -2255,6 +2278,8 @@
         }
       );
 
+      console.log('[APP-MSG-TYPE] ✅ REST API response received:', { msgId: message?.id, type });
+
       // Clear input after success
       const input = els.dmMessageInput();
       if (input) input.value = "";
@@ -2262,10 +2287,14 @@
 
       // Add to messages if not duplicate
       if (message && !state.dmMessages.find((m) => m.id === message.id)) {
+        console.log('[APP-MSG-TYPE] 📝 Adding message from REST response');
         state.dmMessages.push(message);
         renderDmMessages();
+      } else if (message) {
+        console.warn('[APP-MSG-TYPE] ⚠️ Message already exists, not adding');
       }
     } catch (err) {
+      console.error('[APP-MSG-TYPE] ❌ Error:', err);
       ToastManager?.error?.(err?.message || "Không thể gửi tin nhắn");
     }
   }
@@ -2338,7 +2367,7 @@
       }
 
       const attachmentUrls = uploadedAttachments.map(att => att.fileUrl);
-      const metadata = uploadedAttachments.length > 0 
+      const metadata = uploadedAttachments.length > 0
         ? JSON.stringify({ files: uploadedAttachments })
         : null;
 
@@ -2497,11 +2526,11 @@
     document.querySelectorAll('.shop-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         const tabName = tab.getAttribute('data-shop-tab');
-        
+
         // Update tab active state
         document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        
+
         // Show/hide sections
         document.querySelectorAll('.shop-section').forEach(section => {
           const sectionName = section.getAttribute('data-shop-content');
@@ -2529,10 +2558,10 @@
   function updateQuestStats() {
     const completedEl = document.getElementById('completedQuests');
     const activeEl = document.getElementById('activeQuests');
-    
+
     const completed = document.querySelectorAll('.quest-card.completed').length;
     const active = document.querySelectorAll('.quest-card:not(.completed)').length;
-    
+
     if (completedEl) completedEl.textContent = completed;
     if (activeEl) activeEl.textContent = active;
   }
@@ -2586,8 +2615,8 @@
         await startOutgoingCall({ video: false });
       } catch (err) {
         const msg = err?.name === "NotAllowedError"
-            ? "Vui lòng cho phép microphone"
-            : err?.message || "Không thể gọi thoại";
+          ? "Vui lòng cho phép microphone"
+          : err?.message || "Không thể gọi thoại";
         if (window.ToastManager) {
           ToastManager.error(msg);
         } else {
@@ -2627,8 +2656,8 @@
         await acceptIncomingCall();
       } catch (err) {
         const msg = err?.name === "NotAllowedError"
-            ? "Vui lòng cho phép microphone/camera"
-            : err?.message || "Không thể tham gia cuộc gọi";
+          ? "Vui lòng cho phép microphone/camera"
+          : err?.message || "Không thể tham gia cuộc gọi";
         if (window.ToastManager) {
           ToastManager.error(msg);
         } else {
@@ -2673,12 +2702,12 @@
     renderDmList();
     renderFriendsList();
     document.querySelectorAll(".tab").forEach((b) => {
-          b.onclick = () => { // Dùng onclick trực tiếp để chắc chắn chạy
-              setActiveTab(b.dataset.tab);
-          };
-  });
-  const btnAdd = document.getElementById("addFriendBtn");
-      if(btnAdd) btnAdd.onclick = showAddFriendView;
+      b.onclick = () => { // Dùng onclick trực tiếp để chắc chắn chạy
+        setActiveTab(b.dataset.tab);
+      };
+    });
+    const btnAdd = document.getElementById("addFriendBtn");
+    if (btnAdd) btnAdd.onclick = showAddFriendView;
   }
   async function initPresence() {
     const store = window.CoCoCordPresence;
@@ -2773,12 +2802,12 @@
 
     try {
       const navItems = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
-        navItems.forEach(item => {
-            item.onclick = (e) => {
-                e.preventDefault();
-                switchMainView(item.getAttribute('data-view'));
-            };
-        });
+      navItems.forEach(item => {
+        item.onclick = (e) => {
+          e.preventDefault();
+          switchMainView(item.getAttribute('data-view'));
+        };
+      });
       if (!window.__cococordIncomingCallListenerAttached) {
         window.__cococordIncomingCallListenerAttached = true;
         window.addEventListener("incomingCall", (e) => {
@@ -2799,9 +2828,9 @@
       ]);
       rebuildFriendsStateFromSnapshots();
       render();
-  } catch (err) {
-    throw err;
-  }
+    } catch (err) {
+      throw err;
+    }
     // Friends realtime updates (no polling)
     await initFriendsRealtime();
 
@@ -2843,15 +2872,15 @@
     initQuestInteractions();
     initPrimarySidebarResize();
   }
-  window.reInitAppHome = function() {
-      const homeRoot = document.getElementById("cococordHome");
-      if (!homeRoot) return;
-      if (typeof wireEvents === 'function') {
-          wireEvents(); 
-      }
-      if (typeof render === 'function') {
-           render();
-      }
+  window.reInitAppHome = function () {
+    const homeRoot = document.getElementById("cococordHome");
+    if (!homeRoot) return;
+    if (typeof wireEvents === 'function') {
+      wireEvents();
+    }
+    if (typeof render === 'function') {
+      render();
+    }
   };
   // ==================== PRIMARY SIDEBAR RESIZE ====================
   function initPrimarySidebarResize() {
@@ -2954,7 +2983,7 @@
     });
   }
 
-  
+
 
   // ===== Expose API for Quick Switcher =====
   window.AppHome = {
@@ -2988,46 +3017,46 @@
   // ==========================================
 
   function forceInit() {
-      const root = document.getElementById("cococordHome");
-      if (!root) return;
-      
-      isInitializing = false; 
+    const root = document.getElementById("cococordHome");
+    if (!root) return;
 
-      // Set up sidebar navigation with capture phase listener
-      const sidebarNav = root.querySelector(".sidebar-nav");
-      if (sidebarNav) {
-          sidebarNav.addEventListener('click', (e) => {
-              const navItem = e.target.closest('.nav-item');
-              if (navItem) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.stopImmediatePropagation(); 
+    isInitializing = false;
 
-                  // Update active state
-                  root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                  navItem.classList.add('active');
+    // Set up sidebar navigation with capture phase listener
+    const sidebarNav = root.querySelector(".sidebar-nav");
+    if (sidebarNav) {
+      sidebarNav.addEventListener('click', (e) => {
+        const navItem = e.target.closest('.nav-item');
+        if (navItem) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
 
-                  // Switch view
-                  const view = navItem.getAttribute("data-view");
-                  if (view && typeof switchMainView === 'function') {
-                      switchMainView(view);
-                  }
-              }
-          }, true); // Capture phase
-      }
+          // Update active state
+          root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          navItem.classList.add('active');
 
-      // Wire events and initialize
-      try {
-          if (typeof wireEvents === 'function') {
-              wireEvents(); 
+          // Switch view
+          const view = navItem.getAttribute("data-view");
+          if (view && typeof switchMainView === 'function') {
+            switchMainView(view);
           }
-      } catch (e) {
-          console.error('[AppHome] Wire events failed:', e);
+        }
+      }, true); // Capture phase
+    }
+
+    // Wire events and initialize
+    try {
+      if (typeof wireEvents === 'function') {
+        wireEvents();
       }
-      
-      if (typeof init === 'function') {
-          init().catch(err => console.error('[AppHome] Init failed:', err));
-      }
+    } catch (e) {
+      console.error('[AppHome] Wire events failed:', e);
+    }
+
+    if (typeof init === 'function') {
+      init().catch(err => console.error('[AppHome] Init failed:', err));
+    }
   }
   window.forceInitAppHome = forceInit;
 })();
