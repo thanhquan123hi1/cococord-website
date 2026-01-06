@@ -64,6 +64,7 @@ public class ServerServiceImpl implements IServerService {
     private final IServerMuteRepository serverMuteRepository;
     private final IPermissionService permissionService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final vn.cococord.service.IFileStorageService fileStorageService;
 
     @Override
     public ServerResponse createServer(CreateServerRequest request, String username) {
@@ -82,7 +83,7 @@ public class ServerServiceImpl implements IServerService {
 
         server = serverRepository.save(server);
 
-        // Create default role (@everyone)
+        // Create default role (@everyone) - base role for all members
         Role defaultRole = Role.builder()
                 .server(server)
                 .name("@everyone")
@@ -93,11 +94,26 @@ public class ServerServiceImpl implements IServerService {
                 .build();
         roleRepository.save(defaultRole);
 
-        // Add owner as member with default role
+        // Create @Admin role with all permissions - for server owner
+        Role adminRole = Role.builder()
+                .server(server)
+                .name("@Admin")
+                .color("#E74C3C") // Red color for admin
+                .position(999) // Highest position
+                .isDefault(false)
+                .isHoisted(true) // Display separately in member list
+                .isMentionable(true)
+                .build();
+        adminRole = roleRepository.save(adminRole);
+        
+        // Grant all permissions to admin role
+        permissionService.grantAllPermissionsToRole(adminRole.getId());
+
+        // Add owner as member with @Admin role
         ServerMember ownerMember = ServerMember.builder()
                 .server(server)
                 .user(owner)
-                .role(defaultRole)
+                .role(adminRole)
                 .build();
         serverMemberRepository.save(ownerMember);
 
@@ -219,7 +235,7 @@ public class ServerServiceImpl implements IServerService {
 
         User user = getUserByUsername(username);
 
-        // Owner cannot leave their own server
+        // Owner cannot leave their own server - must transfer ownership first
         if (server.getOwner().getId().equals(user.getId())) {
             throw new BadRequestException(
                     "Server owner cannot leave the server. Transfer ownership or delete the server.");
@@ -227,6 +243,12 @@ public class ServerServiceImpl implements IServerService {
 
         ServerMember member = serverMemberRepository.findByServerIdAndUserId(serverId, user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this server"));
+
+        // Check if user has @Admin role - they must transfer it first
+        if (member.getRole() != null && "@Admin".equals(member.getRole().getName())) {
+            throw new BadRequestException(
+                    "ADMIN_TRANSFER_REQUIRED:You have @Admin role. Please transfer it to another member before leaving.");
+        }
 
         serverMemberRepository.delete(member);
         log.info("User {} left server: {}", username, server.getName());
@@ -603,9 +625,35 @@ public class ServerServiceImpl implements IServerService {
             throw new UnauthorizedException("Only server owner can create roles");
         }
 
+        // Validate role name - only letters, numbers, Vietnamese characters, spaces
+        String roleName = request.getName();
+        if (roleName == null || roleName.trim().isEmpty()) {
+            throw new BadRequestException("Role name cannot be empty");
+        }
+        
+        // Remove @ prefix if provided, we'll add it back
+        String cleanName = roleName.startsWith("@") ? roleName.substring(1).trim() : roleName.trim();
+        
+        // Validate: no special characters
+        if (!cleanName.matches("^[a-zA-Z0-9\\u00C0-\\u024F\\u1E00-\\u1EFF\\s]+$")) {
+            throw new BadRequestException("Role name can only contain letters, numbers and spaces. No special characters allowed.");
+        }
+        
+        if (cleanName.length() < 2 || cleanName.length() > 50) {
+            throw new BadRequestException("Role name must be between 2 and 50 characters");
+        }
+        
+        // Prevent creating roles with reserved names
+        if ("Admin".equalsIgnoreCase(cleanName) || "everyone".equalsIgnoreCase(cleanName)) {
+            throw new BadRequestException("Cannot create role with reserved name: @" + cleanName);
+        }
+        
+        // Auto-prefix with @
+        String finalRoleName = "@" + cleanName;
+
         Role role = Role.builder()
                 .server(server)
-                .name(request.getName())
+                .name(finalRoleName)
                 .color(request.getColor() != null ? request.getColor() : "#99AAB5")
                 .position(request.getPosition() != null ? request.getPosition() : 0)
                 .isHoisted(request.getIsHoisted() != null ? request.getIsHoisted() : false)
@@ -642,7 +690,12 @@ public class ServerServiceImpl implements IServerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         if (role.getIsDefault()) {
-            throw new BadRequestException("Cannot delete default role");
+            throw new BadRequestException("Cannot delete default @everyone role");
+        }
+        
+        // Cannot delete @Admin role
+        if ("@Admin".equals(role.getName())) {
+            throw new BadRequestException("Cannot delete the @Admin role");
         }
 
         roleRepository.delete(role);
@@ -813,6 +866,11 @@ public class ServerServiceImpl implements IServerService {
         Role role = roleRepository.findByIdAndServerId(roleId, serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
+        // Can't edit @Admin role at all
+        if ("@Admin".equals(role.getName())) {
+            throw new BadRequestException("Cannot edit the @Admin role. This role has all permissions by default.");
+        }
+
         // Can't edit default @everyone role name
         if (role.getIsDefault() && request.getName() != null && !role.getName().equals(request.getName())) {
             throw new BadRequestException("Cannot rename the default @everyone role");
@@ -856,5 +914,152 @@ public class ServerServiceImpl implements IServerService {
 
         // Users with ADMINISTRATOR permission can access settings
         return permissionService.isAdministrator(user.getId(), serverId);
+    }
+
+    // ==================== ICON/BANNER MANAGEMENT ====================
+
+    @Override
+    public String uploadServerIcon(Long serverId, org.springframework.web.multipart.MultipartFile file, String username) {
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+        
+        // Check permission
+        if (!isServerOwner(serverId, username) && !permissionService.canManageServer(getUserByUsername(username).getId(), serverId)) {
+            throw new UnauthorizedException("You don't have permission to change server icon");
+        }
+        
+        // Upload file
+        var uploadResponse = fileStorageService.uploadFile(file, "server_" + serverId);
+        String iconUrl = uploadResponse.getFileUrl();
+        
+        // Update server
+        server.setIconUrl(iconUrl);
+        serverRepository.save(server);
+        
+        log.info("Server icon updated for {} by {}", server.getName(), username);
+        return iconUrl;
+    }
+
+    @Override
+    public String uploadServerBanner(Long serverId, org.springframework.web.multipart.MultipartFile file, String username) {
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+        
+        // Check permission
+        if (!isServerOwner(serverId, username) && !permissionService.canManageServer(getUserByUsername(username).getId(), serverId)) {
+            throw new UnauthorizedException("You don't have permission to change server banner");
+        }
+        
+        // Upload file
+        var uploadResponse = fileStorageService.uploadFile(file, "server_" + serverId);
+        String bannerUrl = uploadResponse.getFileUrl();
+        
+        // Update server
+        server.setBannerUrl(bannerUrl);
+        serverRepository.save(server);
+        
+        log.info("Server banner updated for {} by {}", server.getName(), username);
+        return bannerUrl;
+    }
+
+    // ==================== MEMBER ROLE MANAGEMENT ====================
+
+    @Override
+    public ServerMemberResponse updateMemberRole(Long serverId, Long memberId, Long roleId, String username) {
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+        
+        User editor = getUserByUsername(username);
+        
+        // Check permission - need MANAGE_ROLES or be owner
+        if (!permissionService.canManageRoles(editor.getId(), serverId) && !permissionService.isServerOwner(editor.getId(), serverId)) {
+            throw new UnauthorizedException("You don't have permission to manage member roles");
+        }
+        
+        ServerMember member = serverMemberRepository.findById(memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        
+        // Verify member belongs to this server
+        if (!member.getServer().getId().equals(serverId)) {
+            throw new BadRequestException("Member does not belong to this server");
+        }
+        
+        // Cannot change the role of the server owner - they must use transfer ownership
+        if (server.getOwner().getId().equals(member.getUser().getId())) {
+            throw new BadRequestException("Cannot change the server owner's role. Use 'Transfer Ownership' to give admin to another member.");
+        }
+        
+        Role newRole = roleRepository.findByIdAndServerId(roleId, serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found in this server"));
+        
+        // Can't assign @Admin role to non-owners - @Admin is reserved for owner only
+        if ("@Admin".equals(newRole.getName())) {
+            throw new BadRequestException("The @Admin role is reserved for the server owner. Use 'Transfer Ownership' instead.");
+        }
+        
+        member.setRole(newRole);
+        member = serverMemberRepository.save(member);
+        
+        log.info("Member {} role changed to {} in server {} by {}", 
+                member.getUser().getUsername(), newRole.getName(), server.getName(), username);
+        
+        return convertToMemberResponse(member);
+    }
+
+    // ==================== OWNERSHIP TRANSFER ====================
+
+    @Override
+    public void transferOwnership(Long serverId, Long newOwnerId, String username) {
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
+        
+        User currentOwner = getUserByUsername(username);
+        
+        // Only current owner can transfer ownership
+        if (!server.getOwner().getId().equals(currentOwner.getId())) {
+            throw new UnauthorizedException("Only the server owner can transfer ownership");
+        }
+        
+        User newOwner = userRepository.findById(newOwnerId)
+                .orElseThrow(() -> new ResourceNotFoundException("New owner not found"));
+        
+        // Verify new owner is a member
+        ServerMember newOwnerMember = serverMemberRepository.findByServerIdAndUserId(serverId, newOwnerId)
+                .orElseThrow(() -> new BadRequestException("New owner must be a member of this server"));
+        
+        // Get or create @Admin role
+        Role adminRole = roleRepository.findByServerIdAndName(serverId, "@Admin")
+                .orElseGet(() -> {
+                    Role newAdminRole = Role.builder()
+                            .server(server)
+                            .name("@Admin")
+                            .color("#E74C3C")
+                            .position(999)
+                            .isDefault(false)
+                            .isHoisted(true)
+                            .isMentionable(true)
+                            .build();
+                    return roleRepository.save(newAdminRole);
+                });
+        
+        // Get @everyone role
+        Role everyoneRole = roleRepository.findDefaultRoleByServerId(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
+        
+        // Assign @Admin role to new owner
+        newOwnerMember.setRole(adminRole);
+        serverMemberRepository.save(newOwnerMember);
+        
+        // Change current owner's role to @everyone
+        ServerMember currentOwnerMember = serverMemberRepository.findByServerIdAndUserId(serverId, currentOwner.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Current owner member record not found"));
+        currentOwnerMember.setRole(everyoneRole);
+        serverMemberRepository.save(currentOwnerMember);
+        
+        // Transfer server ownership
+        server.setOwner(newOwner);
+        serverRepository.save(server);
+        
+        log.info("Server {} ownership transferred from {} to {}", server.getName(), username, newOwner.getUsername());
     }
 }

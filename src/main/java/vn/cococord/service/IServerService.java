@@ -1,9 +1,21 @@
 package vn.cococord.service;
 
-import vn.cococord.dto.request.*;
-import vn.cococord.dto.response.*;
-
 import java.util.List;
+
+import vn.cococord.dto.request.BanMemberRequest;
+import vn.cococord.dto.request.CreateInviteLinkRequest;
+import vn.cococord.dto.request.CreateRoleRequest;
+import vn.cococord.dto.request.CreateServerRequest;
+import vn.cococord.dto.request.KickMemberRequest;
+import vn.cococord.dto.request.MuteMemberRequest;
+import vn.cococord.dto.request.UpdateRoleRequest;
+import vn.cococord.dto.request.UpdateServerRequest;
+import vn.cococord.dto.response.InviteLinkResponse;
+import vn.cococord.dto.response.RoleResponse;
+import vn.cococord.dto.response.ServerBanResponse;
+import vn.cococord.dto.response.ServerMemberResponse;
+import vn.cococord.dto.response.ServerMuteResponse;
+import vn.cococord.dto.response.ServerResponse;
 
 public interface IServerService {
 
@@ -60,6 +72,17 @@ public interface IServerService {
     RoleResponse updateRole(Long serverId, Long roleId, UpdateRoleRequest request, String username);
 
     void deleteRole(Long serverId, Long roleId, String username);
+
+    // Icon/Banner Management
+    String uploadServerIcon(Long serverId, org.springframework.web.multipart.MultipartFile file, String username);
+
+    String uploadServerBanner(Long serverId, org.springframework.web.multipart.MultipartFile file, String username);
+
+    // Member Role Management
+    ServerMemberResponse updateMemberRole(Long serverId, Long memberId, Long roleId, String username);
+
+    // Ownership Transfer
+    void transferOwnership(Long serverId, Long newOwnerId, String username);
 
     // Helper methods
     boolean isServerOwner(Long serverId, String username);

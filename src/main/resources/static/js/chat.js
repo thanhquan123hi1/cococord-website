@@ -2719,7 +2719,195 @@
                 clearMessages();
             }
         } catch (e) {
-            alert('Không thể rời server: ' + (e.message || 'Lỗi'));
+            const errorMsg = e.message || 'Lỗi';
+            // Check if admin needs to transfer role before leaving
+            if (errorMsg.includes('ADMIN_TRANSFER_REQUIRED')) {
+                showAdminTransferModal();
+            } else {
+                alert('Không thể rời server: ' + errorMsg);
+            }
+        }
+    }
+
+    // ==================== ADMIN TRANSFER MODAL ====================
+    async function showAdminTransferModal() {
+        if (!activeServerId) return;
+        
+        // Create modal if not exists
+        let modal = document.getElementById('adminTransferModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'adminTransferModal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 420px;">
+                    <h3><i class="bi bi-shield-exclamation"></i> Chuyển quyền Admin</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 16px;">
+                        Bạn có vai trò @Admin. Vui lòng chuyển quyền admin cho thành viên khác trước khi rời server.
+                    </p>
+                    <div id="adminTransferMemberList" class="admin-transfer-member-list"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" id="cancelAdminTransfer">Hủy</button>
+                        <button class="btn-primary" id="confirmAdminTransfer" disabled>Chuyển & Rời</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Add styles if not exist
+            if (!document.getElementById('adminTransferStyles')) {
+                const style = document.createElement('style');
+                style.id = 'adminTransferStyles';
+                style.textContent = `
+                    .admin-transfer-member-list {
+                        max-height: 300px;
+                        overflow-y: auto;
+                        margin-bottom: 16px;
+                        border: 1px solid var(--border-color);
+                        border-radius: 8px;
+                    }
+                    .admin-transfer-member {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        padding: 10px 12px;
+                        cursor: pointer;
+                        transition: background 0.15s;
+                    }
+                    .admin-transfer-member:hover {
+                        background: var(--bg-hover);
+                    }
+                    .admin-transfer-member.selected {
+                        background: var(--accent-color-light);
+                    }
+                    .admin-transfer-member img {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 50%;
+                    }
+                    .admin-transfer-member-info {
+                        flex: 1;
+                    }
+                    .admin-transfer-member-name {
+                        font-weight: 500;
+                        color: var(--text-primary);
+                    }
+                    .admin-transfer-member-role {
+                        font-size: 12px;
+                        color: var(--text-muted);
+                    }
+                    .admin-transfer-member .check-icon {
+                        color: var(--accent-color);
+                        font-size: 18px;
+                        display: none;
+                    }
+                    .admin-transfer-member.selected .check-icon {
+                        display: block;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Event handlers
+            document.getElementById('cancelAdminTransfer').onclick = hideAdminTransferModal;
+            document.getElementById('confirmAdminTransfer').onclick = confirmAdminTransfer;
+            modal.onclick = (e) => {
+                if (e.target === modal) hideAdminTransferModal();
+            };
+        }
+        
+        // Load server members
+        try {
+            const members = await apiGet(`/api/servers/${activeServerId}/members`);
+            const memberList = document.getElementById('adminTransferMemberList');
+            
+            // Filter out current user
+            const otherMembers = members.filter(m => 
+                currentUser && String(m.userId) !== String(currentUser.id)
+            );
+            
+            if (otherMembers.length === 0) {
+                memberList.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                        Không có thành viên khác để chuyển quyền.<br>
+                        Bạn cần xóa server hoặc mời thêm thành viên.
+                    </div>
+                `;
+                document.getElementById('confirmAdminTransfer').disabled = true;
+            } else {
+                memberList.innerHTML = otherMembers.map(m => `
+                    <div class="admin-transfer-member" data-member-id="${m.id}" data-user-id="${m.userId}">
+                        <img src="${m.avatarUrl || '/images/default-avatar.png'}" alt="">
+                        <div class="admin-transfer-member-info">
+                            <div class="admin-transfer-member-name">${escapeHtml(m.displayName || m.username)}</div>
+                            <div class="admin-transfer-member-role">${escapeHtml(m.roleName || '@everyone')}</div>
+                        </div>
+                        <i class="bi bi-check-circle-fill check-icon"></i>
+                    </div>
+                `).join('');
+                
+                // Handle member selection
+                memberList.querySelectorAll('.admin-transfer-member').forEach(el => {
+                    el.onclick = () => {
+                        memberList.querySelectorAll('.admin-transfer-member').forEach(m => m.classList.remove('selected'));
+                        el.classList.add('selected');
+                        document.getElementById('confirmAdminTransfer').disabled = false;
+                    };
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load members:', err);
+            showToast('Không thể tải danh sách thành viên', 'error');
+            return;
+        }
+        
+        modal.style.display = 'flex';
+    }
+    
+    function hideAdminTransferModal() {
+        const modal = document.getElementById('adminTransferModal');
+        if (modal) modal.style.display = 'none';
+    }
+    
+    async function confirmAdminTransfer() {
+        const selected = document.querySelector('.admin-transfer-member.selected');
+        if (!selected || !activeServerId) return;
+        
+        const newAdminMemberId = selected.dataset.memberId;
+        const confirmBtn = document.getElementById('confirmAdminTransfer');
+        
+        try {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Đang chuyển...';
+            
+            // Transfer ownership/admin role
+            await apiPost(`/api/servers/${activeServerId}/transfer-ownership`, {
+                newOwnerId: parseInt(newAdminMemberId, 10)
+            });
+            
+            hideAdminTransferModal();
+            showToast('Đã chuyển quyền Admin thành công', 'success');
+            
+            // Now try to leave again
+            await apiPost(`/api/servers/${activeServerId}/leave`, {});
+            await loadServers();
+            renderServerList();
+            
+            if (servers.length > 0) {
+                await selectServer(servers[0].id);
+            } else {
+                activeServerId = null;
+                activeChannelId = null;
+                el.serverName.textContent = 'Chọn một server';
+                el.channelList.innerHTML = '';
+                clearMessages();
+            }
+            
+            showToast('Đã rời khỏi server', 'success');
+        } catch (e) {
+            showToast('Không thể chuyển quyền: ' + (e.message || 'Lỗi'), 'error');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Chuyển & Rời';
         }
     }
 
