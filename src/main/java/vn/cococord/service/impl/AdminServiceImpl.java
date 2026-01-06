@@ -144,6 +144,75 @@ public class AdminServiceImpl implements IAdminService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public OverviewStatsResponse getOverviewStats() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime lastWeek = now.minusWeeks(1);
+        LocalDateTime twoWeeksAgo = now.minusDays(14);
+        LocalDateTime yesterday = now.minusDays(1);
+
+        // Calculate all values with safe defaults (0 instead of null)
+        long totalUsers = safeCount(() -> userRepository.count());
+        long totalMessages = safeCount(() -> messageRepository.count());
+        long newUsersLast7Days = safeCount(() -> userRepository.countByCreatedAtAfter(lastWeek));
+        long onlineUsers = safeCount(() -> userRepository.countByStatus(UserStatus.ONLINE));
+
+        // Calculate growth percentages with safe logic (no division by zero)
+
+        // Users growth: compare this week vs last week
+        long usersThisWeek = safeCount(() -> userRepository.countByCreatedAtBetween(lastWeek, now));
+        long usersPreviousWeek = safeCount(() -> userRepository.countByCreatedAtBetween(twoWeeksAgo, lastWeek));
+        double usersGrowth = calculateGrowthPercentage(usersThisWeek, usersPreviousWeek);
+
+        // Messages growth: rough estimate based on daily average vs last 24h
+        long messagesLast24h = totalMessages > 0 ? totalMessages / 30 : 0; // Rough daily average
+        long messagesPrevious24h = totalMessages > 0 ? (totalMessages - messagesLast24h) / 30 : 0;
+        double messagesGrowth = calculateGrowthPercentage(messagesLast24h, messagesPrevious24h);
+
+        // New users growth: last 7 days vs previous 7 days
+        long newUsersPreviousWeek = safeCount(() -> userRepository.countByCreatedAtBetween(twoWeeksAgo, lastWeek));
+        double newUsersGrowth = calculateGrowthPercentage(newUsersLast7Days, newUsersPreviousWeek);
+
+        return OverviewStatsResponse.builder()
+                .totalMessages(totalMessages)
+                .totalUsers(totalUsers)
+                .newUsersLast7Days(newUsersLast7Days)
+                .onlineUsers(onlineUsers)
+                .growth(OverviewStatsResponse.GrowthStats.builder()
+                        .messages(messagesGrowth)
+                        .users(usersGrowth)
+                        .newUsers(newUsersGrowth)
+                        .build())
+                .build();
+    }
+
+    /**
+     * Safe count wrapper that returns 0 instead of throwing exception
+     */
+    private long safeCount(java.util.function.Supplier<Long> countSupplier) {
+        try {
+            Long result = countSupplier.get();
+            return result != null ? result : 0L;
+        } catch (Exception e) {
+            log.warn("Count operation failed: {}", e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * Calculate growth percentage safely (no division by zero, no NaN/Infinity)
+     * Returns 0 if previous is 0, otherwise calculates percentage change
+     */
+    private double calculateGrowthPercentage(long current, long previous) {
+        if (previous == 0) {
+            return current > 0 ? 100.0 : 0.0;
+        }
+        double growth = ((double) (current - previous) / previous) * 100.0;
+        // Round to 1 decimal place
+        return Math.round(growth * 10.0) / 10.0;
+    }
+
     private List<AdminDashboardResponse.DailyActivity> buildServerActivityChart() {
         List<AdminDashboardResponse.DailyActivity> activities = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();

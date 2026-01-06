@@ -21,6 +21,11 @@ public interface IAdminService {
     AdminDashboardResponse getDashboardSummary();
 
     /**
+     * Get overview statistics (simplified, guaranteed non-null fields)
+     */
+    OverviewStatsResponse getOverviewStats();
+
+    /**
      * Get detailed statistics for charts
      */
     AdminStatsResponse getDetailedStats(String period);
