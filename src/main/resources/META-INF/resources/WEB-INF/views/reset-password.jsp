@@ -28,8 +28,11 @@
         <!-- Header -->
         <div class="auth-header">
             <div class="auth-logo">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <circle cx="7.5" cy="12" r="3"></circle>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 12H21" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 12v3" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 15v3" />
                 </svg>
             </div>
             <h1 class="auth-title">Đặt lại mật khẩu</h1>
@@ -51,9 +54,9 @@
                         id="newPassword" 
                         name="newPassword"
                         class="auth-input has-icon"
-                        placeholder="Ít nhất 8 ký tự"
+                        placeholder="Ít nhất 6 ký tự"
                         autocomplete="new-password"
-                        minlength="8"
+                        minlength="6"
                         required
                     />
                     <button type="button" id="togglePassword" class="auth-input-icon">
@@ -62,7 +65,7 @@
                         </svg>
                     </button>
                 </div>
-                <span class="auth-hint">Gồm chữ hoa, chữ thường, số và ký tự đặc biệt</span>
+                <span class="auth-hint">Gồm chữ hoa, chữ thường và số</span>
             </div>
 
             <!-- Confirm Password -->
@@ -153,6 +156,22 @@
         }
     }
 
+    async function fetchJsonWithTimeout(url, options, timeoutMs) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            const text = await response.text();
+            let json = null;
+            if (text) {
+                try { json = JSON.parse(text); } catch { json = null; }
+            }
+            return { response, json };
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
     // Handle reset password form submission
     document.getElementById('reset-password-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -167,31 +186,59 @@
         
         const btn = document.getElementById('submit-btn');
         setButtonLoading(btn, true, 'Đang xử lý...');
+
+        const actionName = 'Đặt lại mật khẩu';
         
         try {
-            const response = await fetch('${pageContext.request.contextPath}/api/auth/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: document.getElementById('token').value,
-                    newPassword: newPassword
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                showAlert('Đặt lại mật khẩu thành công! Đang chuyển đến trang đăng nhập...', 'success');
+            const { response, json: data } = await fetchJsonWithTimeout(
+                '${pageContext.request.contextPath}/api/auth/reset-password',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: document.getElementById('token').value,
+                        newPassword: newPassword,
+                        confirmPassword: confirmPassword
+                    })
+                },
+                15000
+            );
+
+            const backendSuccess = data && typeof data === 'object' ? data.success : undefined;
+
+            if (response.ok && backendSuccess !== false) {
+                const suffix = (data && typeof data.message === 'string' && data.message.trim()) ? ` ${data.message.trim()}` : '';
+                showAlert(`${actionName} thành công!${suffix} Đang chuyển đến trang đăng nhập...`, 'success');
                 setTimeout(() => {
                     window.location.href = '${pageContext.request.contextPath}/login';
                 }, 2000);
             } else {
-                showAlert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.', 'danger');
+                let errorMessage = `${actionName} thất bại. Vui lòng thử lại.`;
+
+                if (data && typeof data === 'object') {
+                    if (typeof data.message === 'string' && data.message.trim()) {
+                        errorMessage = `${actionName} thất bại: ${data.message.trim()}`;
+                    }
+                    if (data.errors && typeof data.errors === 'object') {
+                        const errorValues = Object.values(data.errors)
+                            .filter(v => typeof v === 'string' && v.trim())
+                            .map(v => v.trim());
+                        if (errorValues.length > 0) {
+                            errorMessage = `${actionName} thất bại:<br>${errorValues.join('<br>')}`;
+                        }
+                    }
+                }
+
+                showAlert(errorMessage, 'danger');
                 setButtonLoading(btn, false);
             }
         } catch (error) {
             console.error('Reset password error:', error);
-            showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+            if (error?.name === 'AbortError') {
+                showAlert('Đặt lại mật khẩu thất bại: Yêu cầu quá lâu. Vui lòng thử lại.', 'danger');
+            } else {
+                showAlert('Đặt lại mật khẩu thất bại: Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+            }
             setButtonLoading(btn, false);
         }
     });

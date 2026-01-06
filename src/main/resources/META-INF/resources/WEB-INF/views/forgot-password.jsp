@@ -28,8 +28,9 @@
         <!-- Header -->
         <div class="auth-header">
             <div class="auth-logo">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7.5h16v9H4z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7.5l8 6 8-6" />
                 </svg>
             </div>
             <h1 class="auth-title">Quên mật khẩu?</h1>
@@ -128,23 +129,30 @@
                 15000
             );
 
-            if (response.ok) {
-                showAlert('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.', 'success');
+            const backendSuccess = data && typeof data === 'object' ? data.success : undefined;
+
+            if (response.ok && backendSuccess !== false) {
+                const suffix = (data && typeof data.message === 'string' && data.message.trim()) ? ` ${data.message.trim()}` : '';
+                showAlert(`Gửi email đặt lại mật khẩu thành công!${suffix}`, 'success');
                 document.getElementById('forgot-password-form').reset();
             } else {
-                let errorMessage = data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                let errorMessage = 'Gửi email đặt lại mật khẩu thất bại. Vui lòng thử lại.';
+
+                if (data && typeof data === 'object' && typeof data.message === 'string' && data.message.trim()) {
+                    errorMessage = `Gửi email đặt lại mật khẩu thất bại: ${data.message.trim()}`;
+                }
                 if (data?.errors) {
                     const errorList = Object.values(data.errors).join('<br>');
-                    errorMessage = errorList || errorMessage;
+                    errorMessage = `Gửi email đặt lại mật khẩu thất bại:<br>${errorList || errorMessage}`;
                 }
                 showAlert(errorMessage, 'danger');
             }
         } catch (error) {
             console.error('Forgot password error:', error);
             if (error?.name === 'AbortError') {
-                showAlert('Yêu cầu gửi email quá lâu. Vui lòng thử lại.', 'danger');
+                showAlert('Gửi email đặt lại mật khẩu thất bại: Yêu cầu quá lâu. Vui lòng thử lại.', 'danger');
             } else {
-                showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+                showAlert('Gửi email đặt lại mật khẩu thất bại: Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
             }
         } finally {
             setButtonLoading(btn, false);

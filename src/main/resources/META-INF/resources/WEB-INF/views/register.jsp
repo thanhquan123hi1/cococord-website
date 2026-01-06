@@ -28,8 +28,11 @@
         <!-- Header -->
         <div class="auth-header">
             <div class="auth-logo">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11a4 4 0 1 0-8 0" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 20c1.2-3.7 5-6 8-6s6.8 2.3 8 6" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 8v4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 10h4" />
                 </svg>
             </div>
             <h1 class="auth-title">Tạo tài khoản</h1>
@@ -258,8 +261,11 @@
                 15000
             );
             
-            if (response.ok) {
-                showAlert('Đăng ký thành công! Đang chuyển đến trang đăng nhập...', 'success');
+            const backendSuccess = data && typeof data === 'object' ? data.success : undefined;
+
+            if (response.ok && backendSuccess !== false) {
+                const suffix = (data && typeof data.message === 'string' && data.message.trim()) ? ` ${data.message.trim()}` : '';
+                showAlert(`Đăng ký thành công!${suffix} Đang chuyển đến trang đăng nhập...`, 'success');
                 setTimeout(() => {
                     window.location.href = '${pageContext.request.contextPath}/login';
                 }, 1500);
@@ -269,13 +275,13 @@
                 
                 if (data && typeof data === 'object') {
                     if (data.message && typeof data.message === 'string' && data.message.trim()) {
-                        errorMessage = data.message.trim();
+                        errorMessage = `Đăng ký thất bại: ${data.message.trim()}`;
                     } else if (response.status === 400 && data.errors && typeof data.errors === 'object') {
                         const errorValues = Object.values(data.errors)
                             .filter(v => typeof v === 'string' && v.trim())
                             .map(v => v.trim());
                         if (errorValues.length > 0) {
-                            errorMessage = errorValues.join('<br>');
+                            errorMessage = `Đăng ký thất bại:<br>${errorValues.join('<br>')}`;
                         }
                     }
                 }
@@ -290,9 +296,9 @@
         } catch (error) {
             console.error('Register error:', error);
             if (error?.name === 'AbortError') {
-                showAlert('Yêu cầu đăng ký quá lâu. Vui lòng thử lại.', 'danger');
+                showAlert('Đăng ký thất bại: Yêu cầu quá lâu. Vui lòng thử lại.', 'danger');
             } else {
-                showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+                showAlert('Đăng ký thất bại: Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
             }
             setButtonLoading(btn, false);
         }
