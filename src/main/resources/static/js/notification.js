@@ -230,7 +230,13 @@ class InboxManager {
     }
 
     handleNewNotification(notification) {
-        if (!notification) return;
+        console.log('[INBOX DEBUG] handleNewNotification called:', notification);
+        if (!notification) {
+            console.warn('[INBOX DEBUG] Notification is null/undefined');
+            return;
+        }
+        console.log('[INBOX DEBUG] Notification type:', notification.type);
+        console.log('[INBOX DEBUG] Notification metadata:', notification.metadata);
         this.notifications.unshift(notification);
         if (notification.isRead === false) {
             this.updateUnreadCount(this.unreadCount + 1);
@@ -238,6 +244,7 @@ class InboxManager {
         this.render();
         this.showBrowserNotification(notification);
         this.playNotificationSound();
+        console.log('[INBOX DEBUG] Notification added to inbox, total:', this.notifications.length);
     }
 
     /**
@@ -389,20 +396,24 @@ class InboxManager {
             });
         });
     }
-
     /**
      * Show accept/decline popup for server invite notification
      */
     showServerInvitePopup(notif) {
+        console.log('[INBOX DEBUG] showServerInvitePopup called:', notif);
         // Parse metadata from notification
         let metadata = {};
         try {
             if (notif.metadata) {
+                console.log('[INBOX DEBUG] Raw metadata:', notif.metadata);
                 metadata = typeof notif.metadata === 'string'
                     ? JSON.parse(notif.metadata)
                     : notif.metadata;
+                console.log('[INBOX DEBUG] Parsed metadata:', metadata);
             }
-        } catch (_) { }
+        } catch (e) {
+            console.error('[INBOX DEBUG] Metadata parse error:', e);
+        }
 
         const serverName = metadata.serverName || 'Server';
         const serverIconUrl = metadata.serverIconUrl || '/images/default-server.png';
@@ -456,12 +467,18 @@ class InboxManager {
         });
 
         document.body.appendChild(popup);
-        requestAnimationFrame(() => popup.classList.add('show'));
+        console.log('[INBOX DEBUG] Popup added to DOM');
+        requestAnimationFrame(() => {
+            popup.classList.add('show');
+            console.log('[INBOX DEBUG] Popup show class added');
+        });
     }
 
     async acceptServerInvite(notif, popup) {
+        console.log('[INBOX DEBUG] acceptServerInvite called:', notif.id);
         try {
             const token = localStorage.getItem('accessToken') || '';
+            console.log('[INBOX DEBUG] Calling accept API for notification:', notif.id);
             const res = await fetch(`/api/invites/${notif.id}/accept`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -470,8 +487,10 @@ class InboxManager {
             popup.remove();
             this.close();
 
+            console.log('[INBOX DEBUG] Accept API response status:', res.status);
             if (res.ok) {
                 const data = await res.json();
+                console.log('[INBOX DEBUG] Accept response data:', data);
                 // Remove from local list
                 this.notifications = this.notifications.filter(n => n.id !== notif.id);
                 this.updateUnreadCount(Math.max(0, this.unreadCount - 1));
@@ -496,8 +515,10 @@ class InboxManager {
     }
 
     async declineServerInvite(notif, popup) {
+        console.log('[INBOX DEBUG] declineServerInvite called:', notif.id);
         try {
             const token = localStorage.getItem('accessToken') || '';
+            console.log('[INBOX DEBUG] Calling decline API for notification:', notif.id);
             await fetch(`/api/invites/${notif.id}/decline`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }

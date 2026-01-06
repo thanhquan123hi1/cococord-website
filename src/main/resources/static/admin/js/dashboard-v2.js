@@ -47,6 +47,11 @@ var DashboardV2 = window.DashboardV2 || (function() {
     // Setup auto-refresh
     startAutoRefresh();
     
+    // Initialize New Users Chart
+    if (window.AdminNewUsersChart) {
+      AdminNewUsersChart.init();
+    }
+    
     console.log('[DashboardV2] Initialized successfully');
   }
 
@@ -126,8 +131,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
   async function fetchDashboardData() {
     const token = getAuthToken();
     if (!token) {
-      console.warn('[DashboardV2] No auth token, using mock data');
-      updateWithMockData();
+      console.warn('[DashboardV2] No auth token');
       return;
     }
 
@@ -141,27 +145,12 @@ var DashboardV2 = window.DashboardV2 || (function() {
       });
 
       if (summaryResponse.ok) {
-        const summaryData = await summaryResponse.json();
-        updateOverviewStats(summaryData);
-        updateSummaryCard(summaryData);
-      }
-
-      // Fetch detailed stats (for charts)
-      const statsResponse = await fetch(`${CONFIG.apiBase}/dashboard/stats?period=week`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        updateChartFromStats(statsData);
-        updateDonutChart(statsData);
+        const data = await summaryResponse.json();
+        updateDashboardFromAPI(data);
       }
 
       // Fetch recent activity
-      const activityResponse = await fetch(`${CONFIG.apiBase}/audit?page=0&size=5`, {
+      const activityResponse = await fetch(`${CONFIG.apiBase}/audit?page=0&size=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -170,29 +159,327 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
       if (activityResponse.ok) {
         const activityData = await activityResponse.json();
-        updateActivityFromAudit(activityData);
+        updateRecentActivity(activityData);
+      }
+      
+      // Fetch pending reports
+      const reportsResponse = await fetch(`${CONFIG.apiBase}/reports?status=PENDING&page=0&size=5`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (reportsResponse.ok) {
+        const reportsData = await reportsResponse.json();
+        updatePendingReports(reportsData);
+      }
+      
+      // Fetch top servers
+      const serversResponse = await fetch(`${CONFIG.apiBase}/servers?page=0&size=5&sort=memberCount,desc`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (serversResponse.ok) {
+        const serversData = await serversResponse.json();
+        updateTopServers(serversData);
       }
     } catch (err) {
       console.error('[DashboardV2] Error fetching dashboard data:', err);
-      updateWithMockData();
     }
   }
 
-  function updateWithMockData() {
-    // Mock data for overview cards
-    updateOverviewStats({
-      totalUsers: 40689,
-      activeUsers24h: 2318,
-      totalServers: 12456,
-      pendingReports: 23,
-      messagesToday: 89000
+  function updateDashboardFromAPI(data) {
+    // KPI Cards
+    updateStatElement('totalMessages', formatNumber(data.totalMessages || 0));
+    updateStatElement('totalUsers', formatNumber(data.totalUsers || 0));
+    updateStatElement('newUsersLast7Days', formatNumber(data.newUsersLast7Days || 0));
+    updateStatElement('onlineUsers', formatNumber(data.onlineUsers || 0));
+    
+    // Growth indicators
+    const usersGrowth = data.usersGrowth || 0;
+    const messagesGrowth = data.messagesGrowth || 0;
+    const newUsersGrowth = data.newUsersGrowth || 0;
+    
+    updateGrowthElement('usersGrowth', usersGrowth, 'so với tuần trước');
+    updateGrowthElement('messagesGrowth', messagesGrowth, 'so với tuần trước');
+    updateGrowthElement('newUsersGrowth', newUsersGrowth, 'so với 7 ngày trước');
+    
+    // Active users percent
+    const activePercent = data.totalUsers > 0 
+        ? Math.round((data.onlineUsers / data.totalUsers) * 100) 
+        : 0;
+    updateStatElement('activeUsersPercent', `${activePercent}% tổng số người dùng`);
+    
+    // Platform Overview
+    updateStatElement('totalChannels', formatNumber(data.totalChannels || 0));
+    updateStatElement('totalServers', formatNumber(data.totalServers || 0));
+    updateStatElement('activeServers', formatNumber(data.activeServers || 0));
+    updateStatElement('lockedServers', formatNumber(data.lockedServers || 0));
+    
+    // Resources
+    updateStatElement('bannedUsers', formatNumber(data.bannedUsers || 0));
+    updateStatElement('suspendedServers', formatNumber(data.suspendedServers || 0));
+    updateStatElement('newServersToday', formatNumber(data.newServersToday || 0));
+    updateStatElement('activeUsers24h', formatNumber(data.activeUsers24h || 0));
+    updateStatElement('pendingReports', data.pendingReports || 0);
+    updateStatElement('activityCount', data.recentActivity?.length || 0);
+    
+    // Update percentage bars
+    updateResourceBar('bannedUsersPercent', data.bannedUsers, data.totalUsers);
+    updateResourceBar('suspendedServersPercent', data.suspendedServers, data.totalServers);
+    updateResourceBar('newServersTodayPercent', data.newServersToday, data.totalServers, 20);
+    updateResourceBar('activeUsers24hPercent', data.activeUsers24h, data.totalUsers);
+    
+    // Update Server Activity Chart
+    if (data.serverActivityChart && data.serverActivityChart.length > 0) {
+      updateServerActivityChart(data.serverActivityChart);
+    }
+  }
+  
+  function updateGrowthElement(statKey, value, suffix) {
+    const el = document.querySelector(`[data-stat="${statKey}"]`);
+    if (el) {
+      const sign = value >= 0 ? '+' : '';
+      el.textContent = `${sign}${value.toFixed(1)}% ${suffix}`;
+      
+      // Update parent delta class
+      const delta = el.closest('.delta');
+      if (delta) {
+        delta.classList.remove('up', 'down');
+        delta.classList.add(value >= 0 ? 'up' : 'down');
+        
+        // Update SVG direction
+        const svg = delta.querySelector('svg path');
+        if (svg) {
+          svg.setAttribute('d', value >= 0 
+              ? 'M6 9V3m0 0L3 6m3-3l3 3' 
+              : 'M6 3v6m0 0l3-3m-3 3L3 6');
+        }
+      }
+    }
+  }
+  
+  function updateResourceBar(statKey, value, total, maxPercent = 100) {
+    const el = document.querySelector(`[data-stat="${statKey}"]`);
+    if (el && total > 0) {
+      let percent = Math.round((value / total) * 100);
+      percent = Math.min(percent, maxPercent);
+      percent = Math.max(percent, 1); // At least 1% for visibility
+      el.style.width = `${percent}%`;
+    }
+  }
+  
+  function updateServerActivityChart(chartData) {
+    const canvas = document.getElementById('serverActivityChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    
+    // Destroy existing chart
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+    
+    const labels = chartData.map(d => d.dayLabel);
+    const messagesData = chartData.map(d => d.messageCount);
+    const userJoinsData = chartData.map(d => d.userJoins);
+    
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Tin nhắn',
+            data: messagesData,
+            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+            borderRadius: 4
+          },
+          {
+            label: 'Người dùng mới',
+            data: userJoinsData,
+            backgroundColor: 'rgba(236, 72, 153, 0.8)',
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            padding: 12,
+            cornerRadius: 8
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)'
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              callback: function(value) {
+                return formatCompactNumber(value);
+              }
+            }
+          }
+        }
+      }
     });
-
-    // Mock data for summary card
-    updateSummaryCard({
-      totalServers: 12456,
-      activeServers: 10234,
-      newServersToday: 128
+  }
+  
+  function updateRecentActivity(data) {
+    const container = document.getElementById('activity-list');
+    if (!container) return;
+    
+    if (!data || !data.content || data.content.length === 0) {
+      container.innerHTML = '<div class="no-data">Chưa có hoạt động nào</div>';
+      return;
+    }
+    
+    container.innerHTML = data.content.map(audit => createActivityItemFromAudit(audit)).join('');
+  }
+  
+  function createActivityItemFromAudit(audit) {
+    const actionText = formatActionTypeVi(audit.actionType);
+    const timeAgo = formatTimeAgo(audit.createdAt);
+    const initials = getInitials(audit.actor?.username || 'SYS');
+    
+    return `
+      <div class="activity-item">
+        <div class="avatar">${initials}</div>
+        <div class="activity-content">
+          <div class="activity-text">
+            <strong>${escapeHtml(audit.actor?.username || 'Hệ thống')}</strong> 
+            ${actionText}
+            ${audit.targetName ? `<strong>${escapeHtml(audit.targetName)}</strong>` : ''}
+          </div>
+          <div class="activity-time">${timeAgo}</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  function formatActionTypeVi(actionType) {
+    const actionMap = {
+      'USER_CREATED': 'đã tạo người dùng',
+      'USER_UPDATED': 'đã cập nhật người dùng',
+      'USER_BANNED': 'đã cấm người dùng',
+      'USER_UNBANNED': 'đã gỡ cấm người dùng',
+      'USER_DELETED': 'đã xóa người dùng',
+      'USER_REGISTERED': 'đã đăng ký',
+      'SERVER_CREATED': 'đã tạo server',
+      'SERVER_UPDATED': 'đã cập nhật server',
+      'SERVER_DELETED': 'đã xóa server',
+      'SERVER_LOCKED': 'đã khóa server',
+      'SERVER_UNLOCKED': 'đã mở khóa server',
+      'REPORT_RESOLVED': 'đã xử lý báo cáo',
+      'REPORT_DISMISSED': 'đã bỏ qua báo cáo',
+      'SETTINGS_UPDATED': 'đã cập nhật cài đặt'
+    };
+    return actionMap[actionType] || 'đã thực hiện thao tác';
+  }
+  
+  function updatePendingReports(data) {
+    const container = document.getElementById('reports-list');
+    if (!container) return;
+    
+    if (!data || !data.content || data.content.length === 0) {
+      container.innerHTML = '<div class="no-data">Không có báo cáo đang chờ</div>';
+      return;
+    }
+    
+    container.innerHTML = data.content.map(report => `
+      <div class="report-item">
+        <div class="report-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="report-content">
+          <div class="report-reason">${escapeHtml(report.reason || 'Không có lý do')}</div>
+          <div class="report-meta">
+            <span>Báo cáo bởi ${escapeHtml(report.reporter?.username || 'Ẩn danh')}</span>
+            <span>${formatTimeAgo(report.createdAt)}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  function updateTopServers(data) {
+    const container = document.getElementById('top-servers-list');
+    if (!container) return;
+    
+    if (!data || !data.content || data.content.length === 0) {
+      container.innerHTML = '<div class="no-data">Chưa có server nào</div>';
+      return;
+    }
+    
+    container.innerHTML = data.content.map(server => `
+      <div class="list-item">
+        <div class="avatar">${getInitials(server.name)}</div>
+        <div class="meta">
+          <div class="name">${escapeHtml(server.name)}</div>
+          <div class="sub">${formatNumber(server.memberCount || 0)} thành viên</div>
+        </div>
+        <span class="badge badge-${server.isLocked ? 'warning' : 'success'}">
+          ${server.isLocked ? 'Bị khóa' : 'Hoạt động'}
+        </span>
+      </div>
+    `).join('');
+  }
+  
+  function formatTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  }
+  
+  function getInitials(name) {
+    if (!name) return '??';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+  }
+  
+  function formatCompactNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
+  }
     });
   }
 
@@ -631,6 +918,10 @@ var DashboardV2 = window.DashboardV2 || (function() {
     stopAutoRefresh();
     if (stompClient && isConnected) {
       stompClient.disconnect();
+    }
+    // Destroy New Users Chart
+    if (window.AdminNewUsersChart) {
+      AdminNewUsersChart.destroy();
     }
     console.log('[DashboardV2] Destroyed');
   }

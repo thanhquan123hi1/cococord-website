@@ -53,6 +53,12 @@ public class AdminApiController {
         return ResponseEntity.ok(adminService.getDetailedStats(period));
     }
 
+    @GetMapping("/stats/new-users")
+    public ResponseEntity<NewUsersStatsResponse> getNewUsersStats(
+            @RequestParam(defaultValue = "7") int range) {
+        return ResponseEntity.ok(adminService.getNewUsersStats(range));
+    }
+
     // ================== User Management ==================
 
     @GetMapping("/users")

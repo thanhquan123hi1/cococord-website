@@ -28,4 +28,7 @@ public interface IServerMemberRepository extends JpaRepository<ServerMember, Lon
 
     @Query("SELECT COUNT(sm) FROM ServerMember sm WHERE sm.server.id = :serverId")
     Long countByServerId(@Param("serverId") Long serverId);
+
+    @Query("SELECT sm.user.id FROM ServerMember sm WHERE sm.server.id = :serverId")
+    List<Long> findUserIdsByServerId(@Param("serverId") Long serverId);
 }

@@ -57,17 +57,25 @@ public class InviteNotificationController {
      */
     @PostMapping("/send")
     public ResponseEntity<MessageResponse> sendInvite(
-            @Valid @RequestBody SendInviteRequest request,
+            @RequestBody @Valid vn.cococord.dto.request.SendInviteRequest request,
             Authentication authentication) {
+
+        log.info("[INVITE] Raw request body: {}", request);
+
+        Long recipientId = request.getRecipientId();
+        Long serverId = request.getServerId();
+        String inviteCode = request.getInviteCode();
+
+        log.info("[INVITE] Parsed IDs: recId={}, srvId={}, code={}", recipientId, serverId, inviteCode);
 
         String senderUsername = authentication.getName();
         User sender = userService.getUserByUsername(senderUsername);
 
         // Get recipient
-        User recipient = userService.getUserById(request.getRecipientId());
+        User recipient = userService.getUserById(recipientId);
 
         // Get server
-        Server server = serverRepository.findById(request.getServerId())
+        Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
 
         // Check if sender is a member of the server
@@ -83,7 +91,6 @@ public class InviteNotificationController {
         }
 
         // Get or create invite code
-        String inviteCode = request.getInviteCode();
         if (inviteCode == null || inviteCode.isEmpty()) {
             // Try to find existing invite or create new one
             List<InviteLink> existingInvites = inviteLinkRepository.findActiveByServerId(server.getId());
@@ -132,8 +139,17 @@ public class InviteNotificationController {
                 .isRead(false)
                 .build();
 
-        notification = notificationRepository.save(notification);
-        log.info("Server invite notification sent from {} to {} for server {}",
+        log.info("[INVITE DEBUG] Saving notification...");
+        try {
+            notification = notificationRepository.save(notification);
+            notificationRepository.flush(); // Force immediate execution
+        } catch (Exception e) {
+            log.error("[INVITE CRITICAL] Failed to save notification: {}", e.getMessage(), e);
+            throw e;
+        }
+
+        log.info("[INVITE] Notification saved with ID: {}", notification.getId());
+        log.info("[INVITE] Server invite notification sent from {} to {} for server {}",
                 sender.getUsername(), recipient.getUsername(), server.getName());
 
         // Send real-time WebSocket notification to recipient
@@ -151,10 +167,11 @@ public class InviteNotificationController {
         wsPayload.put("message", notification.getMessage());
         wsPayload.put("createdAt", LocalDateTime.now().toString());
 
-        messagingTemplate.convertAndSend(
-                "/topic/user." + recipient.getId() + ".notifications",
-                wsPayload);
-
+        String topic = "/topic/user." + recipient.getId() + ".notifications";
+        log.info("[INVITE] Broadcasting to WebSocket topic: {}", topic);
+        log.info("[INVITE] WebSocket payload: {}", wsPayload);
+        messagingTemplate.convertAndSend(topic, wsPayload);
+        log.info("[INVITE] WebSocket message sent successfully");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new MessageResponse("Invite sent successfully"));
     }
@@ -298,11 +315,6 @@ public class InviteNotificationController {
         return sb.toString();
     }
 
-    // DTO for send invite request
-    @lombok.Data
-    public static class SendInviteRequest {
-        private Long recipientId;
-        private Long serverId;
-        private String inviteCode;
-    }
+    // Inner class SendInviteRequest removed, using standalone class in
+    // vn.cococord.dto.request
 }

@@ -228,6 +228,16 @@ public interface IAdminService {
      */
     AdminSettingsResponse updateSettings(AdminSettingsRequest request, String adminUsername);
 
+    // ================== Statistics ==================
+
+    /**
+     * Get new users statistics by day
+     * 
+     * @param range number of days to include (7, 14, or 30)
+     * @return statistics with daily breakdown
+     */
+    NewUsersStatsResponse getNewUsersStats(int range);
+
     // ================== Legacy methods ==================
 
     /**

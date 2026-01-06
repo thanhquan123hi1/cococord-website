@@ -1,343 +1,276 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<% request.setAttribute("pageTitle", "Overview"); %>
+<% request.setAttribute("pageTitle", "Tổng quan"); %>
 
-<title>Dashboard Overview - CoCoCord Admin</title>
+<title>Tổng quan - CoCoCord Admin</title>
 
 <div class="admin-grid-main">
     <!-- Left: Main Dashboard Content -->
     <div class="flex flex-col gap-6">
         <!-- KPI Cards -->
         <div class="cards-4">
-            <div class="stat-card">
-                <div class="label">Total Users</div>
-                <div class="value">40,689</div>
+            <div class="stat-card" id="kpi-total-messages">
+                <div class="label">Tổng số tin nhắn</div>
+                <div class="value" data-stat="totalMessages">--</div>
                 <div class="delta up">
                     <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
                     </svg>
-                    <span>+8.5% vs last month</span>
+                    <span data-stat="messagesGrowth">+0% so với tuần trước</span>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="label">Total Servers</div>
-                <div class="value">10,293</div>
+            <div class="stat-card" id="kpi-total-users">
+                <div class="label">Tổng số người dùng</div>
+                <div class="value" data-stat="totalUsers">--</div>
                 <div class="delta up">
                     <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
                     </svg>
-                    <span>+1.3% vs last month</span>
+                    <span data-stat="usersGrowth">+0% so với tuần trước</span>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="label">Messages Today</div>
-                <div class="value">89,000</div>
-                <div class="delta down">
-                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 3v6m0 0l3-3m-3 3L3 6"/>
-                    </svg>
-                    <span>-4.3% vs yesterday</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Active Voice Calls</div>
-                <div class="value">2,040</div>
+            <div class="stat-card" id="kpi-new-users">
+                <div class="label">Người dùng mới (7 ngày)</div>
+                <div class="value" data-stat="newUsersLast7Days">--</div>
                 <div class="delta up">
                     <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
                     </svg>
-                    <span>+1.8% vs last hour</span>
+                    <span data-stat="newUsersGrowth">+0% so với 7 ngày trước</span>
+                </div>
+            </div>
+            <div class="stat-card" id="kpi-online-users">
+                <div class="label">Người dùng đang online</div>
+                <div class="value" data-stat="onlineUsers">--</div>
+                <div class="delta up">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9V3m0 0L3 6m3-3l3 3"/>
+                    </svg>
+                    <span data-stat="activeUsersPercent">0% tổng số người dùng</span>
                 </div>
             </div>
         </div>
 
-        <!-- Main Chart -->
-        <div class="admin-panel">
+        <!-- Server Activity Chart -->
+        <div class="admin-panel" id="server-activity-panel">
             <div class="section-title">
-                <div class="chart-tabs">
-                    <button class="chart-tab active">Total Users</button>
-                    <button class="chart-tab">Total Servers</button>
-                    <button class="chart-tab">Messages</button>
-                </div>
+                <h3>Hoạt động Server (7 ngày gần nhất)</h3>
                 <div class="chart-legend">
                     <div class="chart-legend-item">
                         <span class="chart-legend-dot primary"></span>
-                        <span>This Year</span>
+                        <span>Tin nhắn</span>
                     </div>
                     <div class="chart-legend-item">
                         <span class="chart-legend-dot accent"></span>
-                        <span>Last Year</span>
+                        <span>Người dùng mới</span>
                     </div>
                 </div>
             </div>
-            <div class="chart-container">
-                <div class="chart-placeholder">
-                    <span>Chart.js sẽ được tích hợp ở Phase 2</span>
-                </div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="serverActivityChart"></canvas>
             </div>
         </div>
 
         <!-- Two Column Charts -->
         <div class="admin-grid admin-grid-2">
-            <div class="admin-panel">
+            <!-- Platform Overview -->
+            <div class="admin-panel" id="platform-overview-panel">
                 <div class="section-title">
-                    <h3>Server Growth</h3>
-                    <span class="badge badge-default">Weekly</span>
+                    <h3>Tổng quan nền tảng</h3>
+                    <span class="badge badge-default">Realtime</span>
                 </div>
-                <div class="chart-placeholder" style="height: 200px;">Bar chart placeholder</div>
+                <div class="platform-stats">
+                    <div class="platform-stat-item">
+                        <div class="platform-stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="platform-stat-info">
+                            <span class="platform-stat-value" data-stat="totalChannels">--</span>
+                            <span class="platform-stat-label">Tổng số kênh</span>
+                        </div>
+                    </div>
+                    <div class="platform-stat-item">
+                        <div class="platform-stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </div>
+                        <div class="platform-stat-info">
+                            <span class="platform-stat-value" data-stat="totalServers">--</span>
+                            <span class="platform-stat-label">Tổng số Server</span>
+                        </div>
+                    </div>
+                    <div class="platform-stat-item">
+                        <div class="platform-stat-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </div>
+                        <div class="platform-stat-info">
+                            <span class="platform-stat-value" data-stat="activeServers">--</span>
+                            <span class="platform-stat-label">Server hoạt động</span>
+                        </div>
+                    </div>
+                    <div class="platform-stat-item">
+                        <div class="platform-stat-icon warning">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </div>
+                        <div class="platform-stat-info">
+                            <span class="platform-stat-value" data-stat="lockedServers">--</span>
+                            <span class="platform-stat-label">Server bị khóa</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="admin-panel">
+            
+            <!-- Resources -->
+            <div class="admin-panel" id="resources-panel">
                 <div class="section-title">
-                    <h3>User Distribution</h3>
-                    <span class="badge badge-default">By Role</span>
+                    <h3>Tài nguyên hệ thống</h3>
+                    <span class="badge badge-default">Hôm nay</span>
                 </div>
-                <div class="chart-placeholder" style="height: 200px;">Donut chart placeholder</div>
+                <div class="resource-stats">
+                    <div class="resource-item">
+                        <div class="resource-header">
+                            <span class="resource-label">Người dùng bị cấm</span>
+                            <span class="resource-value" data-stat="bannedUsers">--</span>
+                        </div>
+                        <div class="resource-bar">
+                            <div class="resource-bar-fill danger" data-stat="bannedUsersPercent" style="width: 5%;"></div>
+                        </div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-header">
+                            <span class="resource-label">Server tạm ngưng</span>
+                            <span class="resource-value" data-stat="suspendedServers">--</span>
+                        </div>
+                        <div class="resource-bar">
+                            <div class="resource-bar-fill warning" data-stat="suspendedServersPercent" style="width: 3%;"></div>
+                        </div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-header">
+                            <span class="resource-label">Server mới hôm nay</span>
+                            <span class="resource-value" data-stat="newServersToday">--</span>
+                        </div>
+                        <div class="resource-bar">
+                            <div class="resource-bar-fill success" data-stat="newServersTodayPercent" style="width: 10%;"></div>
+                        </div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-header">
+                            <span class="resource-label">Hoạt động 24h</span>
+                            <span class="resource-value" data-stat="activeUsers24h">--</span>
+                        </div>
+                        <div class="resource-bar">
+                            <div class="resource-bar-fill primary" data-stat="activeUsers24hPercent" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Recent Users Table -->
-        <div class="admin-panel white">
+        <!-- New Users Per Day Chart -->
+        <div class="admin-panel white" id="new-users-chart-panel">
             <div class="section-title">
-                <h3>Recent Users</h3>
-                <a href="${pageContext.request.contextPath}/admin/users" class="btn btn-ghost btn-sm">View All</a>
+                <h3>Người dùng mới theo ngày</h3>
+                <div class="chart-period-selector">
+                    <button class="btn btn-ghost btn-sm active" data-period="7">7 ngày</button>
+                    <button class="btn btn-ghost btn-sm" data-period="14">14 ngày</button>
+                    <button class="btn btn-ghost btn-sm" data-period="30">30 ngày</button>
+                </div>
             </div>
-            <table class="table" aria-label="Recent users">
-                <thead>
-                <tr>
-                    <th>User</th>
-                    <th>Status</th>
-                    <th>Role</th>
-                    <th>Joined</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>
-                        <div class="cell-user">
-                            <div class="avatar">NV</div>
-                            <div class="cell-user-info">
-                                <span class="cell-user-name">Nguyễn Văn A</span>
-                                <span class="cell-user-email">nguyenvana@email.com</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge badge-success">Active</span></td>
-                    <td>User</td>
-                    <td>Jan 15, 2024</td>
-                    <td>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="cell-user">
-                            <div class="avatar">TT</div>
-                            <div class="cell-user-info">
-                                <span class="cell-user-name">Trần Thị B</span>
-                                <span class="cell-user-email">tranthib@email.com</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge badge-success">Active</span></td>
-                    <td>Premium</td>
-                    <td>Jan 10, 2024</td>
-                    <td>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="cell-user">
-                            <div class="avatar">LM</div>
-                            <div class="cell-user-info">
-                                <span class="cell-user-name">Lê Minh C</span>
-                                <span class="cell-user-email">leminhc@email.com</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge badge-warning">Inactive</span></td>
-                    <td>User</td>
-                    <td>Dec 20, 2023</td>
-                    <td>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="cell-user">
-                            <div class="avatar">PH</div>
-                            <div class="cell-user-info">
-                                <span class="cell-user-name">Phạm Hương D</span>
-                                <span class="cell-user-email">phamhuongd@email.com</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge badge-danger">Banned</span></td>
-                    <td>User</td>
-                    <td>Nov 05, 2023</td>
-                    <td>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="View">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="9" cy="9" r="2"/>
-                                <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
-                            </svg>
-                        </button>
-                        <button class="btn btn-ghost btn-sm btn-icon" title="Edit">
-                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M13 2l3 3-9 9H4v-3l9-9z"/>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="chart-container" style="height: 250px;">
+                <canvas id="newUsersChart"></canvas>
+            </div>
+            <div class="chart-summary">
+                <div class="chart-summary-item">
+                    <span class="chart-summary-value" id="totalNewUsers">--</span>
+                    <span class="chart-summary-label">Tổng người dùng mới</span>
+                </div>
+                <div class="chart-summary-item">
+                    <span class="chart-summary-value" id="avgNewUsers">--</span>
+                    <span class="chart-summary-label">Trung bình/ngày</span>
+                </div>
+                <div class="chart-summary-item">
+                    <span class="chart-summary-value" id="peakNewUsers">--</span>
+                    <span class="chart-summary-label">Cao nhất</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Right: Activity & Top Servers Panel -->
+    <!-- Right: Activity & Pending Reports Panel -->
     <div class="flex flex-col gap-6">
         <!-- Recent Activity -->
-        <div class="admin-panel white">
+        <div class="admin-panel white" id="recent-activity-panel">
             <div class="section-title">
-                <h3>Recent Activity</h3>
-                <span class="badge badge-info">5</span>
+                <h3>Hoạt động gần đây</h3>
+                <span class="badge badge-info" data-stat="activityCount">0</span>
             </div>
-            <div class="activity-list">
-                <div class="activity-item">
-                    <div class="avatar">PT</div>
-                    <div class="activity-content">
-                        <div class="activity-text">
-                            <strong>Phan Thị A</strong> created a new server <strong>Vietnam Gamers</strong>
-                        </div>
-                        <div class="activity-time">2 minutes ago</div>
-                    </div>
+            <div class="activity-list" id="activity-list">
+                <!-- Activity items will be loaded dynamically -->
+                <div class="activity-loading">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
                 </div>
-                <div class="activity-item">
-                    <div class="avatar">NV</div>
-                    <div class="activity-content">
-                        <div class="activity-text">
-                            <strong>Nguyễn Văn B</strong> reported a user <strong>spammer123</strong>
-                        </div>
-                        <div class="activity-time">15 minutes ago</div>
-                    </div>
+            </div>
+            <div class="activity-footer">
+                <a href="${pageContext.request.contextPath}/admin/audit" class="btn btn-ghost btn-sm">Xem tất cả</a>
+            </div>
+        </div>
+
+        <!-- Pending Reports -->
+        <div class="admin-panel white" id="pending-reports-panel">
+            <div class="section-title">
+                <h3>Báo cáo đang chờ xử lý</h3>
+                <span class="badge badge-warning" data-stat="pendingReports">0</span>
+            </div>
+            <div class="reports-list" id="reports-list">
+                <!-- Reports will be loaded dynamically -->
+                <div class="reports-loading">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
                 </div>
-                <div class="activity-item">
-                    <div class="avatar">TM</div>
-                    <div class="activity-content">
-                        <div class="activity-text">
-                            <strong>Trần Minh C</strong> updated server settings for <strong>Tech Talk VN</strong>
-                        </div>
-                        <div class="activity-time">32 minutes ago</div>
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="avatar">LH</div>
-                    <div class="activity-content">
-                        <div class="activity-text">
-                            <strong>Lê Hương D</strong> joined the platform
-                        </div>
-                        <div class="activity-time">1 hour ago</div>
-                    </div>
-                </div>
-                <div class="activity-item">
-                    <div class="avatar">
-                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;">
-                            <circle cx="9" cy="9" r="7"/>
-                            <path d="M9 5v4l2 2"/>
-                        </svg>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-text">
-                            <strong>System</strong> completed daily backup
-                        </div>
-                        <div class="activity-time">3 hours ago</div>
-                    </div>
-                </div>
+            </div>
+            <div class="reports-footer">
+                <a href="${pageContext.request.contextPath}/admin/reports" class="btn btn-ghost btn-sm">Xem tất cả</a>
             </div>
         </div>
 
         <!-- Top Servers -->
-        <div class="admin-panel white">
+        <div class="admin-panel white" id="top-servers-panel">
             <div class="section-title">
-                <h3>Top Servers</h3>
-                <a href="${pageContext.request.contextPath}/admin/servers" class="btn btn-ghost btn-sm">View All</a>
+                <h3>Server hàng đầu</h3>
+                <a href="${pageContext.request.contextPath}/admin/servers" class="btn btn-ghost btn-sm">Xem tất cả</a>
             </div>
-            <div class="list">
-                <div class="list-item">
-                    <div class="avatar">VG</div>
-                    <div class="meta">
-                        <div class="name">Vietnam Gamers</div>
-                        <div class="sub">15,420 members</div>
-                    </div>
-                    <span class="badge badge-success">+12.5%</span>
-                </div>
-                <div class="list-item">
-                    <div class="avatar">TT</div>
-                    <div class="meta">
-                        <div class="name">Tech Talk VN</div>
-                        <div class="sub">8,930 members</div>
-                    </div>
-                    <span class="badge badge-success">+8.2%</span>
-                </div>
-                <div class="list-item">
-                    <div class="avatar">ML</div>
-                    <div class="meta">
-                        <div class="name">Music Lovers</div>
-                        <div class="sub">7,210 members</div>
-                    </div>
-                    <span class="badge badge-success">+5.1%</span>
-                </div>
-                <div class="list-item">
-                    <div class="avatar">SG</div>
-                    <div class="meta">
-                        <div class="name">Study Group</div>
-                        <div class="sub">5,890 members</div>
-                    </div>
-                    <span class="badge badge-success">+15.3%</span>
-                </div>
-                <div class="list-item">
-                    <div class="avatar">AF</div>
-                    <div class="meta">
-                        <div class="name">Anime Fans VN</div>
-                        <div class="sub">4,520 members</div>
-                    </div>
-                    <span class="badge badge-success">+3.7%</span>
+            <div class="list" id="top-servers-list">
+                <!-- Top servers will be loaded dynamically -->
+                <div class="servers-loading">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="${pageContext.request.contextPath}/admin/js/mock-data.js"></script>
-<script src="${pageContext.request.contextPath}/admin/js/dashboard.js"></script>
+<script src="${pageContext.request.contextPath}/admin/js/dashboard-v2.js"></script>
+<script src="${pageContext.request.contextPath}/admin/js/new-users-chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.DashboardV2) {
+        DashboardV2.init();
+    }
+});
+</script>
