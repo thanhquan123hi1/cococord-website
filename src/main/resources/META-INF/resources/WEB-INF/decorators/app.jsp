@@ -73,7 +73,8 @@
                             <a class="server-item home-btn<c:if test=" ${empty param.serverId}"> active</c:if>"
                                 href="${pageContext.request.contextPath}/app"
                                 title="Tin nhắn trực tiếp" id="homeBtn">
-                                <i class="bi bi-discord"></i>
+                                <!-- <i class="bi bi-discord"></i> -->
+                                 <img src="${pageContext.request.contextPath}/images/cococord-logo.png" alt="CoCoCord" style="width: 50px; height: 50px; object-fit: contain;">
                             </a>
                             <div class="server-divider"></div>
 

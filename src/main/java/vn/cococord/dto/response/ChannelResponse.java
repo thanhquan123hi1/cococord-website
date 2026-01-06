@@ -24,6 +24,8 @@ public class ChannelResponse {
     private Boolean isNsfw;
     private Boolean isDefault;
     private Integer slowMode;
+    private Integer bitrate;
+    private Integer userLimit;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

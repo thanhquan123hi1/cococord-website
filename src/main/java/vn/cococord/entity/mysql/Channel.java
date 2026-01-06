@@ -78,6 +78,14 @@ public class Channel {
     @Builder.Default
     private Integer slowMode = 0; // seconds
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer bitrate = 64000; // default 64kbps
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer userLimit = 0; // 0 = unlimited
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

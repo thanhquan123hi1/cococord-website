@@ -248,9 +248,10 @@
                             <!-- Server sidebar -->
                             <div class="w-16 bg-dark-900 p-2 space-y-2 flex-shrink-0">
                                 <div class="w-12 h-12 rounded-2xl bg-brand-blurple flex items-center justify-center">
-                                    <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                    <!-- <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-                                    </svg>
+                                    </svg> -->
+                                    <img src="${pageContext.request.contextPath}/images/cococord-logo.png" alt="Server" style="width: 50px; height: 50px; object-fit: contain;">
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center text-white text-sm font-bold">TC</div>
                                 <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center text-xl">🎮</div>
@@ -287,15 +288,15 @@
                                     <div class="flex items-start gap-2">
                                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex-shrink-0"></div>
                                         <div class="min-w-0">
-                                            <div class="text-white font-medium text-sm">Olive <span class="text-dark-400 text-xs ml-1">9:32 AM</span></div>
-                                            <div class="text-dark-200 text-sm">lol what did i miss? 😅</div>
+                                            <div class="text-white font-medium text-sm">Negav <span class="text-dark-400 text-xs ml-1">9:32 AM</span></div>
+                                            <div class="text-dark-200 text-sm">Có gì hot khum anh em? 😅</div>
                                         </div>
                                     </div>
                                     <div class="flex items-start gap-2">
                                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-pink-500 flex-shrink-0"></div>
                                         <div class="min-w-0">
-                                            <div class="text-white font-medium text-sm">Rod <span class="text-dark-400 text-xs ml-1">9:33 AM</span></div>
-                                            <div class="text-dark-200 text-sm">yeah sounds right 👍</div>
+                                            <div class="text-white font-medium text-sm">J97 <span class="text-dark-400 text-xs ml-1">9:33 AM</span></div>
+                                            <div class="text-dark-200 text-sm">Đom đóm không thể có 5tr 😂</div>
                                         </div>
                                     </div>
                                 </div>
@@ -303,28 +304,28 @@
                             
                             <!-- Members list -->
                             <div class="w-36 bg-dark-800 p-3 hidden lg:block flex-shrink-0">
-                                <div class="text-dark-400 text-xs font-bold uppercase mb-2">Online — 4</div>
+                                <div class="text-dark-400 text-xs font-bold uppercase mb-2">Online — 3</div>
                                 <div class="space-y-2">
                                     <div class="flex items-center gap-2">
                                         <div class="relative">
                                             <div class="w-7 h-7 rounded-full bg-gradient-to-br from-green-400 to-teal-500"></div>
                                             <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-dark-800"></div>
                                         </div>
-                                        <span class="text-dark-200 text-xs truncate">Olive</span>
+                                        <span class="text-dark-200 text-xs truncate">Negav</span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <div class="relative">
                                             <div class="w-7 h-7 rounded-full bg-gradient-to-br from-red-400 to-pink-500"></div>
                                             <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-dark-800"></div>
                                         </div>
-                                        <span class="text-dark-200 text-xs truncate">Rod</span>
+                                        <span class="text-dark-200 text-xs truncate">J97</span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <div class="relative">
                                             <div class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
                                             <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-dark-800"></div>
                                         </div>
-                                        <span class="text-dark-200 text-xs truncate">moongirl</span>
+                                        <span class="text-dark-200 text-xs truncate">Thiên An</span>
                                     </div>
                                 </div>
                             </div>
@@ -392,8 +393,8 @@
                         <!-- Voice channel active view with video cards -->
                         <div class="flex-1 w-full">
                             <div class="flex items-center gap-2 mb-4 text-dark-700">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                                <span class="text-lg font-bold">vc-general</span>
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                                <span class="text-lg text-white font-bold">vc-general</span>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="voice-card voice-card-red p-4 aspect-video flex items-center justify-center">
@@ -467,9 +468,10 @@
                         <div class="flex gap-3">
                             <div class="w-14 space-y-2 flex-shrink-0">
                                 <div class="w-12 h-12 rounded-2xl bg-brand-blurple mx-auto flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                    <!-- <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-                                    </svg>
+                                    </svg> -->
+                                    <img src="${pageContext.request.contextPath}/images/cococord-logo.png" alt="Server" style="width: 50px; height: 50px; object-fit: contain;">
                                 </div>
                                 <div class="w-12 h-12 rounded-full bg-dark-700 mx-auto"></div>
                                 <div class="w-12 h-12 rounded-full bg-dark-700 mx-auto"></div>
