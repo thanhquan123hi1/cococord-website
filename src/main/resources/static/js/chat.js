@@ -726,14 +726,16 @@
             : `<div class="avatar-placeholder">${initial}</div>`;
         const timeShort = new Date(msg.createdAt || msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         return `
-            <div class="message-row ${isContinued ? 'continued' : ''}" data-message-id="${msg.id}" data-user-id="${currentId}">
+            <div class="message-row" data-message-id="${msg.id}">
                 <div class="message-avatar" onclick="showUserProfile('${currentId}')">
-                    ${avatarHtml} 
-                    <span class="timestamp-hover">${timeShort}</span>
+                    ${msg.avatarUrl ? `<img src="${escapeHtml(msg.avatarUrl)}">` : `<div class="avatar-placeholder">${initial}</div>`}
                 </div>
                 <div class="message-body">
-                    ${!isContinued ? `<div class="message-header"><span class="message-author" onclick="showUserProfile('${currentId}')">${escapeHtml(displayName)}</span><span class="message-timestamp">${formatTime(msg.createdAt)}</span></div>` : ''}
-                    <div class="message-content markdown-content">${htmlContent}${attachmentsHtml}</div>
+                    <div class="message-header">
+                        <span class="message-author" onclick="showUserProfile('${currentId}')">${escapeHtml(displayName)}</span>
+                        <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
+                    </div>
+                    <div class="message-content markdown-content">${htmlContent}${renderAttachments(msg)}</div>
                 </div>
             </div>`;
     }
