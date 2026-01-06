@@ -1124,10 +1124,11 @@
       }
 
       // Change Password button
+      // Change Password button
       const changePasswordBtn = document.getElementById("changePasswordBtn");
       if (changePasswordBtn) {
         changePasswordBtn.addEventListener("click", () => {
-          window.location.href = "/change-password";
+          this.showChangePasswordModal();
         });
       }
 
@@ -2079,6 +2080,118 @@
         }
       };
       document.addEventListener("keydown", escHandler);
+    },
+
+    showChangePasswordModal: function () {
+      const popupHtml = `
+            <div class="settings-edit-popup-overlay" id="changePasswordPopup">
+                <div class="settings-edit-popup" style="width: 440px;">
+                    <div class="settings-edit-popup-header">
+                        <h2 class="settings-edit-popup-title">Change Password</h2>
+                        <p class="settings-edit-popup-subtitle">Enter your current password and a new password.</p>
+                    </div>
+                    <div class="settings-edit-popup-content" style="padding: 16px;">
+                        <div class="settings-form-group">
+                            <label class="settings-form-label">CURRENT PASSWORD</label>
+                            <input type="password" class="settings-form-input" id="currentPasswordInput">
+                        </div>
+                        <div class="settings-form-group">
+                            <label class="settings-form-label">NEW PASSWORD</label>
+                            <input type="password" class="settings-form-input" id="newPasswordInput">
+                        </div>
+                        <div class="settings-form-group">
+                            <label class="settings-form-label">CONFIRM NEW PASSWORD</label>
+                            <input type="password" class="settings-form-input" id="confirmNewPasswordInput">
+                        </div>
+                        <div id="passwordChangeError" style="color: #ed4245; font-size: 13px; margin-top: 10px; display: none; font-weight: 500;"></div>
+                    </div>
+                    <div class="settings-edit-popup-footer">
+                        <button class="settings-edit-popup-btn cancel" id="changePasswordCancel">Cancel</button>
+                        <button class="settings-edit-popup-btn save" id="changePasswordSave">Done</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+      document.body.insertAdjacentHTML("beforeend", popupHtml);
+
+      const popup = document.getElementById("changePasswordPopup");
+      const cancelBtn = document.getElementById("changePasswordCancel");
+      const saveBtn = document.getElementById("changePasswordSave");
+      const errorDiv = document.getElementById("passwordChangeError");
+
+      const closePopup = () => {
+        popup.remove();
+      };
+
+      // Close on overlay click
+      popup.addEventListener("click", (e) => {
+        if (e.target === popup) closePopup();
+      });
+
+      cancelBtn.addEventListener("click", closePopup);
+
+      saveBtn.addEventListener("click", async () => {
+        const currentPassword = document.getElementById("currentPasswordInput").value;
+        const newPassword = document.getElementById("newPasswordInput").value;
+        const confirmPassword = document.getElementById("confirmNewPasswordInput").value;
+
+        errorDiv.style.display = "none";
+        errorDiv.textContent = "";
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          errorDiv.textContent = "Please fill in all fields.";
+          errorDiv.style.display = "block";
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            errorDiv.textContent = "New passwords do not match.";
+            errorDiv.style.display = "block";
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            errorDiv.textContent = "Password must be at least 8 characters.";
+            errorDiv.style.display = "block";
+            return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        try {
+            const token = localStorage.getItem("accessToken");
+            const response = await fetch("/api/users/change-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": token ? "Bearer " + token : ""
+                },
+                body: JSON.stringify({ currentPassword, newPassword })
+            });
+
+            if (response.ok) {
+                closePopup();
+                if (window.ToastManager) {
+                    window.ToastManager.show("Password changed successfully!", "success");
+                } else {
+                    alert("Password changed successfully!");
+                }
+            } else {
+                const errText = await response.text();
+                errorDiv.textContent = errText || "Failed to change password.";
+                errorDiv.style.display = "block";
+            }
+        } catch (e) {
+            console.error(e);
+            errorDiv.textContent = "An error occurred. Please try again.";
+            errorDiv.style.display = "block";
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Done";
+        }
+      });
     },
 
     /**
