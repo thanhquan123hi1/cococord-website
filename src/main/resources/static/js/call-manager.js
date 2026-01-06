@@ -631,9 +631,9 @@
 
     async function ensureLocalMedia(video) {
         if (state.localStream) {
-            log('✅ Using existing local stream');
+            log('Using existing local stream');
             const tracks = state.localStream.getTracks();
-            log('📊 Existing stream tracks:', tracks.map(t => ({
+            log('Existing stream tracks:', tracks.map(t => ({
                 kind: t.kind,
                 enabled: t.enabled,
                 muted: t.muted,
@@ -644,7 +644,7 @@
             // Verify and re-enable tracks if needed
             tracks.forEach(track => {
                 if (!track.enabled) {
-                    log('⚠️ Re-enabling disabled track:', track.kind);
+                    log('Re-enabling disabled track:', track.kind);
                     track.enabled = true;
                 }
             });
@@ -652,7 +652,7 @@
             return state.localStream;
         }
 
-        log('🎤 Requesting user media:', { audio: true, video });
+        log('Requesting user media:', { audio: true, video });
 
         try {
             state.localStream = await navigator.mediaDevices.getUserMedia({
@@ -660,9 +660,9 @@
                 video: video ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false
             });
 
-            log('✅ getUserMedia successful!');
+            log('getUserMedia successful!');
             const tracks = state.localStream.getTracks();
-            log('📊 New stream tracks:', tracks.map(t => ({
+            log('New stream tracks:', tracks.map(t => ({
                 kind: t.kind,
                 enabled: t.enabled,
                 muted: t.muted,
@@ -673,15 +673,15 @@
             // Verify tracks are enabled and not muted
             tracks.forEach(track => {
                 if (!track.enabled) {
-                    error('❌ Track is disabled:', track.kind);
+                    error('Track is disabled:', track.kind);
                     track.enabled = true; // Force enable
-                    log('🔧 Force enabled track:', track.kind);
+                    log('Force enabled track:', track.kind);
                 }
                 if (track.muted) {
-                    warn('⚠️ Track is muted (browser/OS level):', track.kind);
+                    warn('Track is muted (browser/OS level):', track.kind);
                 }
                 if (track.readyState !== 'live') {
-                    error('❌ Track is not live:', track.kind, track.readyState);
+                    error('Track is not live:', track.kind, track.readyState);
                 }
             });
 
@@ -689,12 +689,12 @@
             const localVideo = document.getElementById('callLocalVideo');
             if (localVideo && video) {
                 attachStreamToVideo(localVideo, state.localStream, { muted: true });
-                log('✅ Local video attached to DOM');
+                log('Local video attached to DOM');
             }
 
             return state.localStream;
         } catch (err) {
-            error('❌ Failed to get user media:', err);
+            error('Failed to get user media:', err);
             error('Error name:', err.name);
             error('Error message:', err.message);
             throw err;
@@ -736,7 +736,7 @@
         const selfId = state.currentUser?.id;
         
         // Log ALL signals before filtering
-        log('📨 Raw signal received:', {
+        log('Raw signal received:', {
             type: evt.type,
             fromUserId: evt.fromUserId,
             selfId: selfId,
@@ -827,10 +827,10 @@
 
         // Buffer the OFFER if included in CALL_START
         if (evt.sdp) {
-            log('📩 OFFER included in CALL_START, buffering for when user accepts');
+            log('OFFER included in CALL_START, buffering for when user accepts');
             state.pendingOffer = evt;
         } else {
-            log('⚠️ No OFFER in CALL_START, will wait for separate OFFER message');
+            log('No OFFER in CALL_START, will wait for separate OFFER message');
         }
 
         // Fetch target user info if not provided
@@ -888,16 +888,16 @@
         const senders = state.pc.getSenders();
         const audioSender = senders.find(s => s.track?.kind === 'audio');
         const videoSender = senders.find(s => s.track?.kind === 'video');
-        log('📊 Peer connection state before setRemoteDescription:');
+        log('Peer connection state before setRemoteDescription:');
         log('  - Audio track added:', !!audioSender);
         log('  - Video track added:', !!videoSender);
         log('  - Total senders:', senders.length);
         
         if (!audioSender) {
-            error('❌ No audio track in peer connection! Check acceptIncomingCall()');
+            error('No audio track in peer connection! Check acceptIncomingCall()');
         }
         if (state.video && !videoSender) {
-            error('❌ No video track in peer connection! Check acceptIncomingCall()');
+            error('No video track in peer connection! Check acceptIncomingCall()');
         }
 
         // Set remote description (the offer)
@@ -1044,10 +1044,10 @@
         // Get local media first
         try {
             const stream = await ensureLocalMedia(video);
-            log('🎥 Local stream tracks:', stream.getTracks().map(t => `${t.kind} (${t.label})`));
+            log('Local stream tracks:', stream.getTracks().map(t => `${t.kind} (${t.label})`));
             stream.getTracks().forEach(track => {
                 state.pc.addTrack(track, stream);
-                log('✅ Added track to peer connection:', track.kind);
+                log('Added track to peer connection:', track.kind);
             });
         } catch (err) {
             error('Failed to get local media:', err);
@@ -1062,7 +1062,7 @@
             
             // Verify tracks before creating offer
             const senders = state.pc.getSenders();
-            log('📊 Verify before createOffer:');
+            log('Verify before createOffer:');
             log('  - Total senders:', senders.length);
             log('  - Audio sender:', !!senders.find(s => s.track?.kind === 'audio'));
             log('  - Video sender:', video ? !!senders.find(s => s.track?.kind === 'video') : 'N/A');
@@ -1072,9 +1072,9 @@
                 offerToReceiveVideo: video
             });
             await state.pc.setLocalDescription(offer);
-            log('✅ Local description (offer) set successfully');
-            log('📝 SDP has video:', offer.sdp.includes('m=video'));
-            log('📝 SDP has audio:', offer.sdp.includes('m=audio'));
+            log('Local description (offer) set successfully');
+            log('SDP has video:', offer.sdp.includes('m=video'));
+            log('SDP has audio:', offer.sdp.includes('m=audio'));
         } catch (err) {
             error('Failed to create offer:', err);
             showToast('Không thể tạo offer', 'error');
@@ -1137,20 +1137,20 @@
 
         // Get local media and add tracks FIRST
         try {
-            log('🎥 Getting local media for callee (receiver)...');
+            log('Getting local media for callee (receiver)...');
             const stream = await ensureLocalMedia(state.video);
-            log('🎥 Callee stream tracks:', stream.getTracks().map(t => `${t.kind} (${t.label})`));
+            log('Callee stream tracks:', stream.getTracks().map(t => `${t.kind} (${t.label})`));
             
             stream.getTracks().forEach(track => {
                 if (!state.pc.getSenders().find(s => s.track === track)) {
                     state.pc.addTrack(track, stream);
-                    log('✅ Callee added track:', track.kind);
+                    log('Callee added track:', track.kind);
                 }
             });
             
             // Verify all tracks are added
             const senders = state.pc.getSenders();
-            log('📊 Callee peer connection ready:');
+            log('Callee peer connection ready:');
             log('  - Audio track:', !!senders.find(s => s.track?.kind === 'audio'));
             log('  - Video track:', !!senders.find(s => s.track?.kind === 'video'));
             log('  - Total senders:', senders.length);
@@ -1164,11 +1164,11 @@
         // NOW process pending offer (PC and tracks are ready)
         log('Checking for pending offer:', !!state.pendingOffer);
         if (state.pendingOffer) {
-            log('📩 Processing pending OFFER from CALL_START');
+            log('Processing pending OFFER from CALL_START');
             await handleOffer(state.pendingOffer);
             state.pendingOffer = null;
         } else {
-            log('⚠️ No pending offer, will wait for OFFER to arrive');
+            log('No pending offer, will wait for OFFER to arrive');
         }
 
         showActiveCallView(state.video);
