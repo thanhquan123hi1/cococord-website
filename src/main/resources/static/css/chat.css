@@ -1143,12 +1143,50 @@ body {
   color: var(--status-online);
 }
 
+/* ==================== DATE SEPARATOR ==================== */
+#chatApp .date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 16px 4px;
+  position: relative;
+}
+
+#chatApp .date-separator::before,
+#chatApp .date-separator::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--bg-modifier-hover);
+}
+
+#chatApp .date-separator span {
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 /* Message Row */
 #chatApp .message-row {
   display: flex;
-  padding: 1px 48px 1px 72px;
+  padding: 2px 16px 2px 72px;
   position: relative;
-  margin-top: 6px;
+  margin-top: 0;
+}
+
+/* First message (new sender) - minimal top spacing */
+#chatApp .message-row:not(.continued) {
+  margin-top: 4px;
+  padding-top: 2px;
+}
+
+/* First message after date separator */
+#chatApp .date-separator + .message-row:not(.continued) {
+  margin-top: 2px;
 }
 
 #chatApp .message-row:hover {
@@ -1157,11 +1195,7 @@ body {
 
 #chatApp .message-row.continued {
   margin-top: 0;
-  padding-top: 1px;
-}
-
-#chatApp .message-row.continued .message-avatar {
-  display: none;
+  padding-top: 0;
 }
 
 #chatApp .message-row.continued .message-time-hover {
@@ -1173,27 +1207,36 @@ body {
 }
 
 #chatApp .message-avatar {
-    width: 40px;          /* Bắt buộc có chiều rộng */
-    min-width: 40px;      /* Quan trọng: Ngăn không cho co lại khi rỗng */
-    height: 40px;
-    margin-right: 16px;   /* Khoảng cách giữa avatar và nội dung */
-    flex-shrink: 0;       /* Quan trọng: Không bị nén trong flexbox */
-    
-    /* Thêm để căn chỉnh placeholder (chữ cái đầu) đẹp hơn */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: var(--bg-modifier-selected); /* Màu nền nếu không có ảnh */
+  position: absolute;
+  left: 16px;
+  top: 2px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+
+  /* Căn chỉnh placeholder (chữ cái đầu) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--bg-modifier-selected);
+  color: var(--text-normal);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Ẩn avatar cho tin nhắn nối tiếp (cùng người gửi) */
+#chatApp .message-row.continued .message-avatar {
+  visibility: hidden;
 }
 
 /* Đảm bảo ảnh bên trong (nếu có) luôn tròn và vừa khung */
 #chatApp .message-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block; /* Sửa lỗi khoảng trắng thừa dưới ảnh */
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 
 #chatApp .message-body {
@@ -2238,272 +2281,281 @@ body {
 
 /* ==================== MESSAGE HIGHLIGHT (Jump to message) ==================== */
 #chatApp .message-row.highlight {
-    animation: messageHighlight 2s ease;
+  animation: messageHighlight 2s ease;
 }
 
 @keyframes messageHighlight {
-    0%, 100% {
-        background: transparent;
-    }
-    25% {
-        background: rgba(88, 101, 242, 0.2);
-    }
-    75% {
-        background: rgba(88, 101, 242, 0.1);
-    }
+  0%,
+  100% {
+    background: transparent;
+  }
+  25% {
+    background: rgba(88, 101, 242, 0.2);
+  }
+  75% {
+    background: rgba(88, 101, 242, 0.1);
+  }
 }
 /* ==================== SERVER LOCK/SUSPEND STATES ==================== */
 
 /* Server Locked Banner */
 .server-locked-banner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: linear-gradient(90deg, rgba(240, 178, 50, 0.15) 0%, rgba(240, 178, 50, 0.08) 100%);
-    border-bottom: 1px solid rgba(240, 178, 50, 0.3);
-    color: var(--discord-yellow);
-    font-size: 14px;
-    animation: slideDown 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(
+    90deg,
+    rgba(240, 178, 50, 0.15) 0%,
+    rgba(240, 178, 50, 0.08) 100%
+  );
+  border-bottom: 1px solid rgba(240, 178, 50, 0.3);
+  color: var(--discord-yellow);
+  font-size: 14px;
+  animation: slideDown 0.3s ease-out;
 }
 
 .server-locked-banner i {
-    font-size: 18px;
-    flex-shrink: 0;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .server-locked-banner .banner-content {
-    flex: 1;
+  flex: 1;
 }
 
 .server-locked-banner .banner-title {
-    font-weight: 600;
-    margin-bottom: 2px;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .server-locked-banner .banner-reason {
-    color: var(--text-muted);
-    font-size: 13px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .server-locked-banner .banner-until {
-    font-size: 12px;
-    color: var(--text-muted);
-    opacity: 0.8;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 @keyframes slideDown {
-    from {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Server Suspended Overlay */
 .server-suspended-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease-out;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .server-suspended-overlay .suspend-icon {
-    font-size: 64px;
-    color: var(--discord-red);
-    margin-bottom: 24px;
+  font-size: 64px;
+  color: var(--discord-red);
+  margin-bottom: 24px;
 }
 
 .server-suspended-overlay .suspend-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-normal);
-    margin-bottom: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-normal);
+  margin-bottom: 12px;
 }
 
 .server-suspended-overlay .suspend-message {
-    font-size: 16px;
-    color: var(--text-muted);
-    text-align: center;
-    max-width: 400px;
-    margin-bottom: 8px;
+  font-size: 16px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 400px;
+  margin-bottom: 8px;
 }
 
 .server-suspended-overlay .suspend-reason {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 24px;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    max-width: 400px;
-    text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  max-width: 400px;
+  text-align: center;
 }
 
 .server-suspended-overlay .suspend-actions {
-    display: flex;
-    gap: 12px;
+  display: flex;
+  gap: 12px;
 }
 
 .server-suspended-overlay .suspend-btn {
-    padding: 12px 24px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
 }
 
 .server-suspended-overlay .suspend-btn-primary {
-    background: var(--discord-primary);
-    color: white;
+  background: var(--discord-primary);
+  color: white;
 }
 
 .server-suspended-overlay .suspend-btn-primary:hover {
-    background: #4752c4;
+  background: #4752c4;
 }
 
 .server-suspended-overlay .suspend-btn-secondary {
-    background: transparent;
-    color: var(--text-normal);
-    border: 1px solid var(--text-muted);
+  background: transparent;
+  color: var(--text-normal);
+  border: 1px solid var(--text-muted);
 }
 
 .server-suspended-overlay .suspend-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Server item locked state in sidebar */
 .server-item.server-locked {
-    opacity: 0.7;
-    position: relative;
+  opacity: 0.7;
+  position: relative;
 }
 
 .server-item.server-locked::after {
-    content: '\f023'; /* Bootstrap Icons lock */
-    font-family: 'bootstrap-icons';
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    font-size: 12px;
-    color: var(--discord-yellow);
-    background: var(--bg-tertiary);
-    border-radius: 50%;
-    padding: 2px 4px;
+  content: "\f023"; /* Bootstrap Icons lock */
+  font-family: "bootstrap-icons";
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 12px;
+  color: var(--discord-yellow);
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 2px 4px;
 }
 
 /* Server item suspended state in sidebar */
 .server-item.server-suspended {
-    opacity: 0.4;
-    filter: grayscale(100%);
-    pointer-events: none;
-    position: relative;
+  opacity: 0.4;
+  filter: grayscale(100%);
+  pointer-events: none;
+  position: relative;
 }
 
 .server-item.server-suspended::after {
-    content: '\f62a'; /* Bootstrap Icons slash-circle */
-    font-family: 'bootstrap-icons';
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    font-size: 12px;
-    color: var(--discord-red);
-    background: var(--bg-tertiary);
-    border-radius: 50%;
-    padding: 2px 4px;
+  content: "\f62a"; /* Bootstrap Icons slash-circle */
+  font-family: "bootstrap-icons";
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 12px;
+  color: var(--discord-red);
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 2px 4px;
 }
 
 /* Disabled chat input state */
 .chat-composer.disabled {
-    opacity: 0.6;
-    pointer-events: none;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .chat-composer.disabled .chat-input {
-    background: rgba(0, 0, 0, 0.2);
-    cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
 }
 
 .chat-composer.disabled .chat-input::placeholder {
-    color: var(--discord-yellow);
+  color: var(--discord-yellow);
 }
 
 /* Disabled action buttons */
 .channel-sidebar .disabled-action,
 .server-dropdown .disabled-action,
 .chat-composer .disabled-action {
-    opacity: 0.4;
-    pointer-events: none;
-    cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .channel-sidebar .disabled-action:hover,
 .server-dropdown .disabled-action:hover {
-    background: transparent !important;
+  background: transparent !important;
 }
 
 /* --- FIX SPACING CHAT SERVER --- */
 
 /* Loại bỏ margin thừa của các thẻ p trong nội dung tin nhắn */
 #chatApp .message-content p {
-    margin: 0;
+  margin: 0;
 }
 
 /* Tạo khoảng cách nhỏ nếu tin nhắn có nhiều đoạn văn */
 #chatApp .message-content p + p {
-    margin-top: 4px;
+  margin-top: 4px;
 }
 
 /* Đảm bảo ảnh/video không bị đẩy quá xa */
 #chatApp .message-content img,
 #chatApp .message-content video {
-    margin-top: 4px;
-    margin-bottom: 2px;
+  margin-top: 4px;
+  margin-bottom: 2px;
 }
 /* --- FIX SPACING & LAYOUT --- */
 
 /* 1. Giảm khoảng cách giữa các tin nhắn nối tiếp (continued) */
 #chatApp .message-row.continued {
-    margin-top: 2px !important;    /* Khoảng cách nhỏ giữa các dòng tin nhắn liên tiếp */
-    padding-top: 0 !important;
+  margin-top: 2px !important; /* Khoảng cách nhỏ giữa các dòng tin nhắn liên tiếp */
+  padding-top: 0 !important;
 }
 
 /* 2. Khoảng cách chuẩn cho tin nhắn mới (có avatar) */
 #chatApp .message-row {
-    margin-top: 16px;             /* Khoảng cách giữa các nhóm tin nhắn */
-    display: flex;                /* Đảm bảo layout flex hoạt động */
-    align-items: flex-start;      /* Căn nội dung theo dòng trên cùng */
+  margin-top: 16px; /* Khoảng cách giữa các nhóm tin nhắn */
+  display: flex; /* Đảm bảo layout flex hoạt động */
+  align-items: flex-start; /* Căn nội dung theo dòng trên cùng */
 }
 
 /* 3. Xử lý margin của văn bản (quan trọng nhất để giảm độ cao dòng) */
 #chatApp .message-content {
-    line-height: 1.375rem;        /* Chiều cao dòng chuẩn Discord */
-    color: var(--text-normal);
+  line-height: 1.375rem; /* Chiều cao dòng chuẩn Discord */
+  color: var(--text-normal);
 }
 
 #chatApp .message-content p {
-    margin-bottom: 0 !important;  /* Loại bỏ khoảng trắng dưới mỗi đoạn văn */
-    margin-top: 0 !important;
+  margin-bottom: 0 !important; /* Loại bỏ khoảng trắng dưới mỗi đoạn văn */
+  margin-top: 0 !important;
 }
 
 /* Nếu có nhiều đoạn văn trong 1 tin nhắn, tạo khoảng cách nhỏ */
 #chatApp .message-content p + p {
-    margin-top: 6px !important;
+  margin-top: 6px !important;
 }

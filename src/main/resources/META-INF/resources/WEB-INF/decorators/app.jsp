@@ -49,6 +49,14 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/skeleton.css?v=20260105a">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260103a">
+    <!-- CoCo Credits CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/coco-credits.css?v=20260106a">
+    <!-- Nitro Modal CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/nitro-modal.css?v=20260106a">
+    <!-- Shop Modal CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/shop-modal.css?v=20260106a">
+    <!-- Missions Modal CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/missions-modal.css?v=20260106a">
     
     <%
         if (sitemeshContent != null) {
@@ -196,6 +204,14 @@
     <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260105_release"></script>
     <!-- Notification system with global call subscription -->
     <script src="${pageContext.request.contextPath}/js/notification.js?v=20260105_release"></script>
+    <!-- CoCo Credits System -->
+    <script src="${pageContext.request.contextPath}/js/coco-credits.js?v=20260106_release"></script>
+    <!-- Nitro Modal -->
+    <script src="${pageContext.request.contextPath}/js/nitro-modal.js?v=20260106_release"></script>
+    <!-- Shop Modal -->
+    <script src="${pageContext.request.contextPath}/js/shop-modal.js?v=20260106_release"></script>
+    <!-- Missions Modal -->
+    <script src="${pageContext.request.contextPath}/js/missions-modal.js?v=20260106_release"></script>
    
 
     <%

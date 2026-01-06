@@ -951,12 +951,12 @@
 
   async function loadFriends() {
     state.friends = (await apiJson("/api/friends", { method: "GET" })) || [];
-    
+
     // Hide friends list skeleton after loading
-    const friendsSkeleton = document.getElementById('friendsListSkeleton');
+    const friendsSkeleton = document.getElementById("friendsListSkeleton");
     if (friendsSkeleton) {
-      friendsSkeleton.style.opacity = '0';
-      setTimeout(() => friendsSkeleton.style.display = 'none', 300);
+      friendsSkeleton.style.opacity = "0";
+      setTimeout(() => (friendsSkeleton.style.display = "none"), 300);
     }
   }
 
@@ -973,12 +973,12 @@
   async function loadDmSidebar() {
     state.dmItems =
       (await apiJson("/api/direct-messages/sidebar", { method: "GET" })) || [];
-    
+
     // Hide DM list skeleton after loading
-    const dmSkeleton = document.getElementById('dmListSkeleton');
+    const dmSkeleton = document.getElementById("dmListSkeleton");
     if (dmSkeleton) {
-      dmSkeleton.style.opacity = '0';
-      setTimeout(() => dmSkeleton.style.display = 'none', 300);
+      dmSkeleton.style.opacity = "0";
+      setTimeout(() => (dmSkeleton.style.display = "none"), 300);
     }
   }
 
@@ -1435,7 +1435,9 @@
             render();
           } catch (err) {
             if (window.ToastManager) {
-              ToastManager.error(err?.message || "Không thể bỏ chặn người dùng");
+              ToastManager.error(
+                err?.message || "Không thể bỏ chặn người dùng"
+              );
             } else {
               alert(err?.message || "Không thể bỏ chặn người dùng");
             }
@@ -1994,31 +1996,27 @@
     stompClient = Stomp.over(socket);
     stompClient.debug = null; // Disable debug
 
-    stompClient.connect(
-      { Authorization: "Bearer " + token },
-      () => {
-        dmSubscription = stompClient.subscribe(
-          `/topic/dm/${state.activeDmGroupId}`,
-          (message) => {
-            const msg = JSON.parse(message.body);
-            if (!state.dmMessages.find((m) => m.id === msg.id)) {
-              state.dmMessages.push(msg);
-              renderDmMessages();
-            }
+    stompClient.connect({ Authorization: "Bearer " + token }, () => {
+      dmSubscription = stompClient.subscribe(
+        `/topic/dm/${state.activeDmGroupId}`,
+        (message) => {
+          const msg = JSON.parse(message.body);
+          if (!state.dmMessages.find((m) => m.id === msg.id)) {
+            state.dmMessages.push(msg);
+            renderDmMessages();
           }
-        );
+        }
+      );
 
-        // Call signaling for this DM
-        callSubscription = stompClient.subscribe(
-          `/topic/call/${state.activeDmGroupId}`,
-          (message) => {
-            const evt = JSON.parse(message.body);
-            handleCallSignal(evt);
-            
-          }
-        );
-      },
-    );
+      // Call signaling for this DM
+      callSubscription = stompClient.subscribe(
+        `/topic/call/${state.activeDmGroupId}`,
+        (message) => {
+          const evt = JSON.parse(message.body);
+          handleCallSignal(evt);
+        }
+      );
+    });
   }
 
   function disconnectDmWebSocket() {
@@ -2085,7 +2083,7 @@
    * @param {string} viewName - 'friends', 'nitro', 'shop', 'quests'
    */
   function switchMainView(viewName) {
-    const validViews = ['friends', 'nitro', 'shop', 'quests'];
+    const validViews = ["friends", "nitro", "shop", "quests"];
     if (!validViews.includes(viewName)) {
       return;
     }
@@ -2093,32 +2091,41 @@
     // Update state
     state.activeMainView = viewName;
 
+    // Load dynamic content for specific views
+    if (viewName === "shop" && window.ShopView) {
+      window.ShopView.load();
+    } else if (viewName === "quests" && window.QuestsView) {
+      window.QuestsView.load();
+    }
+
     // Update sidebar nav items
-    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
-      const itemView = item.getAttribute('data-view');
+    document.querySelectorAll(".sidebar-nav .nav-item").forEach((item) => {
+      const itemView = item.getAttribute("data-view");
       if (itemView === viewName) {
-        item.classList.add('active');
+        item.classList.add("active");
       } else {
-        item.classList.remove('active');
+        item.classList.remove("active");
       }
     });
 
     // Hide all view contents
-    document.querySelectorAll('.view-content').forEach(view => {
-      view.style.display = 'none';
+    document.querySelectorAll(".view-content").forEach((view) => {
+      view.style.display = "none";
     });
 
     // Show selected view
-    const targetView = document.querySelector(`.view-content[data-view="${viewName}"]`);
+    const targetView = document.querySelector(
+      `.view-content[data-view="${viewName}"]`
+    );
     if (targetView) {
-      targetView.style.display = 'flex';
+      targetView.style.display = "flex";
     }
 
     // Update top bar based on view
     updateTopBarForView(viewName);
 
     // Close DM chat if open
-    if (state.activeView === 'dm') {
+    if (state.activeView === "dm") {
       closeDmChat();
     }
   }
@@ -2128,45 +2135,45 @@
    * @param {string} viewName
    */
   function updateTopBarForView(viewName) {
-    const topBar = document.querySelector('.top-bar');
+    const topBar = document.querySelector(".top-bar");
     if (!topBar) return;
 
-    const topLeft = topBar.querySelector('.top-left');
+    const topLeft = topBar.querySelector(".top-left");
     if (!topLeft) return;
 
     // Get elements
-    const topIcon = topLeft.querySelector('i');
-    const topTitle = topLeft.querySelector('.top-title');
-    const topDivider = topLeft.querySelector('.top-divider');
-    const topTabs = topLeft.querySelector('.top-tabs');
-    const addFriendBtn = topLeft.querySelector('#addFriendBtn');
+    const topIcon = topLeft.querySelector("i");
+    const topTitle = topLeft.querySelector(".top-title");
+    const topDivider = topLeft.querySelector(".top-divider");
+    const topTabs = topLeft.querySelector(".top-tabs");
+    const addFriendBtn = topLeft.querySelector("#addFriendBtn");
 
     // View configurations
     const viewConfig = {
       friends: {
-        icon: 'bi-people-fill',
-        title: 'Bạn bè',
+        icon: "bi-people-fill",
+        title: "Bạn bè",
         showTabs: true,
-        showAddFriend: true
+        showAddFriend: true,
       },
       nitro: {
-        icon: 'bi-lightning-charge-fill',
-        title: 'Nitro',
+        icon: "bi-lightning-charge-fill",
+        title: "Nitro",
         showTabs: false,
-        showAddFriend: false
+        showAddFriend: false,
       },
       shop: {
-        icon: 'bi-bag-fill',
-        title: 'Cửa hàng',
+        icon: "bi-bag-fill",
+        title: "Cửa hàng",
         showTabs: false,
-        showAddFriend: false
+        showAddFriend: false,
       },
       quests: {
-        icon: 'bi-compass-fill',
-        title: 'Nhiệm vụ',
+        icon: "bi-compass-fill",
+        title: "Nhiệm vụ",
         showTabs: false,
-        showAddFriend: false
-      }
+        showAddFriend: false,
+      },
     };
 
     const config = viewConfig[viewName] || viewConfig.friends;
@@ -2183,13 +2190,13 @@
 
     // Show/hide tabs and divider
     if (topDivider) {
-      topDivider.style.display = config.showTabs ? '' : 'none';
+      topDivider.style.display = config.showTabs ? "" : "none";
     }
     if (topTabs) {
-      topTabs.style.display = config.showTabs ? '' : 'none';
+      topTabs.style.display = config.showTabs ? "" : "none";
     }
     if (addFriendBtn) {
-      addFriendBtn.style.display = config.showAddFriend ? '' : 'none';
+      addFriendBtn.style.display = config.showAddFriend ? "" : "none";
     }
   }
 
@@ -2197,18 +2204,20 @@
    * Initialize Shop tab switching
    */
   function initShopTabs() {
-    document.querySelectorAll('.shop-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const tabName = tab.getAttribute('data-shop-tab');
-        
+    document.querySelectorAll(".shop-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const tabName = tab.getAttribute("data-shop-tab");
+
         // Update tab active state
-        document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
+        document
+          .querySelectorAll(".shop-tab")
+          .forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+
         // Show/hide sections
-        document.querySelectorAll('.shop-section').forEach(section => {
-          const sectionName = section.getAttribute('data-shop-content');
-          section.style.display = sectionName === tabName ? '' : 'none';
+        document.querySelectorAll(".shop-section").forEach((section) => {
+          const sectionName = section.getAttribute("data-shop-content");
+          section.style.display = sectionName === tabName ? "" : "none";
         });
       });
     });
@@ -2218,9 +2227,9 @@
    * Initialize Quest interactions
    */
   function initQuestInteractions() {
-    document.querySelectorAll('.quest-card:not(.completed)').forEach(card => {
-      card.addEventListener('click', () => {
-        const questId = card.getAttribute('data-quest-id');
+    document.querySelectorAll(".quest-card:not(.completed)").forEach((card) => {
+      card.addEventListener("click", () => {
+        const questId = card.getAttribute("data-quest-id");
       });
     });
     updateQuestStats();
@@ -2230,25 +2239,29 @@
    * Update quest statistics display
    */
   function updateQuestStats() {
-    const completedEl = document.getElementById('completedQuests');
-    const activeEl = document.getElementById('activeQuests');
-    
-    const completed = document.querySelectorAll('.quest-card.completed').length;
-    const active = document.querySelectorAll('.quest-card:not(.completed)').length;
-    
+    const completedEl = document.getElementById("completedQuests");
+    const activeEl = document.getElementById("activeQuests");
+
+    const completed = document.querySelectorAll(".quest-card.completed").length;
+    const active = document.querySelectorAll(
+      ".quest-card:not(.completed)"
+    ).length;
+
     if (completedEl) completedEl.textContent = completed;
     if (activeEl) activeEl.textContent = active;
   }
 
   function wireEvents() {
     // Sidebar navigation - Single Page Navigation
-    document.querySelectorAll('.sidebar-nav .nav-item[data-view]').forEach((item) => {
-      item.addEventListener('click', (e) => {
-        e.preventDefault();
-        const viewName = item.getAttribute('data-view');
-        switchMainView(viewName);
+    document
+      .querySelectorAll(".sidebar-nav .nav-item[data-view]")
+      .forEach((item) => {
+        item.addEventListener("click", (e) => {
+          e.preventDefault();
+          const viewName = item.getAttribute("data-view");
+          switchMainView(viewName);
+        });
       });
-    });
 
     // Tabs
     document.querySelectorAll(".tab").forEach((b) => {
@@ -2288,7 +2301,8 @@
       try {
         await startOutgoingCall({ video: false });
       } catch (err) {
-        const msg = err?.name === "NotAllowedError"
+        const msg =
+          err?.name === "NotAllowedError"
             ? "Vui lòng cho phép microphone"
             : err?.message || "Không thể gọi thoại";
         if (window.ToastManager) {
@@ -2329,7 +2343,8 @@
       try {
         await acceptIncomingCall();
       } catch (err) {
-        const msg = err?.name === "NotAllowedError"
+        const msg =
+          err?.name === "NotAllowedError"
             ? "Vui lòng cho phép microphone/camera"
             : err?.message || "Không thể tham gia cuộc gọi";
         if (window.ToastManager) {
@@ -2376,12 +2391,13 @@
     renderDmList();
     renderFriendsList();
     document.querySelectorAll(".tab").forEach((b) => {
-          b.onclick = () => { // Dùng onclick trực tiếp để chắc chắn chạy
-              setActiveTab(b.dataset.tab);
-          };
-  });
-  const btnAdd = document.getElementById("addFriendBtn");
-      if(btnAdd) btnAdd.onclick = showAddFriendView;
+      b.onclick = () => {
+        // Dùng onclick trực tiếp để chắc chắn chạy
+        setActiveTab(b.dataset.tab);
+      };
+    });
+    const btnAdd = document.getElementById("addFriendBtn");
+    if (btnAdd) btnAdd.onclick = showAddFriendView;
   }
   async function initPresence() {
     const store = window.CoCoCordPresence;
@@ -2475,13 +2491,15 @@
     isInitializing = true;
 
     try {
-      const navItems = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
-        navItems.forEach(item => {
-            item.onclick = (e) => {
-                e.preventDefault();
-                switchMainView(item.getAttribute('data-view'));
-            };
-        });
+      const navItems = document.querySelectorAll(
+        ".sidebar-nav .nav-item[data-view]"
+      );
+      navItems.forEach((item) => {
+        item.onclick = (e) => {
+          e.preventDefault();
+          switchMainView(item.getAttribute("data-view"));
+        };
+      });
       if (!window.__cococordIncomingCallListenerAttached) {
         window.__cococordIncomingCallListenerAttached = true;
         window.addEventListener("incomingCall", (e) => {
@@ -2502,9 +2520,9 @@
       ]);
       rebuildFriendsStateFromSnapshots();
       render();
-  } catch (err) {
-    throw err;
-  }
+    } catch (err) {
+      throw err;
+    }
     // Friends realtime updates (no polling)
     await initFriendsRealtime();
 
@@ -2539,22 +2557,32 @@
     }
 
     const viewParam = urlParams.get("view");
-    if (viewParam && ['friends', 'nitro', 'shop', 'quests'].includes(viewParam)) {
+    if (
+      viewParam &&
+      ["friends", "nitro", "shop", "quests"].includes(viewParam)
+    ) {
       switchMainView(viewParam);
     }
     initShopTabs();
     initQuestInteractions();
     initPrimarySidebarResize();
+
+    // Dispatch event for other modules (like CocoCredits) to reinitialize
+    document.dispatchEvent(new CustomEvent("appHome:loaded"));
   }
-  window.reInitAppHome = function() {
-      const homeRoot = document.getElementById("cococordHome");
-      if (!homeRoot) return;
-      if (typeof wireEvents === 'function') {
-          wireEvents(); 
-      }
-      if (typeof render === 'function') {
-           render();
-      }
+  window.reInitAppHome = function () {
+    const homeRoot = document.getElementById("cococordHome");
+    if (!homeRoot) return;
+    if (typeof wireEvents === "function") {
+      wireEvents();
+    }
+    if (typeof render === "function") {
+      render();
+    }
+    // Reinit CocoCredits
+    if (window.CocoCredits && typeof window.CocoCredits.reinit === "function") {
+      window.CocoCredits.reinit();
+    }
   };
   // ==================== PRIMARY SIDEBAR RESIZE ====================
   function initPrimarySidebarResize() {
@@ -2657,8 +2685,6 @@
     });
   }
 
-  
-
   // ===== Expose API for Quick Switcher =====
   window.AppHome = {
     getDmItems: () => [...state.dmItems],
@@ -2691,46 +2717,52 @@
   // ==========================================
 
   function forceInit() {
-      const root = document.getElementById("cococordHome");
-      if (!root) return;
-      
-      isInitializing = false; 
+    const root = document.getElementById("cococordHome");
+    if (!root) return;
 
-      // Set up sidebar navigation with capture phase listener
-      const sidebarNav = root.querySelector(".sidebar-nav");
-      if (sidebarNav) {
-          sidebarNav.addEventListener('click', (e) => {
-              const navItem = e.target.closest('.nav-item');
-              if (navItem) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.stopImmediatePropagation(); 
+    isInitializing = false;
 
-                  // Update active state
-                  root.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                  navItem.classList.add('active');
+    // Set up sidebar navigation with capture phase listener
+    const sidebarNav = root.querySelector(".sidebar-nav");
+    if (sidebarNav) {
+      sidebarNav.addEventListener(
+        "click",
+        (e) => {
+          const navItem = e.target.closest(".nav-item");
+          if (navItem) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
 
-                  // Switch view
-                  const view = navItem.getAttribute("data-view");
-                  if (view && typeof switchMainView === 'function') {
-                      switchMainView(view);
-                  }
-              }
-          }, true); // Capture phase
-      }
+            // Update active state
+            root
+              .querySelectorAll(".nav-item")
+              .forEach((i) => i.classList.remove("active"));
+            navItem.classList.add("active");
 
-      // Wire events and initialize
-      try {
-          if (typeof wireEvents === 'function') {
-              wireEvents(); 
+            // Switch view
+            const view = navItem.getAttribute("data-view");
+            if (view && typeof switchMainView === "function") {
+              switchMainView(view);
+            }
           }
-      } catch (e) {
-          console.error('[AppHome] Wire events failed:', e);
+        },
+        true
+      ); // Capture phase
+    }
+
+    // Wire events and initialize
+    try {
+      if (typeof wireEvents === "function") {
+        wireEvents();
       }
-      
-      if (typeof init === 'function') {
-          init().catch(err => console.error('[AppHome] Init failed:', err));
-      }
+    } catch (e) {
+      console.error("[AppHome] Wire events failed:", e);
+    }
+
+    if (typeof init === "function") {
+      init().catch((err) => console.error("[AppHome] Init failed:", err));
+    }
   }
   window.forceInitAppHome = forceInit;
 })();

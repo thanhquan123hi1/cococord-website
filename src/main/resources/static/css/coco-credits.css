@@ -1,0 +1,244 @@
+/* CoCo Credits System Styles */
+
+/* Credits Container - Fixed at bottom of server bar */
+.coco-credits-container {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+/* Credits Badge */
+.coco-credits-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #5865f2, #7289da);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+}
+
+.coco-credits-badge:hover {
+  background: linear-gradient(135deg, #4752c4, #5865f2);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+}
+
+.coco-credits-badge .credits-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffd700;
+}
+
+.coco-credits-badge .credits-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  min-width: 20px;
+  text-align: center;
+}
+
+.coco-credits-badge .credits-amount.credits-updated {
+  animation: creditsPulse 0.5s ease;
+}
+
+@keyframes creditsPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+    color: #ffd700;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Credits Menu Dropdown */
+.coco-credits-menu {
+  width: 280px;
+  background: #2b2d31;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 9999;
+  animation: menuSlideIn 0.15s ease;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Menu Header - Balance Display */
+.credits-menu-header {
+  padding: 16px;
+  background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
+}
+
+.credits-balance-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.credits-icon-large {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+}
+
+.credits-icon-large svg {
+  width: 24px;
+  height: 24px;
+  color: #ffd700;
+}
+
+.credits-balance-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.balance-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.balance-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Menu Divider */
+.credits-menu-divider {
+  height: 1px;
+  background: #3f4147;
+  margin: 0;
+}
+
+/* Menu Items */
+.credits-menu-items {
+  padding: 8px;
+}
+
+.credits-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.credits-menu-item:hover {
+  background: #35373c;
+}
+
+.credits-menu-item.small {
+  padding: 8px 12px;
+  justify-content: center;
+}
+
+.credits-menu-item.small .menu-item-title {
+  font-size: 12px;
+  color: #b5bac1;
+}
+
+/* Menu Item Icons */
+.menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.menu-item-icon.nitro-icon {
+  background: linear-gradient(135deg, #ff73fa, #5865f2);
+}
+
+.menu-item-icon.shop-icon {
+  background: linear-gradient(135deg, #57f287, #3ba55d);
+}
+
+.menu-item-icon.missions-icon {
+  background: linear-gradient(135deg, #faa61a, #f04747);
+}
+
+.menu-item-icon svg {
+  color: #fff;
+}
+
+/* Menu Item Content */
+.menu-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #f2f3f5;
+}
+
+.menu-item-desc {
+  font-size: 12px;
+  color: #b5bac1;
+}
+
+.menu-item-arrow {
+  color: #b5bac1;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.credits-menu-item:hover .menu-item-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Menu Footer */
+.credits-menu-footer {
+  padding: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .coco-credits-container {
+    bottom: 8px;
+  }
+
+  .coco-credits-badge {
+    padding: 4px 8px;
+  }
+
+  .coco-credits-badge .credits-amount {
+    font-size: 11px;
+  }
+}

@@ -5,137 +5,137 @@
    ============================================ */
 
 .markdown-content {
-    line-height: 1.5;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ===== INLINE CODE ===== */
 .markdown-content code {
-    background: rgba(32, 34, 37, 0.6);
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    border-radius: 3px;
-    padding: 0.2em 0.4em;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.85em;
-    color: #dcddde;
+  background: rgba(32, 34, 37, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  padding: 0.2em 0.4em;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.85em;
+  color: #dcddde;
 }
 
 /* ===== CODE BLOCKS ===== */
 .markdown-content pre {
-    background: #2f3136;
-    border: 1px solid rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    padding: 0.5em;
-    margin: 4px 0 8px 0;
-    overflow-x: auto;
-    max-width: 100%;
+  background: #2f3136;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 0.5em;
+  margin: 4px 0 8px 0;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .markdown-content pre code {
-    background: transparent;
-    border: none;
-    padding: 0;
-    font-size: 0.875rem;
-    line-height: 1.4;
-    display: block;
-    color: #dcddde;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  display: block;
+  color: #dcddde;
 }
 
 /* Scrollbar cho code blocks */
 .markdown-content pre::-webkit-scrollbar {
-    height: 8px;
+  height: 8px;
 }
 
 .markdown-content pre::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
 }
 
 .markdown-content pre::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
 }
 
 .markdown-content pre::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.6);
 }
 
 /* ===== BLOCKQUOTE ===== */
 .markdown-content blockquote {
-    border-left: 4px solid #4f545c;
-    padding-left: 12px;
-    margin: 4px 0;
-    color: #dcddde;
-    background: rgba(79, 84, 92, 0.1);
-    border-radius: 0 4px 4px 0;
+  border-left: 4px solid #4f545c;
+  padding-left: 12px;
+  margin: 4px 0;
+  color: #dcddde;
+  background: rgba(79, 84, 92, 0.1);
+  border-radius: 0 4px 4px 0;
 }
 
 .markdown-content blockquote p {
-    margin: 4px 0;
+  margin: 4px 0;
 }
 
 /* ===== TEXT FORMATTING ===== */
 .markdown-content strong,
 .markdown-content b {
-    font-weight: 700;
-    color: #ffffff;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .markdown-content em,
 .markdown-content i {
-    font-style: italic;
+  font-style: italic;
 }
 
 .markdown-content u {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .markdown-content s,
 .markdown-content del {
-    text-decoration: line-through;
+  text-decoration: line-through;
 }
 
 /* ===== LINKS ===== */
 .markdown-content a {
-    color: #00b0f4;
-    text-decoration: none;
-    transition: color 0.15s ease;
+  color: #00b0f4;
+  text-decoration: none;
+  transition: color 0.15s ease;
 }
 
 .markdown-content a:hover {
-    color: #00d9ff;
-    text-decoration: underline;
+  color: #00d9ff;
+  text-decoration: underline;
 }
 
 /* ===== LISTS ===== */
 .markdown-content ul,
 .markdown-content ol {
-    margin: 4px 0;
-    padding-left: 20px;
+  margin: 4px 0;
+  padding-left: 20px;
 }
 
 .markdown-content ul {
-    list-style-type: disc;
+  list-style-type: disc;
 }
 
 .markdown-content ol {
-    list-style-type: decimal;
+  list-style-type: decimal;
 }
 
 .markdown-content li {
-    margin: 2px 0;
+  margin: 2px 0;
 }
 
 /* Nested lists */
 .markdown-content ul ul,
 .markdown-content ol ul {
-    list-style-type: circle;
+  list-style-type: circle;
 }
 
 .markdown-content ul ul ul,
 .markdown-content ol ul ul {
-    list-style-type: square;
+  list-style-type: square;
 }
 
 /* ===== HEADERS ===== */
@@ -145,177 +145,189 @@
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-    color: #ffffff;
-    font-weight: 700;
-    margin: 8px 0 4px 0;
-    line-height: 1.3;
+  color: #ffffff;
+  font-weight: 700;
+  margin: 8px 0 4px 0;
+  line-height: 1.3;
 }
 
-.markdown-content h1 { font-size: 1.5em; }
-.markdown-content h2 { font-size: 1.3em; }
-.markdown-content h3 { font-size: 1.15em; }
-.markdown-content h4 { font-size: 1.05em; }
-.markdown-content h5 { font-size: 1em; }
-.markdown-content h6 { font-size: 0.95em; }
+.markdown-content h1 {
+  font-size: 1.5em;
+}
+.markdown-content h2 {
+  font-size: 1.3em;
+}
+.markdown-content h3 {
+  font-size: 1.15em;
+}
+.markdown-content h4 {
+  font-size: 1.05em;
+}
+.markdown-content h5 {
+  font-size: 1em;
+}
+.markdown-content h6 {
+  font-size: 0.95em;
+}
 
 /* ===== PARAGRAPHS ===== */
 .markdown-content p {
-    margin: 4px 0;
+  margin: 0;
 }
 
 /* Remove margin for first/last elements */
 .markdown-content > *:first-child {
-    margin-top: 0;
+  margin-top: 0;
 }
 
 .markdown-content > *:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* ===== HORIZONTAL RULE ===== */
 .markdown-content hr {
-    border: none;
-    border-top: 1px solid #4f545c;
-    margin: 12px 0;
+  border: none;
+  border-top: 1px solid #4f545c;
+  margin: 12px 0;
 }
 
 /* ===== MENTIONS ===== */
 .markdown-content .mention {
-    background: rgba(88, 101, 242, 0.3);
-    color: #dee0fc;
-    padding: 0 2px;
-    border-radius: 3px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s ease;
+  background: rgba(88, 101, 242, 0.3);
+  color: #dee0fc;
+  padding: 0 2px;
+  border-radius: 3px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .markdown-content .mention:hover {
-    background: rgba(88, 101, 242, 0.5);
-    color: #ffffff;
+  background: rgba(88, 101, 242, 0.5);
+  color: #ffffff;
 }
 
 /* ===== GIF AND MEDIA RENDERING ===== */
 .markdown-content .message-gif {
-    max-width: 400px;
-    width: auto;
-    height: auto;
-    border-radius: 8px;
-    margin: 4px 0;
-    display: block;
+  max-width: 400px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  margin: 4px 0;
+  display: block;
 }
 
 .markdown-content img.message-gif,
 .markdown-content video.message-gif {
-    max-width: 400px;
-    width: auto;
-    height: auto;
-    border-radius: 8px;
-    margin: 4px 0;
-    display: block;
+  max-width: 400px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  margin: 4px 0;
+  display: block;
 }
 
 /* ===== STICKER RENDERING ===== */
 .markdown-content .message-sticker {
-    max-width: 160px;
-    max-height: 160px;
-    width: auto;
-    height: auto;
-    display: block;
-    margin: 4px 0;
+  max-width: 160px;
+  max-height: 160px;
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 4px 0;
 }
 
 /* ===== TABLES ===== */
 .markdown-content table {
-    border-collapse: collapse;
-    margin: 8px 0;
-    background: rgba(32, 34, 37, 0.3);
-    border-radius: 4px;
-    overflow: hidden;
+  border-collapse: collapse;
+  margin: 8px 0;
+  background: rgba(32, 34, 37, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .markdown-content th,
 .markdown-content td {
-    padding: 8px 12px;
-    border: 1px solid rgba(79, 84, 92, 0.5);
-    text-align: left;
+  padding: 8px 12px;
+  border: 1px solid rgba(79, 84, 92, 0.5);
+  text-align: left;
 }
 
 .markdown-content th {
-    background: rgba(32, 34, 37, 0.6);
-    font-weight: 700;
-    color: #ffffff;
+  background: rgba(32, 34, 37, 0.6);
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .markdown-content tr:hover {
-    background: rgba(79, 84, 92, 0.1);
+  background: rgba(79, 84, 92, 0.1);
 }
 
 /* ===== HIGHLIGHT.JS THEME OVERRIDES ===== */
 /* Adjust Monokai theme for Discord dark mode */
 .markdown-content .hljs {
-    background: #2f3136 !important;
-    color: #f8f8f2;
+  background: #2f3136 !important;
+  color: #f8f8f2;
 }
 
 /* Inline code trong code blocks */
 .markdown-content pre code .hljs-keyword {
-    color: #f92672;
+  color: #f92672;
 }
 
 .markdown-content pre code .hljs-string {
-    color: #e6db74;
+  color: #e6db74;
 }
 
 .markdown-content pre code .hljs-comment {
-    color: #75715e;
+  color: #75715e;
 }
 
 .markdown-content pre code .hljs-number {
-    color: #ae81ff;
+  color: #ae81ff;
 }
 
 .markdown-content pre code .hljs-function {
-    color: #a6e22e;
+  color: #a6e22e;
 }
 
 .markdown-content pre code .hljs-class {
-    color: #a6e22e;
+  color: #a6e22e;
 }
 
 .markdown-content pre code .hljs-built_in {
-    color: #66d9ef;
+  color: #66d9ef;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .markdown-content pre {
-        font-size: 0.8rem;
-    }
-    
-    .markdown-content code {
-        font-size: 0.8em;
-    }
+  .markdown-content pre {
+    font-size: 0.8rem;
+  }
+
+  .markdown-content code {
+    font-size: 0.8em;
+  }
 }
 
 /* ===== ACCESSIBILITY ===== */
 .markdown-content :focus-visible {
-    outline: 2px solid #00b0f4;
-    outline-offset: 2px;
-    border-radius: 2px;
+  outline: 2px solid #00b0f4;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* ===== SPOILERS (future feature) ===== */
 .markdown-content .spoiler {
-    background: #202225;
-    color: transparent;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+  background: #202225;
+  color: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .markdown-content .spoiler:hover,
 .markdown-content .spoiler.revealed {
-    background: rgba(79, 84, 92, 0.3);
-    color: #dcddde;
+  background: rgba(79, 84, 92, 0.3);
+  color: #dcddde;
 }
