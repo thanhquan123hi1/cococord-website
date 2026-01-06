@@ -643,13 +643,17 @@
   background: var(--light-bg);
 }
 
-/* ==================== DM CALL OVERLAY ==================== */
+/* ==================== DM CALL OVERLAY (DEPRECATED) ==================== */
+/* Legacy overlay - completely disabled, replaced by global CallManager */
 .dm-call-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
   position: fixed;
   inset: 0;
   z-index: 9999;
   background: rgba(0, 0, 0, 0.7);
-  display: flex;
   align-items: center;
   justify-content: center;
 }
