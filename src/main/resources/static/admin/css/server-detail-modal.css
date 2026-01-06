@@ -357,12 +357,34 @@
   background: var(--admin-surface);
   border-radius: var(--admin-radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .sdm-stat-item:hover {
   background: var(--admin-hover);
-  transform: translateX(2px);
+  transform: translateX(4px);
+  border-color: var(--admin-border-light);
+}
+
+.sdm-stat-item.active {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+}
+
+.sdm-stat-item.active .sdm-stat-label,
+.sdm-stat-item.active .sdm-stat-value {
+  color: white;
+}
+
+.sdm-stat-item.active .sdm-stat-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.sdm-stat-item.active:hover {
+  background: var(--admin-primary-hover);
+  transform: translateX(4px);
 }
 
 .sdm-stat-left {
@@ -508,6 +530,45 @@
 /* ========================================
    OVERVIEW TAB
    ======================================== */
+
+/* Sidebar Content Header (for Members, Channels, Roles views) */
+.sdm-sidebar-content-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.sdm-back-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--admin-surface-2);
+  border: 1px solid var(--admin-border-light);
+  border-radius: var(--admin-radius-md);
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sdm-back-btn:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+  border-color: var(--admin-border);
+}
+
+.sdm-back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sdm-sidebar-content-header .sdm-section-title {
+  margin: 0;
+  flex: 1;
+}
 
 .sdm-section {
   margin-bottom: var(--space-6);

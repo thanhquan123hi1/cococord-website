@@ -918,13 +918,7 @@
                 e.preventDefault();
                 const serverId = item.dataset.serverId;
                 
-                // Check if server is suspended
-                const server = servers.find(s => String(s.id) === String(serverId));
-                if (server && server.isSuspended) {
-                    showToast('Server này đã bị đình chỉ. Bạn không thể truy cập.', 'error');
-                    return;
-                }
-                
+                // Allow clicking on suspended servers - will show overlay inside
                 if (serverId && String(serverId) !== String(activeServerId)) {
                     await selectServer(Number(serverId));
                 }
@@ -1912,10 +1906,10 @@
             try { serverStatusSubscription.unsubscribe(); } catch (e) { /* ignore */ }
             serverStatusSubscription = null;
         }
-        serverStatusSubscription = stompClient.subscribe(`/topic/server.${serverId}.status`, (message) => {
+        serverStatusSubscription = stompClient.subscribe(`/topic/server.${serverId}.status`, async (message) => {
             try {
                 const event = JSON.parse(message.body);
-                handleServerStatusEvent(event);
+                await handleServerStatusEvent(event);
             } catch (e) {
                 console.error('[ServerStatus] Error handling status event:', e);
             }
@@ -1925,7 +1919,7 @@
     // ==================== SERVER LOCK/SUSPEND HANDLING ====================
     let currentServerStatus = { isLocked: false, isSuspended: false };
 
-    function handleServerStatusEvent(event) {
+    async function handleServerStatusEvent(event) {
         console.log('[ServerStatus] Received event:', event);
         const { type, payload } = event;
 
@@ -1940,7 +1934,7 @@
                 handleServerSuspended(payload);
                 break;
             case 'SERVER_UNSUSPENDED':
-                handleServerUnsuspended();
+                await handleServerUnsuspended(payload);
                 break;
             default:
                 console.warn('[ServerStatus] Unknown event type:', type);
@@ -2015,7 +2009,8 @@
         updateServerSidebarStatus();
     }
 
-    function handleServerUnsuspended() {
+    async function handleServerUnsuspended(payload) {
+        const wasSuspended = !!currentServerStatus.isSuspended;
         currentServerStatus.isSuspended = false;
         currentServerStatus.suspendReason = null;
 
@@ -2028,21 +2023,66 @@
 
         // Remove suspended overlay
         removeSuspendedOverlay();
-        
+
         // Update server sidebar
         updateServerSidebarStatus();
 
         showToast('Server đã được khôi phục hoạt động', 'success');
+
+        // If the user is currently viewing a previously-suspended server,
+        // reload channels/members so they can use it immediately without reloading.
+        if (!wasSuspended || !activeServerId) return;
+
+        try {
+            // Re-enable input if not locked
+            if (!currentServerStatus.isLocked) {
+                enableChatInput();
+            }
+
+            updateGlobalServerListActive();
+            clearMessages();
+
+            await Promise.all([
+                loadChannels(activeServerId),
+                loadMembers(activeServerId)
+            ]);
+
+            renderChannelList();
+            renderMembersList();
+
+            const nextChannelId = channels.length ? channels[0].id : null;
+            if (nextChannelId != null) {
+                await selectChannel(nextChannelId);
+                if (el.chatComposer) el.chatComposer.style.display = '';
+                if (el.chatEmpty) el.chatEmpty.style.display = 'none';
+            } else {
+                if (el.channelName) el.channelName.textContent = 'Chọn kênh';
+                if (el.chatComposer) el.chatComposer.style.display = 'none';
+                if (el.chatEmpty) el.chatEmpty.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('[ServerStatus] Failed to reload after unsuspend:', e);
+        }
+    }
+
+    const dismissedLockNoticeForServer = new Set();
+
+    function getLockedBlockMessage() {
+        const reason = currentServerStatus.lockReason || 'Không có lý do cụ thể';
+        return `Server đã bị khóa. Lý do: ${reason}`;
     }
 
     function showLockedBanner() {
         // Remove existing banner if any
         removeLockedBanner();
 
+        if (!activeServerId) return;
+        if (dismissedLockNoticeForServer.has(String(activeServerId))) return;
+
         const banner = document.createElement('div');
         banner.className = 'server-locked-banner';
         banner.id = 'serverLockedBanner';
-        
+
         let untilText = '';
         if (currentServerStatus.lockedUntil) {
             const until = new Date(currentServerStatus.lockedUntil);
@@ -2052,16 +2092,33 @@
         banner.innerHTML = `
             <i class="bi bi-lock-fill"></i>
             <div class="banner-content">
-                <div class="banner-title">Server đang bị khóa tạm thời</div>
+                <div class="banner-title">Server đang bị khóa</div>
                 <div class="banner-reason">Lý do: ${escapeHtml(currentServerStatus.lockReason || 'Không có lý do cụ thể')}</div>
                 ${untilText}
             </div>
+            <button class="banner-close" type="button" aria-label="Đóng thông báo" data-action="dismiss-lock-banner">
+                <i class="bi bi-x"></i>
+            </button>
         `;
 
-        // Insert banner at top of chat area
-        const chatArea = document.querySelector('.chat-area');
-        if (chatArea) {
-            chatArea.insertBefore(banner, chatArea.firstChild);
+        // Insert banner at top of the visible chat container
+        const host = document.querySelector('#chatApp .text-channel-view')
+            || document.querySelector('#chatApp .main-content')
+            || document.querySelector('#chatApp');
+
+        if (host) {
+            host.insertBefore(banner, host.firstChild);
+        }
+
+        // Dismiss handler (hide notice but keep restrictions)
+        const dismissBtn = banner.querySelector('[data-action="dismiss-lock-banner"]');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (activeServerId) dismissedLockNoticeForServer.add(String(activeServerId));
+                removeLockedBanner();
+            });
         }
     }
 
@@ -2071,6 +2128,30 @@
             banner.remove();
         }
     }
+
+    // Block all interactions inside the locked server UI (but allow switching servers)
+    document.addEventListener('click', (e) => {
+        if (!currentServerStatus?.isLocked) return;
+
+        const target = e.target;
+        if (!target) return;
+
+        // Allow switching servers / going home
+        if (target.closest('#mainServerSidebar')) return;
+
+        // Allow dismissing the banner
+        if (target.closest('#serverLockedBanner') && target.closest('[data-action="dismiss-lock-banner"]')) return;
+
+        // Only block within chat page content
+        if (!target.closest('#chatApp')) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        showToast(getLockedBlockMessage(), 'warning');
+        // If user dismissed notice earlier, don't force it back; otherwise keep it visible
+        showLockedBanner();
+    }, true);
 
     function showSuspendedOverlay() {
         // Remove existing overlay if any

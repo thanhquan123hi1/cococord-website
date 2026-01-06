@@ -14,6 +14,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
   let isOpen = false;
   let currentServer = null;
   let currentTab = 'overview';
+  let currentSidebarView = null; // 'members', 'channels', 'reports' or null
   let modalElement = null;
   let escapeKeyHandler = null;
   let isLoading = {
@@ -68,6 +69,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
     
     currentServer = server;
     currentTab = initialTab || 'overview';
+    currentSidebarView = null;
     isOpen = true;
     cachedReports = null;
     cachedAuditLogs = null;
@@ -95,6 +97,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
     console.log('[ServerDetailModal] Closing modal');
     isOpen = false;
     currentServer = null;
+    currentSidebarView = null;
     cachedReports = null;
     cachedAuditLogs = null;
     cachedMembers = null;
@@ -184,11 +187,11 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
   }
 
   function renderHeader(server, isLocked, isSuspended) {
-    let statusBadge = '<span class="sdm-badge sdm-badge-active">ACTIVE</span>';
+    let statusBadge = '<span class="sdm-badge sdm-badge-active">ĐANG HOẠT ĐỘNG</span>';
     if (isSuspended) {
-      statusBadge = '<span class="sdm-badge sdm-badge-suspended">SUSPENDED</span>';
+      statusBadge = '<span class="sdm-badge sdm-badge-suspended">TẠM NGƯNG</span>';
     } else if (isLocked) {
-      statusBadge = '<span class="sdm-badge sdm-badge-locked">LOCKED</span>';
+      statusBadge = '<span class="sdm-badge sdm-badge-locked">ĐÃ KHÓA</span>';
     }
     
     return `
@@ -234,20 +237,20 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
                   <line x1="2" y1="12" x2="22" y2="12"/>
                   <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                 </svg>
-                Public
+                Công khai
               ` : `
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                   <path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
-                Private
+                Riêng tư
               `}
             </div>
           </div>
           
-          <!-- Server Stats -->
+          <!-- Server Stats - Clickable Sidebar Buttons -->
           <div class="sdm-server-stats">
-            <div class="sdm-stat-item" data-stat="members">
+            <div class="sdm-stat-item" data-sidebar="members">
               <div class="sdm-stat-left">
                 <div class="sdm-stat-icon members">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -257,24 +260,24 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
                 </div>
-                <span class="sdm-stat-label">Members</span>
+                <span class="sdm-stat-label">Thành viên</span>
               </div>
               <span class="sdm-stat-value">${formatNumber(server.memberCount || 0)}</span>
             </div>
             
-            <div class="sdm-stat-item" data-stat="channels">
+            <div class="sdm-stat-item" data-sidebar="channels">
               <div class="sdm-stat-left">
                 <div class="sdm-stat-icon channels">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>
                   </svg>
                 </div>
-                <span class="sdm-stat-label">Channels</span>
+                <span class="sdm-stat-label">Kênh</span>
               </div>
               <span class="sdm-stat-value">${formatNumber(server.channelCount || 0)}</span>
             </div>
             
-            <div class="sdm-stat-item" data-stat="roles">
+            <div class="sdm-stat-item" data-sidebar="roles">
               <div class="sdm-stat-left">
                 <div class="sdm-stat-icon roles">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -285,12 +288,12 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
                     <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
                   </svg>
                 </div>
-                <span class="sdm-stat-label">Roles</span>
+                <span class="sdm-stat-label">Vai trò</span>
               </div>
               <span class="sdm-stat-value">${formatNumber(server.roleCount || 0)}</span>
             </div>
             
-            <div class="sdm-stat-item" data-stat="reports">
+            <div class="sdm-stat-item" data-sidebar="reports">
               <div class="sdm-stat-left">
                 <div class="sdm-stat-icon reports">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -300,7 +303,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
                     <line x1="9" y1="15" x2="15" y2="15"/>
                   </svg>
                 </div>
-                <span class="sdm-stat-label">Reports</span>
+                <span class="sdm-stat-label">Báo cáo</span>
               </div>
               <span class="sdm-stat-value">${formatNumber(server.reportCount || 0)}</span>
             </div>
@@ -312,12 +315,10 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
 
   function renderMainContent(server, isLocked, isSuspended) {
     const reportCount = server.reportCount || 0;
-    const memberCount = server.memberCount || 0;
-    const channelCount = server.channelCount || 0;
     
     return `
       <div class="sdm-main">
-        <!-- Tab Navigation -->
+        <!-- Tab Navigation - Only admin/overview tabs -->
         <div class="sdm-tabs">
           <button class="sdm-tab active" data-tab="overview">
             <svg class="sdm-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -327,23 +328,6 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
               <rect x="3" y="14" width="7" height="7"/>
             </svg>
             Tổng quan
-          </button>
-          <button class="sdm-tab" data-tab="members">
-            <svg class="sdm-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Thành viên
-            ${memberCount > 0 ? `<span class="sdm-tab-badge sdm-tab-badge-info">${formatNumber(memberCount)}</span>` : ''}
-          </button>
-          <button class="sdm-tab" data-tab="channels">
-            <svg class="sdm-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>
-            </svg>
-            Kênh
-            ${channelCount > 0 ? `<span class="sdm-tab-badge sdm-tab-badge-purple">${formatNumber(channelCount)}</span>` : ''}
           </button>
           <button class="sdm-tab" data-tab="reports">
             <svg class="sdm-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -373,6 +357,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
         ${renderOverviewTab(server, isLocked, isSuspended)}
         ${renderMembersTab(server)}
         ${renderChannelsTab(server)}
+        ${renderRolesTab(server)}
         ${renderReportsTab(server)}
         ${renderAuditTab(server)}
         ${renderActionsTab(server, isLocked, isSuspended)}
@@ -551,19 +536,59 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
       <div class="sdm-content" data-content="members">
         <div class="sdm-content-scroll">
           <div class="sdm-section">
-            <h4 class="sdm-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              DANH SÁCH THÀNH VIÊN
-              <span class="sdm-section-count">${formatNumber(memberCount)} thành viên</span>
-            </h4>
+            <div class="sdm-sidebar-content-header">
+              <button class="sdm-back-btn" data-action="back-to-overview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Quay lại
+              </button>
+              <h4 class="sdm-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                DANH SÁCH THÀNH VIÊN
+                <span class="sdm-section-count">${formatNumber(memberCount)}</span>
+              </h4>
+            </div>
           </div>
           <div class="sdm-members-list" id="sdm-members-list">
             ${memberCount === 0 ? renderEmptyState('members') : renderMembersLoading()}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  function renderRolesTab(server) {
+    const roleCount = server.roleCount || 0;
+    
+    return `
+      <div class="sdm-content" data-content="roles">
+        <div class="sdm-content-scroll">
+          <div class="sdm-section">
+            <div class="sdm-sidebar-content-header">
+              <button class="sdm-back-btn" data-action="back-to-overview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Quay lại
+              </button>
+              <h4 class="sdm-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="4"/>
+                </svg>
+                DANH SÁCH VAI TRÒ
+                <span class="sdm-section-count">${formatNumber(roleCount)}</span>
+              </h4>
+            </div>
+          </div>
+          <div class="sdm-roles-list" id="sdm-roles-list">
+            ${renderEmptyState('roles')}
           </div>
         </div>
       </div>
@@ -611,7 +636,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
             <span class="sdm-member-id">ID: ${member.userId || member.id}</span>
           </div>
           <div class="sdm-member-status-badge ${isOnline ? 'online' : 'offline'}">
-            ${isOnline ? 'Đang online' : 'Offline'}
+            ${isOnline ? 'Đang trực tuyến' : 'Ngoại tuyến'}
           </div>
         </div>
       `;
@@ -629,13 +654,21 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
       <div class="sdm-content" data-content="channels">
         <div class="sdm-content-scroll">
           <div class="sdm-section">
-            <h4 class="sdm-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>
-              </svg>
-              DANH SÁCH KÊNH
-              <span class="sdm-section-count">${formatNumber(channelCount)} kênh</span>
-            </h4>
+            <div class="sdm-sidebar-content-header">
+              <button class="sdm-back-btn" data-action="back-to-overview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Quay lại
+              </button>
+              <h4 class="sdm-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>
+                </svg>
+                DANH SÁCH KÊNH
+                <span class="sdm-section-count">${formatNumber(channelCount)}</span>
+              </h4>
+            </div>
           </div>
           <div class="sdm-channels-list" id="sdm-channels-list">
             ${channelCount === 0 ? renderEmptyState('channels') : renderChannelsLoading()}
@@ -927,6 +960,14 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
         </svg>`,
         title: 'Chưa có lịch sử hoạt động',
         text: 'Các hoạt động sẽ xuất hiện ở đây.'
+      },
+      roles: {
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>`,
+        title: 'Chưa có vai trò',
+        text: 'Server này chưa có vai trò tùy chỉnh nào.'
       }
     };
     
@@ -1058,6 +1099,11 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
       tab.addEventListener('click', () => handleTabChange(tab.dataset.tab));
     });
     
+    // Sidebar button clicks
+    modalElement.querySelectorAll('.sdm-stat-item[data-sidebar]').forEach(item => {
+      item.addEventListener('click', () => handleSidebarClick(item.dataset.sidebar));
+    });
+    
     // Warning banner actions
     modalElement.querySelectorAll('.sdm-warning-action').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1083,13 +1129,68 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
   }
 
   function handleTabChange(tab) {
-    if (tab === currentTab) return;
+    if (tab === currentTab && !currentSidebarView) return;
     
+    // Clear sidebar view when switching to topbar tabs
+    currentSidebarView = null;
+    updateSidebarActiveState();
     switchTab(tab);
+  }
+  
+  function handleSidebarClick(view) {
+    if (view === currentSidebarView) return;
+    
+    currentSidebarView = view;
+    updateSidebarActiveState();
+    
+    // Show corresponding content in main area
+    if (view === 'members') {
+      switchToSidebarContent('members');
+      if (!cachedMembers) loadMembers();
+    } else if (view === 'channels') {
+      switchToSidebarContent('channels');
+      if (!cachedChannels) loadChannels();
+    } else if (view === 'reports') {
+      // Reports is both sidebar and topbar - switch to reports tab
+      currentSidebarView = null;
+      updateSidebarActiveState();
+      switchTab('reports');
+    } else if (view === 'roles') {
+      // Roles - show message for now
+      switchToSidebarContent('roles');
+    }
+  }
+  
+  function updateSidebarActiveState() {
+    if (!modalElement) return;
+    modalElement.querySelectorAll('.sdm-stat-item[data-sidebar]').forEach(item => {
+      item.classList.toggle('active', item.dataset.sidebar === currentSidebarView);
+    });
+    
+    // Also update topbar tabs - clear active if showing sidebar content
+    if (currentSidebarView) {
+      modalElement.querySelectorAll('.sdm-tab').forEach(t => t.classList.remove('active'));
+    }
+  }
+  
+  function switchToSidebarContent(view) {
+    // Hide all tab contents
+    modalElement.querySelectorAll('.sdm-content').forEach(c => {
+      c.classList.remove('active');
+    });
+    
+    // Show the sidebar content
+    const content = modalElement.querySelector(`[data-content="${view}"]`);
+    if (content) {
+      content.classList.add('active');
+      content.style.animation = 'sdmTabFadeIn 0.3s ease forwards';
+    }
   }
   
   function switchTab(tab) {
     currentTab = tab;
+    currentSidebarView = null;
+    updateSidebarActiveState();
     
     // Update tab UI with animation
     modalElement.querySelectorAll('.sdm-tab').forEach(t => {
@@ -1107,11 +1208,7 @@ var ServerDetailModal = window.ServerDetailModal || (function() {
     });
     
     // Load data for tab if needed
-    if (tab === 'members' && !cachedMembers) {
-      loadMembers();
-    } else if (tab === 'channels' && !cachedChannels) {
-      loadChannels();
-    } else if (tab === 'reports' && !cachedReports) {
+    if (tab === 'reports' && !cachedReports) {
       loadReports();
     } else if (tab === 'audit' && !cachedAuditLogs) {
       loadAuditLogs();

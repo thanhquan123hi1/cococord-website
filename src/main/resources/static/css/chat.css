@@ -2400,6 +2400,21 @@ body {
     animation: slideDown 0.3s ease-out;
 }
 
+.server-locked-banner .banner-close {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 6px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.server-locked-banner .banner-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-normal);
+}
+
 .server-locked-banner i {
     font-size: 18px;
     flex-shrink: 0;
@@ -2546,7 +2561,7 @@ body {
 .server-item.server-suspended {
     opacity: 0.4;
     filter: grayscale(100%);
-    pointer-events: none;
+  cursor: pointer;
     position: relative;
 }
 

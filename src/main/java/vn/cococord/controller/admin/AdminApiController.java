@@ -2,6 +2,7 @@ package vn.cococord.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,8 +17,13 @@ import vn.cococord.dto.request.AdminCreateUserRequest;
 import vn.cococord.dto.request.AdminRoleRequest;
 import vn.cococord.dto.request.AdminSettingsRequest;
 import vn.cococord.dto.response.*;
+import vn.cococord.entity.mysql.Channel;
+import vn.cococord.entity.mysql.ServerMember;
+import vn.cococord.repository.IChannelRepository;
+import vn.cococord.repository.IServerMemberRepository;
 import vn.cococord.service.IAdminService;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,6 +37,8 @@ import java.util.Map;
 public class AdminApiController {
 
     private final IAdminService adminService;
+    private final IServerMemberRepository serverMemberRepository;
+    private final IChannelRepository channelRepository;
 
     // ================== Dashboard ==================
 
@@ -225,6 +233,58 @@ public class AdminApiController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(adminService.getServerReports(serverId, pageable));
+    }
+
+    @GetMapping("/servers/{serverId}/members")
+    public ResponseEntity<Page<ServerMemberResponse>> getServerMembers(
+            @PathVariable Long serverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<ServerMember> allMembers = serverMemberRepository.findByServerId(serverId);
+        int start = page * size;
+        int end = Math.min(start + size, allMembers.size());
+        List<ServerMemberResponse> pageContent = allMembers.stream()
+                .skip(start)
+                .limit(size)
+                .map(member -> ServerMemberResponse.builder()
+                        .id(member.getId())
+                        .serverId(member.getServer().getId())
+                        .userId(member.getUser().getId())
+                        .username(member.getUser().getUsername())
+                        .displayName(
+                                member.getNickname() != null ? member.getNickname() : member.getUser().getDisplayName())
+                        .avatarUrl(member.getUser().getAvatarUrl())
+                        .nickname(member.getNickname())
+                        .joinedAt(member.getJoinedAt())
+                        .build())
+                .toList();
+        return ResponseEntity.ok(new PageImpl<>(pageContent, PageRequest.of(page, size), allMembers.size()));
+    }
+
+    @GetMapping("/servers/{serverId}/channels")
+    public ResponseEntity<Page<ChannelResponse>> getServerChannels(
+            @PathVariable Long serverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        List<Channel> allChannels = channelRepository.findByServerIdOrderByPosition(serverId);
+        int start = page * size;
+        int end = Math.min(start + size, allChannels.size());
+        List<ChannelResponse> pageContent = allChannels.stream()
+                .skip(start)
+                .limit(size)
+                .map(channel -> ChannelResponse.builder()
+                        .id(channel.getId())
+                        .serverId(channel.getServer().getId())
+                        .name(channel.getName())
+                        .type(channel.getType().name())
+                        .position(channel.getPosition())
+                        .topic(channel.getTopic())
+                        .categoryId(channel.getCategory() != null ? channel.getCategory().getId() : null)
+                        .categoryName(channel.getCategory() != null ? channel.getCategory().getName() : null)
+                        .createdAt(channel.getCreatedAt())
+                        .build())
+                .toList();
+        return ResponseEntity.ok(new PageImpl<>(pageContent, PageRequest.of(page, size), allChannels.size()));
     }
 
     // ================== Report Management ==================
