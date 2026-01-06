@@ -1,24 +1,33 @@
 package vn.cococord.controller.user;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import vn.cococord.dto.request.CreateDMGroupRequest;
 import vn.cococord.dto.request.SendFriendRequestRequest;
 import vn.cococord.dto.response.DMGroupResponse;
 import vn.cococord.dto.response.FriendRequestResponse;
 import vn.cococord.dto.response.MessageResponse;
 import vn.cococord.dto.response.UserProfileResponse;
+import vn.cococord.service.IDMGroupService;
 import vn.cococord.service.IFriendService;
 import vn.cococord.service.IPresenceService;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * REST Controller for Friend & Direct Message Management
@@ -31,6 +40,7 @@ public class FriendController {
 
     private final IFriendService friendService;
     private final IPresenceService presenceService;
+    private final IDMGroupService dmGroupService;
 
     // ===== FRIEND MANAGEMENT =====
 
@@ -199,7 +209,6 @@ public class FriendController {
     }
 
     // ===== DIRECT MESSAGE GROUPS =====
-    // TODO: Implement DMService and related endpoints
 
     /**
      * GET /api/friends/dm-groups
@@ -208,7 +217,8 @@ public class FriendController {
     @GetMapping("/dm-groups")
     public ResponseEntity<List<DMGroupResponse>> getDMGroups(
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(List.of());
+        List<DMGroupResponse> groups = dmGroupService.getDMGroupsForUser(userDetails.getUsername());
+        return ResponseEntity.ok(groups);
     }
 
     /**
@@ -219,7 +229,8 @@ public class FriendController {
     public ResponseEntity<DMGroupResponse> createDMGroup(
             @Valid @RequestBody CreateDMGroupRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(DMGroupResponse.builder().build());
+        DMGroupResponse response = dmGroupService.createDMGroup(request, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -230,7 +241,8 @@ public class FriendController {
     public ResponseEntity<DMGroupResponse> getDMGroup(
             @PathVariable Long groupId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(DMGroupResponse.builder().build());
+        DMGroupResponse response = dmGroupService.getDMGroup(groupId, userDetails.getUsername());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -241,6 +253,7 @@ public class FriendController {
     public ResponseEntity<MessageResponse> leaveDMGroup(
             @PathVariable Long groupId,
             @AuthenticationPrincipal UserDetails userDetails) {
+        dmGroupService.leaveDMGroup(groupId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Left DM group successfully"));
     }
 
@@ -253,6 +266,7 @@ public class FriendController {
             @PathVariable Long groupId,
             @RequestParam Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
+        dmGroupService.addMemberToDMGroup(groupId, userId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Member added to DM group"));
     }
 
@@ -265,6 +279,19 @@ public class FriendController {
             @PathVariable Long groupId,
             @PathVariable Long userId,
             @AuthenticationPrincipal UserDetails userDetails) {
+        dmGroupService.removeMemberFromDMGroup(groupId, userId, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Member removed from DM group"));
+    }
+
+    /**
+     * POST /api/friends/dm/{userId}
+     * Get or create a 1-1 DM with a specific user
+     */
+    @PostMapping("/dm/{userId}")
+    public ResponseEntity<DMGroupResponse> getOrCreateOneToOneDM(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        DMGroupResponse response = dmGroupService.getOrCreateOneToOneDM(userId, userDetails.getUsername());
+        return ResponseEntity.ok(response);
     }
 }

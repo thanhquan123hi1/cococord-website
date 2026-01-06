@@ -1,12 +1,11 @@
 package vn.cococord.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @Builder
@@ -14,8 +13,20 @@ import java.util.List;
 @AllArgsConstructor
 public class SendDirectMessageRequest {
 
-    @NotBlank(message = "Message content cannot be empty")
     private String content;
 
     private List<String> attachmentUrls;
+
+    /**
+     * Message type: TEXT, IMAGE, FILE, STICKER, GIF, AUDIO, VIDEO
+     * Default is TEXT if not specified
+     */
+    private String type;
+
+    /**
+     * JSON string containing additional metadata for sticker/gif
+     * Example for sticker: {"stickerId": "123", "packId": "456"}
+     * Example for GIF: {"gifId": "abc", "source": "tenor"}
+     */
+    private String metadata;
 }

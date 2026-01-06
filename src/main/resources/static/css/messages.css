@@ -1699,6 +1699,33 @@ html, body {
     word-wrap: break-word;
 }
 
+/* Updated message wrapper support */
+.message-content-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+.message-row.is-sequence {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.message-row.is-sequence .timestamp-hover {
+    width: 40px;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+    opacity: 0;
+    user-select: none;
+    line-height: 1.375rem;
+    padding-right: 4px;
+}
+.message-row.is-sequence:hover .timestamp-hover {
+    opacity: 1;
+}
+.message-row.is-sequence .message-avatar {
+    display: none;
+}
+
+
 .message-content a {
     color: var(--text-link);
 }
@@ -1920,3 +1947,547 @@ html, body {
     margin-top: 4px;
     margin-bottom: 2px;
 }
+
+/* ==================== RICH CONTENT STYLES ==================== */
+
+/* Sticker & GIF */
+.message-sticker {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    margin-top: 4px;
+}
+
+.message-gif {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    margin-top: 4px;
+}
+
+/* Attachments */
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.attachment-item {
+    max-width: 100%;
+}
+
+.attachment-image {
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--bg-modifier-hover);
+    transition: transform 0.2s ease;
+}
+
+.attachment-image:hover {
+    transform: scale(1.01);
+}
+
+.attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    border: 1px solid var(--bg-tertiary);
+    text-decoration: none;
+    color: var(--text-normal);
+    min-width: 200px;
+}
+
+.attachment-file:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+.attachment-file i {
+    font-size: 24px;
+    color: var(--discord-primary);
+}
+
+/* Spacer cho tin nhắn liên tiếp */
+.message-avatar-spacer {
+    width: 40px; /* Khớp với width của avatar */
+    flex-shrink: 0;
+}
+
+/* Cải thiện hiển thị Markdown */
+.message-content.markdown-content p {
+    margin: 0 !important;
+}
+
+/* Style cho ChatInputManager (nếu chưa có) */
+.composer-box {
+    display: flex;
+    align-items: center;
+    background: var(--channel-text-area-bg);
+    border-radius: 8px;
+    padding: 0 16px;
+    min-height: 44px;
+}
+
+.composer-btn {
+    background: none;
+    border: none;
+    color: var(--interactive-normal);
+    padding: 8px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: color 0.1s;
+}
+
+.composer-btn:hover {
+    color: var(--interactive-hover);
+}
+
+/* ==================== CHAT INPUT AREA (COMPOSER) ==================== */
+.chat-input-area {
+    padding: 0 16px 24px 16px;
+    background-color: var(--bg-primary); /* Đảm bảo trùng màu nền chính */
+    flex-shrink: 0;
+}
+
+.chat-composer {
+    position: relative;
+    background-color: var(--channel-text-area-bg, #383a40);
+    border-radius: 8px;
+    margin-top: -8px; /* Điều chỉnh vị trí */
+}
+
+.composer-box {
+    display: flex;
+    align-items: flex-start; /* Để textarea giãn nở */
+    padding: 10px;
+}
+
+/* Nút bấm trong composer */
+.composer-btn {
+    background: none;
+    border: none;
+    color: var(--interactive-normal, #b5bac1);
+    cursor: pointer;
+    padding: 8px 10px; /* Tăng vùng bấm */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.composer-btn:hover {
+    color: var(--interactive-hover, #dbdee1);
+}
+
+.composer-btn i {
+    font-size: 20px;
+}
+
+/* Khu vực input text */
+.input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+#messageInput {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-normal, #dbdee1);
+    resize: none;
+    font-size: 1rem;
+    line-height: 1.375rem;
+    height: 44px; /* Chiều cao mặc định */
+    padding: 10px 0;
+}
+
+#messageInput:focus {
+    outline: none;
+}
+
+/* Scrollbar cho input */
+.input-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+.input-wrapper::-webkit-scrollbar-thumb {
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+/* File Preview (Do ChatInputManager sinh ra) */
+.attachment-preview-container {
+    display: flex;
+    padding: 10px 10px 0 10px;
+    gap: 10px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--bg-modifier-accent, rgba(255,255,255,0.06));
+}
+
+.attachment-preview-item {
+    position: relative;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+    max-width: 200px;
+}
+
+.preview-media {
+    max-width: 100%;
+    max-height: 100px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.preview-remove-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--discord-red, #ed4245);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+/* ==================== MESSAGE CONTENT STYLES ==================== */
+
+/* Sticker */
+.message-sticker {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    margin-top: 4px;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.message-sticker:hover {
+    transform: scale(1.02);
+}
+
+/* GIF */
+.message-gif {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Attachments Layout */
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.attachment-image {
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.attachment-video {
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 8px;
+}
+
+/* File Card Style */
+.attachment-file-card {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 10px;
+    text-decoration: none;
+    color: var(--text-normal);
+    gap: 10px;
+    min-width: 200px;
+    transition: background-color 0.2s;
+}
+
+.attachment-file-card:hover {
+    background-color: var(--bg-modifier-hover);
+}
+
+.file-icon {
+    font-size: 24px;
+    color: var(--text-muted);
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-name {
+    font-weight: 500;
+    color: var(--text-link);
+}
+
+.file-size {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ==================== RICH CONTENT (THÊM MỚI) ==================== */
+
+/* Sticker */
+.message-sticker {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    display: block;
+    margin-top: 5px;
+    transition: transform 0.2s;
+}
+.message-sticker:hover { transform: scale(1.05); }
+
+/* GIF */
+.message-gif {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Image (single image message) */
+.message-image {
+    max-width: 100%;
+    max-height: 350px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 5px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.message-image:hover {
+    opacity: 0.9;
+}
+
+/* Video (inline video message) */
+.message-video {
+    max-width: 100%;
+    max-height: 350px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Audio (inline audio message) */
+.message-audio {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 5px;
+}
+
+/* System message (join, leave, etc.) */
+.system-message {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 4px 0;
+}
+.system-message em {
+    font-style: italic;
+}
+
+/* Attachments */
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.attachment-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.attachment-video {
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 8px;
+}
+
+.attachment-file-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 5px;
+    color: var(--text-normal);
+    text-decoration: none;
+}
+.attachment-file-card:hover { background: var(--bg-modifier-hover); }
+
+/* Composer Input Styles (Cho ChatInputManager) */
+.chat-composer {
+    background-color: var(--channel-text-area-bg, #383a40);
+    border-radius: 8px;
+    padding: 0;
+}
+.composer-box {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+}
+.input-wrapper { flex: 1; margin: 0 8px; }
+.input-wrapper textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: white;
+    resize: none;
+    height: 30px;
+    padding-top: 4px;
+}
+.input-wrapper textarea:focus { outline: none; }
+.composer-btn {
+    background: none;
+    border: none;
+    color: #b5bac1;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 4px 8px;
+}
+.composer-btn:hover { color: #dbdee1; }
+
+/* Preview container (quan trọng cho upload file) */
+.attachment-preview-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    overflow-x: auto;
+}
+.attachment-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+.preview-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.preview-remove-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* ==================== TYPING INDICATOR ==================== */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: transparent;
+  font-size: 13px;
+  color: var(--text-muted);
+  animation: fadeInUp 0.2s ease;
+  position: absolute;
+  bottom: 70px; /* Above chat input */
+  left: 0;
+  width: 100%;
+  pointer-events: none; /* Let clicks pass through */
+  z-index: 10;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.typing-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.typing-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-left: -8px;
+  border: 2px solid var(--bg-primary);
+}
+
+.typing-avatar:first-child { margin-left: 0; }
+
+.typing-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+.typing-text { flex: 1; margin-left: 8px; }
+.typing-text strong { color: var(--text-normal); font-weight: 600; }

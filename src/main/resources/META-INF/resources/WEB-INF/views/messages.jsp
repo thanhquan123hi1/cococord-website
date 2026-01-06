@@ -57,17 +57,29 @@
             <div class="messages-list" id="messagesList"></div>
         </section>
 
-        <form class="composer" id="composer" style="display: none;" autocomplete="off">
-            <div class="composer-inner">
-                <button class="composer-btn" type="button" title="Đính kèm tệp"><i class="bi bi-plus-circle"></i></button>
-                <input id="messageInput" class="composer-input" type="text" placeholder="Nhắn tin tới @User" />
-                <div class="composer-actions">
-                    <button class="composer-btn" type="button" title="Chọn GIF"><i class="bi bi-filetype-gif"></i></button>
-                    <button class="composer-btn" type="button" title="Chọn sticker"><i class="bi bi-sticky"></i></button>
-                    <button class="composer-btn" type="button" title="Chọn emoji"><i class="bi bi-emoji-smile"></i></button>
+        <div class="chat-input-area">
+            <div id="composer" class="chat-composer">
+                <div class="composer-box">
+                    <button type="button" id="attachBtn" class="composer-btn" title="Đính kèm file">
+                        <i class="bi bi-plus-circle-fill"></i>
+                    </button>
+                    
+                    <div class="input-wrapper">
+                        <textarea id="messageInput" placeholder="Nhắn tin..." rows="1"></textarea>
+                    </div>
+                    
+                    <div class="composer-tools">
+                        <button type="button" id="gifBtn" class="composer-btn"><i class="bi bi-filetype-gif"></i></button>
+                        <button type="button" id="stickerBtn" class="composer-btn"><i class="bi bi-stickies-fill"></i></button>
+                        <button type="button" id="emojiBtn" class="composer-btn"><i class="bi bi-emoji-smile-fill"></i></button>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
+
+        <script src="${pageContext.request.contextPath}/js/markdown-renderer.js"></script>
+        <script src="${pageContext.request.contextPath}/js/chat-input-manager.js"></script>
+        <script src="${pageContext.request.contextPath}/js/messages.js"></script>
     </main>
 
     <!-- User Profile Panel (right sidebar) -->

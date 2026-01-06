@@ -15,7 +15,12 @@
         otherUser: null,
         messages: [],
         stomp: null,
-        dmSearch: ''
+        dmSearch: '',
+        // Typing indicator state
+        typingUsers: new Map(), // username -> { timeout, displayName, avatarUrl }
+        isCurrentlyTyping: false,
+        typingTimeout: null,
+        stopTypingTimeout: null
     };
 
     // ==================== CALL (WebRTC + WebSocket signaling) ====================
@@ -47,6 +52,8 @@
         messagesArea: () => document.getElementById('messagesArea'),
         messagesList: () => document.getElementById('messagesList'),
         emptyState: () => document.getElementById('emptyState'),
+        // Typing indicator container - will be inserted dynamically
+        typingIndicator: () => document.getElementById('typingIndicator'),
         dmStart: () => document.getElementById('dmStart'),
         dmStartAvatar: () => document.getElementById('dmStartAvatar'),
         dmStartName: () => document.getElementById('dmStartName'),
@@ -312,6 +319,129 @@
             await apiJson(`/api/direct-messages/${encodeURIComponent(state.dmGroupId)}/read`, { method: 'POST' });
         } catch (_) { /* ignore */ }
     }
+    // TYPING INDICATOR ====================
+    function renderTypingIndicator() {
+        let indicator = document.getElementById('typingIndicator');
+        const container = els.messagesArea(); 
+        
+        if (state.typingUsers.size === 0) {
+            if (indicator) indicator.remove();
+            return;
+        }
+        
+        // Create if not exists
+        if (!indicator && container) {
+            indicator = document.createElement('div');
+            indicator.id = 'typingIndicator';
+            indicator.className = 'typing-indicator';
+            // Insert at the bottom of messages area, or before the input area if it was outside
+            // In layout, messagesArea is the scrolling container. 
+            // We usually want it floating at bottom or just appended.
+            // Let's append to messagesArea
+            container.appendChild(indicator);
+        }
+        
+        if (!indicator) return;
+
+        const users = Array.from(state.typingUsers.values());
+        const avatarsHtml = users.slice(0, 3).map(u => `
+            <div class="typing-avatar">
+                ${u.avatarUrl ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">` : escapeHtml((u.displayName || 'U').charAt(0).toUpperCase())}
+            </div>
+        `).join('');
+        
+        let text = '';
+        if (users.length === 1) {
+            text = `<strong>${escapeHtml(users[0].displayName)}</strong> đang nhập...`;
+        } else if (users.length === 2) {
+            text = `<strong>${escapeHtml(users[0].displayName)}</strong> và <strong>${escapeHtml(users[1].displayName)}</strong> đang nhập...`;
+        } else if (users.length > 2) {
+            text = `<strong>${escapeHtml(users[0].displayName)}</strong> và ${users.length - 1} người khác đang nhập...`;
+        }
+        
+        indicator.innerHTML = `
+            <div class="typing-avatars">${avatarsHtml}</div>
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="typing-text">${text}</div>
+        `;
+        
+        // Scroll to see typing if near bottom
+        scrollToBottom();
+    }
+
+    function addTypingUser(username, displayName, avatarUrl) {
+        // Don't show own typing
+        if (state.currentUser && username === state.currentUser.username) return;
+        
+        // Clear existing timeout
+        const existing = state.typingUsers.get(username);
+        if (existing?.timeout) clearTimeout(existing.timeout);
+        
+        // Set new timeout (auto-hide after 5 seconds if no new event)
+        const timeout = setTimeout(() => {
+            state.typingUsers.delete(username);
+            renderTypingIndicator();
+        }, 5000);
+        
+        state.typingUsers.set(username, { displayName, avatarUrl, timeout });
+        renderTypingIndicator();
+    }
+
+    function removeTypingUser(username) {
+        const existing = state.typingUsers.get(username);
+        if (existing?.timeout) clearTimeout(existing.timeout);
+        state.typingUsers.delete(username);
+        renderTypingIndicator();
+    }
+
+    // Send typing notification
+    function sendTypingNotification() {
+        if (!state.stomp || !state.stomp.connected || !state.dmGroupId) return;
+        
+        // Send "start typing" if not already typing
+        if (!state.isCurrentlyTyping) {
+            state.isCurrentlyTyping = true;
+            try {
+                state.stomp.send('/app/chat.dm.typing', {}, JSON.stringify({
+                    channelId: state.dmGroupId, // reusing channelId field for dmGroupId in DTO if needed, or backend handles it
+                    dmGroupId: state.dmGroupId,
+                    isTyping: true
+                }));
+            } catch (_) { /* ignore */ }
+        }
+        
+        if (state.stopTypingTimeout) clearTimeout(state.stopTypingTimeout);
+        
+        state.stopTypingTimeout = setTimeout(() => {
+            sendStopTypingNotification();
+        }, 2000);
+        
+        if (state.typingTimeout) clearTimeout(state.typingTimeout);
+        state.typingTimeout = setTimeout(() => {
+            const input = els.messageInput();
+            if (document.activeElement === input && input?.value?.trim()) {
+                state.isCurrentlyTyping = false; // Reset so next keystroke sends typing again
+            }
+        }, 3000);
+    }
+
+    function sendStopTypingNotification() {
+        if (!state.stomp || !state.stomp.connected || !state.dmGroupId) return;
+        
+        if (state.isCurrentlyTyping) {
+            state.isCurrentlyTyping = false;
+            try {
+                state.stomp.send('/app/chat.dm.typing', {}, JSON.stringify({
+                    dmGroupId: state.dmGroupId,
+                    isTyping: false
+                }));
+            } catch (_) { /* ignore */ }
+        }
+    }
+
+    // ==================== 
 
     // ==================== RENDER FUNCTIONS ====================
     // REMOVED: renderUserPanel() - now handled by global UserPanel component (user-panel.js)
@@ -446,13 +576,225 @@
         if (infoEl) infoEl.textContent = `Đây là khởi đầu cuộc trò chuyện của bạn với ${username}.`;
     }
 
+    let chatInputManager = null;
+
+    // ==================== INITIALIZATION ====================
+    function initChatInputManager() {
+        if (chatInputManager) chatInputManager.destroy();
+        
+        // Kiểm tra thư viện đã load chưa
+        if (typeof ChatInputManager === 'undefined') {
+            console.warn('[Messages] ChatInputManager not loaded');
+            return;
+        }
+
+        // Support both /app (dmComposer) and /messages (composer) pages
+        const composerEl = document.getElementById('dmComposer') || document.getElementById('composer');
+        const inputEl = document.getElementById('dmMessageInput') || document.getElementById('messageInput');
+        
+        if (!composerEl || !inputEl) {
+            console.warn('[Messages] Composer elements not found');
+            return;
+        }
+
+        const composerSelector = composerEl.id === 'dmComposer' ? '#dmComposer' : '#composer';
+        const inputSelector = inputEl.id === 'dmMessageInput' ? '#dmMessageInput' : '#messageInput';
+
+        console.log('[Messages] Initializing ChatInputManager with:', { composerSelector, inputSelector });
+
+        chatInputManager = new ChatInputManager({
+            composerSelector: composerSelector,
+            inputSelector: inputSelector,
+            attachBtnSelector: '#attachBtn',
+            emojiBtnSelector: '#emojiBtn',
+            gifBtnSelector: '#gifBtn',
+            stickerBtnSelector: '#stickerBtn',
+            
+            // Gửi tin nhắn (Text + File)
+            onSendMessage: async (text, files) => {
+                const filesToSend = files || chatInputManager.getAttachedFiles();
+                if (filesToSend.length > 0) {
+                    await uploadAndSendFiles(filesToSend, text);
+                } else if (text.trim()) {
+                    await sendMessage(text);
+                }
+            },
+            // Gửi GIF
+            onSendGif: async (gifUrl, gifData) => {
+                await sendRichMessage(gifUrl, 'GIF', gifData);
+            },
+            // Gửi Sticker
+            onSendSticker: async (stickerId, stickerUrl) => {
+                await sendRichMessage(stickerUrl, 'STICKER', { stickerId });
+            },
+            // Typing events
+            onTypingStart: () => sendTypingNotification(),
+            onTypingEnd: () => sendStopTypingNotification()
+        });
+        
+        console.log('[Messages] ChatInputManager initialized successfully');
+    }
+
+    // ==================== RICH MESSAGE ACTIONS ====================
+
+    async function uploadAndSendFiles(files, textContent) {
+        if (!state.dmGroupId) return;
+        try {
+            const uploadedAttachments = [];
+            // Upload từng file
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Gọi API upload (dùng chung với server chat)
+                const res = await fetch('/api/upload', {
+                    method: 'POST', 
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    uploadedAttachments.push({
+                        fileName: data.fileName || file.name,
+                        fileUrl: data.fileUrl,
+                        fileType: data.fileType || file.type,
+                        fileSize: data.fileSize || file.size
+                    });
+                }
+            }
+
+            // Determine message type based on uploaded files
+            let messageType = 'TEXT';
+            if (uploadedAttachments.length > 0) {
+                const hasImage = uploadedAttachments.some(att => att.fileType && att.fileType.startsWith('image/'));
+                const hasVideo = uploadedAttachments.some(att => att.fileType && att.fileType.startsWith('video/'));
+                
+                if (hasImage) {
+                    messageType = 'IMAGE';
+                } else if (hasVideo) {
+                    messageType = 'VIDEO';
+                } else {
+                    messageType = 'FILE';
+                }
+            }
+
+            // Extract attachment URLs for the API
+            const attachmentUrls = uploadedAttachments.map(att => att.fileUrl);
+
+            // Build metadata with file details
+            const metadata = uploadedAttachments.length > 0 
+                ? JSON.stringify({ files: uploadedAttachments })
+                : null;
+
+            // Gửi tin nhắn với định dạng đúng DTO
+            await apiJson(`/api/direct-messages/${state.dmGroupId}/messages`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    content: textContent || '',
+                    attachmentUrls: attachmentUrls,
+                    type: messageType,
+                    metadata: metadata
+                })
+            });
+
+            // Clear input sau khi gửi xong
+            if (chatInputManager) {
+                chatInputManager.clearAttachments();
+                if (chatInputManager.inputEl) chatInputManager.inputEl.value = '';
+            }
+            
+            // Load lại tin nhắn mới nhất (hoặc chờ websocket)
+            await loadDmGroupAndMessages(); 
+
+        } catch (e) {
+            console.error("Upload error:", e);
+            alert("Lỗi khi gửi file!");
+        }
+    }
+
+    // Gửi tin nhắn đặc biệt (Sticker/GIF)
+    async function sendRichMessage(content, type, metadata = null) {
+        if (!state.dmGroupId) return;
+        try {
+            // Build payload theo đúng DTO SendDirectMessageRequest
+            const payload = {
+                content: content,                    // URL của sticker hoặc GIF
+                attachmentUrls: [],                  // Mảng rỗng cho sticker/GIF
+                type: type,                          // 'STICKER' hoặc 'GIF'
+                metadata: metadata ? JSON.stringify(metadata) : null  // Convert object to JSON string
+            };
+
+            await apiJson(`/api/direct-messages/${state.dmGroupId}/messages`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            // Không cần load lại vì WebSocket sẽ broadcast tin nhắn mới
+            // await loadDmGroupAndMessages();
+        } catch (e) {
+            console.error(`Error sending ${type}:`, e);
+        }
+    }
+    function handleNewMessage(msg) {
+        state.messages.push(msg);
+        renderMessages();
+        scrollToBottom();
+    }
+    // ==================== RENDERING IMPROVEMENTS ====================
+
+    function renderAttachments(msg) {
+        if (!msg.attachments || msg.attachments.length === 0) return '';
+        
+        let html = '<div class="message-attachments">';
+        msg.attachments.forEach(att => {
+            // Kiểm tra nếu là ảnh thì hiển thị thumbnail
+            if (att.fileType && att.fileType.startsWith('image/')) {
+                html += `
+                    <div class="attachment-item">
+                        <a href="${att.fileUrl}" target="_blank" class="attachment-image-link">
+                            <img src="${att.fileUrl}" alt="${att.fileName}" class="attachment-image" loading="lazy">
+                        </a>
+                    </div>`;
+            } else if (att.fileType && att.fileType.startsWith('video/')) {
+                html += `
+                    <div class="attachment-item">
+                        <video src="${att.fileUrl}" controls class="attachment-video"></video>
+                    </div>`;
+            } else {
+                // File thường (PDF, Zip, Doc...)
+                html += `
+                    <div class="attachment-item">
+                        <a href="${att.fileUrl}" target="_blank" class="attachment-file-card">
+                            <div class="file-icon"><i class="bi bi-file-earmark-text"></i></div>
+                            <div class="file-info">
+                                <span class="file-name">${att.fileName}</span>
+                                <span class="file-size">${formatBytes(att.fileSize)}</span>
+                            </div>
+                            <div class="file-download"><i class="bi bi-download"></i></div>
+                        </a>
+                    </div>`;
+            }
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+        if (!bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
     function renderMessages() {
-        const container = els.messagesList();
+        const container = document.getElementById('messagesArea'); 
+        if (!container) return;
         const emptyState = els.emptyState();
         const composer = els.composer();
-
-        if (!container) return;
-
+        
         if (!state.dmGroupId) {
             if (composer) composer.style.display = 'none';
             if (emptyState) emptyState.style.display = 'flex';
@@ -468,57 +810,158 @@
             return;
         }
 
-        let lastSenderId = null;
-        let lastTime = null;
-
-        const rows = state.messages.map((m, index) => {
-            const senderId = m.senderId;
-            const timestamp = new Date(m.createdAt || m.timestamp);
-            const showHeader = senderId !== lastSenderId || 
-                (lastTime && (timestamp - lastTime) > 5 * 60 * 1000); // 5 minutes
-
-            lastSenderId = senderId;
-            lastTime = timestamp;
-
-            const name = m.senderDisplayName || m.senderUsername || 'Unknown';
-            const avatar = m.senderAvatarUrl 
-                ? `<img src="${escapeHtml(m.senderAvatarUrl)}" alt="">` 
-                : escapeHtml(name.charAt(0).toUpperCase());
+        // Render all messages
+        const html = state.messages.map((m, index) => {
+            // Logic gộp tin nhắn (Header) - so sánh với tin nhắn trước
+            const prev = state.messages[index - 1];
+            const isSeq = prev && 
+                prev.senderId === m.senderId && 
+                (new Date(m.createdAt || m.timestamp) - new Date(prev.createdAt || prev.timestamp) < 5 * 60 * 1000);
             
-            // Render markdown content
-            const rawContent = m.content || '';
-            const content = window.CocoCordMarkdown 
-                ? window.CocoCordMarkdown.render(rawContent)
-                : escapeHtml(rawContent);
+            // Render content based on message type
+            const contentHtml = renderMessageContent(m);
             
-            const timeStr = formatTimestamp(m.createdAt || m.timestamp);
+            // Render attachments (file, image, video)
+            const attachmentsHtml = renderAttachments(m);
 
-            if (showHeader) {
+            // Get sender info with fallbacks
+            const senderName = m.senderDisplayName || m.senderUsername || m.senderName || 'Unknown';
+            const senderAvatar = m.senderAvatarUrl || m.senderAvatar || '/images/default-avatar.png';
+            const avatarInitial = senderName.charAt(0).toUpperCase();
+            const timestamp = m.createdAt || m.timestamp;
+
+            if (!isSeq) {
+                // Tin nhắn có Header (Avatar + Tên)
                 return `
-                    <div class="message-row has-header">
-                        <div class="message-avatar">${typeof avatar === 'string' && avatar.startsWith('<img') ? avatar : `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${avatar}</span>`}</div>
-                        <div class="message-body">
+                    <div class="message-row has-header" id="msg-${m.id}" data-message-id="${m.id}">
+                        <div class="message-avatar">
+                            ${senderAvatar && senderAvatar !== '/images/default-avatar.png' 
+                                ? `<img src="${escapeHtml(senderAvatar)}" alt="Avatar">`
+                                : `<div class="avatar-placeholder">${avatarInitial}</div>`
+                            }
+                        </div>
+                        <div class="message-content-wrapper">
                             <div class="message-header">
-                                <span class="message-author">${escapeHtml(name)}</span>
-                                <span class="message-timestamp">${escapeHtml(timeStr)}</span>
+                                <span class="username">${escapeHtml(senderName)}</span>
+                                <span class="timestamp">${formatTimestamp(timestamp)}</span>
                             </div>
-                            <div class="message-content markdown-content">${content}</div>
+                            <div class="message-body markdown-content">
+                                ${contentHtml}
+                                ${attachmentsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
             } else {
+                // Tin nhắn nối tiếp (Không Avatar)
                 return `
-                    <div class="message-row">
-                        <div class="message-avatar-spacer"></div>
-                        <div class="message-body">
-                            <div class="message-content markdown-content">${content}</div>
+                    <div class="message-row is-sequence" id="msg-${m.id}" data-message-id="${m.id}">
+                        <div class="timestamp-hover">${new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div class="message-content-wrapper">
+                            <div class="message-body markdown-content">
+                                ${contentHtml}
+                                ${attachmentsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
             }
-        });
+        }).join('');
 
-        container.innerHTML = rows.join('');
+        container.innerHTML = html;
+    }
+
+    /**
+     * Render message content based on type (TEXT, STICKER, GIF, IMAGE, etc.)
+     */
+    function renderMessageContent(msg) {
+        const type = (msg.type || 'TEXT').toUpperCase();
+        const content = msg.content || '';
+        
+        switch (type) {
+            case 'STICKER':
+                // Sticker: hiển thị ảnh với class đặc biệt
+                return `<img src="${escapeHtml(content)}" class="message-sticker" alt="Sticker" loading="lazy" />`;
+            
+            case 'GIF':
+                // GIF: detect format và render phù hợp
+                return renderGifContent(content, msg.metadata);
+            
+            case 'IMAGE':
+                // Single image (không có attachments riêng)
+                if (content && !msg.attachments?.length) {
+                    return `<a href="${escapeHtml(content)}" target="_blank"><img src="${escapeHtml(content)}" class="message-image" alt="Image" loading="lazy" /></a>`;
+                }
+                // Nếu có attachments thì text content vẫn render bình thường
+                return renderTextContent(content);
+            
+            case 'VIDEO':
+                // Video inline
+                if (content && content.match(/\.(mp4|webm|ogg)$/i)) {
+                    return `<video src="${escapeHtml(content)}" controls class="message-video" preload="metadata"></video>`;
+                }
+                return renderTextContent(content);
+            
+            case 'AUDIO':
+                // Audio player
+                if (content && content.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+                    return `<audio src="${escapeHtml(content)}" controls class="message-audio"></audio>`;
+                }
+                return renderTextContent(content);
+            
+            case 'SYSTEM':
+                // System message (join, leave, etc.)
+                return `<div class="system-message"><em>${escapeHtml(content)}</em></div>`;
+            
+            case 'TEXT':
+            case 'FILE':
+            default:
+                // Default text rendering with markdown
+                return renderTextContent(content);
+        }
+    }
+
+    /**
+     * Render text content with markdown support
+     */
+    function renderTextContent(content) {
+        if (!content || !content.trim()) return '';
+        return window.CocoCordMarkdown 
+            ? window.CocoCordMarkdown.render(content)
+            : escapeHtml(content);
+    }
+
+    /**
+     * Render GIF content - supports both .gif images and .mp4 videos (Tenor/Giphy format)
+     */
+    function renderGifContent(url, metadata) {
+        if (!url) return '';
+        
+        // Parse metadata if string
+        let gifData = null;
+        if (metadata) {
+            try {
+                gifData = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+            } catch (e) { /* ignore */ }
+        }
+        
+        // Check if URL is mp4 (Tenor often uses mp4 for "GIFs")
+        const isMp4 = url.toLowerCase().endsWith('.mp4') || url.includes('.mp4');
+        const isWebm = url.toLowerCase().endsWith('.webm');
+        
+        if (isMp4 || isWebm) {
+            // Video-based GIF: autoplay, loop, muted, no controls
+            return `
+                <video src="${escapeHtml(url)}" 
+                    class="message-gif" 
+                    autoplay loop muted playsinline
+                    ${gifData?.width ? `width="${gifData.width}"` : ''}
+                    ${gifData?.height ? `height="${gifData.height}"` : ''}>
+                </video>`;
+        } else {
+            // Standard GIF image
+            return `<img src="${escapeHtml(url)}" class="message-gif" alt="GIF" loading="lazy" />`;
+        }
     }
 
     function scrollToBottom() {
@@ -528,20 +971,28 @@
     }
 
     // ==================== ACTIONS ====================
-    async function sendMessage(text) {
-        if (!state.dmGroupId) return;
-        const content = (text || '').trim();
-        if (!content) return;
-
-        const msg = await apiJson(`/api/direct-messages/${encodeURIComponent(state.dmGroupId)}/messages`, {
-            method: 'POST',
-            body: JSON.stringify({ content, attachmentUrls: [] })
-        });
-
-        if (msg) {
-            state.messages.push(msg);
-            renderMessages();
-            scrollToBottom();
+    async function sendMessage(content) {
+        if (!content.trim()) return;
+        
+        try {
+            const msg = await apiJson(`/api/direct-messages/${state.dmGroupId}/messages`, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    content: content,
+                    attachmentUrls: [],
+                    type: 'TEXT',
+                    metadata: null
+                })
+            });
+            
+            if (msg) {
+                handleNewMessage(msg);
+                if (chatInputManager && chatInputManager.inputEl) {
+                    chatInputManager.inputEl.value = ''; // Xóa input sau khi gửi thành công
+                }
+            }
+        } catch (err) {
+            console.error('Lỗi gửi tin nhắn:', err);
         }
     }
 
@@ -740,6 +1191,18 @@
         if (lv) lv.srcObject = null;
         if (rv) rv.srcObject = null;
         if (ra) ra.srcObject = null;
+
+                    // Typing events
+                    stomp.subscribe(`/topic/dm/${state.dmGroupId}/typing`, (msg) => {
+                        try {
+                            const data = JSON.parse(msg.body);
+                            if (data.isTyping) {
+                                addTypingUser(data.username, data.displayName, data.avatarUrl);
+                            } else {
+                                removeTypingUser(data.username);
+                            }
+                        } catch (_) { /* ignore */ }
+                    });
 
         hideCallOverlay();
     }
@@ -1521,6 +1984,9 @@
         renderDmStart();
         renderMessages();
         connectPresenceAndDm();
+
+        // Initialize ChatInputManager for file/sticker/GIF/emoji buttons
+        initChatInputManager();
 
         if (state.dmGroupId) {
             scrollToBottom();

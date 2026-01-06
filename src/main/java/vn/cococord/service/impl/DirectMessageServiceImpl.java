@@ -306,13 +306,31 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     @Override
     @Transactional
     public DirectMessage sendDirectMessage(Long dmGroupId, Long senderId, String content) {
-        return sendDirectMessageWithAttachments(dmGroupId, senderId, content, null);
+        return sendDirectMessageWithAttachments(dmGroupId, senderId, content, null, null, null);
     }
 
     @Override
     @Transactional
     public DirectMessage sendDirectMessageWithAttachments(Long dmGroupId, Long senderId, String content,
             List<String> attachmentUrls) {
+        return sendDirectMessageWithAttachments(dmGroupId, senderId, content, attachmentUrls, null, null);
+    }
+
+    /**
+     * Send a direct message with full support for attachments, type and metadata.
+     * 
+     * @param dmGroupId      the DM group ID
+     * @param senderId       the sender's user ID
+     * @param content        the message content (for sticker/gif, this is the URL)
+     * @param attachmentUrls list of attachment URLs
+     * @param type           message type: TEXT, IMAGE, FILE, STICKER, GIF, AUDIO, VIDEO
+     * @param metadata       JSON string with additional metadata for sticker/gif
+     * @return the saved DirectMessage
+     */
+    @Override
+    @Transactional
+    public DirectMessage sendDirectMessageWithAttachments(Long dmGroupId, Long senderId, String content,
+            List<String> attachmentUrls, String type, String metadata) {
         // Verify DM group exists and user is member
         if (!dmGroupRepository.isUserMemberOfGroup(dmGroupId, senderId)) {
             throw new ForbiddenException("You are not a member of this DM group");
@@ -322,6 +340,9 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        // Parse message type from string, default to TEXT
+        DirectMessage.MessageType messageType = parseMessageType(type);
+
         DirectMessage.DirectMessageBuilder messageBuilder = DirectMessage.builder()
                 .dmGroupId(dmGroupId)
                 .senderId(senderId)
@@ -329,7 +350,8 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
                 .senderDisplayName(sender.getDisplayName())
                 .senderAvatarUrl(sender.getAvatarUrl())
                 .content(content)
-                .type(DirectMessage.MessageType.TEXT);
+                .type(messageType)
+                .metadata(metadata);
 
         if (attachmentUrls != null && !attachmentUrls.isEmpty()) {
             List<DirectMessage.Attachment> attachments = attachmentUrls.stream()
@@ -536,5 +558,23 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     private String extractFilename(String url) {
         int lastSlash = url.lastIndexOf('/');
         return lastSlash >= 0 ? url.substring(lastSlash + 1) : url;
+    }
+
+    /**
+     * Parse message type from string to enum.
+     * Supports: TEXT, IMAGE, FILE, STICKER, GIF, AUDIO, VIDEO
+     * Returns TEXT as default if type is null or invalid.
+     */
+    private DirectMessage.MessageType parseMessageType(String type) {
+        if (type == null || type.isBlank()) {
+            return DirectMessage.MessageType.TEXT;
+        }
+
+        try {
+            return DirectMessage.MessageType.valueOf(type.toUpperCase().trim());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown message type '{}', defaulting to TEXT", type);
+            return DirectMessage.MessageType.TEXT;
+        }
     }
 }

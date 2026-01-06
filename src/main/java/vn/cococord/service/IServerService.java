@@ -27,9 +27,19 @@ public interface IServerService {
 
     void kickMember(Long serverId, KickMemberRequest request, String username);
 
+    // Ban Management
     void banMember(Long serverId, BanMemberRequest request, String username);
 
     void unbanMember(Long serverId, Long userId, String username);
+
+    List<ServerBanResponse> getBannedMembers(Long serverId, String username);
+
+    // Mute/Timeout Management
+    void muteMember(Long serverId, MuteMemberRequest request, String username);
+
+    void unmuteMember(Long serverId, Long userId, String username);
+
+    List<ServerMuteResponse> getMutedMembers(Long serverId, String username);
 
     // Invite Links
     InviteLinkResponse createInviteLink(Long serverId, CreateInviteLinkRequest request, String username);
@@ -47,10 +57,14 @@ public interface IServerService {
 
     List<RoleResponse> getServerRoles(Long serverId, String username);
 
+    RoleResponse updateRole(Long serverId, Long roleId, UpdateRoleRequest request, String username);
+
     void deleteRole(Long serverId, Long roleId, String username);
 
     // Helper methods
     boolean isServerOwner(Long serverId, String username);
 
     boolean isServerMember(Long serverId, String username);
+
+    boolean canAccessServerSettings(Long serverId, String username);
 }

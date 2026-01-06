@@ -621,7 +621,7 @@
 
     <form class="dm-composer" id="dmComposer" autocomplete="off">
       <div class="composer-inner">
-        <button class="composer-btn" type="button" title="Đính kèm">
+        <button class="composer-btn" id="attachBtn" type="button" title="Đính kèm">
           <i class="bi bi-plus-circle"></i>
         </button>
         <input
@@ -631,13 +631,13 @@
           placeholder="Nhắn tin tới @User"
         />
         <div class="composer-actions">
-          <button class="composer-btn" type="button" title="GIF">
+          <button class="composer-btn" id="gifBtn" type="button" title="GIF">
             <i class="bi bi-filetype-gif"></i>
           </button>
-          <button class="composer-btn" type="button" title="Sticker">
+          <button class="composer-btn" id="stickerBtn" type="button" title="Sticker">
             <i class="bi bi-sticky"></i>
           </button>
-          <button class="composer-btn" type="button" title="Emoji">
+          <button class="composer-btn" id="emojiBtn" type="button" title="Emoji">
             <i class="bi bi-emoji-smile"></i>
           </button>
         </div>

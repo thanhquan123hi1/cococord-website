@@ -1,18 +1,38 @@
 package vn.cococord.controller.user;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import vn.cococord.dto.request.*;
-import vn.cococord.dto.response.*;
-import vn.cococord.service.IServerService;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import vn.cococord.dto.request.BanMemberRequest;
+import vn.cococord.dto.request.CreateInviteLinkRequest;
+import vn.cococord.dto.request.CreateRoleRequest;
+import vn.cococord.dto.request.CreateServerRequest;
+import vn.cococord.dto.request.KickMemberRequest;
+import vn.cococord.dto.request.MuteMemberRequest;
+import vn.cococord.dto.request.UpdateRoleRequest;
+import vn.cococord.dto.request.UpdateServerRequest;
+import vn.cococord.dto.response.InviteLinkResponse;
+import vn.cococord.dto.response.RoleResponse;
+import vn.cococord.dto.response.ServerBanResponse;
+import vn.cococord.dto.response.ServerMemberResponse;
+import vn.cococord.dto.response.ServerMuteResponse;
+import vn.cococord.dto.response.ServerResponse;
+import vn.cococord.service.IServerService;
 
 @RestController
 @RequestMapping("/api/servers")
@@ -146,6 +166,56 @@ public class ServerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Get all banned members of a server
+     */
+    @GetMapping("/{serverId}/bans")
+    public ResponseEntity<List<ServerBanResponse>> getBannedMembers(
+            @PathVariable Long serverId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<ServerBanResponse> bans = serverService.getBannedMembers(serverId, username);
+        return ResponseEntity.ok(bans);
+    }
+
+    /**
+     * Mute a member in the server
+     */
+    @PostMapping("/{serverId}/mute")
+    public ResponseEntity<Void> muteMember(
+            @PathVariable Long serverId,
+            @Valid @RequestBody MuteMemberRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        serverService.muteMember(serverId, request, username);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Unmute a member in the server
+     */
+    @DeleteMapping("/{serverId}/mute/{userId}")
+    public ResponseEntity<Void> unmuteMember(
+            @PathVariable Long serverId,
+            @PathVariable Long userId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        serverService.unmuteMember(serverId, userId, username);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get all muted members of a server
+     */
+    @GetMapping("/{serverId}/mutes")
+    public ResponseEntity<List<ServerMuteResponse>> getMutedMembers(
+            @PathVariable Long serverId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<ServerMuteResponse> mutes = serverService.getMutedMembers(serverId, username);
+        return ResponseEntity.ok(mutes);
+    }
+
     // ==================== INVITE LINKS ====================
 
     /**
@@ -235,6 +305,20 @@ public class ServerController {
     }
 
     /**
+     * Update a role's settings
+     */
+    @PutMapping("/{serverId}/roles/{roleId}")
+    public ResponseEntity<RoleResponse> updateRole(
+            @PathVariable Long serverId,
+            @PathVariable Long roleId,
+            @Valid @RequestBody UpdateRoleRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        RoleResponse role = serverService.updateRole(serverId, roleId, request, username);
+        return ResponseEntity.ok(role);
+    }
+
+    /**
      * Delete a role
      */
     @DeleteMapping("/{serverId}/roles/{roleId}")
@@ -259,5 +343,17 @@ public class ServerController {
         String username = authentication.getName();
         boolean isOwner = serverService.isServerOwner(serverId, username);
         return ResponseEntity.ok(Map.of("isOwner", isOwner));
+    }
+
+    /**
+     * Check if current user can access server settings
+     */
+    @GetMapping("/{serverId}/can-access-settings")
+    public ResponseEntity<Map<String, Boolean>> canAccessServerSettings(
+            @PathVariable Long serverId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        boolean canAccess = serverService.canAccessServerSettings(serverId, username);
+        return ResponseEntity.ok(Map.of("canAccess", canAccess));
     }
 }

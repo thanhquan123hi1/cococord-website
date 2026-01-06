@@ -2751,10 +2751,21 @@
     }
 
     // ==================== SERVER SETTINGS & LEAVE ====================
-    function showServerSettingsModal() {
+    async function showServerSettingsModal() {
         if (!activeServerId) {
             showToast('Vui lòng chọn một server trước', 'error');
             return;
+        }
+
+        // Check if user can access server settings
+        try {
+            const response = await apiGet(`/api/servers/${activeServerId}/can-access-settings`);
+            if (!response.canAccess) {
+                showToast('Bạn không có quyền truy cập cài đặt server', 'error');
+                return;
+            }
+        } catch (e) {
+            console.warn('[Chat] Could not check settings access, proceeding anyway');
         }
 
         if (serverSettingsManager) {

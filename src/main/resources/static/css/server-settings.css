@@ -841,3 +841,465 @@
         transform: translateX(0) translateY(0);
     }
 }
+
+/* ==================== EMOJI/STICKERS TAB ==================== */
+
+.emoji-upload-area,
+.sticker-upload-area {
+    margin-bottom: 16px;
+}
+
+.emoji-list,
+.sticker-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.emoji-list-empty,
+.sticker-list-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.emoji-list-empty i,
+.sticker-list-empty i {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.emoji-item,
+.sticker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    position: relative;
+}
+
+.emoji-item:hover,
+.sticker-item:hover {
+    background: var(--bg-modifier-hover);
+}
+
+.emoji-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.sticker-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.emoji-name,
+.sticker-name {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-delete-emoji,
+.btn-delete-sticker {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-danger, #ed4245);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.emoji-item:hover .btn-delete-emoji,
+.sticker-item:hover .btn-delete-sticker {
+    opacity: 1;
+}
+
+.btn-delete-emoji:hover,
+.btn-delete-sticker:hover {
+    background: rgba(237, 66, 69, 0.2);
+}
+
+/* ==================== MEMBERS TAB ==================== */
+
+.members-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.members-search {
+    display: flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    padding: 8px 12px;
+    flex: 1;
+    max-width: 300px;
+}
+
+.members-search i {
+    color: var(--text-muted);
+    margin-right: 8px;
+}
+
+.members-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-normal);
+    font-size: 14px;
+    outline: none;
+}
+
+.members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.members-loading,
+.members-empty,
+.members-error {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.member-item:hover {
+    background: var(--bg-modifier-hover);
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.member-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.member-name {
+    font-weight: 500;
+    color: var(--text-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.member-username {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.member-role {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-right: 12px;
+}
+
+.member-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.member-item:hover .member-actions {
+    opacity: 1;
+}
+
+.btn-member-action {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-member-action:hover {
+    background: var(--bg-modifier-hover);
+    color: var(--text-normal);
+}
+
+.btn-member-action.btn-danger:hover {
+    background: rgba(237, 66, 69, 0.2);
+    color: var(--text-danger, #ed4245);
+}
+
+/* ==================== INVITES TAB ==================== */
+
+.invites-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.btn-create-invite {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: var(--discord-blurple, #5865f2);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+}
+
+.btn-create-invite:hover {
+    background: #4752c4;
+}
+
+.invites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.invites-loading,
+.invites-empty,
+.invites-error {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.invites-empty i {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.invite-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    gap: 12px;
+}
+
+.invite-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.invite-code {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.invite-url-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-normal);
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.btn-copy-invite {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-normal);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-copy-invite:hover {
+    background: var(--bg-modifier-hover);
+}
+
+.invite-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.invite-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-delete-invite {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-danger, #ed4245);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.btn-delete-invite:hover {
+    background: rgba(237, 66, 69, 0.2);
+}
+
+/* ==================== BANS TAB ==================== */
+
+.bans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bans-loading,
+.bans-empty,
+.bans-error {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.bans-empty i {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.ban-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    gap: 12px;
+}
+
+.ban-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.ban-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.ban-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ban-name {
+    font-weight: 500;
+    color: var(--text-normal);
+}
+
+.ban-username {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ban-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.btn-unban {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: var(--discord-green, #3ba55d);
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.btn-unban:hover {
+    background: #2d7d46;
+}
+
+/* ==================== SPINNER ==================== */
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--bg-modifier-hover);
+    border-top-color: var(--discord-blurple);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
