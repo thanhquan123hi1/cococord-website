@@ -76,6 +76,7 @@
     dmStartAvatar: () => document.getElementById("dmStartAvatar"),
     dmStartName: () => document.getElementById("dmStartName"),
     dmStartInfo: () => document.getElementById("dmStartInfo"),
+    dmMessagesArea: () => document.getElementById("dmMessagesArea"),
     dmMessagesList: () => document.getElementById("dmMessagesList"),
     dmComposer: () => document.getElementById("dmComposer"),
     dmMessageInput: () => document.getElementById("dmMessageInput"),
@@ -1805,8 +1806,13 @@
         });
       });
 
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Scroll to bottom - target dmMessagesArea (the scrollable container), not dmMessagesList
+    const scrollContainer = els.dmMessagesArea();
+    if (scrollContainer) {
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      });
+    }
   }
 
   /**
