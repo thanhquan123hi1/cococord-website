@@ -1898,7 +1898,12 @@
         initChatInputManager();
 
         if (state.dmGroupId) {
-            scrollToBottom();
+            // Use requestAnimationFrame + setTimeout to ensure DOM is fully rendered before scrolling
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 100);
+            });
         }
     }
 
