@@ -200,7 +200,396 @@
   height: 20px;
 }
 
-/* Sidebar Logo */
+/* Admin Profile Header */
+.admin-profile-header {
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+.admin-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  background: var(--admin-surface-2);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  position: relative;
+}
+
+.admin-profile-trigger:hover {
+  background: var(--admin-hover);
+  border-color: var(--admin-primary);
+}
+
+.admin-profile-trigger.active {
+  background: var(--admin-hover);
+  border-color: var(--admin-primary);
+}
+
+.admin-profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--admin-radius-full);
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 18px;
+}
+
+.admin-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--admin-radius-full);
+  object-fit: cover;
+}
+
+.admin-profile-info {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.admin-profile-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.admin-profile-role {
+  font-size: 12px;
+  color: var(--admin-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-profile-arrow {
+  font-size: 12px;
+  color: var(--admin-muted);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.admin-profile-trigger.active .admin-profile-arrow {
+  transform: rotate(180deg);
+}
+
+/* Admin Profile Dropdown */
+.admin-profile-dropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  right: 0;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  color: var(--admin-text);
+  text-decoration: none;
+  transition: background var(--transition-fast);
+  font-size: 14px;
+}
+
+.admin-profile-dropdown-item:hover {
+  background: var(--admin-hover);
+}
+
+.admin-profile-dropdown-item i {
+  width: 18px;
+  color: var(--admin-muted);
+  font-size: 14px;
+}
+
+.admin-profile-dropdown-item--danger {
+  color: var(--admin-danger);
+}
+
+.admin-profile-dropdown-item--danger i {
+  color: var(--admin-danger);
+}
+
+.admin-profile-dropdown-item--danger:hover {
+  background: var(--admin-danger-bg);
+}
+
+.admin-profile-dropdown-divider {
+  height: 1px;
+  background: var(--admin-border);
+  margin: var(--space-1) 0;
+}
+
+/* Admin Account Detail Modal */
+.admin-account-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.admin-account-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.admin-account-modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 550px;
+  max-height: 85vh;
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.admin-account-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-account-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--admin-text);
+  margin: 0;
+}
+
+.admin-account-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--admin-radius-md);
+  border: none;
+  background: transparent;
+  color: var(--admin-muted);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-account-modal-close:hover {
+  background: var(--admin-hover);
+  color: var(--admin-text);
+}
+
+.admin-account-modal-body {
+  padding: var(--space-5);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.admin-account-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-account-modal-body::-webkit-scrollbar-thumb {
+  background: var(--admin-border);
+  border-radius: 3px;
+}
+
+/* Loading state */
+.admin-account-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  color: var(--admin-muted);
+}
+
+.admin-account-loading i {
+  font-size: 32px;
+  margin-bottom: var(--space-3);
+}
+
+.admin-account-loading p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Profile Section */
+.admin-account-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: var(--space-5);
+}
+
+.admin-account-profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--admin-radius-full);
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-account-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--admin-radius-full);
+  object-fit: cover;
+}
+
+.admin-account-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-account-profile-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--admin-text);
+  margin-bottom: var(--space-1);
+}
+
+.admin-account-profile-role {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--admin-primary-bg);
+  color: var(--admin-primary);
+  border-radius: var(--admin-radius-full);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Info Grid */
+.admin-account-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.admin-account-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.admin-account-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-account-info-value {
+  font-size: 15px;
+  color: var(--admin-text);
+  font-weight: 500;
+}
+
+.admin-account-info-value i {
+  margin-right: var(--space-2);
+  color: var(--admin-muted);
+  width: 18px;
+}
+
+/* Status Badge */
+.admin-account-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--admin-radius-full);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-account-status--active {
+  background: var(--admin-success-bg);
+  color: var(--admin-success);
+}
+
+.admin-account-status--suspended {
+  background: var(--admin-danger-bg);
+  color: var(--admin-danger);
+}
+
+.admin-account-status i {
+  font-size: 8px;
+}
+
+/* Sidebar Logo (legacy - keep for footer if needed) */
 .admin-sidebar-logo {
   margin-top: auto;
   padding: var(--space-4);

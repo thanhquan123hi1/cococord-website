@@ -66,6 +66,28 @@
     </div>
 </div>
 
+<!-- Stats Bar -->
+<div class="audit-stats-bar">
+    <div class="audit-stat-item">
+        <div class="audit-stat-icon">
+            <i class="fas fa-list"></i>
+        </div>
+        <div class="audit-stat-info">
+            <div class="audit-stat-label">Tổng số nhật ký</div>
+            <div class="audit-stat-value" id="totalAuditLogs">0</div>
+        </div>
+    </div>
+    <div class="audit-stat-item">
+        <div class="audit-stat-icon">
+            <i class="fas fa-eye"></i>
+        </div>
+        <div class="audit-stat-info">
+            <div class="audit-stat-label">Đang hiển thị</div>
+            <div class="audit-stat-value" id="displayedAuditLogs">0</div>
+        </div>
+    </div>
+</div>
+
 <!-- Main Content - Audit Timeline -->
 <div class="audit-timeline-container">
     <div id="auditTimeline" class="audit-timeline">
