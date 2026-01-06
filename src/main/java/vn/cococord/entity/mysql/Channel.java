@@ -91,6 +91,6 @@ public class Channel {
     private Set<ChannelPermission> channelPermissions = new HashSet<>();
 
     public enum ChannelType {
-        TEXT, VOICE, ANNOUNCEMENT, STAGE
+        TEXT, VOICE, ANNOUNCEMENT, STAGE, FORUM
     }
 }

@@ -787,8 +787,8 @@
 
     const avatarHtml = msg.avatarUrl
       ? `<img src="${escapeHtml(
-          msg.avatarUrl
-        )}" class="avatar-img" alt="Avatar">`
+        msg.avatarUrl
+      )}" class="avatar-img" alt="Avatar">`
       : `<div class="avatar-placeholder">${initial}</div>`;
     const timeShort = new Date(
       msg.createdAt || msg.timestamp
@@ -796,24 +796,23 @@
     return `
             <div class="message-row" data-message-id="${msg.id}">
                 <div class="message-avatar" onclick="showUserProfile('${currentId}')">
-                    ${
-                      msg.avatarUrl
-                        ? `<img src="${escapeHtml(msg.avatarUrl)}">`
-                        : `<div class="avatar-placeholder">${initial}</div>`
-                    }
+                    ${msg.avatarUrl
+        ? `<img src="${escapeHtml(msg.avatarUrl)}">`
+        : `<div class="avatar-placeholder">${initial}</div>`
+      }
                 </div>
                 <div class="message-body">
                     <div class="message-header">
                         <span class="message-author" onclick="showUserProfile('${currentId}')">${escapeHtml(
-      displayName
-    )}</span>
+        displayName
+      )}</span>
                         <span class="message-timestamp">${formatTime(
-                          msg.createdAt
-                        )}</span>
+        msg.createdAt
+      )}</span>
                     </div>
                     <div class="message-content markdown-content">${htmlContent}${renderAttachments(
-      msg
-    )}</div>
+        msg
+      )}</div>
                 </div>
             </div>`;
   }
@@ -1055,10 +1054,12 @@
     // Helper function to render a channel item
     const renderChannelItem = (c) => {
       const isVoice = c.type === "VOICE";
+      const isForum = c.type === "FORUM";
       const item = document.createElement("div");
       item.className =
         "channel-item" +
         (isVoice ? " voice-channel" : "") +
+        (isForum ? " forum-channel" : "") +
         (String(c.id) === String(activeChannelId) ? " active" : "") +
         (isVoice && String(c.id) === String(activeVoiceChannelId)
           ? " voice-active"
@@ -1068,20 +1069,28 @@
       item.dataset.channelId = c.id;
       item.dataset.channelType = c.type || "TEXT";
 
-      const icon = isVoice
-        ? '<i class="bi bi-volume-up"></i>'
-        : '<span class="hash">#</span>';
+      // Channel type icon
+      let icon;
+      if (isVoice) {
+        icon = '<i class="bi bi-volume-up"></i>';
+      } else if (isForum) {
+        icon = '<i class="bi bi-chat-square-text"></i>';
+      } else {
+        icon = '<span class="hash">#</span>';
+      }
 
       item.innerHTML = `
                 ${icon}
                 <span class="channel-name">${escapeHtml(
-                  c.name || "channel"
-                )}</span>
-                ${
-                  c.isDefault
-                    ? '<i class="bi bi-star-fill channel-default-icon" title="Kênh mặc định"></i>'
-                    : ""
-                }
+        c.name || "channel"
+      )}</span>
+                ${c.isDefault
+          ? '<i class="bi bi-star-fill channel-default-icon" title="Kênh mặc định"></i>'
+          : ""
+        }
+                <button class="channel-settings-btn" title="Cài đặt kênh" onclick="event.stopPropagation();">
+                    <i class="bi bi-gear"></i>
+                </button>
             `;
 
       const channelId = c.id;
@@ -1169,36 +1178,32 @@
 
             const avatarHtml = u.avatarUrl
               ? `<img class="voice-user-avatar" src="${escapeHtml(
-                  u.avatarUrl
-                )}" alt=""/>`
+                u.avatarUrl
+              )}" alt=""/>`
               : `<div class="voice-user-avatar"></div>`;
 
             row.innerHTML = `
                             ${avatarHtml}
                             <span class="voice-user-name">${escapeHtml(
-                              u.username || "User"
-                            )}</span>
+              u.username || "User"
+            )}</span>
                             <span class="voice-user-icons">
-                                ${
-                                  u.isScreenSharing
-                                    ? '<i class="bi bi-display"></i>'
-                                    : ""
-                                }
-                                ${
-                                  u.isCameraOn
-                                    ? '<i class="bi bi-camera-video-fill"></i>'
-                                    : ""
-                                }
-                                ${
-                                  u.isDeafened
-                                    ? '<i class="bi bi-volume-mute-fill"></i>'
-                                    : ""
-                                }
-                                ${
-                                  u.isMuted
-                                    ? '<i class="bi bi-mic-mute-fill"></i>'
-                                    : ""
-                                }
+                                ${u.isScreenSharing
+                ? '<i class="bi bi-display"></i>'
+                : ""
+              }
+                                ${u.isCameraOn
+                ? '<i class="bi bi-camera-video-fill"></i>'
+                : ""
+              }
+                                ${u.isDeafened
+                ? '<i class="bi bi-volume-mute-fill"></i>'
+                : ""
+              }
+                                ${u.isMuted
+                ? '<i class="bi bi-mic-mute-fill"></i>'
+                : ""
+              }
                             </span>
                         `;
 
@@ -1360,20 +1365,19 @@
         (m) => `
             <div class="member-item online" data-user-id="${m.id}">
                 <div class="member-avatar">
-                    ${
-                      m.avatarUrl
-                        ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">`
-                        : escapeHtml(
-                            (m.displayName || m.username || "U")
-                              .charAt(0)
-                              .toUpperCase()
-                          )
-                    }
+                    ${m.avatarUrl
+            ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">`
+            : escapeHtml(
+              (m.displayName || m.username || "U")
+                .charAt(0)
+                .toUpperCase()
+            )
+          }
                     <span class="status-dot online"></span>
                 </div>
                 <span class="member-name">${escapeHtml(
-                  m.displayName || m.username || "User"
-                )}</span>
+            m.displayName || m.username || "User"
+          )}</span>
             </div>
         `
       )
@@ -1384,20 +1388,19 @@
         (m) => `
             <div class="member-item" data-user-id="${m.id}">
                 <div class="member-avatar">
-                    ${
-                      m.avatarUrl
-                        ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">`
-                        : escapeHtml(
-                            (m.displayName || m.username || "U")
-                              .charAt(0)
-                              .toUpperCase()
-                          )
-                    }
+                    ${m.avatarUrl
+            ? `<img src="${escapeHtml(m.avatarUrl)}" alt="">`
+            : escapeHtml(
+              (m.displayName || m.username || "U")
+                .charAt(0)
+                .toUpperCase()
+            )
+          }
                     <span class="status-dot"></span>
                 </div>
                 <span class="member-name">${escapeHtml(
-                  m.displayName || m.username || "User"
-                )}</span>
+            m.displayName || m.username || "User"
+          )}</span>
             </div>
         `
       )
@@ -1443,8 +1446,7 @@
       }
 
       console.log(
-        `[AppendMessage] Adding message to ${prepend ? "start" : "end"}: ${
-          msg.id
+        `[AppendMessage] Adding message to ${prepend ? "start" : "end"}: ${msg.id
         }, total will be ${messages.length + 1}`
       );
 
@@ -1476,29 +1478,27 @@
 
     row.innerHTML = `
             <div class="message-avatar">
-                ${
-                  msg.avatarUrl
-                    ? `<img src="${escapeHtml(
-                        msg.avatarUrl
-                      )}" alt="${escapeHtml(displayName)}">`
-                    : initial
-                }
+                ${msg.avatarUrl
+        ? `<img src="${escapeHtml(
+          msg.avatarUrl
+        )}" alt="${escapeHtml(displayName)}">`
+        : initial
+      }
             </div>
             <div class="message-body">
                 <div class="message-header">
                     <span class="message-author" title="${escapeHtml(
-                      msg.username || "user"
-                    )}#${discriminatorFromId(
-      msg.userId || msg.senderId
-    )}">${escapeHtml(displayName)}</span>
+        msg.username || "user"
+      )}#${discriminatorFromId(
+        msg.userId || msg.senderId
+      )}">${escapeHtml(displayName)}</span>
                     <span class="message-timestamp">${formatTime(
-                      msg.createdAt
-                    )}</span>
-                    ${
-                      msg.editedAt
-                        ? '<span class="message-edited">(đã chỉnh sửa)</span>'
-                        : ""
-                    }
+        msg.createdAt
+      )}</span>
+                    ${msg.editedAt
+        ? '<span class="message-edited">(đã chỉnh sửa)</span>'
+        : ""
+      }
                 </div>
                 <div class="message-content markdown-content">${htmlContent}</div>
             </div>
@@ -1518,8 +1518,8 @@
     const threshold = 100; // pixels from bottom
     return (
       el.messageList.scrollHeight -
-        el.messageList.scrollTop -
-        el.messageList.clientHeight <
+      el.messageList.scrollTop -
+      el.messageList.clientHeight <
       threshold
     );
   }
@@ -1584,11 +1584,10 @@
       .map(
         (u) => `
             <div class="typing-avatar">
-                ${
-                  u.avatarUrl
-                    ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">`
-                    : escapeHtml((u.displayName || "U").charAt(0).toUpperCase())
-                }
+                ${u.avatarUrl
+            ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">`
+            : escapeHtml((u.displayName || "U").charAt(0).toUpperCase())
+          }
             </div>
         `
       )
@@ -1606,9 +1605,8 @@
         users[1].displayName
       )}</strong> đang nhập...`;
     } else if (users.length > 2) {
-      text = `<strong>${escapeHtml(users[0].displayName)}</strong> và ${
-        users.length - 1
-      } người khác đang nhập...`;
+      text = `<strong>${escapeHtml(users[0].displayName)}</strong> và ${users.length - 1
+        } người khác đang nhập...`;
     }
 
     indicator.innerHTML = `
@@ -2044,8 +2042,8 @@
     subscriptionCount++;
     console.log(
       "[Subscribe] Creating subscription #" +
-        subscriptionCount +
-        " for channel",
+      subscriptionCount +
+      " for channel",
       channelId
     );
 
@@ -2454,8 +2452,8 @@
             <div class="banner-content">
                 <div class="banner-title">Server đang bị khóa</div>
                 <div class="banner-reason">Lý do: ${escapeHtml(
-                  currentServerStatus.lockReason || "Không có lý do cụ thể"
-                )}</div>
+      currentServerStatus.lockReason || "Không có lý do cụ thể"
+    )}</div>
                 ${untilText}
             </div>
             <button class="banner-close" type="button" aria-label="Đóng thông báo" data-action="dismiss-lock-banner">
@@ -2539,8 +2537,8 @@
             <div class="suspend-title">Server đã bị đình chỉ</div>
             <div class="suspend-message">Server này đã bị đình chỉ do vi phạm nghiêm trọng quy định cộng đồng.</div>
             <div class="suspend-reason">${escapeHtml(
-              currentServerStatus.suspendReason || "Không có lý do cụ thể"
-            )}</div>
+      currentServerStatus.suspendReason || "Không có lý do cụ thể"
+    )}</div>
             <div class="suspend-actions">
                 <button class="suspend-btn suspend-btn-primary" onclick="window.location.href='/app'">Quay về trang chủ</button>
             </div>
@@ -2811,11 +2809,10 @@
           return '<div class="context-menu-divider"></div>';
         }
         const dangerClass = item.danger ? " danger" : "";
-        return `<div class="context-menu-item${dangerClass}" data-action="${
-          item.action
-        }">${item.icon ? `<i class="${item.icon}"></i>` : ""}${escapeHtml(
-          item.label
-        )}</div>`;
+        return `<div class="context-menu-item${dangerClass}" data-action="${item.action
+          }">${item.icon ? `<i class="${item.icon}"></i>` : ""}${escapeHtml(
+            item.label
+          )}</div>`;
       })
       .join("");
 
@@ -2908,10 +2905,9 @@
             <div class="reply-preview-content">
                 <i class="bi bi-reply-fill"></i>
                 <span>Đang trả lời <strong>${escapeHtml(
-                  author
-                )}</strong>: ${escapeHtml(content.slice(0, 50))}${
-      content.length > 50 ? "..." : ""
-    }</span>
+      author
+    )}</strong>: ${escapeHtml(content.slice(0, 50))}${content.length > 50 ? "..." : ""
+      }</span>
             </div>
             <button class="reply-cancel" type="button"><i class="bi bi-x"></i></button>
         `;
@@ -2957,8 +2953,8 @@
     const originalHtml = contentEl.innerHTML;
     contentEl.innerHTML = `
             <input type="text" class="edit-message-input" value="${escapeHtml(
-              currentContent
-            )}">
+      currentContent
+    )}">
             <div class="edit-message-hint">Escape để hủy • Enter để lưu</div>
         `;
 
@@ -3346,19 +3342,17 @@
         memberList.innerHTML = otherMembers
           .map(
             (m) => `
-                    <div class="admin-transfer-member" data-member-id="${
-                      m.id
-                    }" data-user-id="${m.userId}">
-                        <img src="${
-                          m.avatarUrl || "/images/default-avatar.png"
-                        }" alt="">
+                    <div class="admin-transfer-member" data-member-id="${m.id
+              }" data-user-id="${m.userId}">
+                        <img src="${m.avatarUrl || "/images/default-avatar.png"
+              }" alt="">
                         <div class="admin-transfer-member-info">
                             <div class="admin-transfer-member-name">${escapeHtml(
-                              m.displayName || m.username
-                            )}</div>
+                m.displayName || m.username
+              )}</div>
                             <div class="admin-transfer-member-role">${escapeHtml(
-                              m.roleName || "@everyone"
-                            )}</div>
+                m.roleName || "@everyone"
+              )}</div>
                         </div>
                         <i class="bi bi-check-circle-fill check-icon"></i>
                     </div>
@@ -3555,9 +3549,8 @@
     });
 
     if (!filtered.length) {
-      container.innerHTML = `<div class="invite-empty">${
-        filter ? "Không tìm thấy bạn bè" : "Bạn chưa có bạn bè nào"
-      }</div>`;
+      container.innerHTML = `<div class="invite-empty">${filter ? "Không tìm thấy bạn bè" : "Bạn chưa có bạn bè nào"
+        }</div>`;
       return;
     }
 
@@ -3566,10 +3559,10 @@
         const avatarHtml = friend.avatarUrl
           ? `<img src="${escapeHtml(friend.avatarUrl)}" alt="">`
           : `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${escapeHtml(
-              (friend.displayName || friend.username || "U")
-                .charAt(0)
-                .toUpperCase()
-            )}</span>`;
+            (friend.displayName || friend.username || "U")
+              .charAt(0)
+              .toUpperCase()
+          )}</span>`;
 
         const invited = invitedFriends.has(friend.id);
         const online = isOnline(friend.username);
@@ -3578,16 +3571,14 @@
                 <div class="invite-friend-row" data-friend-id="${friend.id}">
                     <div class="invite-friend-avatar">
                         ${avatarHtml}
-                        <span class="status-dot ${
-                          online ? "online" : ""
-                        }"></span>
+                        <span class="status-dot ${online ? "online" : ""
+          }"></span>
                     </div>
                     <span class="invite-friend-name">${escapeHtml(
-                      friend.displayName || friend.username || "Unknown"
-                    )}</span>
-                    <button class="btn-invite ${invited ? "invited" : ""}" ${
-          invited ? "disabled" : ""
-        } onclick="inviteFriendFromChat(${friend.id})">
+            friend.displayName || friend.username || "Unknown"
+          )}</span>
+                    <button class="btn-invite ${invited ? "invited" : ""}" ${invited ? "disabled" : ""
+          } onclick="inviteFriendFromChat(${friend.id})">
                         ${invited ? "Đã mời" : "Mời"}
                     </button>
                 </div>
@@ -3613,46 +3604,36 @@
     );
 
     try {
-      // Send DM with invite link
-      const friend = friendsList.find((f) => f.id === friendId);
-      if (friend) {
-        // Find or create DM group with this friend
-        const res = await fetch(
-          `/api/direct-messages/find-or-create?userId=${encodeURIComponent(
-            friendId
-          )}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
-          }
-        );
+      // Get invite code from input
+      const inviteCode = document.getElementById("inviteLinkInput")?.value?.split('/').pop() || "";
 
-        if (res.ok) {
-          const dmGroup = await res.json();
-          if (dmGroup?.id) {
-            const inviteLink =
-              document.getElementById("inviteLinkInput")?.value || "";
-            await fetch(
-              `/api/direct-messages/${encodeURIComponent(dmGroup.id)}/messages`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${getAccessToken()}`,
-                },
-                body: JSON.stringify({
-                  content: `Bạn được mời tham gia máy chủ ${serverName}!\n${inviteLink}`,
-                  attachmentUrls: [],
-                }),
-              }
-            );
-          }
-        }
+      // Send invite notification via API (real-time WebSocket)
+      const res = await fetch('/api/invites/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAccessToken()}`
+        },
+        body: JSON.stringify({
+          recipientId: friendId,
+          serverId: activeServerId,
+          inviteCode: inviteCode
+        })
+      });
+
+      if (res.ok) {
+        showToast(`Đã gửi lời mời tới bạn bè tham gia ${serverName}`, 'success');
+      } else {
+        const error = await res.json();
+        showToast(error.message || 'Không thể gửi lời mời', 'error');
+        invitedFriends.delete(friendId);
+        renderInviteFriendsList(document.getElementById("inviteFriendSearch")?.value || "");
       }
     } catch (err) {
+      console.error('[Invite] Error sending invite:', err);
       showToast("Không thể gửi lời mời", "error");
+      invitedFriends.delete(friendId);
+      renderInviteFriendsList(document.getElementById("inviteFriendSearch")?.value || "");
     }
   }
 
@@ -4068,21 +4049,19 @@
     grid.innerHTML = participants
       .map((p) => {
         const avatarHtml = p.avatarUrl
-          ? `<img class="voice-participant-avatar" src="${
-              p.avatarUrl
-            }" alt="${escapeHtml(p.username)}">`
+          ? `<img class="voice-participant-avatar" src="${p.avatarUrl
+          }" alt="${escapeHtml(p.username)}">`
           : `<div class="voice-participant-avatar-placeholder">${(
-              p.username || "?"
-            )
-              .charAt(0)
-              .toUpperCase()}</div>`;
+            p.username || "?"
+          )
+            .charAt(0)
+            .toUpperCase()}</div>`;
 
         // Video element cho camera/screenshare
         const videoHtml =
           p.isCameraOn || p.isScreenSharing
-            ? `<video class="voice-participant-video" id="video-${
-                p.peerId
-              }" autoplay playsinline ${p.isLocal ? "muted" : ""}></video>`
+            ? `<video class="voice-participant-video" id="video-${p.peerId
+            }" autoplay playsinline ${p.isLocal ? "muted" : ""}></video>`
             : "";
 
         const showMuted = !!p.isMuted;
@@ -4092,48 +4071,41 @@
         const showSpeaking = !!p.isSpeaking && !showMuted;
 
         return `
-                <div class="voice-participant-tile ${p.isLocal ? "self" : ""} ${
-          showSpeaking ? "speaking" : ""
-        } ${showCamera ? "camera-on" : ""} ${
-          showScreen ? "screen-sharing" : ""
-        }" id="voice-tile-${p.peerId}" data-user-id="${p.userId || ""}">
+                <div class="voice-participant-tile ${p.isLocal ? "self" : ""} ${showSpeaking ? "speaking" : ""
+          } ${showCamera ? "camera-on" : ""} ${showScreen ? "screen-sharing" : ""
+          }" id="voice-tile-${p.peerId}" data-user-id="${p.userId || ""}">
                     ${videoHtml}
                     <div class="voice-tile-badges">
                         ${showScreen ? '<i class="bi bi-display"></i>' : ""}
-                        ${
-                          showCamera
-                            ? '<i class="bi bi-camera-video-fill"></i>'
-                            : ""
-                        }
-                        ${
-                          showDeafened
-                            ? '<i class="bi bi-volume-mute-fill"></i>'
-                            : ""
-                        }
-                        ${
-                          showMuted ? '<i class="bi bi-mic-mute-fill"></i>' : ""
-                        }
+                        ${showCamera
+            ? '<i class="bi bi-camera-video-fill"></i>'
+            : ""
+          }
+                        ${showDeafened
+            ? '<i class="bi bi-volume-mute-fill"></i>'
+            : ""
+          }
+                        ${showMuted ? '<i class="bi bi-mic-mute-fill"></i>' : ""
+          }
                     </div>
-                    <div class="voice-avatar-wrapper" style="${
-                      p.isCameraOn || p.isScreenSharing ? "display:none" : ""
-                    }">
+                    <div class="voice-avatar-wrapper" style="${p.isCameraOn || p.isScreenSharing ? "display:none" : ""
+          }">
                         ${avatarHtml}
                     </div>
                     <div class="voice-participant-info">
                         <div class="voice-participant-name">
                             ${escapeHtml(p.username)}
                         </div>
-                        ${
-                          !p.isCameraOn && !p.isScreenSharing
-                            ? `
+                        ${!p.isCameraOn && !p.isScreenSharing
+            ? `
                             <div class="voice-indicator">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/>
                                 </svg>
                             </div>
                         `
-                            : ""
-                        }
+            : ""
+          }
                     </div>
                 </div>
             `;
@@ -5424,8 +5396,8 @@
     activeServerId = requestedServer
       ? requestedServer.id
       : servers.length
-      ? servers[0].id
-      : null;
+        ? servers[0].id
+        : null;
 
     // Cập nhật global sidebar (active state + SPA events)
     updateGlobalServerListActive();
@@ -5467,8 +5439,8 @@
     activeChannelId = requestedChannel
       ? requestedChannel.id
       : channels.length
-      ? channels[0].id
-      : null;
+        ? channels[0].id
+        : null;
     renderChannelList();
     renderMembersList();
 
