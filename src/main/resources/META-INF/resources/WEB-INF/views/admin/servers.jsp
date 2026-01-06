@@ -4,6 +4,7 @@
 
 <title>Server Management - CoCoCord Admin</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/admin/css/servers.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/admin/css/server-detail-modal.css">
 
 <div class="flex flex-col gap-6">
     <!-- Header Actions -->
@@ -752,4 +753,5 @@
 </div>
 
 <script src="${pageContext.request.contextPath}/admin/js/mock-data.js"></script>
+<script src="${pageContext.request.contextPath}/admin/js/server-detail-modal.js"></script>
 <script src="${pageContext.request.contextPath}/admin/js/servers.js"></script>

@@ -20,6 +20,8 @@
 @import url('modals.css');
 @import url('charts.css');
 @import url('user-detail-modal.css');
+@import url('server-detail-modal.css');
+@import url('server-action-modals.css');
 
 /* Page-Specific Styles */
 @import url('reports.css');

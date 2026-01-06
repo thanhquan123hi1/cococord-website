@@ -48,81 +48,6 @@ var AdminServers = window.AdminServers || (function() {
   };
 
   // ========================================
-  // Confirmation Modal
-  // ========================================
-
-  function showConfirmationModal(options) {
-    const { title, message, confirmText, confirmClass, isDangerous, onConfirm } = options;
-    
-    // Remove existing modal if any
-    const existingModal = document.getElementById('confirmation-modal');
-    if (existingModal) existingModal.remove();
-    
-    // Create modal HTML
-    const modal = document.createElement('div');
-    modal.id = 'confirmation-modal';
-    modal.className = 'admin-modal-backdrop glass-backdrop';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-      <div class="admin-modal admin-modal-sm glass-modal confirmation-modal">
-        <div class="confirmation-modal-header ${isDangerous ? 'confirmation-header-danger' : 'confirmation-header-warning'}">
-          <div class="confirmation-modal-icon">
-            ${isDangerous ? `
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 2L2 20h20L12 2z"/>
-                <path d="M12 9v4M12 17v.01"/>
-              </svg>
-            ` : `
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v4M12 16v.01"/>
-              </svg>
-            `}
-          </div>
-          <h3 class="confirmation-modal-title">${escapeHtml(title)}</h3>
-        </div>
-        <div class="admin-modal-body">
-          <p class="confirmation-message">${escapeHtml(message)}</p>
-        </div>
-        <div class="admin-modal-footer">
-          <button class="admin-btn admin-btn-ghost" id="confirmation-cancel">Cancel</button>
-          <button class="admin-btn ${confirmClass || 'admin-btn-primary'}" id="confirmation-confirm">
-            ${escapeHtml(confirmText || 'Confirm')}
-          </button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    document.body.style.overflow = 'hidden';
-    
-    // Event handlers
-    const closeConfirmationModal = () => {
-      modal.remove();
-      document.body.style.overflow = '';
-    };
-    
-    modal.querySelector('#confirmation-cancel').addEventListener('click', closeConfirmationModal);
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeConfirmationModal();
-    });
-    
-    modal.querySelector('#confirmation-confirm').addEventListener('click', () => {
-      closeConfirmationModal();
-      if (typeof onConfirm === 'function') onConfirm();
-    });
-    
-    // Escape key
-    const escHandler = (e) => {
-      if (e.key === 'Escape') {
-        closeConfirmationModal();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
-  }
-
-  // ========================================
   // Initialization
   // ========================================
 
@@ -207,7 +132,11 @@ var AdminServers = window.AdminServers || (function() {
       
       // Update detail modal if this server is currently shown
       if (currentServer && currentServer.id === server.id) {
-        showServerDetailModal(server);
+        if (window.ServerDetailModal) {
+          ServerDetailModal.open(server);
+        } else {
+          showServerDetailModal(server);
+        }
       }
     }
   }
@@ -483,78 +412,72 @@ var AdminServers = window.AdminServers || (function() {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) showServerDetailModal(server);
+        if (server) {
+          if (window.ServerDetailModal) {
+            ServerDetailModal.open(server);
+          } else {
+            console.warn('[AdminServers] ServerDetailModal not loaded, using legacy modal');
+            showServerDetailModal(server);
+          }
+        }
       };
     });
 
-    // Lock buttons - with confirmation modal
+    // Lock buttons - use ServerActionModals
     document.querySelectorAll('[data-action="lock"]').forEach(btn => {
       btn.onclick = function(e) {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) {
-          showConfirmationModal({
-            title: 'Lock Server',
-            message: `Are you sure you want to lock "${server.name}"? Members will not be able to access this server.`,
-            confirmText: 'Lock Server',
-            confirmClass: 'admin-btn-warning',
-            onConfirm: () => showLockModal(server)
+        if (server && window.ServerActionModals) {
+          ServerActionModals.showLockModal(server, async (lockData) => {
+            if (await lockServer(server.id, lockData.reason, lockData.duration)) {
+              AdminUtils?.showToast?.('Server locked successfully', 'success');
+            }
           });
         }
       };
     });
 
-    // Unlock buttons - with confirmation modal
+    // Unlock buttons - direct confirmation
     document.querySelectorAll('[data-action="unlock"]').forEach(btn => {
-      btn.onclick = function(e) {
+      btn.onclick = async function(e) {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) {
-          showConfirmationModal({
-            title: 'Unlock Server',
-            message: `Are you sure you want to unlock "${server.name}"? Members will be able to access this server again.`,
-            confirmText: 'Unlock Server',
-            confirmClass: 'admin-btn-success',
-            onConfirm: async () => await unlockServer(serverId)
-          });
+        if (server && confirm(`Are you sure you want to unlock "${server.name}"?`)) {
+          if (await unlockServer(serverId)) {
+            AdminUtils?.showToast?.('Server unlocked successfully', 'success');
+          }
         }
       };
     });
 
-    // Unsuspend buttons - with confirmation modal
+    // Unsuspend buttons - direct confirmation
     document.querySelectorAll('[data-action="unsuspend"]').forEach(btn => {
-      btn.onclick = function(e) {
+      btn.onclick = async function(e) {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) {
-          showConfirmationModal({
-            title: 'Unsuspend Server',
-            message: `Are you sure you want to unsuspend "${server.name}"? The server will become active again.`,
-            confirmText: 'Unsuspend Server',
-            confirmClass: 'admin-btn-success',
-            onConfirm: async () => await unsuspendServer(serverId)
-          });
+        if (server && confirm(`Are you sure you want to unsuspend "${server.name}"?`)) {
+          if (await unsuspendServer(serverId)) {
+            AdminUtils?.showToast?.('Server unsuspended successfully', 'success');
+          }
         }
       };
     });
 
-    // Delete buttons - with confirmation modal
+    // Delete buttons - use ServerActionModals
     document.querySelectorAll('[data-action="delete"]').forEach(btn => {
       btn.onclick = function(e) {
         e.stopPropagation();
         const serverId = this.dataset.id;
         const server = serversData.find(s => s.id == serverId);
-        if (server) {
-          showConfirmationModal({
-            title: 'Delete Server',
-            message: `Are you sure you want to delete "${server.name}"? This action cannot be undone.`,
-            confirmText: 'Delete Server',
-            confirmClass: 'admin-btn-danger',
-            isDangerous: true,
-            onConfirm: () => showDeleteModal(server)
+        if (server && window.ServerActionModals) {
+          ServerActionModals.showDeleteModal(server, async () => {
+            if (await deleteServer(server.id, 'Admin force delete')) {
+              AdminUtils?.showToast?.('Server deleted successfully', 'success');
+            }
           });
         }
       };
@@ -603,70 +526,61 @@ var AdminServers = window.AdminServers || (function() {
     contextMenu.querySelector('[data-action="view-details"]')?.addEventListener('click', function() {
       const server = contextMenuServer;
       hideContextMenu();
-      if (server) showServerDetailModal(server);
+      if (server) {
+        if (window.ServerDetailModal) {
+          ServerDetailModal.open(server);
+        } else {
+          console.warn('[AdminServers] ServerDetailModal not loaded, using legacy modal');
+          showServerDetailModal(server);
+        }
+      }
     });
 
-    // Lock Server - show confirmation modal
+    // Lock Server - use ServerActionModals directly
     contextMenu.querySelector('[data-action="lock-server"]')?.addEventListener('click', function() {
       const server = contextMenuServer; // Capture before hideContextMenu sets it to null
       hideContextMenu();
-      if (server) {
-        showConfirmationModal({
-          title: 'Lock Server',
-          message: `Are you sure you want to lock "${server.name}"? Members will not be able to access this server.`,
-          confirmText: 'Lock Server',
-          confirmClass: 'admin-btn-warning',
-          onConfirm: () => showLockModal(server)
-        });
-      }
-    });
-
-    // Unlock Server - show confirmation modal
-    contextMenu.querySelector('[data-action="unlock-server"]')?.addEventListener('click', function() {
-      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
-      hideContextMenu();
-      if (server) {
-        showConfirmationModal({
-          title: 'Unlock Server',
-          message: `Are you sure you want to unlock "${server.name}"? Members will be able to access this server again.`,
-          confirmText: 'Unlock Server',
-          confirmClass: 'admin-btn-success',
-          onConfirm: async () => {
-            await unlockServer(server.id);
+      if (server && window.ServerActionModals) {
+        ServerActionModals.showLockModal(server, async (lockData) => {
+          if (await lockServer(server.id, lockData.reason, lockData.duration)) {
+            AdminUtils?.showToast?.('Server locked successfully', 'success');
           }
         });
       }
     });
 
-    // Suspend Server - show confirmation modal
+    // Unlock Server - direct confirmation
+    contextMenu.querySelector('[data-action="unlock-server"]')?.addEventListener('click', async function() {
+      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
+      hideContextMenu();
+      if (server && confirm(`Are you sure you want to unlock "${server.name}"?`)) {
+        if (await unlockServer(server.id)) {
+          AdminUtils?.showToast?.('Server unlocked successfully', 'success');
+        }
+      }
+    });
+
+    // Suspend Server - use ServerActionModals directly
     contextMenu.querySelector('[data-action="suspend-server"]')?.addEventListener('click', function() {
       const server = contextMenuServer; // Capture before hideContextMenu sets it to null
       hideContextMenu();
-      if (server) {
-        showConfirmationModal({
-          title: 'Suspend Server',
-          message: `Are you sure you want to suspend "${server.name}"? The server will be temporarily disabled.`,
-          confirmText: 'Suspend Server',
-          confirmClass: 'admin-btn-warning',
-          onConfirm: () => showSuspendModal(server)
+      if (server && window.ServerActionModals) {
+        ServerActionModals.showSuspendModal(server, async (suspendData) => {
+          if (await suspendServer(server.id, suspendData.reason, suspendData.duration)) {
+            AdminUtils?.showToast?.('Server suspended successfully', 'success');
+          }
         });
       }
     });
 
-    // Unsuspend Server - show confirmation modal
-    contextMenu.querySelector('[data-action="unsuspend-server"]')?.addEventListener('click', function() {
+    // Unsuspend Server - direct confirmation
+    contextMenu.querySelector('[data-action="unsuspend-server"]')?.addEventListener('click', async function() {
       const server = contextMenuServer; // Capture before hideContextMenu sets it to null
       hideContextMenu();
-      if (server) {
-        showConfirmationModal({
-          title: 'Unsuspend Server',
-          message: `Are you sure you want to unsuspend "${server.name}"? The server will become active again.`,
-          confirmText: 'Unsuspend Server',
-          confirmClass: 'admin-btn-success',
-          onConfirm: async () => {
-            await unsuspendServer(server.id);
-          }
-        });
+      if (server && confirm(`Are you sure you want to unsuspend "${server.name}"?`)) {
+        if (await unsuspendServer(server.id)) {
+          AdminUtils?.showToast?.('Server unsuspended successfully', 'success');
+        }
       }
     });
 
@@ -675,23 +589,24 @@ var AdminServers = window.AdminServers || (function() {
       const server = contextMenuServer;
       hideContextMenu();
       if (server) {
-        showServerDetailModal(server);
-        setTimeout(() => switchModalTab('audit-log'), 100);
+        if (window.ServerDetailModal) {
+          ServerDetailModal.open(server, 'audit');
+        } else {
+          showServerDetailModal(server);
+          setTimeout(() => switchModalTab('audit-log'), 100);
+        }
       }
     });
 
-    // Force Delete - show confirmation modal
+    // Force Delete - use ServerActionModals directly
     contextMenu.querySelector('[data-action="delete-server"]')?.addEventListener('click', function() {
       const server = contextMenuServer; // Capture before hideContextMenu sets it to null
       hideContextMenu();
-      if (server) {
-        showConfirmationModal({
-          title: 'Force Delete Server',
-          message: `Are you sure you want to permanently delete "${server.name}"? This action cannot be undone and all data will be lost.`,
-          confirmText: 'Delete Server',
-          confirmClass: 'admin-btn-danger',
-          isDangerous: true,
-          onConfirm: () => showDeleteModal(server)
+      if (server && window.ServerActionModals) {
+        ServerActionModals.showDeleteModal(server, async () => {
+          if (await deleteServer(server.id, 'Admin force delete')) {
+            AdminUtils?.showToast?.('Server deleted successfully', 'success');
+          }
         });
       }
     });
@@ -757,7 +672,7 @@ var AdminServers = window.AdminServers || (function() {
   // Server Actions
   // ========================================
 
-  async function lockServer(serverId, reason) {
+  async function lockServer(serverId, reason, duration) {
     if (!reason || !reason.trim()) {
       AdminUtils?.showToast?.('Reason is required', 'warning');
       return false;
@@ -766,9 +681,12 @@ var AdminServers = window.AdminServers || (function() {
     try {
       const params = new URLSearchParams();
       params.append('reason', reason.trim());
+      if (duration) {
+        params.append('duration', duration);
+      }
       
       await AdminUtils.api.post(`${API.lock(serverId)}?${params}`);
-      AdminUtils?.showToast?.('Server locked successfully', 'warning');
+      // Toast will be shown by caller
       // Stats will update via WebSocket
       return true;
     } catch (error) {
@@ -781,7 +699,7 @@ var AdminServers = window.AdminServers || (function() {
   async function unlockServer(serverId) {
     try {
       await AdminUtils.api.post(API.unlock(serverId));
-      AdminUtils?.showToast?.('Server unlocked successfully', 'success');
+      // Toast will be shown by caller
       // Stats will update via WebSocket
       return true;
     } catch (error) {
@@ -802,7 +720,7 @@ var AdminServers = window.AdminServers || (function() {
       params.append('reason', reason.trim());
       
       await AdminUtils.api.delete(`${API.server(serverId)}?${params}`);
-      AdminUtils?.showToast?.('Server deleted successfully', 'success');
+      // Toast will be shown by caller
       // Stats will update via WebSocket
       return true;
     } catch (error) {
@@ -851,7 +769,7 @@ var AdminServers = window.AdminServers || (function() {
       }
       
       await AdminUtils.api.post(`${API.suspend(serverId)}?${params}`);
-      AdminUtils?.showToast?.('Server suspended successfully', 'warning');
+      // Toast will be shown by caller
       // Stats will update via WebSocket
       return true;
     } catch (error) {
@@ -864,7 +782,7 @@ var AdminServers = window.AdminServers || (function() {
   async function unsuspendServer(serverId) {
     try {
       await AdminUtils.api.post(API.unsuspend(serverId));
-      AdminUtils?.showToast?.('Server unsuspended successfully', 'success');
+      // Toast will be shown by caller
       // Stats will update via WebSocket
       return true;
     } catch (error) {
@@ -1217,6 +1135,8 @@ var AdminServers = window.AdminServers || (function() {
 
   // ========================================
   // Server Detail Modal (Horizontal Layout)
+  // NOTE: Legacy implementation - now using ServerDetailModal module
+  // Keep for reference and fallback until fully migrated
   // ========================================
 
   function showServerDetailModal(server) {
@@ -1517,57 +1437,11 @@ var AdminServers = window.AdminServers || (function() {
   // ========================================
   // Modal Tab Data Loading
   // ========================================  // ========================================
-  // Action Modals (Lock, Suspend, Transfer, Delete)
+  // Action Modals (Transfer only - Lock, Suspend, Delete use ServerActionModals)
   // ========================================
 
   function initActionModals() {
-    // Lock Modal
-    document.getElementById('btn-confirm-lock')?.addEventListener('click', async function() {
-      if (!currentServer) return;
-      const reason = document.getElementById('lock-reason')?.value?.trim();
-      if (!reason) {
-        AdminUtils?.showToast?.('Please enter a reason for locking this server', 'warning');
-        document.getElementById('lock-reason')?.focus();
-        return;
-      }
-      
-      this.disabled = true;
-      this.innerHTML = '<span class="loading-spinner-sm"></span> Locking...';
-      
-      if (await lockServer(currentServer.id, reason)) {
-        closeModal('lock-modal');
-        closeModal('server-detail-modal');
-      }
-      
-      this.disabled = false;
-      this.textContent = 'Lock Server';
-    });
-
-    // Suspend Modal
-    document.getElementById('btn-confirm-suspend')?.addEventListener('click', async function() {
-      if (!currentServer) return;
-      const reason = document.getElementById('suspend-reason')?.value?.trim();
-      const duration = document.getElementById('suspend-duration')?.value || 'permanent';
-      
-      if (!reason) {
-        AdminUtils?.showToast?.('Please enter a reason for suspending this server', 'warning');
-        document.getElementById('suspend-reason')?.focus();
-        return;
-      }
-      
-      this.disabled = true;
-      this.innerHTML = '<span class="loading-spinner-sm"></span> Suspending...';
-      
-      if (await suspendServer(currentServer.id, reason, duration)) {
-        closeModal('suspend-modal');
-        closeModal('server-detail-modal');
-      }
-      
-      this.disabled = false;
-      this.textContent = 'Suspend Server';
-    });
-
-    // Transfer Modal
+    // Transfer Modal - still uses legacy HTML modal
     document.getElementById('btn-confirm-transfer')?.addEventListener('click', async function() {
       if (!currentServer) return;
       const newOwnerId = document.getElementById('transfer-user-id')?.value?.trim();
@@ -1597,71 +1471,32 @@ var AdminServers = window.AdminServers || (function() {
       this.textContent = 'Transfer Ownership';
     });
 
-    // Delete Modal
-    document.getElementById('confirm-delete-input')?.addEventListener('input', function() {
-      const btn = document.getElementById('btn-confirm-delete');
-      if (btn && currentServer) {
-        btn.disabled = this.value !== currentServer.name;
-      }
-    });
-
-    document.getElementById('btn-confirm-delete')?.addEventListener('click', async function() {
-      if (!currentServer || this.disabled) return;
-      const reason = document.getElementById('delete-reason')?.value?.trim();
-      
-      if (!reason) {
-        AdminUtils?.showToast?.('Please enter a reason for deleting this server', 'warning');
-        document.getElementById('delete-reason')?.focus();
-        return;
-      }
-      
-      this.disabled = true;
-      this.innerHTML = '<span class="loading-spinner-sm"></span> Deleting...';
-      
-      if (await deleteServer(currentServer.id, reason)) {
-        closeModal('delete-modal');
-        closeModal('server-detail-modal');
-      }
-      
-      this.disabled = false;
-      this.textContent = 'Delete Server';
-    });
-
-    // Close buttons for action modals
-    document.querySelectorAll('[data-action="close-lock-modal"]').forEach(btn => {
-      btn.onclick = () => closeModal('lock-modal');
-    });
-    document.querySelectorAll('[data-action="close-suspend-modal"]').forEach(btn => {
-      btn.onclick = () => closeModal('suspend-modal');
-    });
+    // Close buttons for transfer modal only
     document.querySelectorAll('[data-action="close-transfer-modal"]').forEach(btn => {
       btn.onclick = () => closeModal('transfer-modal');
     });
-    document.querySelectorAll('[data-action="close-delete-modal"]').forEach(btn => {
-      btn.onclick = () => closeModal('delete-modal');
-    });
 
-    // Action card buttons in Admin Actions tab
+    // Action card buttons in Admin Actions tab - use ServerActionModals
     document.getElementById('btn-open-lock-modal')?.addEventListener('click', async function() {
       if (!currentServer) return;
       const isLocked = currentServer.isLocked || currentServer.locked || false;
       
       if (isLocked) {
-        // Server is locked, perform unlock directly
-        showConfirmationModal({
-          title: 'Unlock Server',
-          message: `Are you sure you want to unlock "${currentServer.name}"? Members will be able to access this server again.`,
-          confirmText: 'Unlock Server',
-          confirmClass: 'admin-btn-success',
-          onConfirm: async () => {
-            if (await unlockServer(currentServer.id)) {
-              closeModal('server-detail-modal');
-            }
+        // Server is locked, perform unlock directly with simple confirmation
+        if (confirm(`Are you sure you want to unlock "${currentServer.name}"?`)) {
+          if (await unlockServer(currentServer.id)) {
+            closeModal('server-detail-modal');
+            AdminUtils?.showToast?.('Server unlocked successfully', 'success');
+          }
+        }
+      } else if (window.ServerActionModals) {
+        // Server is not locked, show lock modal
+        ServerActionModals.showLockModal(currentServer, async (lockData) => {
+          if (await lockServer(currentServer.id, lockData.reason, lockData.duration)) {
+            closeModal('server-detail-modal');
+            AdminUtils?.showToast?.('Server locked successfully', 'success');
           }
         });
-      } else {
-        // Server is not locked, show lock modal
-        showLockModal(currentServer);
       }
     });
     document.getElementById('btn-open-suspend-modal')?.addEventListener('click', async function() {
@@ -1669,87 +1504,44 @@ var AdminServers = window.AdminServers || (function() {
       const isSuspended = currentServer.isSuspended || currentServer.suspended || false;
       
       if (isSuspended) {
-        // Server is suspended, perform unsuspend directly
-        showConfirmationModal({
-          title: 'Unsuspend Server',
-          message: `Are you sure you want to unsuspend "${currentServer.name}"? The server will become active again.`,
-          confirmText: 'Unsuspend Server',
-          confirmClass: 'admin-btn-success',
-          onConfirm: async () => {
-            if (await unsuspendServer(currentServer.id)) {
-              closeModal('server-detail-modal');
-            }
+        // Server is suspended, perform unsuspend directly with simple confirmation
+        if (confirm(`Are you sure you want to unsuspend "${currentServer.name}"?`)) {
+          if (await unsuspendServer(currentServer.id)) {
+            closeModal('server-detail-modal');
+            AdminUtils?.showToast?.('Server unsuspended successfully', 'success');
+          }
+        }
+      } else if (window.ServerActionModals) {
+        // Server is not suspended, show suspend modal
+        ServerActionModals.showSuspendModal(currentServer, async (suspendData) => {
+          if (await suspendServer(currentServer.id, suspendData.reason, suspendData.duration)) {
+            closeModal('server-detail-modal');
+            AdminUtils?.showToast?.('Server suspended successfully', 'success');
           }
         });
-      } else {
-        // Server is not suspended, show suspend modal
-        showSuspendModal(currentServer);
       }
     });
     document.getElementById('btn-open-transfer-modal')?.addEventListener('click', function() {
       if (currentServer) showTransferModal(currentServer);
     });
     document.getElementById('btn-open-delete-modal')?.addEventListener('click', function() {
-      if (currentServer) showDeleteModal(currentServer);
+      if (currentServer && window.ServerActionModals) {
+        ServerActionModals.showDeleteModal(currentServer, async () => {
+          if (await deleteServer(currentServer.id, 'Admin force delete')) {
+            closeModal('server-detail-modal');
+            AdminUtils?.showToast?.('Server deleted successfully', 'success');
+          }
+        });
+      }
     });
   }
 
-  function showLockModal(server) {
-    currentServer = server;
-    const modal = document.getElementById('lock-modal');
-    if (!modal) return;
+  // ========================================
+  // Legacy Modal Functions (Removed - using ServerActionModals)
+  // ========================================
 
-    // Update modal content
-    const avatarEl = document.getElementById('lock-avatar');
-    if (avatarEl) avatarEl.textContent = getInitials(server.name);
-    
-    document.getElementById('lock-server-name')?.textContent &&
-      (document.getElementById('lock-server-name').textContent = server.name);
-    
-    const metaEl = document.getElementById('lock-server-meta');
-    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
-    
-    // Reset form
-    document.getElementById('lock-reason').value = '';
-    
-    // Reset button state
-    const btn = document.getElementById('btn-confirm-lock');
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Lock Server';
-    }
-
-    modal.style.display = 'flex';
-  }
-
-  function showSuspendModal(server) {
-    currentServer = server;
-    const modal = document.getElementById('suspend-modal');
-    if (!modal) return;
-
-    // Update modal content
-    const avatarEl = document.getElementById('suspend-avatar');
-    if (avatarEl) avatarEl.textContent = getInitials(server.name);
-    
-    document.getElementById('suspend-server-name')?.textContent &&
-      (document.getElementById('suspend-server-name').textContent = server.name);
-    
-    const metaEl = document.getElementById('suspend-server-meta');
-    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
-    
-    // Reset form
-    document.getElementById('suspend-reason').value = '';
-    document.getElementById('suspend-duration').value = '7';
-    
-    // Reset button state
-    const btn = document.getElementById('btn-confirm-suspend');
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Suspend Server';
-    }
-
-    modal.style.display = 'flex';
-  }
+  // Note: showLockModal, showSuspendModal, showDeleteModal have been replaced
+  // by ServerActionModals.showLockModal(), showSuspendModal(), showDeleteModal()
 
   function showTransferModal(server) {
     currentServer = server;
@@ -1784,53 +1576,6 @@ var AdminServers = window.AdminServers || (function() {
     }
 
     modal.style.display = 'flex';
-  }
-
-  function showDeleteModal(server) {
-    currentServer = server;
-    const modal = document.getElementById('delete-modal');
-    if (!modal) return;
-
-    // Update modal content
-    const avatarEl = document.getElementById('delete-avatar');
-    if (avatarEl) avatarEl.textContent = getInitials(server.name);
-    
-    document.getElementById('delete-server-name')?.textContent &&
-      (document.getElementById('delete-server-name').textContent = server.name);
-    
-    // Update the confirmation label with server name
-    const confirmLabel = document.getElementById('confirm-delete-server-name-label');
-    if (confirmLabel) confirmLabel.textContent = server.name;
-    
-    const metaEl = document.getElementById('delete-server-meta');
-    if (metaEl) metaEl.textContent = `${AdminUtils?.formatNumber?.(server.memberCount || 0)} members`;
-    
-    // Reset form
-    const confirmInput = document.getElementById('confirm-delete-input');
-    if (confirmInput) confirmInput.value = '';
-    const reasonInput = document.getElementById('delete-reason');
-    if (reasonInput) reasonInput.value = '';
-    
-    // Reset button state
-    const btn = document.getElementById('btn-confirm-delete');
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Delete Server';
-    }
-
-    modal.style.display = 'flex';
-  }
-
-  // ========================================
-  // Confirm Delete Modal (Legacy - kept for compatibility)
-  // ========================================
-
-  function showConfirmDeleteModal(server) {
-    showDeleteModal(server);
-  }
-
-  function showQuickLockModal(server) {
-    showLockModal(server);
   }
 
   // ========================================

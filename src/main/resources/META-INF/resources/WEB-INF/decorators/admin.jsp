@@ -259,6 +259,8 @@
 <script src="${pageContext.request.contextPath}/admin/js/presence.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/users.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/user-detail-modal.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/server-detail-modal.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/server-action-modals.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/servers.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/reports.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/messages.js" defer></script>
