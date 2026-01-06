@@ -2250,3 +2250,209 @@ body {
         background: rgba(88, 101, 242, 0.1);
     }
 }
+/* ==================== SERVER LOCK/SUSPEND STATES ==================== */
+
+/* Server Locked Banner */
+.server-locked-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(90deg, rgba(240, 178, 50, 0.15) 0%, rgba(240, 178, 50, 0.08) 100%);
+    border-bottom: 1px solid rgba(240, 178, 50, 0.3);
+    color: var(--discord-yellow);
+    font-size: 14px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.server-locked-banner i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.server-locked-banner .banner-content {
+    flex: 1;
+}
+
+.server-locked-banner .banner-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.server-locked-banner .banner-reason {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.server-locked-banner .banner-until {
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Server Suspended Overlay */
+.server-suspended-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.server-suspended-overlay .suspend-icon {
+    font-size: 64px;
+    color: var(--discord-red);
+    margin-bottom: 24px;
+}
+
+.server-suspended-overlay .suspend-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-normal);
+    margin-bottom: 12px;
+}
+
+.server-suspended-overlay .suspend-message {
+    font-size: 16px;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 400px;
+    margin-bottom: 8px;
+}
+
+.server-suspended-overlay .suspend-reason {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    max-width: 400px;
+    text-align: center;
+}
+
+.server-suspended-overlay .suspend-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.server-suspended-overlay .suspend-btn {
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.server-suspended-overlay .suspend-btn-primary {
+    background: var(--discord-primary);
+    color: white;
+}
+
+.server-suspended-overlay .suspend-btn-primary:hover {
+    background: #4752c4;
+}
+
+.server-suspended-overlay .suspend-btn-secondary {
+    background: transparent;
+    color: var(--text-normal);
+    border: 1px solid var(--text-muted);
+}
+
+.server-suspended-overlay .suspend-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Server item locked state in sidebar */
+.server-item.server-locked {
+    opacity: 0.7;
+    position: relative;
+}
+
+.server-item.server-locked::after {
+    content: '\f023'; /* Bootstrap Icons lock */
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 12px;
+    color: var(--discord-yellow);
+    background: var(--bg-tertiary);
+    border-radius: 50%;
+    padding: 2px 4px;
+}
+
+/* Server item suspended state in sidebar */
+.server-item.server-suspended {
+    opacity: 0.4;
+    filter: grayscale(100%);
+    pointer-events: none;
+    position: relative;
+}
+
+.server-item.server-suspended::after {
+    content: '\f62a'; /* Bootstrap Icons slash-circle */
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 12px;
+    color: var(--discord-red);
+    background: var(--bg-tertiary);
+    border-radius: 50%;
+    padding: 2px 4px;
+}
+
+/* Disabled chat input state */
+.chat-composer.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.chat-composer.disabled .chat-input {
+    background: rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+}
+
+.chat-composer.disabled .chat-input::placeholder {
+    color: var(--discord-yellow);
+}
+
+/* Disabled action buttons */
+.channel-sidebar .disabled-action,
+.server-dropdown .disabled-action,
+.chat-composer .disabled-action {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.channel-sidebar .disabled-action:hover,
+.server-dropdown .disabled-action:hover {
+    background: transparent !important;
+}

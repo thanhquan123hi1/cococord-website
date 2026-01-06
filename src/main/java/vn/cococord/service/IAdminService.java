@@ -97,8 +97,14 @@ public interface IAdminService {
 
     /**
      * Lock a server
+     * 
+     * @param serverId      server to lock
+     * @param reason        lock reason
+     * @param durationHours lock duration in hours (null = permanent until manually
+     *                      unlocked)
+     * @param adminUsername admin performing the action
      */
-    void lockServer(Long serverId, String reason, String adminUsername);
+    void lockServer(Long serverId, String reason, Integer durationHours, String adminUsername);
 
     /**
      * Unlock a server

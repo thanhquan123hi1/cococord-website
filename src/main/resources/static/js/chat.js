@@ -92,6 +92,7 @@
     let voiceSubscription = null;
     let serverChannelsSubscription = null;
     let serverCategoriesSubscription = null;
+    let serverStatusSubscription = null; // Server lock/suspend status
 
     let servers = [];
     let channels = [];
@@ -377,10 +378,28 @@
     }
 
     /**
+     * Check if sending messages is allowed (server not locked/suspended)
+     * @returns {boolean}
+     */
+    function canSendMessage() {
+        if (currentServerStatus.isSuspended) {
+            showToast('Server đã bị đình chỉ. Bạn không thể gửi tin nhắn.', 'error');
+            return false;
+        }
+        if (currentServerStatus.isLocked) {
+            showToast('Server đang bị khóa. Bạn không thể gửi tin nhắn.', 'warning');
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Send text-only message via WebSocket
      * @returns {Promise<void>}
      */
     async function sendTextMessage(text) {
+        if (!canSendMessage()) return;
+        
         if (!stompClient || !stompClient.connected) {
             throw new Error('WebSocket not connected');
         }
@@ -409,6 +428,8 @@
      * Upload files and send message with attachments
      */
     async function uploadAndSendFiles(files, text) {
+        if (!canSendMessage()) return;
+        
         if (!files || files.length === 0) {
             console.warn('[Chat] uploadAndSendFiles called with no files');
             return;
@@ -486,6 +507,8 @@
      * Send GIF message
      */
     async function sendGifMessage(gifUrl, gifData) {
+        if (!canSendMessage()) return;
+        
         if (!stompClient || !stompClient.connected) {
             return;
         }
@@ -507,6 +530,8 @@
      * Send sticker message
      */
     async function sendStickerMessage(stickerId, stickerUrl) {
+        if (!canSendMessage()) return;
+        
         if (!stompClient || !stompClient.connected) {
             return;
         }
@@ -869,6 +894,25 @@
         // Remove active class from all server items
         el.globalServerList.querySelectorAll('.server-item').forEach(item => {
             item.classList.remove('active');
+            
+            // Also update lock/suspend status
+            const serverId = item.dataset.serverId;
+            const server = servers.find(s => String(s.id) === String(serverId));
+            
+            // Remove existing status classes
+            item.classList.remove('server-locked', 'server-suspended');
+            
+            if (server) {
+                if (server.isSuspended) {
+                    item.classList.add('server-suspended');
+                    item.title = server.name + ' - Server đã bị đình chỉ';
+                } else if (server.isLocked) {
+                    item.classList.add('server-locked');
+                    item.title = server.name + ' - Server đang bị khóa tạm thời';
+                } else {
+                    item.title = server.name;
+                }
+            }
         });
         
         // Add active class to current server
@@ -896,6 +940,14 @@
             item.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const serverId = item.dataset.serverId;
+                
+                // Check if server is suspended
+                const server = servers.find(s => String(s.id) === String(serverId));
+                if (server && server.isSuspended) {
+                    showToast('Server này đã bị đình chỉ. Bạn không thể truy cập.', 'error');
+                    return;
+                }
+                
                 if (serverId && String(serverId) !== String(activeServerId)) {
                     await selectServer(Number(serverId));
                 }
@@ -1877,6 +1929,260 @@
                 showToast('Lỗi khi cập nhật danh mục', 'error');
             }
         });
+
+        // Subscribe to server status changes (lock/suspend)
+        if (serverStatusSubscription) {
+            try { serverStatusSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            serverStatusSubscription = null;
+        }
+        serverStatusSubscription = stompClient.subscribe(`/topic/server.${serverId}.status`, (message) => {
+            try {
+                const event = JSON.parse(message.body);
+                handleServerStatusEvent(event);
+            } catch (e) {
+                console.error('[ServerStatus] Error handling status event:', e);
+            }
+        });
+    }
+
+    // ==================== SERVER LOCK/SUSPEND HANDLING ====================
+    let currentServerStatus = { isLocked: false, isSuspended: false };
+
+    function handleServerStatusEvent(event) {
+        console.log('[ServerStatus] Received event:', event);
+        const { type, payload } = event;
+
+        switch (type) {
+            case 'SERVER_LOCKED':
+                handleServerLocked(payload);
+                break;
+            case 'SERVER_UNLOCKED':
+                handleServerUnlocked();
+                break;
+            case 'SERVER_SUSPENDED':
+                handleServerSuspended(payload);
+                break;
+            case 'SERVER_UNSUSPENDED':
+                handleServerUnsuspended();
+                break;
+            default:
+                console.warn('[ServerStatus] Unknown event type:', type);
+        }
+    }
+
+    function handleServerLocked(payload) {
+        currentServerStatus.isLocked = true;
+        currentServerStatus.lockReason = payload?.reason || 'Vi phạm quy định cộng đồng';
+        currentServerStatus.lockedUntil = payload?.lockedUntil;
+
+        // Update server in local state
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        if (server) {
+            server.isLocked = true;
+            server.lockReason = currentServerStatus.lockReason;
+            server.lockedUntil = currentServerStatus.lockedUntil;
+        }
+
+        // Show locked banner
+        showLockedBanner();
+        
+        // Disable chat input
+        disableChatInput('Server đang bị khóa – bạn không thể gửi tin nhắn');
+        
+        // Update server sidebar
+        updateServerSidebarStatus();
+
+        showToast('Server đã bị khóa bởi quản trị viên', 'warning');
+    }
+
+    function handleServerUnlocked() {
+        currentServerStatus.isLocked = false;
+        currentServerStatus.lockReason = null;
+        currentServerStatus.lockedUntil = null;
+
+        // Update server in local state
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        if (server) {
+            server.isLocked = false;
+            server.lockReason = null;
+            server.lockedUntil = null;
+        }
+
+        // Remove locked banner
+        removeLockedBanner();
+        
+        // Re-enable chat input
+        enableChatInput();
+        
+        // Update server sidebar
+        updateServerSidebarStatus();
+
+        showToast('Server đã được mở khóa', 'success');
+    }
+
+    function handleServerSuspended(payload) {
+        currentServerStatus.isSuspended = true;
+        currentServerStatus.suspendReason = payload?.reason || 'Vi phạm nghiêm trọng quy định cộng đồng';
+
+        // Update server in local state
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        if (server) {
+            server.isSuspended = true;
+            server.suspendReason = currentServerStatus.suspendReason;
+        }
+
+        // Show suspended overlay
+        showSuspendedOverlay();
+        
+        // Update server sidebar
+        updateServerSidebarStatus();
+    }
+
+    function handleServerUnsuspended() {
+        currentServerStatus.isSuspended = false;
+        currentServerStatus.suspendReason = null;
+
+        // Update server in local state
+        const server = servers.find(s => String(s.id) === String(activeServerId));
+        if (server) {
+            server.isSuspended = false;
+            server.suspendReason = null;
+        }
+
+        // Remove suspended overlay
+        removeSuspendedOverlay();
+        
+        // Update server sidebar
+        updateServerSidebarStatus();
+
+        showToast('Server đã được khôi phục hoạt động', 'success');
+    }
+
+    function showLockedBanner() {
+        // Remove existing banner if any
+        removeLockedBanner();
+
+        const banner = document.createElement('div');
+        banner.className = 'server-locked-banner';
+        banner.id = 'serverLockedBanner';
+        
+        let untilText = '';
+        if (currentServerStatus.lockedUntil) {
+            const until = new Date(currentServerStatus.lockedUntil);
+            untilText = `<div class="banner-until">Mở khóa lúc: ${until.toLocaleString('vi-VN')}</div>`;
+        }
+
+        banner.innerHTML = `
+            <i class="bi bi-lock-fill"></i>
+            <div class="banner-content">
+                <div class="banner-title">Server đang bị khóa tạm thời</div>
+                <div class="banner-reason">Lý do: ${escapeHtml(currentServerStatus.lockReason || 'Không có lý do cụ thể')}</div>
+                ${untilText}
+            </div>
+        `;
+
+        // Insert banner at top of chat area
+        const chatArea = document.querySelector('.chat-area');
+        if (chatArea) {
+            chatArea.insertBefore(banner, chatArea.firstChild);
+        }
+    }
+
+    function removeLockedBanner() {
+        const banner = document.getElementById('serverLockedBanner');
+        if (banner) {
+            banner.remove();
+        }
+    }
+
+    function showSuspendedOverlay() {
+        // Remove existing overlay if any
+        removeSuspendedOverlay();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'server-suspended-overlay';
+        overlay.id = 'serverSuspendedOverlay';
+        overlay.innerHTML = `
+            <i class="bi bi-slash-circle suspend-icon"></i>
+            <div class="suspend-title">Server đã bị đình chỉ</div>
+            <div class="suspend-message">Server này đã bị đình chỉ do vi phạm nghiêm trọng quy định cộng đồng.</div>
+            <div class="suspend-reason">${escapeHtml(currentServerStatus.suspendReason || 'Không có lý do cụ thể')}</div>
+            <div class="suspend-actions">
+                <button class="suspend-btn suspend-btn-primary" onclick="window.location.href='/app'">Quay về trang chủ</button>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+    }
+
+    function removeSuspendedOverlay() {
+        const overlay = document.getElementById('serverSuspendedOverlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+
+    function disableChatInput(placeholder) {
+        if (el.chatComposer) {
+            el.chatComposer.classList.add('disabled');
+        }
+        if (el.chatInput) {
+            el.chatInput.disabled = true;
+            el.chatInput.placeholder = placeholder || 'Bạn không thể gửi tin nhắn';
+        }
+    }
+
+    function enableChatInput() {
+        if (el.chatComposer) {
+            el.chatComposer.classList.remove('disabled');
+        }
+        if (el.chatInput) {
+            el.chatInput.disabled = false;
+            const channel = channels.find(c => String(c.id) === String(activeChannelId));
+            el.chatInput.placeholder = channel ? `Nhắn #${channel.name}` : 'Nhắn tin...';
+        }
+    }
+
+    function updateServerSidebarStatus() {
+        // Update server icon in sidebar
+        const serverItems = document.querySelectorAll('.server-item');
+        serverItems.forEach(item => {
+            const serverId = item.dataset.serverId;
+            const server = servers.find(s => String(s.id) === String(serverId));
+            
+            // Remove existing status classes
+            item.classList.remove('server-locked', 'server-suspended');
+            
+            if (server) {
+                if (server.isSuspended) {
+                    item.classList.add('server-suspended');
+                    item.title = 'Server đã bị đình chỉ';
+                } else if (server.isLocked) {
+                    item.classList.add('server-locked');
+                    item.title = 'Server đang bị khóa tạm thời';
+                }
+            }
+        });
+    }
+
+    function checkServerStatusOnLoad(server) {
+        if (server.isSuspended) {
+            currentServerStatus.isSuspended = true;
+            currentServerStatus.suspendReason = server.suspendReason;
+            showSuspendedOverlay();
+        } else if (server.isLocked) {
+            currentServerStatus.isLocked = true;
+            currentServerStatus.lockReason = server.lockReason;
+            currentServerStatus.lockedUntil = server.lockedUntil;
+            showLockedBanner();
+            disableChatInput('Server đang bị khóa – bạn không thể gửi tin nhắn');
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     async function selectServer(serverId) {
@@ -1892,6 +2198,29 @@
             const server = servers.find(s => String(s.id) === String(serverId));
             if (el.serverName) {
                 el.serverName.textContent = server ? (server.name || 'Server') : 'Server...';
+            }
+
+            // Reset previous server status UI
+            removeLockedBanner();
+            removeSuspendedOverlay();
+            enableChatInput();
+            currentServerStatus = { isLocked: false, isSuspended: false };
+
+            // Check server lock/suspend status on load
+            if (server) {
+                checkServerStatusOnLoad(server);
+            }
+
+            // If server is suspended, do not load channels/messages. Still subscribe to status updates
+            // so that SERVER_UNSUSPENDED can recover without a reload.
+            if (server && server.isSuspended) {
+                try {
+                    await subscribeToServerUpdates(serverId);
+                } catch (err) {
+                    // Continue even if subscription fails
+                }
+                updateGlobalServerListActive();
+                return;
             }
 
             // Update sidebar active state
@@ -4163,6 +4492,22 @@
         const server = servers.find(s => String(s.id) === String(activeServerId));
         el.serverName.textContent = server ? (server.name || 'Server') : 'Server';
 
+        // Check server lock/suspend status on initial load
+        if (server) {
+            checkServerStatusOnLoad(server);
+        }
+
+        // If server is suspended, avoid loading channels/history. Still subscribe to status updates
+        // so that SERVER_UNSUSPENDED can recover without a reload.
+        if (server && server.isSuspended) {
+            try {
+                await subscribeToServerUpdates(activeServerId);
+            } catch (e) {
+                console.warn('Failed to subscribe to server updates:', e);
+            }
+            return;
+        }
+
         await Promise.all([
             loadChannels(activeServerId),
             loadMembers(activeServerId)
@@ -4257,6 +4602,15 @@
             try { serverCategoriesSubscription.unsubscribe(); } catch (e) { /* ignore */ }
             serverCategoriesSubscription = null;
         }
+        if (serverStatusSubscription) {
+            try { serverStatusSubscription.unsubscribe(); } catch (e) { /* ignore */ }
+            serverStatusSubscription = null;
+        }
+        
+        // Reset server status state
+        currentServerStatus = { isLocked: false, isSuspended: false };
+        removeLockedBanner();
+        removeSuspendedOverlay();
         
         // Disconnect STOMP client to prevent reconnection issues
         if (stompClient && stompClient.connected) {

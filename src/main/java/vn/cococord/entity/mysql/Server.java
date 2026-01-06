@@ -51,6 +51,8 @@ public class Server {
 
     private LocalDateTime lockedAt;
 
+    private LocalDateTime lockedUntil;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isSuspended = false;

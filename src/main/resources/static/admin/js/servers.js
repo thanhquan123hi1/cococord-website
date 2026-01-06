@@ -601,92 +601,99 @@ var AdminServers = window.AdminServers || (function() {
 
     // View Details
     contextMenu.querySelector('[data-action="view-details"]')?.addEventListener('click', function() {
-      if (contextMenuServer) showServerDetailModal(contextMenuServer);
+      const server = contextMenuServer;
       hideContextMenu();
+      if (server) showServerDetailModal(server);
     });
 
     // Lock Server - show confirmation modal
     contextMenu.querySelector('[data-action="lock-server"]')?.addEventListener('click', function() {
-      if (contextMenuServer) {
+      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
+      hideContextMenu();
+      if (server) {
         showConfirmationModal({
           title: 'Lock Server',
-          message: `Are you sure you want to lock "${contextMenuServer.name}"? Members will not be able to access this server.`,
+          message: `Are you sure you want to lock "${server.name}"? Members will not be able to access this server.`,
           confirmText: 'Lock Server',
           confirmClass: 'admin-btn-warning',
-          onConfirm: () => showLockModal(contextMenuServer)
+          onConfirm: () => showLockModal(server)
         });
       }
-      hideContextMenu();
     });
 
     // Unlock Server - show confirmation modal
     contextMenu.querySelector('[data-action="unlock-server"]')?.addEventListener('click', function() {
-      if (contextMenuServer) {
+      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
+      hideContextMenu();
+      if (server) {
         showConfirmationModal({
           title: 'Unlock Server',
-          message: `Are you sure you want to unlock "${contextMenuServer.name}"? Members will be able to access this server again.`,
+          message: `Are you sure you want to unlock "${server.name}"? Members will be able to access this server again.`,
           confirmText: 'Unlock Server',
           confirmClass: 'admin-btn-success',
           onConfirm: async () => {
-            await unlockServer(contextMenuServer.id);
+            await unlockServer(server.id);
           }
         });
       }
-      hideContextMenu();
     });
 
     // Suspend Server - show confirmation modal
     contextMenu.querySelector('[data-action="suspend-server"]')?.addEventListener('click', function() {
-      if (contextMenuServer) {
+      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
+      hideContextMenu();
+      if (server) {
         showConfirmationModal({
           title: 'Suspend Server',
-          message: `Are you sure you want to suspend "${contextMenuServer.name}"? The server will be temporarily disabled.`,
+          message: `Are you sure you want to suspend "${server.name}"? The server will be temporarily disabled.`,
           confirmText: 'Suspend Server',
           confirmClass: 'admin-btn-warning',
-          onConfirm: () => showSuspendModal(contextMenuServer)
+          onConfirm: () => showSuspendModal(server)
         });
       }
-      hideContextMenu();
     });
 
     // Unsuspend Server - show confirmation modal
     contextMenu.querySelector('[data-action="unsuspend-server"]')?.addEventListener('click', function() {
-      if (contextMenuServer) {
+      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
+      hideContextMenu();
+      if (server) {
         showConfirmationModal({
           title: 'Unsuspend Server',
-          message: `Are you sure you want to unsuspend "${contextMenuServer.name}"? The server will become active again.`,
+          message: `Are you sure you want to unsuspend "${server.name}"? The server will become active again.`,
           confirmText: 'Unsuspend Server',
           confirmClass: 'admin-btn-success',
           onConfirm: async () => {
-            await unsuspendServer(contextMenuServer.id);
+            await unsuspendServer(server.id);
           }
         });
       }
-      hideContextMenu();
     });
 
     // View Audit Log
     contextMenu.querySelector('[data-action="view-audit"]')?.addEventListener('click', function() {
-      if (contextMenuServer) {
-        showServerDetailModal(contextMenuServer);
+      const server = contextMenuServer;
+      hideContextMenu();
+      if (server) {
+        showServerDetailModal(server);
         setTimeout(() => switchModalTab('audit-log'), 100);
       }
-      hideContextMenu();
     });
 
     // Force Delete - show confirmation modal
     contextMenu.querySelector('[data-action="delete-server"]')?.addEventListener('click', function() {
-      if (contextMenuServer) {
+      const server = contextMenuServer; // Capture before hideContextMenu sets it to null
+      hideContextMenu();
+      if (server) {
         showConfirmationModal({
           title: 'Force Delete Server',
-          message: `Are you sure you want to permanently delete "${contextMenuServer.name}"? This action cannot be undone and all data will be lost.`,
+          message: `Are you sure you want to permanently delete "${server.name}"? This action cannot be undone and all data will be lost.`,
           confirmText: 'Delete Server',
           confirmClass: 'admin-btn-danger',
           isDangerous: true,
-          onConfirm: () => showDeleteModal(contextMenuServer)
+          onConfirm: () => showDeleteModal(server)
         });
       }
-      hideContextMenu();
     });
   }
 

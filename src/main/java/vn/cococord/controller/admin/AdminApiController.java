@@ -153,8 +153,9 @@ public class AdminApiController {
     public ResponseEntity<MessageResponse> lockServer(
             @PathVariable Long serverId,
             @RequestParam(required = false) String reason,
+            @RequestParam(required = false) Integer durationHours,
             @AuthenticationPrincipal UserDetails userDetails) {
-        adminService.lockServer(serverId, reason, userDetails.getUsername());
+        adminService.lockServer(serverId, reason, durationHours, userDetails.getUsername());
         return ResponseEntity.ok(new MessageResponse("Server locked successfully"));
     }
 

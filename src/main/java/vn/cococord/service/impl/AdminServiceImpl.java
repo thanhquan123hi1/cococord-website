@@ -555,7 +555,7 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
-    public void lockServer(Long serverId, String reason, String adminUsername) {
+    public void lockServer(Long serverId, String reason, Integer durationHours, String adminUsername) {
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found"));
 
@@ -567,16 +567,28 @@ public class AdminServiceImpl implements IAdminService {
         server.setIsLocked(true);
         server.setLockReason(reason);
         server.setLockedAt(LocalDateTime.now());
+
+        // Set lock end time if duration is specified
+        if (durationHours != null && durationHours > 0) {
+            server.setLockedUntil(LocalDateTime.now().plusHours(durationHours));
+        } else {
+            server.setLockedUntil(null); // No auto-unlock
+        }
+
         serverRepository.save(server);
 
+        String durationText = durationHours != null ? durationHours + " hours" : "indefinite";
         logAdminAction(AdminAuditLog.AdminActionType.SERVER_LOCK,
-                "Locked server " + server.getName() + " for: " + reason,
+                "Locked server " + server.getName() + " (" + durationText + ") for: " + reason,
                 "SERVER", serverId, server.getName(), null, adminUsername, null);
 
         // Broadcast realtime update to admin dashboard
         broadcastServerUpdate("SERVER_LOCKED", mapServerToResponse(server));
 
-        log.info("Admin {} locked server {} for: {}", adminUsername, server.getName(), reason);
+        // Broadcast to server members for realtime UI update
+        broadcastServerStatusToMembers(server, "SERVER_LOCKED");
+
+        log.info("Admin {} locked server {} ({}) for: {}", adminUsername, server.getName(), durationText, reason);
     }
 
     @Override
@@ -587,6 +599,7 @@ public class AdminServiceImpl implements IAdminService {
         server.setIsLocked(false);
         server.setLockReason(null);
         server.setLockedAt(null);
+        server.setLockedUntil(null);
         serverRepository.save(server);
 
         logAdminAction(AdminAuditLog.AdminActionType.SERVER_UNLOCK,
@@ -595,6 +608,9 @@ public class AdminServiceImpl implements IAdminService {
 
         // Broadcast realtime update to admin dashboard
         broadcastServerUpdate("SERVER_UNLOCKED", mapServerToResponse(server));
+
+        // Broadcast to server members for realtime UI update
+        broadcastServerStatusToMembers(server, "SERVER_UNLOCKED");
 
         log.info("Admin {} unlocked server {}", adminUsername, server.getName());
     }
@@ -607,19 +623,19 @@ public class AdminServiceImpl implements IAdminService {
         server.setIsSuspended(true);
         server.setSuspendReason(reason);
         server.setSuspendedAt(LocalDateTime.now());
-        
+
         // Set suspension end date if duration is specified (null = permanent)
         if (durationDays != null && durationDays > 0) {
             server.setSuspendedUntil(LocalDateTime.now().plusDays(durationDays));
         } else {
             server.setSuspendedUntil(null); // Permanent suspension
         }
-        
+
         // Also lock the server
         server.setIsLocked(true);
         server.setLockReason("Server suspended: " + reason);
         server.setLockedAt(LocalDateTime.now());
-        
+
         serverRepository.save(server);
 
         String durationText = durationDays != null ? durationDays + " days" : "permanent";
@@ -629,6 +645,9 @@ public class AdminServiceImpl implements IAdminService {
 
         // Broadcast realtime update to admin dashboard
         broadcastServerUpdate("SERVER_SUSPENDED", mapServerToResponse(server));
+
+        // Broadcast to server members for realtime UI update (kick users)
+        broadcastServerStatusToMembers(server, "SERVER_SUSPENDED");
 
         log.info("Admin {} suspended server {} ({}) for: {}", adminUsername, server.getName(), durationText, reason);
     }
@@ -642,12 +661,13 @@ public class AdminServiceImpl implements IAdminService {
         server.setSuspendReason(null);
         server.setSuspendedAt(null);
         server.setSuspendedUntil(null);
-        
+
         // Also unlock the server
         server.setIsLocked(false);
         server.setLockReason(null);
         server.setLockedAt(null);
-        
+        server.setLockedUntil(null);
+
         serverRepository.save(server);
 
         logAdminAction(AdminAuditLog.AdminActionType.SERVER_UNSUSPEND,
@@ -656,6 +676,9 @@ public class AdminServiceImpl implements IAdminService {
 
         // Broadcast realtime update to admin dashboard
         broadcastServerUpdate("SERVER_UNSUSPENDED", mapServerToResponse(server));
+
+        // Broadcast to server members for realtime UI update
+        broadcastServerStatusToMembers(server, "SERVER_UNSUSPENDED");
 
         log.info("Admin {} unsuspended server {}", adminUsername, server.getName());
     }
@@ -693,7 +716,7 @@ public class AdminServiceImpl implements IAdminService {
             event.put("type", eventType);
             event.put("server", server);
             event.put("timestamp", LocalDateTime.now().toString());
-            
+
             messagingTemplate.convertAndSend("/topic/admin.servers", event);
             log.debug("Broadcast {} for server {}", eventType, server.getId());
         } catch (Exception e) {
@@ -711,11 +734,40 @@ public class AdminServiceImpl implements IAdminService {
             event.put("serverId", serverId);
             event.put("serverName", serverName);
             event.put("timestamp", LocalDateTime.now().toString());
-            
+
             messagingTemplate.convertAndSend("/topic/admin.servers", event);
             log.debug("Broadcast SERVER_DELETED for server {}", serverId);
         } catch (Exception e) {
             log.error("Failed to broadcast server deletion: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Broadcast server status change to all server members via WebSocket
+     * Used for realtime Lock/Suspend UI updates on user clients
+     */
+    private void broadcastServerStatusToMembers(Server server, String eventType) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("type", eventType);
+            event.put("serverId", server.getId());
+            event.put("serverName", server.getName());
+            event.put("isLocked", server.getIsLocked());
+            event.put("lockReason", server.getLockReason());
+            event.put("lockedAt", server.getLockedAt() != null ? server.getLockedAt().toString() : null);
+            event.put("lockedUntil", server.getLockedUntil() != null ? server.getLockedUntil().toString() : null);
+            event.put("isSuspended", server.getIsSuspended());
+            event.put("suspendReason", server.getSuspendReason());
+            event.put("suspendedAt", server.getSuspendedAt() != null ? server.getSuspendedAt().toString() : null);
+            event.put("suspendedUntil",
+                    server.getSuspendedUntil() != null ? server.getSuspendedUntil().toString() : null);
+            event.put("timestamp", LocalDateTime.now().toString());
+
+            // Broadcast to server-specific topic (all connected members receive this)
+            messagingTemplate.convertAndSend("/topic/server." + server.getId() + ".status", event);
+            log.debug("Broadcast {} to members of server {}", eventType, server.getId());
+        } catch (Exception e) {
+            log.error("Failed to broadcast server status to members: {}", e.getMessage());
         }
     }
 
@@ -1176,6 +1228,7 @@ public class AdminServiceImpl implements IAdminService {
                 .isLocked(server.getIsLocked())
                 .lockReason(server.getLockReason())
                 .lockedAt(server.getLockedAt())
+                .lockedUntil(server.getLockedUntil())
                 .isSuspended(server.getIsSuspended())
                 .suspendReason(server.getSuspendReason())
                 .suspendedAt(server.getSuspendedAt())

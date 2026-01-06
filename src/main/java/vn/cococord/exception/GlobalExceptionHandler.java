@@ -98,6 +98,46 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle forbidden exceptions (including server lock/suspend)
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbiddenException(ForbiddenException ex) {
+        String message = ex.getMessage();
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+
+        // Handle server status errors with structured response
+        if (message != null && message.startsWith("SERVER_SUSPENDED:")) {
+            response.put("code", "SERVER_SUSPENDED");
+            response.put("message", message.substring("SERVER_SUSPENDED:".length()));
+            log.warn("Access denied - server suspended: {}", message);
+        } else if (message != null && message.startsWith("SERVER_LOCKED:")) {
+            String details = message.substring("SERVER_LOCKED:".length());
+            String reason = details;
+            String until = null;
+
+            if (details.contains("|UNTIL:")) {
+                String[] parts = details.split("\\|UNTIL:");
+                reason = parts[0];
+                until = parts.length > 1 ? parts[1] : null;
+            }
+
+            response.put("code", "SERVER_LOCKED");
+            response.put("message", reason);
+            if (until != null) {
+                response.put("lockedUntil", until);
+            }
+            log.warn("Access denied - server locked: {}", message);
+        } else {
+            response.put("code", "FORBIDDEN");
+            response.put("message", message != null ? message : "Access denied");
+            log.warn("Forbidden: {}", message);
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    /**
      * Handle user not found
      */
     @ExceptionHandler(UsernameNotFoundException.class)
