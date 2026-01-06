@@ -19,7 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import vn.cococord.annotation.CheckChannelAccess;
 import vn.cococord.dto.permission.ChannelPermissionDTO;
 import vn.cococord.dto.permission.ComputedPermissionsDTO;
+import vn.cococord.entity.mysql.User;
 import vn.cococord.service.IPermissionService;
+import vn.cococord.service.IUserService;
 
 /**
  * REST Controller cho quản lý Channel Permissions
@@ -39,6 +41,7 @@ import vn.cococord.service.IPermissionService;
 public class ChannelPermissionController {
     
     private final IPermissionService permissionService;
+    private final IUserService userService;
     
     /**
      * Lấy tất cả permission overrides của channel
@@ -71,8 +74,8 @@ public class ChannelPermissionController {
         
         log.info("User {} requested their permissions in channel {}", userDetails.getUsername(), channelId);
         
-        // Get user ID from UserDetails (simplified - adapt to your auth system)
-        Long userId = 1L; // TODO: Get from authenticated user
+        User user = userService.getUserByUsername(userDetails.getUsername());
+        Long userId = user.getId();
         
         ComputedPermissionsDTO permissions = permissionService.computeChannelPermissions(userId, channelId);
         return ResponseEntity.ok(permissions);

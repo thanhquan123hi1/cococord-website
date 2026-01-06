@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BanMemberRequest {
+public class MuteMemberRequest {
 
     @NotNull(message = "User ID is required")
     private Long userId;
@@ -19,7 +19,12 @@ public class BanMemberRequest {
     @Size(max = 1000, message = "Reason cannot exceed 1000 characters")
     private String reason;
 
-    private Integer deleteMessageDays; // Delete messages from last X days (0-7)
-
-    private String expiresAt; // ISO datetime string, null = permanent
+    /**
+     * Duration in minutes for the mute. Special values:
+     * - 1440 = 1 day
+     * - 10080 = 1 week
+     * - 43200 = 1 month (30 days)
+     * - null or -1 = permanent
+     */
+    private Integer durationMinutes;
 }

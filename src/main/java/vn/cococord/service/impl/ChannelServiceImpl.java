@@ -233,9 +233,9 @@ public class ChannelServiceImpl implements IChannelService {
             return true;
         }
 
-        // For private channels, check permissions (simplified - always allow for now)
-        // TODO: Implement proper permission checking with ChannelPermission entity
-        return true;
+        // For private channels, check VIEW_CHANNEL permission using ChannelPermission system
+        User user = getUserByUsername(username);
+        return permissionService.hasChannelPermission(user.getId(), channelId, "VIEW_CHANNEL");
     }
 
     private User getUserByUsername(String username) {

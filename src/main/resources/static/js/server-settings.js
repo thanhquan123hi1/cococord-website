@@ -168,33 +168,23 @@
                             
                             <!-- Placeholder tabs -->
                             <div class="settings-tab-content" id="emojiTab">
-                                <div class="overview-section">
-                                    <p style="color:var(--text-muted)">Tính năng Emoji đang được phát triển...</p>
-                                </div>
+                                ${this._createEmojiTabHTML()}
                             </div>
                             
                             <div class="settings-tab-content" id="stickersTab">
-                                <div class="overview-section">
-                                    <p style="color:var(--text-muted)">Tính năng Stickers đang được phát triển...</p>
-                                </div>
+                                ${this._createStickersTabHTML()}
                             </div>
                             
                             <div class="settings-tab-content" id="membersTab">
-                                <div class="overview-section">
-                                    <p style="color:var(--text-muted)">Quản lý thành viên đang được phát triển...</p>
-                                </div>
+                                ${this._createMembersTabHTML()}
                             </div>
                             
                             <div class="settings-tab-content" id="invitesTab">
-                                <div class="overview-section">
-                                    <p style="color:var(--text-muted)">Quản lý lời mời đang được phát triển...</p>
-                                </div>
+                                ${this._createInvitesTabHTML()}
                             </div>
                             
                             <div class="settings-tab-content" id="bansTab">
-                                <div class="overview-section">
-                                    <p style="color:var(--text-muted)">Danh sách cấm đang được phát triển...</p>
-                                </div>
+                                ${this._createBansTabHTML()}
                             </div>
                         </div>
                     </main>
@@ -343,6 +333,102 @@
             return html;
         }
 
+        _createEmojiTabHTML() {
+            return `
+                <div class="overview-section">
+                    <div class="overview-section-title">Emoji tùy chỉnh</div>
+                    <p style="color:var(--text-muted);margin-bottom:16px">Quản lý emoji tùy chỉnh của server</p>
+                    <div class="emoji-upload-area">
+                        <button class="btn-upload" id="btnUploadEmoji">
+                            <i class="bi bi-plus-lg"></i> Tải emoji lên
+                        </button>
+                        <input type="file" accept="image/png,image/gif,image/jpeg" id="emojiFileInput" style="display:none" multiple>
+                    </div>
+                    <div class="emoji-list" id="emojiList">
+                        <div class="emoji-list-empty">
+                            <i class="bi bi-emoji-smile"></i>
+                            <p>Chưa có emoji nào</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _createStickersTabHTML() {
+            return `
+                <div class="overview-section">
+                    <div class="overview-section-title">Stickers tùy chỉnh</div>
+                    <p style="color:var(--text-muted);margin-bottom:16px">Quản lý stickers của server</p>
+                    <div class="sticker-upload-area">
+                        <button class="btn-upload" id="btnUploadSticker">
+                            <i class="bi bi-plus-lg"></i> Tải sticker lên
+                        </button>
+                        <input type="file" accept="image/png,image/gif,image/jpeg" id="stickerFileInput" style="display:none">
+                    </div>
+                    <div class="sticker-list" id="stickerList">
+                        <div class="sticker-list-empty">
+                            <i class="bi bi-stickies"></i>
+                            <p>Chưa có sticker nào</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _createMembersTabHTML() {
+            return `
+                <div class="overview-section">
+                    <div class="members-header">
+                        <div class="overview-section-title">Thành viên Server</div>
+                        <div class="members-search">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="memberSearchInput" placeholder="Tìm kiếm thành viên...">
+                        </div>
+                    </div>
+                    <div class="members-list" id="membersList">
+                        <div class="members-loading">
+                            <div class="spinner"></div>
+                            <p>Đang tải danh sách thành viên...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _createInvitesTabHTML() {
+            return `
+                <div class="overview-section">
+                    <div class="invites-header">
+                        <div class="overview-section-title">Link mời</div>
+                        <button class="btn-create-invite" id="btnCreateInvite">
+                            <i class="bi bi-plus-lg"></i> Tạo link mời
+                        </button>
+                    </div>
+                    <div class="invites-list" id="invitesList">
+                        <div class="invites-loading">
+                            <div class="spinner"></div>
+                            <p>Đang tải danh sách link mời...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        _createBansTabHTML() {
+            return `
+                <div class="overview-section">
+                    <div class="overview-section-title">Danh sách cấm</div>
+                    <p style="color:var(--text-muted);margin-bottom:16px">Các thành viên đã bị cấm khỏi server</p>
+                    <div class="bans-list" id="bansList">
+                        <div class="bans-loading">
+                            <div class="spinner"></div>
+                            <p>Đang tải danh sách...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         // ==================== EVENT BINDING ====================
         
         _bindEvents() {
@@ -441,6 +527,39 @@
                     this.close();
                 }
             });
+
+            // ==================== NEW TAB EVENT BINDINGS ====================
+
+            // Emoji upload
+            this.modal.querySelector('#btnUploadEmoji')?.addEventListener('click', () => {
+                this.modal.querySelector('#emojiFileInput')?.click();
+            });
+            this.modal.querySelector('#emojiFileInput')?.addEventListener('change', (e) => {
+                if (e.target.files) {
+                    this._handleEmojiUpload(e.target.files);
+                }
+            });
+
+            // Sticker upload
+            this.modal.querySelector('#btnUploadSticker')?.addEventListener('click', () => {
+                this.modal.querySelector('#stickerFileInput')?.click();
+            });
+            this.modal.querySelector('#stickerFileInput')?.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this._handleStickerUpload(e.target.files[0]);
+                }
+            });
+
+            // Member search
+            const memberSearchInput = this.modal.querySelector('#memberSearchInput');
+            memberSearchInput?.addEventListener('input', this._debounce(() => {
+                this._filterMembers(memberSearchInput.value);
+            }, 300));
+
+            // Create invite
+            this.modal.querySelector('#btnCreateInvite')?.addEventListener('click', () => {
+                this._createInviteLink();
+            });
         }
 
         // ==================== TAB SWITCHING ====================
@@ -467,6 +586,19 @@
                 bans: 'Danh sách cấm'
             };
             this.tabTitle.textContent = titles[tabId] || tabId;
+
+            // Load data for specific tabs
+            if (tabId === 'members' && !this.membersLoaded) {
+                this._loadMembers();
+            } else if (tabId === 'invites' && !this.invitesLoaded) {
+                this._loadInvites();
+            } else if (tabId === 'bans' && !this.bansLoaded) {
+                this._loadBans();
+            } else if (tabId === 'emoji' && !this.emojiLoaded) {
+                this._loadEmoji();
+            } else if (tabId === 'stickers' && !this.stickersLoaded) {
+                this._loadStickers();
+            }
         }
 
         // ==================== OVERVIEW TAB HANDLERS ====================
@@ -659,6 +791,666 @@
             this._checkForChanges();
         }
 
+        // ==================== EMOJI/STICKERS TAB HANDLERS ====================
+
+        async _loadEmoji() {
+            const container = this.modal.querySelector('#emojiList');
+            if (!container) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/emoji`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) {
+                    this.emojiList = [];
+                } else {
+                    this.emojiList = await response.json();
+                }
+
+                this._renderEmojiList();
+                this.emojiLoaded = true;
+            } catch (error) {
+                console.error('[ServerSettings] Load emoji failed:', error);
+                this.emojiList = [];
+                this._renderEmojiList();
+            }
+        }
+
+        _renderEmojiList() {
+            const container = this.modal.querySelector('#emojiList');
+            if (!container) return;
+
+            if (!this.emojiList || this.emojiList.length === 0) {
+                container.innerHTML = `
+                    <div class="emoji-list-empty">
+                        <i class="bi bi-emoji-smile"></i>
+                        <p>Chưa có emoji nào</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.emojiList.map(emoji => `
+                <div class="emoji-item" data-emoji-id="${emoji.id}">
+                    <img src="${emoji.imageUrl}" alt="${emoji.name}" class="emoji-img">
+                    <span class="emoji-name">:${emoji.name}:</span>
+                    <button class="btn-delete-emoji" data-id="${emoji.id}" title="Xóa emoji">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            // Bind delete events
+            container.querySelectorAll('.btn-delete-emoji').forEach(btn => {
+                btn.addEventListener('click', () => this._deleteEmoji(btn.dataset.id));
+            });
+        }
+
+        async _handleEmojiUpload(files) {
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) {
+                    this._showToast('Chỉ chấp nhận file ảnh', 'error');
+                    continue;
+                }
+                if (file.size > 256 * 1024) {
+                    this._showToast('File quá lớn (tối đa 256KB)', 'error');
+                    continue;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('name', file.name.split('.')[0].replace(/[^a-zA-Z0-9_]/g, '_'));
+
+                    const response = await fetch(`/api/servers/${this.serverId}/emoji`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') },
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Upload failed');
+
+                    this._showToast('Đã tải emoji lên!', 'success');
+                    await this._loadEmoji();
+                } catch (error) {
+                    console.error('[ServerSettings] Emoji upload failed:', error);
+                    this._showToast('Không thể tải emoji lên', 'error');
+                }
+            }
+        }
+
+        async _deleteEmoji(emojiId) {
+            if (!confirm('Bạn có chắc muốn xóa emoji này?')) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/emoji/${emojiId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                this._showToast('Đã xóa emoji', 'success');
+                await this._loadEmoji();
+            } catch (error) {
+                console.error('[ServerSettings] Delete emoji failed:', error);
+                this._showToast('Không thể xóa emoji', 'error');
+            }
+        }
+
+        async _loadStickers() {
+            const container = this.modal.querySelector('#stickerList');
+            if (!container) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/stickers`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) {
+                    this.stickerList = [];
+                } else {
+                    this.stickerList = await response.json();
+                }
+
+                this._renderStickerList();
+                this.stickersLoaded = true;
+            } catch (error) {
+                console.error('[ServerSettings] Load stickers failed:', error);
+                this.stickerList = [];
+                this._renderStickerList();
+            }
+        }
+
+        _renderStickerList() {
+            const container = this.modal.querySelector('#stickerList');
+            if (!container) return;
+
+            if (!this.stickerList || this.stickerList.length === 0) {
+                container.innerHTML = `
+                    <div class="sticker-list-empty">
+                        <i class="bi bi-stickies"></i>
+                        <p>Chưa có sticker nào</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.stickerList.map(sticker => `
+                <div class="sticker-item" data-sticker-id="${sticker.id}">
+                    <img src="${sticker.imageUrl}" alt="${sticker.name}" class="sticker-img">
+                    <span class="sticker-name">${sticker.name}</span>
+                    <button class="btn-delete-sticker" data-id="${sticker.id}" title="Xóa sticker">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            // Bind delete events
+            container.querySelectorAll('.btn-delete-sticker').forEach(btn => {
+                btn.addEventListener('click', () => this._deleteSticker(btn.dataset.id));
+            });
+        }
+
+        async _handleStickerUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                this._showToast('Chỉ chấp nhận file ảnh', 'error');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('name', file.name.split('.')[0]);
+
+                const response = await fetch(`/api/servers/${this.serverId}/stickers`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') },
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                this._showToast('Đã tải sticker lên!', 'success');
+                await this._loadStickers();
+            } catch (error) {
+                console.error('[ServerSettings] Sticker upload failed:', error);
+                this._showToast('Không thể tải sticker lên', 'error');
+            }
+        }
+
+        async _deleteSticker(stickerId) {
+            if (!confirm('Bạn có chắc muốn xóa sticker này?')) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/stickers/${stickerId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                this._showToast('Đã xóa sticker', 'success');
+                await this._loadStickers();
+            } catch (error) {
+                console.error('[ServerSettings] Delete sticker failed:', error);
+                this._showToast('Không thể xóa sticker', 'error');
+            }
+        }
+
+        // ==================== MEMBERS TAB HANDLERS ====================
+
+        async _loadMembers() {
+            const container = this.modal.querySelector('#membersList');
+            if (!container) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/members`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) throw new Error('Failed to load members');
+
+                this.membersList = await response.json();
+                this.filteredMembers = [...this.membersList];
+                this._renderMembersList();
+                this.membersLoaded = true;
+            } catch (error) {
+                console.error('[ServerSettings] Load members failed:', error);
+                container.innerHTML = `
+                    <div class="members-error">
+                        <p>Không thể tải danh sách thành viên</p>
+                    </div>
+                `;
+            }
+        }
+
+        _filterMembers(query) {
+            if (!query) {
+                this.filteredMembers = [...this.membersList];
+            } else {
+                const q = query.toLowerCase();
+                this.filteredMembers = this.membersList.filter(m =>
+                    m.username.toLowerCase().includes(q) ||
+                    (m.displayName && m.displayName.toLowerCase().includes(q)) ||
+                    (m.nickname && m.nickname.toLowerCase().includes(q))
+                );
+            }
+            this._renderMembersList();
+        }
+
+        _renderMembersList() {
+            const container = this.modal.querySelector('#membersList');
+            if (!container) return;
+
+            if (!this.filteredMembers || this.filteredMembers.length === 0) {
+                container.innerHTML = `
+                    <div class="members-empty">
+                        <p>Không tìm thấy thành viên nào</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.filteredMembers.map(member => `
+                <div class="member-item" data-user-id="${member.userId}">
+                    <div class="member-info">
+                        <img src="${member.avatarUrl || '/images/default-avatar.png'}" alt="" class="member-avatar">
+                        <div class="member-details">
+                            <span class="member-name">${this._escapeHtml(member.displayName || member.username)}</span>
+                            <span class="member-username">@${this._escapeHtml(member.username)}</span>
+                        </div>
+                    </div>
+                    <div class="member-role">${member.roleName || '@everyone'}</div>
+                    <div class="member-actions">
+                        <button class="btn-member-action" title="Cấm chat" data-action="mute" data-user-id="${member.userId}">
+                            <i class="bi bi-mic-mute"></i>
+                        </button>
+                        <button class="btn-member-action btn-danger" title="Kick" data-action="kick" data-user-id="${member.userId}">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                        <button class="btn-member-action btn-danger" title="Ban" data-action="ban" data-user-id="${member.userId}">
+                            <i class="bi bi-person-x"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Bind action events
+            container.querySelectorAll('.btn-member-action').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const action = btn.dataset.action;
+                    const userId = btn.dataset.userId;
+                    if (action === 'mute') this._showMuteDialog(userId);
+                    else if (action === 'kick') this._kickMember(userId);
+                    else if (action === 'ban') this._showBanDialog(userId);
+                });
+            });
+        }
+
+        _showMuteDialog(userId) {
+            const member = this.membersList.find(m => String(m.userId) === String(userId));
+            const memberName = member ? (member.displayName || member.username) : 'thành viên';
+
+            const duration = prompt(
+                `Chọn thời gian cấm chat cho ${memberName}:\n\n` +
+                `1 = 1 ngày\n` +
+                `7 = 1 tuần\n` +
+                `30 = 1 tháng\n` +
+                `0 = Vĩnh viễn\n\n` +
+                `Nhập số ngày:`
+            );
+
+            if (duration === null) return;
+
+            const days = parseInt(duration);
+            if (isNaN(days) || days < 0) {
+                this._showToast('Vui lòng nhập số hợp lệ', 'error');
+                return;
+            }
+
+            const durationMinutes = days === 0 ? null : days * 24 * 60;
+            this._muteMember(userId, durationMinutes);
+        }
+
+        async _muteMember(userId, durationMinutes) {
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/mute`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        durationMinutes: durationMinutes,
+                        reason: 'Cấm chat từ cài đặt server'
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to mute');
+                }
+
+                this._showToast('Đã cấm chat thành viên', 'success');
+            } catch (error) {
+                console.error('[ServerSettings] Mute failed:', error);
+                this._showToast('Không thể cấm chat: ' + error.message, 'error');
+            }
+        }
+
+        async _kickMember(userId) {
+            const member = this.membersList.find(m => String(m.userId) === String(userId));
+            const memberName = member ? (member.displayName || member.username) : 'thành viên';
+
+            if (!confirm(`Bạn có chắc muốn kick ${memberName} khỏi server?`)) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/kick`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        reason: 'Kick từ cài đặt server'
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to kick');
+                }
+
+                this._showToast('Đã kick thành viên', 'success');
+                await this._loadMembers();
+            } catch (error) {
+                console.error('[ServerSettings] Kick failed:', error);
+                this._showToast('Không thể kick: ' + error.message, 'error');
+            }
+        }
+
+        _showBanDialog(userId) {
+            const member = this.membersList.find(m => String(m.userId) === String(userId));
+            const memberName = member ? (member.displayName || member.username) : 'thành viên';
+
+            if (!confirm(`Bạn có chắc muốn ban ${memberName} khỏi server? Họ sẽ không thể tham gia lại.`)) return;
+
+            const reason = prompt('Lý do ban (tùy chọn):');
+            this._banMember(userId, reason || null);
+        }
+
+        async _banMember(userId, reason) {
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/ban`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        reason: reason,
+                        deleteMessageDays: 0
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to ban');
+                }
+
+                this._showToast('Đã ban thành viên', 'success');
+                await this._loadMembers();
+            } catch (error) {
+                console.error('[ServerSettings] Ban failed:', error);
+                this._showToast('Không thể ban: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== INVITES TAB HANDLERS ====================
+
+        async _loadInvites() {
+            const container = this.modal.querySelector('#invitesList');
+            if (!container) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/invites`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) throw new Error('Failed to load invites');
+
+                this.invitesList = await response.json();
+                this._renderInvitesList();
+                this.invitesLoaded = true;
+            } catch (error) {
+                console.error('[ServerSettings] Load invites failed:', error);
+                container.innerHTML = `
+                    <div class="invites-error">
+                        <p>Không thể tải danh sách link mời</p>
+                    </div>
+                `;
+            }
+        }
+
+        _renderInvitesList() {
+            const container = this.modal.querySelector('#invitesList');
+            if (!container) return;
+
+            if (!this.invitesList || this.invitesList.length === 0) {
+                container.innerHTML = `
+                    <div class="invites-empty">
+                        <i class="bi bi-link-45deg"></i>
+                        <p>Chưa có link mời nào</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.invitesList.map(invite => {
+                const inviteUrl = `${window.location.origin}/invite/${invite.code}`;
+                const expiresText = invite.expiresAt
+                    ? `Hết hạn: ${new Date(invite.expiresAt).toLocaleDateString('vi-VN')}`
+                    : 'Không hết hạn';
+                const usesText = invite.maxUses > 0
+                    ? `${invite.currentUses}/${invite.maxUses} lượt`
+                    : `${invite.currentUses} lượt`;
+
+                return `
+                    <div class="invite-item" data-invite-id="${invite.id}">
+                        <div class="invite-info">
+                            <div class="invite-code">
+                                <input type="text" value="${inviteUrl}" readonly class="invite-url-input">
+                                <button class="btn-copy-invite" data-url="${inviteUrl}" title="Sao chép link">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <div class="invite-meta">
+                                <span><i class="bi bi-person"></i> ${invite.createdBy}</span>
+                                <span><i class="bi bi-clock"></i> ${expiresText}</span>
+                                <span><i class="bi bi-people"></i> ${usesText}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete-invite" data-id="${invite.id}" title="Xóa link mời">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            // Bind events
+            container.querySelectorAll('.btn-copy-invite').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(btn.dataset.url).then(() => {
+                        this._showToast('Đã sao chép link!', 'success');
+                    });
+                });
+            });
+
+            container.querySelectorAll('.btn-delete-invite').forEach(btn => {
+                btn.addEventListener('click', () => this._deleteInvite(btn.dataset.id));
+            });
+        }
+
+        async _createInviteLink() {
+            const expiresInDays = prompt('Link mời hết hạn sau bao nhiêu ngày? (0 = không hết hạn):', '7');
+            if (expiresInDays === null) return;
+
+            const days = parseInt(expiresInDays) || 0;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/invites`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    },
+                    body: JSON.stringify({
+                        expiresInDays: days > 0 ? days : null,
+                        maxUses: 0
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to create invite');
+
+                this._showToast('Đã tạo link mời mới!', 'success');
+                await this._loadInvites();
+            } catch (error) {
+                console.error('[ServerSettings] Create invite failed:', error);
+                this._showToast('Không thể tạo link mời', 'error');
+            }
+        }
+
+        async _deleteInvite(inviteId) {
+            if (!confirm('Bạn có chắc muốn xóa link mời này?')) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/invites/${inviteId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete invite');
+
+                this._showToast('Đã xóa link mời', 'success');
+                await this._loadInvites();
+            } catch (error) {
+                console.error('[ServerSettings] Delete invite failed:', error);
+                this._showToast('Không thể xóa link mời', 'error');
+            }
+        }
+
+        // ==================== BANS TAB HANDLERS ====================
+
+        async _loadBans() {
+            const container = this.modal.querySelector('#bansList');
+            if (!container) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/bans`, {
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) throw new Error('Failed to load bans');
+
+                this.bansList = await response.json();
+                this._renderBansList();
+                this.bansLoaded = true;
+            } catch (error) {
+                console.error('[ServerSettings] Load bans failed:', error);
+                container.innerHTML = `
+                    <div class="bans-error">
+                        <p>Không thể tải danh sách cấm</p>
+                    </div>
+                `;
+            }
+        }
+
+        _renderBansList() {
+            const container = this.modal.querySelector('#bansList');
+            if (!container) return;
+
+            if (!this.bansList || this.bansList.length === 0) {
+                container.innerHTML = `
+                    <div class="bans-empty">
+                        <i class="bi bi-person-check"></i>
+                        <p>Không có ai bị cấm</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = this.bansList.map(ban => {
+                const bannedDate = new Date(ban.bannedAt).toLocaleDateString('vi-VN');
+                return `
+                    <div class="ban-item" data-ban-id="${ban.id}">
+                        <div class="ban-info">
+                            <img src="${ban.avatarUrl || '/images/default-avatar.png'}" alt="" class="ban-avatar">
+                            <div class="ban-details">
+                                <span class="ban-name">${this._escapeHtml(ban.displayName || ban.username)}</span>
+                                <span class="ban-username">@${this._escapeHtml(ban.username)}</span>
+                                <span class="ban-meta">
+                                    Bị cấm bởi ${ban.bannedByUsername} vào ${bannedDate}
+                                    ${ban.reason ? ` - Lý do: ${this._escapeHtml(ban.reason)}` : ''}
+                                </span>
+                            </div>
+                        </div>
+                        <button class="btn-unban" data-user-id="${ban.userId}" title="Bỏ cấm">
+                            <i class="bi bi-person-plus"></i> Bỏ cấm
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            // Bind unban events
+            container.querySelectorAll('.btn-unban').forEach(btn => {
+                btn.addEventListener('click', () => this._unbanMember(btn.dataset.userId));
+            });
+        }
+
+        async _unbanMember(userId) {
+            const ban = this.bansList.find(b => String(b.userId) === String(userId));
+            const memberName = ban ? (ban.displayName || ban.username) : 'thành viên';
+
+            if (!confirm(`Bạn có chắc muốn bỏ cấm ${memberName}?`)) return;
+
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/bans/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '') }
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to unban');
+                }
+
+                this._showToast('Đã bỏ cấm thành viên', 'success');
+                await this._loadBans();
+            } catch (error) {
+                console.error('[ServerSettings] Unban failed:', error);
+                this._showToast('Không thể bỏ cấm: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== UTILITY ====================
+
+        _debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
         // ==================== SAVE/RESET ====================
         
         _checkForChanges() {
@@ -693,17 +1485,6 @@
             btn.textContent = 'Đang lưu...';
             
             try {
-                // Prepare server settings data
-                const settingsData = {
-                    name: this.modal.querySelector('#settingsServerNameInput')?.value || this.serverData?.name,
-                    roles: this.roles.map(role => ({
-                        id: role.isNew ? null : role.id,
-                        name: role.name,
-                        color: role.color,
-                        permissions: role.permissionsList || []
-                    }))
-                };
-                
                 // If there's a pending icon, upload it first
                 if (this.pendingIconFile) {
                     const formData = new FormData();
@@ -718,23 +1499,90 @@
                     });
                     
                     if (!iconResponse.ok) {
-                        throw new Error('Failed to upload icon');
+                        throw new Error('Không thể tải icon lên');
                     }
                 }
-                
-                // Save settings
-                const response = await fetch(`/api/servers/${this.serverId}/settings`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
-                    },
-                    body: JSON.stringify(settingsData)
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.message || 'Failed to save settings');
+
+                // Update server name if changed
+                const newName = this.modal.querySelector('#settingsServerNameInput')?.value;
+                if (newName && newName !== this.originalData?.name) {
+                    const response = await fetch(`/api/servers/${this.serverId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                        },
+                        body: JSON.stringify({ name: newName })
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json().catch(() => ({}));
+                        throw new Error(error.message || 'Không thể cập nhật tên server');
+                    }
+                }
+
+                // Save role changes
+                for (const role of this.roles) {
+                    const originalRole = this.originalRoles?.find(r => String(r.id) === String(role.id));
+                    const hasChanged = !originalRole || 
+                        role.name !== originalRole.name ||
+                        role.color !== originalRole.color ||
+                        JSON.stringify(role.permissionsList) !== JSON.stringify(originalRole.permissionsList);
+
+                    if (hasChanged) {
+                        if (role.isNew) {
+                            // Create new role
+                            const response = await fetch(`/api/servers/${this.serverId}/roles`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                                },
+                                body: JSON.stringify({
+                                    name: role.name,
+                                    color: role.color,
+                                    permissions: role.permissionsList || []
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Không thể tạo vai trò "${role.name}"`);
+                            }
+                        } else {
+                            // Update existing role
+                            const response = await fetch(`/api/servers/${this.serverId}/roles/${role.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                                },
+                                body: JSON.stringify({
+                                    name: role.name,
+                                    color: role.color,
+                                    permissionsList: role.permissionsList || []
+                                })
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Không thể cập nhật vai trò "${role.name}"`);
+                            }
+                        }
+                    }
+                }
+
+                // Delete removed roles
+                if (this.originalRoles) {
+                    for (const originalRole of this.originalRoles) {
+                        const stillExists = this.roles.some(r => String(r.id) === String(originalRole.id));
+                        if (!stillExists && !originalRole.isDefault) {
+                            await fetch(`/api/servers/${this.serverId}/roles/${originalRole.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                                }
+                            });
+                        }
+                    }
                 }
                 
                 // Update original data
@@ -747,9 +1595,12 @@
                 
                 this._showToast('Đã lưu thay đổi thành công!', 'success');
                 
+                // Refresh roles to get new IDs
+                await this._loadRoles();
+                
                 // Callback
                 if (this.onSave) {
-                    this.onSave(settingsData);
+                    this.onSave({ name: newName });
                 }
                 
             } catch (error) {
@@ -848,6 +1699,13 @@
             this.pendingIconFile = null;
             this.removeIcon = false;
             this.hasChanges = false;
+
+            // Reset loaded flags for tabs
+            this.membersLoaded = false;
+            this.invitesLoaded = false;
+            this.bansLoaded = false;
+            this.emojiLoaded = false;
+            this.stickersLoaded = false;
             
             // Show modal
             this.modal.classList.add('show');
