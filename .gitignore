@@ -33,9 +33,6 @@ build/
 .vscode/
 
 discord-creator-hub-main
-*.jpg
-*.jpeg
-*.png
 *.gif
 *.bmp
 *.tiff
