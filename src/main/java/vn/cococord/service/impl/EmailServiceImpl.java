@@ -27,181 +27,203 @@ public class EmailServiceImpl implements IEmailService {
     @Value("${app.name:CoCoCord}")
     private String appName;
 
+    // --- PUBLIC METHODS ---
+
     @Async
     @SuppressWarnings("null")
     public void sendWelcomeEmail(String toEmail, String displayName) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Welcome to " + appName + "!");
-
-            String htmlContent = buildWelcomeEmailTemplate(displayName);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-            log.info("Welcome email sent to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Failed to send welcome email to: {}", toEmail, e);
-        }
+        String subject = "Welcome to the Inner Circle - " + appName;
+        String content = buildWelcomeContent(displayName);
+        sendEmail(toEmail, subject, content);
     }
 
     @Async
     @SuppressWarnings("null")
     public void sendPasswordResetEmail(String toEmail, String displayName, String resetToken) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Password Reset Request - " + appName);
-
-            String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
-            String htmlContent = buildPasswordResetEmailTemplate(displayName, resetUrl);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-            log.info("Password reset email sent to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Failed to send password reset email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send email", e);
-        }
+        String subject = "Security Verification - " + appName;
+        String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
+        String content = buildPasswordResetContent(displayName, resetUrl);
+        sendEmail(toEmail, subject, content);
     }
 
     @Async
     @SuppressWarnings("null")
     public void sendPasswordChangedEmail(String toEmail, String displayName) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Password Changed - " + appName);
-
-            String htmlContent = buildPasswordChangedEmailTemplate(displayName);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-            log.info("Password changed notification sent to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Failed to send password changed email to: {}", toEmail, e);
-        }
+        String subject = "Credentials Updated - " + appName;
+        String content = buildPasswordChangedContent(displayName);
+        sendEmail(toEmail, subject, content);
     }
 
     @Async
     @SuppressWarnings("null")
     public void sendPasswordResetSuccessEmail(String toEmail, String displayName) {
+        String subject = "Access Restored - " + appName;
+        String content = buildPasswordResetSuccessContent(displayName);
+        sendEmail(toEmail, subject, content);
+    }
+
+    // --- PRIVATE HELPER METHODS ---
+
+    private void sendEmail(String to, String subject, String bodyContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Password Reset Successful - " + appName);
+            helper.setTo(to);
+            helper.setSubject(subject);
 
-            String htmlContent = buildPasswordResetSuccessEmailTemplate(displayName);
-            helper.setText(htmlContent, true);
+            // Wrap nội dung vào layout sang trọng
+            String fullHtml = buildLuxuryLayout(subject, bodyContent);
+            helper.setText(fullHtml, true);
 
             mailSender.send(message);
-            log.info("Password reset success email sent to: {}", toEmail);
+            log.info("Luxury Email sent to: {}", to);
         } catch (MessagingException e) {
-            log.error("Failed to send password reset success email to: {}", toEmail, e);
+            log.error("Failed to send email to: {}", to, e);
+            // Tùy chọn: ném exception nếu cần handle ở tầng trên
         }
     }
 
-    private String buildWelcomeEmailTemplate(String displayName) {
-        return "<!DOCTYPE html>" +
-                "<html><head><style>" +
-                "body{font-family:Arial,sans-serif;line-height:1.6;color:#333}" +
-                ".container{max-width:600px;margin:0 auto;padding:20px}" +
-                ".header{background:#5865F2;color:white;padding:20px;text-align:center}" +
-                ".content{padding:20px;background:#f9f9f9}" +
-                ".button{display:inline-block;padding:10px 20px;background:#5865F2;color:white;text-decoration:none;border-radius:5px}"
-                +
-                "</style></head><body>" +
-                "<div class='container'>" +
-                "<div class='header'><h1>Welcome to " + appName + "!</h1></div>" +
-                "<div class='content'>" +
-                "<p>Hi " + displayName + ",</p>" +
-                "<p>Welcome to " + appName + "! We're excited to have you on board.</p>" +
-                "<p>You can now start chatting with friends, join servers, and explore all the features we have to offer.</p>"
-                +
-                "<p style='text-align:center;margin:30px 0'>" +
-                "<a href='" + frontendUrl + "' class='button'>Get Started</a></p>" +
-                "<p>If you have any questions, feel free to reach out to our support team.</p>" +
-                "<p>Best regards,<br>The " + appName + " Team</p>" +
-                "</div></div></body></html>";
+    // --- TEMPLATE BUILDERS (LUXURY STYLE) ---
+
+    /**
+     * Layout tổng thể:
+     * - Background: Trắng tinh khôi hoặc Xám rất nhạt.
+     * - Font: Serif cho tiêu đề (sang trọng), Sans-serif cho body.
+     * - Accent Color: Gold (#D4AF37) và Black (#1A1A1A).
+     */
+    private String buildLuxuryLayout(String title, String innerContent) {
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        /* Reset & Base */
+                        body { margin: 0; padding: 0; background-color: #F9F9F9; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #333333; }
+                        a { text-decoration: none; transition: all 0.3s ease; }
+
+                        /* Container - Card sang trọng */
+                        .wrapper { width: 100%%; padding: 60px 0; background-color: #F9F9F9; }
+                        .container { max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #EAEAEA; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+
+                        /* Header - Tối giản, Serif Font */
+                        .header { padding: 40px 0 20px 0; text-align: center; border-bottom: 2px solid #D4AF37; margin: 0 40px; }
+                        .brand-name { font-family: 'Times New Roman', Times, serif; font-size: 24px; letter-spacing: 3px; text-transform: uppercase; color: #1A1A1A; font-weight: bold; }
+
+                        /* Content */
+                        .content { padding: 40px; line-height: 1.8; font-size: 15px; color: #555555; }
+                        .greeting { font-family: 'Times New Roman', Times, serif; font-size: 22px; color: #1A1A1A; margin-bottom: 20px; }
+
+                        /* Button - Đen & Vàng Kim */
+                        .btn-container { text-align: center; margin: 40px 0; }
+                        .btn { display: inline-block; padding: 16px 36px; background-color: #1A1A1A; color: #D4AF37 !important; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border: 1px solid #1A1A1A; }
+                        .btn:hover { background-color: #FFFFFF; color: #1A1A1A !important; }
+
+                        /* Footer - Tinh tế */
+                        .footer { background-color: #FAFAFA; padding: 30px; text-align: center; font-size: 11px; color: #999999; border-top: 1px solid #EAEAEA; letter-spacing: 1px; text-transform: uppercase; }
+
+                        /* Utilities */
+                        .divider { height: 1px; background-color: #EAEAEA; margin: 30px 0; border: none; }
+                        .accent-text { color: #D4AF37; font-weight: bold; }
+                        .warning-box { background-color: #FFFAFA; border-left: 2px solid #D4AF37; padding: 20px; font-size: 13px; color: #666; margin-top: 30px; font-style: italic; }
+                    </style>
+                </head>
+                <body>
+                    <div class="wrapper">
+                        <div class="container">
+                            <div class="header">
+                                <span class="brand-name">%s</span>
+                            </div>
+                            <div class="content">
+                                %s
+                            </div>
+                            <div class="footer">
+                                &copy; %s %s. All Rights Reserved.<br>
+                                Excellence in Connectivity.
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                .formatted(appName, innerContent, java.time.Year.now().getValue(), appName);
     }
 
-    private String buildPasswordResetEmailTemplate(String displayName, String resetUrl) {
-        return "<!DOCTYPE html>" +
-                "<html><head><style>" +
-                "body{font-family:Arial,sans-serif;line-height:1.6;color:#333}" +
-                ".container{max-width:600px;margin:0 auto;padding:20px}" +
-                ".header{background:#5865F2;color:white;padding:20px;text-align:center}" +
-                ".content{padding:20px;background:#f9f9f9}" +
-                ".button{display:inline-block;padding:10px 20px;background:#5865F2;color:white;text-decoration:none;border-radius:5px}"
-                +
-                ".warning{background:#fff3cd;padding:10px;border-left:4px solid #ffc107;margin:20px 0}" +
-                "</style></head><body>" +
-                "<div class='container'>" +
-                "<div class='header'><h1>Password Reset Request</h1></div>" +
-                "<div class='content'>" +
-                "<p>Hi " + displayName + ",</p>" +
-                "<p>We received a request to reset your password. Click the button below to create a new password:</p>"
-                +
-                "<p style='text-align:center;margin:30px 0'>" +
-                "<a href='" + resetUrl + "' class='button'>Reset Password</a></p>" +
-                "<div class='warning'><strong>Important:</strong> This link will expire in 1 hour. If you didn't request this, please ignore this email.</div>"
-                +
-                "<p>If the button doesn't work, copy and paste this link into your browser:</p>" +
-                "<p style='word-break:break-all;color:#5865F2'>" + resetUrl + "</p>" +
-                "<p>Best regards,<br>The " + appName + " Team</p>" +
-                "</div></div></body></html>";
+    private String buildWelcomeContent(String displayName) {
+        return """
+                <h2 class="greeting">Greetings, %s.</h2>
+                <p>It is our distinct pleasure to welcome you to <strong>%s</strong>.</p>
+                <p>You have joined a community that values quality, connection, and seamless interaction. Your account has been prepared with the utmost care.</p>
+                <p>We invite you to step into your new digital experience.</p>
+
+                <div class="btn-container">
+                    <a href="%s" class="btn">Begin Experience</a>
+                </div>
+
+                <p style="font-size: 13px; color: #888; text-align: center;">
+                    <em>"Simplicity is the ultimate sophistication."</em>
+                </p>
+                """
+                .formatted(displayName, appName, frontendUrl);
     }
 
-    private String buildPasswordChangedEmailTemplate(String displayName) {
-        return "<!DOCTYPE html>" +
-                "<html><head><style>" +
-                "body{font-family:Arial,sans-serif;line-height:1.6;color:#333}" +
-                ".container{max-width:600px;margin:0 auto;padding:20px}" +
-                ".header{background:#28a745;color:white;padding:20px;text-align:center}" +
-                ".content{padding:20px;background:#f9f9f9}" +
-                ".warning{background:#fff3cd;padding:10px;border-left:4px solid #ffc107;margin:20px 0}" +
-                "</style></head><body>" +
-                "<div class='container'>" +
-                "<div class='header'><h1>Password Changed Successfully</h1></div>" +
-                "<div class='content'>" +
-                "<p>Hi " + displayName + ",</p>" +
-                "<p>This is a confirmation that your password has been changed successfully.</p>" +
-                "<div class='warning'><strong>Security Notice:</strong> If you didn't make this change, please contact our support team immediately.</div>"
-                +
-                "<p>Best regards,<br>The " + appName + " Team</p>" +
-                "</div></div></body></html>";
+    private String buildPasswordResetContent(String displayName, String resetUrl) {
+        return """
+                <h2 class="greeting">Security Verification</h2>
+                <p>Dear %s,</p>
+                <p>We have received a request to reset the credentials associated with your account. To maintain the integrity and security of your profile, please proceed via the secure link below.</p>
+
+                <div class="btn-container">
+                    <a href="%s" class="btn">Secure Reset Link</a>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Notice:</strong> This authorization is valid for 60 minutes. If you did not initiate this request, please disregard this correspondence. Your account remains secure.
+                </div>
+
+                <div style="margin-top: 30px; font-size: 12px; color: #999; text-align: center;">
+                    <p>Alternatively, copy this secure URL:</p>
+                    <a href="%s" style="color: #1A1A1A; border-bottom: 1px solid #D4AF37;">%s</a>
+                </div>
+                """
+                .formatted(displayName, resetUrl, resetUrl, resetUrl);
     }
 
-    private String buildPasswordResetSuccessEmailTemplate(String displayName) {
-        return "<!DOCTYPE html>" +
-                "<html><head><style>" +
-                "body{font-family:Arial,sans-serif;line-height:1.6;color:#333}" +
-                ".container{max-width:600px;margin:0 auto;padding:20px}" +
-                ".header{background:#28a745;color:white;padding:20px;text-align:center}" +
-                ".content{padding:20px;background:#f9f9f9}" +
-                ".button{display:inline-block;padding:10px 20px;background:#5865F2;color:white;text-decoration:none;border-radius:5px}"
-                +
-                "</style></head><body>" +
-                "<div class='container'>" +
-                "<div class='header'><h1>Password Reset Successful</h1></div>" +
-                "<div class='content'>" +
-                "<p>Hi " + displayName + ",</p>" +
-                "<p>Your password has been reset successfully. You can now login with your new password.</p>" +
-                "<p style='text-align:center;margin:30px 0'>" +
-                "<a href='" + frontendUrl + "/login' class='button'>Login Now</a></p>" +
-                "<p>Best regards,<br>The " + appName + " Team</p>" +
-                "</div></div></body></html>";
+    private String buildPasswordChangedContent(String displayName) {
+        String supportEmail = "concierge@" + appName.toLowerCase().replaceAll("\\s+", "") + ".com";
+        return """
+                <h2 class="greeting">Credentials Updated</h2>
+                <p>Dear %s,</p>
+                <p>This correspondence serves as a formal confirmation that the password for your <strong>%s</strong> account has been successfully modified.</p>
+                <p>No further action is required on your part.</p>
+
+                <hr class="divider">
+
+                <p style="font-size: 13px;">
+                    <span style="color: #D4AF37; font-size: 18px; vertical-align: middle;">⚠</span>
+                    <strong>Security Alert:</strong> If this modification was not authorized by you, it is imperative that you <a href="mailto:%s" style="color: #1A1A1A; font-weight: bold; border-bottom: 1px solid #1A1A1A;">contact our concierge support</a> immediately.
+                </p>
+                """
+                .formatted(displayName, appName, supportEmail);
+    }
+
+    private String buildPasswordResetSuccessContent(String displayName) {
+        String loginLink = frontendUrl + "/login";
+        return """
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <span style="font-size: 40px; color: #D4AF37;">&#10003;</span>
+                </div>
+                <h2 class="greeting" style="text-align: center;">Access Restored</h2>
+                <p style="text-align: center;">Dear %s,</p>
+                <p style="text-align: center;">Your access credentials have been successfully reset. You may now resume your session with full privileges.</p>
+
+                <div class="btn-container">
+                    <a href="%s" class="btn">Return to Portal</a>
+                </div>
+                """
+                .formatted(displayName, loginLink);
     }
 }
