@@ -23,7 +23,9 @@
         stopTypingTimeout: null
     };
 
-    // ==================== CALL (WebRTC + WebSocket signaling) ====================
+    // ==================== CALL (Delegated to global CallManager) ====================
+    // Note: Call functionality is now handled by the global CoCoCordCallManager
+    // This local state is kept only for backward compatibility with legacy overlay
     const call = {
         active: false,
         roomId: null,
@@ -1008,32 +1010,81 @@
         return state.dmGroupId ? String(state.dmGroupId) : null;
     }
 
+    // ==================== CALL FUNCTIONS (Delegated to Global CallManager) ====================
+    // These functions now delegate to the global CoCoCordCallManager
+    // Legacy overlay functions are kept for backward compatibility but will be replaced
+    // by the global call overlay in CallManager
+
+    async function startCall({ video }) {
+        console.log('[Messages] ⚡ startCall() called, video:', video);
+        
+        // Delegate to global CallManager
+        if (!window.CoCoCordCallManager) {
+            console.error('[Messages] CoCoCordCallManager not loaded');
+            return;
+        }
+        
+        console.log('[Messages] CallManager found, preparing call data...');
+        
+        const roomId = getCallRoomId();
+        if (!roomId || !state.otherUser) {
+            console.warn('[Messages] Cannot start call: missing roomId or otherUser');
+            return;
+        }
+        
+        const targetUserId = state.otherUser.id;
+        const targetUser = {
+            id: state.otherUser.id,
+            username: state.otherUser.username,
+            displayName: state.otherUser.displayName || state.otherUser.username,
+            avatarUrl: state.otherUser.avatarUrl
+        };
+        
+        console.log('[Messages] Calling CallManager.startCall() with:', {
+            targetUserId,
+            roomId,
+            targetUser: targetUser.username,
+            video
+        });
+        
+        try {
+            const success = await window.CoCoCordCallManager.startCall(targetUserId, roomId, targetUser, video);
+            console.log('[Messages] CallManager.startCall() returned:', success);
+            if (!success) {
+                throw new Error('Failed to start call');
+            }
+        } catch (err) {
+            console.error('[Messages] Failed to start call:', err);
+            throw err;
+        }
+    }
+
+    function endCall({ sendHangup } = { sendHangup: true }) {
+        // Delegate to global CallManager
+        if (window.CoCoCordCallManager) {
+            window.CoCoCordCallManager.endCall(sendHangup);
+        }
+        
+        // Also hide any legacy overlay on this page
+        hideCallOverlay();
+    }
+
     function showCallOverlay({ video, outgoing }) {
-        const overlay = callEls.overlay();
-        if (!overlay) return;
-
-        const otherName = displayName(state.otherUser);
-        const typeLabel = video ? 'Video Call' : 'Voice Call';
-        const prefix = outgoing ? 'Đang gọi' : 'Đang nhận';
-        const title = callEls.title();
-        if (title) title.textContent = `${prefix}: ${otherName} • ${typeLabel}`;
-
-        overlay.style.display = 'flex';
-        overlay.setAttribute('aria-hidden', 'false');
-
-        const localVideo = callEls.localVideo();
-        const remoteVideo = callEls.remoteVideo();
-        if (localVideo) localVideo.style.display = video ? '' : 'none';
-        if (remoteVideo) remoteVideo.style.display = video ? '' : 'none';
+        // NO-OP: Legacy overlay completely disabled
+        // All call UI is now handled by global CoCoCordCallManager
+        return;
     }
 
     function hideCallOverlay() {
+        // Ensure legacy overlay stays hidden
         const overlay = callEls.overlay();
-        if (!overlay) return;
-        overlay.style.display = 'none';
-        overlay.setAttribute('aria-hidden', 'true');
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden', 'true');
+        }
     }
 
+    // Legacy media attachment functions - kept for any remaining usage
     function attachStreamToVideo(videoEl, stream, { muted = false } = {}) {
         if (!videoEl || !stream) return;
         videoEl.autoplay = true;
@@ -1059,227 +1110,12 @@
         } catch (_) { /* ignore */ }
     }
 
-    function sendSignal(payload) {
-        if (!state.stomp || !state.stomp.connected) return;
-        try {
-            state.stomp.send('/app/call.signal', {}, JSON.stringify(payload));
-        } catch (_) { /* ignore */ }
-    }
-
-    function createPeerConnection() {
-        const pc = new RTCPeerConnection({
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        });
-
-        pc.onicecandidate = (e) => {
-            if (!e.candidate || !call.roomId) return;
-            sendSignal({
-                roomId: call.roomId,
-                type: 'ICE',
-                candidate: e.candidate.candidate,
-                sdpMid: e.candidate.sdpMid,
-                sdpMLineIndex: e.candidate.sdpMLineIndex,
-                video: call.video
-            });
-        };
-
-        pc.ontrack = (e) => {
-            if (!call.remoteStream) {
-                call.remoteStream = new MediaStream();
-            }
-            call.remoteStream.addTrack(e.track);
-
-            // Always attach audio
-            attachStreamToAudio(callEls.remoteAudio(), call.remoteStream);
-
-            // Attach video when present and call is video
-            const hasVideo = call.remoteStream.getVideoTracks().length > 0;
-            if (call.video && hasVideo) {
-                attachStreamToVideo(callEls.remoteVideo(), call.remoteStream, { muted: false });
-            }
-        };
-
-        pc.onconnectionstatechange = () => {
-            const s = pc.connectionState;
-            if (s === 'failed' || s === 'closed' || s === 'disconnected') {
-                // Keep it simple: end call on teardown
-                endCall({ sendHangup: false });
-            }
-        };
-
-        return pc;
-    }
-
-    async function ensureLocalMedia(video) {
-        if (call.localStream) return call.localStream;
-
-        call.localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: video ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false
-        });
-
-        if (video) {
-            attachStreamToVideo(callEls.localVideo(), call.localStream, { muted: true });
-        }
-
-        return call.localStream;
-    }
-
-    async function startCall({ video }) {
-        const roomId = getCallRoomId();
-        if (!roomId || !state.otherUser) return;
-        if (!state.stomp || !state.stomp.connected) return;
-        if (call.active) return;
-
-        call.active = true;
-        call.roomId = roomId;
-        call.isCaller = true;
-        call.video = !!video;
-        call.pc = createPeerConnection();
-
-        showCallOverlay({ video: call.video, outgoing: true });
-
-        const stream = await ensureLocalMedia(call.video);
-        stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
-
-        // Notify start (simple auto-join on other side)
-        sendSignal({ roomId: call.roomId, type: 'CALL_START', video: call.video });
-
-        const offer = await call.pc.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: call.video
-        });
-        await call.pc.setLocalDescription(offer);
-        sendSignal({ roomId: call.roomId, type: 'OFFER', sdp: offer.sdp, video: call.video });
-    }
-
-    function endCall({ sendHangup } = { sendHangup: true }) {
-        if (!call.active) {
-            hideCallOverlay();
-            return;
-        }
-
-        if (sendHangup && call.roomId) {
-            sendSignal({ roomId: call.roomId, type: 'HANGUP', video: call.video });
-        }
-
-        try {
-            if (call.pc) {
-                call.pc.onicecandidate = null;
-                call.pc.ontrack = null;
-                call.pc.close();
-            }
-        } catch (_) { /* ignore */ }
-
-        stopStream(call.localStream);
-        stopStream(call.remoteStream);
-
-        call.pc = null;
-        call.localStream = null;
-        call.remoteStream = null;
-        call.active = false;
-        call.roomId = null;
-        call.isCaller = false;
-        call.video = false;
-
-        const lv = callEls.localVideo();
-        const rv = callEls.remoteVideo();
-        const ra = callEls.remoteAudio();
-        if (lv) lv.srcObject = null;
-        if (rv) rv.srcObject = null;
-        if (ra) ra.srcObject = null;
-
-                    // Typing events
-                    stomp.subscribe(`/topic/dm/${state.dmGroupId}/typing`, (msg) => {
-                        try {
-                            const data = JSON.parse(msg.body);
-                            if (data.isTyping) {
-                                addTypingUser(data.username, data.displayName, data.avatarUrl);
-                            } else {
-                                removeTypingUser(data.username);
-                            }
-                        } catch (_) { /* ignore */ }
-                    });
-
-        hideCallOverlay();
-    }
-
-    async function handleSignal(evt) {
-        if (!evt || !evt.type) return;
-        const selfId = state.currentUser?.id;
-        if (selfId && evt.fromUserId && String(evt.fromUserId) === String(selfId)) return;
-        const roomId = getCallRoomId();
-        if (!roomId || evt.roomId !== roomId) return;
-
-        switch (evt.type) {
-            case 'CALL_START': {
-                if (call.active) return;
-                call.active = true;
-                call.roomId = roomId;
-                call.isCaller = false;
-                call.video = !!evt.video;
-                call.pc = createPeerConnection();
-                showCallOverlay({ video: call.video, outgoing: false });
-                // Ask permissions early so offer handling is smooth
-                try {
-                    const stream = await ensureLocalMedia(call.video);
-                    stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
-                } catch (err) {
-                    // If callee can't open devices, end locally
-                    endCall({ sendHangup: true });
-                }
-                break;
-            }
-            case 'OFFER': {
-                if (!call.active) {
-                    call.active = true;
-                    call.roomId = roomId;
-                    call.isCaller = false;
-                    call.video = !!evt.video;
-                    call.pc = createPeerConnection();
-                    showCallOverlay({ video: call.video, outgoing: false });
-                }
-
-                if (!call.pc) {
-                    call.pc = createPeerConnection();
-                }
-
-                if (!call.localStream) {
-                    const stream = await ensureLocalMedia(!!evt.video);
-                    stream.getTracks().forEach(t => call.pc.addTrack(t, stream));
-                }
-
-                await call.pc.setRemoteDescription({ type: 'offer', sdp: evt.sdp });
-                const answer = await call.pc.createAnswer();
-                await call.pc.setLocalDescription(answer);
-                sendSignal({ roomId: call.roomId, type: 'ANSWER', sdp: answer.sdp, video: call.video });
-                break;
-            }
-            case 'ANSWER': {
-                if (!call.pc) return;
-                await call.pc.setRemoteDescription({ type: 'answer', sdp: evt.sdp });
-                break;
-            }
-            case 'ICE': {
-                if (!call.pc || !evt.candidate) return;
-                try {
-                    await call.pc.addIceCandidate({
-                        candidate: evt.candidate,
-                        sdpMid: evt.sdpMid,
-                        sdpMLineIndex: evt.sdpMLineIndex
-                    });
-                } catch (_) { /* ignore */ }
-                break;
-            }
-            case 'HANGUP': {
-                endCall({ sendHangup: false });
-                break;
-            }
-        }
-    }
+    // NOTE: The following legacy WebRTC functions have been removed as call functionality
+    // is now handled by the global CoCoCordCallManager (call-manager.js):
+    // - sendSignal() -> CoCoCordRealtime.send()
+    // - createPeerConnection() -> CallManager handles internally
+    // - ensureLocalMedia() -> CallManager handles internally  
+    // - handleSignal() -> CallManager handles via global subscription
 
     // ==================== WEBSOCKET ====================
     function connectPresenceAndDm() {
@@ -1321,11 +1157,18 @@
                         } catch (_) { /* ignore */ }
                     });
 
-                    // Call signaling for this DM
-                    stomp.subscribe(`/topic/call/${state.dmGroupId}`, (msg) => {
+                    // NOTE: Call signaling subscription removed - now handled globally by CoCoCordCallManager
+                    // The global call manager subscribes to /topic/user.{userId}.calls on app load
+                    
+                    // Typing events for this DM
+                    stomp.subscribe(`/topic/dm/${state.dmGroupId}/typing`, (msg) => {
                         try {
-                            const evt = JSON.parse(msg.body);
-                            handleSignal(evt);
+                            const data = JSON.parse(msg.body);
+                            if (data.isTyping) {
+                                addTypingUser(data.username, data.displayName, data.avatarUrl);
+                            } else {
+                                removeTypingUser(data.username);
+                            }
                         } catch (_) { /* ignore */ }
                     });
                 }
@@ -1534,6 +1377,9 @@
 
         // DM Call buttons
         callEls.voiceBtn()?.addEventListener('click', async () => {
+            console.log('[Messages] 🎤 Voice call button clicked');
+            console.log('[Messages] dmGroupId:', state.dmGroupId, 'otherUser:', state.otherUser?.username);
+            
             if (!state.dmGroupId || !state.otherUser) return;
             try {
                 await startCall({ video: false });
@@ -1544,6 +1390,9 @@
         });
 
         callEls.videoBtn()?.addEventListener('click', async () => {
+            console.log('[Messages] 📹 Video call button clicked');
+            console.log('[Messages] dmGroupId:', state.dmGroupId, 'otherUser:', state.otherUser?.username);
+            
             if (!state.dmGroupId || !state.otherUser) return;
             try {
                 await startCall({ video: true });
@@ -1960,6 +1809,32 @@
 
     // ==================== INIT ====================
     async function init() {
+        // CRITICAL: Force hide legacy call overlay immediately
+        const legacyOverlay = document.getElementById('dmCallOverlay');
+        if (legacyOverlay) {
+            legacyOverlay.style.display = 'none';
+            legacyOverlay.style.visibility = 'hidden';
+            legacyOverlay.style.opacity = '0';
+            legacyOverlay.style.pointerEvents = 'none';
+            legacyOverlay.setAttribute('aria-hidden', 'true');
+            
+            // Add mutation observer to prevent any script from showing it
+            const observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        const display = legacyOverlay.style.display;
+                        if (display !== 'none') {
+                            console.warn('[Messages] Legacy overlay attempted to show, forcing hide');
+                            legacyOverlay.style.display = 'none';
+                            legacyOverlay.style.visibility = 'hidden';
+                            legacyOverlay.style.opacity = '0';
+                        }
+                    }
+                }
+            });
+            observer.observe(legacyOverlay, { attributes: true, attributeFilter: ['style'] });
+        }
+        
         wireEvents();
         readQuery();
 

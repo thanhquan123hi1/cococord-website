@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <head>
     <title>Tin nhắn trực tiếp - CoCoCord</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/messages.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/messages.css?v=20260106b">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/markdown.css">
 </head>
 
@@ -79,7 +79,6 @@
 
         <script src="${pageContext.request.contextPath}/js/markdown-renderer.js"></script>
         <script src="${pageContext.request.contextPath}/js/chat-input-manager.js"></script>
-        <script src="${pageContext.request.contextPath}/js/messages.js"></script>
     </main>
 
     <!-- User Profile Panel (right sidebar) -->
@@ -365,4 +364,4 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.2.0/marked.min.js" integrity="sha512-eUxlZzJK5H7MjNWdmLRZR2YqzEoJPjNnYfSCW+r7L7R2FYvZ0nZjGDr0JdGX2+BxQZ6k7xzJxT4ZBaHnmNIQzg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-H8S3B7t4vTnfg1IXSvWXGMxvYlSLXr7IzaSwG3Prd/aCQjqnPxCYXWP5KgRpMW/JFY48Gn3S1X1vR2UkuB+kJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="${pageContext.request.contextPath}/js/markdown-renderer.js?v=20260104"></script>
-<script defer src="${pageContext.request.contextPath}/js/messages.js?v=20260104"></script>
+<script defer src="${pageContext.request.contextPath}/js/messages.js?v=20260106d"></script>

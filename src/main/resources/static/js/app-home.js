@@ -46,6 +46,9 @@
 
     pendingOfferSdp: null,
     pendingCandidates: [],
+    
+    // Prevent double click
+    startingCall: false,
   };
 
   const els = {
@@ -467,157 +470,97 @@
   }
 
   function endCall({ sendHangup } = { sendHangup: true }) {
-    if (!call.active && !call.incomingPending) {
-      hideCallOverlay();
-      return;
+    console.log('[AppHome] 🛑 endCall() called, sendHangup:', sendHangup);
+    
+    // Delegate to global CallManager
+    if (window.CoCoCordCallManager) {
+      window.CoCoCordCallManager.endCall(sendHangup);
     }
-
-    // Best-effort: write a Discord-like call log row into the DM timeline.
-    // Both sides may attempt; backend dedupes by callId.
-    if (
-      call.active &&
-      call.callId &&
-      call.connectedAtMs &&
-      !call.loggedCall &&
-      call.roomId
-    ) {
-      call.loggedCall = true;
-      const durationSeconds = Math.round(
-        (Date.now() - call.connectedAtMs) / 1000
-      );
-      void logCallToTimeline({
-        dmGroupId: call.roomId,
-        callId: call.callId,
-        video: call.video,
-        durationSeconds,
-      });
-    }
-
-    if (sendHangup && call.roomId) {
-      sendCallSignal({
-        roomId: call.roomId,
-        type: "HANGUP",
-        video: call.video,
-      });
-    }
-
-    try {
-      if (call.pc) {
-        call.pc.onicecandidate = null;
-        call.pc.ontrack = null;
-        call.pc.close();
-      }
-    } catch (_) {
-      /* ignore */
-    }
-
-    stopStream(call.localStream);
-    stopStream(call.remoteStream);
-
-    call.pc = null;
-    call.localStream = null;
-    call.remoteStream = null;
-
-    const lv = callEls.localVideo();
-    const rv = callEls.remoteVideo();
-    const ra = callEls.remoteAudio();
-    if (lv) lv.srcObject = null;
-    if (rv) rv.srcObject = null;
-    if (ra) ra.srcObject = null;
-
-    resetCallState();
+    
+    // Also hide any legacy overlay on this page
     hideCallOverlay();
   }
 
   async function acceptIncomingCall() {
-    if (!call.incomingPending || !call.roomId) return;
-    call.incomingPending = false;
-    sendCallSignal({
-      roomId: call.roomId,
-      type: "CALL_ACCEPT",
-      video: call.video,
-    });
-
-    const typeLabel = call.video ? "Video Call" : "Voice Call";
-    showCallOverlay({
-      video: call.video,
-      title: `Đang kết nối: ${otherUserName()} • ${typeLabel}`,
-      showPrompt: true,
-      promptText: "Đang thiết lập kết nối…",
-      showAccept: false,
-      showDecline: false,
-    });
-
-    call.pc = createPeerConnection();
-    const stream = await ensureLocalMedia(call.video);
-    stream.getTracks().forEach((t) => call.pc.addTrack(t, stream));
-
-    // If offer already arrived, handle it now
-    if (call.pendingOfferSdp) {
-      await handleRemoteOffer(call.pendingOfferSdp);
-      call.pendingOfferSdp = null;
-    }
-
-    // Flush queued ICE
-    if (call.pendingCandidates.length) {
-      const queued = call.pendingCandidates.slice();
-      call.pendingCandidates = [];
-      for (const c of queued) {
-        try {
-          await call.pc.addIceCandidate(c);
-        } catch (_) {
-          /* ignore */
-        }
-      }
+    console.log('[AppHome] ✅ acceptIncomingCall() called');
+    
+    // Delegate to global CallManager
+    if (window.CoCoCordCallManager) {
+      await window.CoCoCordCallManager.acceptIncomingCall();
     }
   }
 
   function declineIncomingCall() {
-    if (!call.incomingPending || !call.roomId) {
-      endCall({ sendHangup: false });
-      return;
+    console.log('[AppHome] ❌ declineIncomingCall() called');
+    
+    // Delegate to global CallManager
+    if (window.CoCoCordCallManager) {
+      window.CoCoCordCallManager.declineIncomingCall();
     }
-    sendCallSignal({
-      roomId: call.roomId,
-      type: "CALL_DECLINE",
-      video: call.video,
-    });
-    endCall({ sendHangup: false });
   }
 
   async function startOutgoingCall({ video }) {
-    const roomId = getCallRoomId();
-    if (!roomId || !stompClient || !stompClient.connected) return;
-    if (call.active || call.incomingPending) return;
-
-    call.active = true;
-    call.roomId = roomId;
-    call.isCaller = true;
-    call.video = !!video;
-    call.callId = newCallId();
-    call.connectedAtMs = null;
-    call.loggedCall = false;
-
-    const typeLabel = call.video ? "Video Call" : "Voice Call";
-    showCallOverlay({
-      video: call.video,
-      title: `Đang gọi: ${otherUserName()} • ${typeLabel}`,
-      showPrompt: true,
-      promptText: "Đang chờ đối phương chấp nhận…",
-      showAccept: false,
-      showDecline: false,
-    });
-
-    // Send invite first; only open devices after callee accepts.
-    // Include targetUserId so backend can notify callee even if they haven't opened DM chat.
-    const targetUserId = getActiveDmTargetUserId();
-    sendCallSignal({
-      roomId: call.roomId,
-      type: "CALL_START",
-      video: call.video,
-      targetUserId,
-      callId: call.callId,
-    });
+    console.log('[AppHome] 🎤📹 startOutgoingCall() called, video:', video);
+    
+    // Prevent double click
+    if (call.startingCall) {
+      console.log('[AppHome] Already starting a call, ignoring double click');
+      return;
+    }
+    call.startingCall = true;
+    
+    try {
+      // Delegate to global CallManager
+      if (!window.CoCoCordCallManager) {
+        console.error('[AppHome] CoCoCordCallManager not loaded');
+        return;
+      }
+      
+      const roomId = getCallRoomId();
+      if (!roomId) {
+        console.warn('[AppHome] Cannot start call: missing roomId');
+        return;
+      }
+      
+      const targetUserId = getActiveDmTargetUserId();
+      if (!targetUserId) {
+        console.warn('[AppHome] Cannot start call: missing targetUserId');
+        return;
+      }
+      
+      const targetUser = state.activeDmUser ? {
+        id: state.activeDmUser.id,
+        username: state.activeDmUser.username,
+        displayName: state.activeDmUser.displayName || state.activeDmUser.username,
+        avatarUrl: state.activeDmUser.avatarUrl
+      } : null;
+      
+      if (!targetUser) {
+        console.warn('[AppHome] Cannot start call: missing activeDmUser');
+        return;
+      }
+      
+      console.log('[AppHome] Calling CallManager.startCall() with:', {
+        targetUserId,
+        roomId,
+        targetUser: targetUser.username,
+        video
+      });
+      
+      const success = await window.CoCoCordCallManager.startCall(targetUserId, roomId, targetUser, video);
+      console.log('[AppHome] CallManager.startCall() returned:', success);
+      if (!success) {
+        throw new Error('Failed to start call');
+      }
+    } catch (err) {
+      console.error('[AppHome] Failed to start call:', err);
+      throw err;
+    } finally {
+      // Reset flag after a delay
+      setTimeout(() => {
+        call.startingCall = false;
+      }, 1000);
+    }
   }
 
   async function beginCallerNegotiation() {
