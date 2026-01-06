@@ -377,6 +377,10 @@
   color: #fff;
   font-weight: 700;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .btn-primary:hover {

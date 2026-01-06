@@ -2533,13 +2533,17 @@
 
     // Show/hide tabs and divider
     if (topDivider) {
-      topDivider.style.display = config.showTabs ? '' : 'none';
+      topDivider.style.display = config.showTabs ? 'block' : 'none';
     }
     if (topTabs) {
-      topTabs.style.display = config.showTabs ? '' : 'none';
+      topTabs.style.display = config.showTabs ? 'flex' : 'none';
     }
     if (addFriendBtn) {
-      addFriendBtn.style.display = config.showAddFriend ? '' : 'none';
+      // Reset button display và đảm bảo CSS được apply đúng
+      addFriendBtn.style.display = config.showAddFriend ? 'flex' : 'none';
+      if (config.showAddFriend) {
+        addFriendBtn.style.visibility = 'visible';
+      }
     }
   }
 
