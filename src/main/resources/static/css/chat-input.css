@@ -117,6 +117,7 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -183,7 +184,9 @@
 .emoji-picker {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100% !important;
+    max-height: 100% !important;
+    /* Ensure scrolling works */
 }
 
 .emoji-search-box {
@@ -246,17 +249,35 @@
 
 .emoji-grid-container {
     flex: 1;
-    overflow-y: auto;
+    min-height: 0 !important;
+    /* Critical for flex scroll! */
+    max-height: 280px !important;
+    /* Explicit max height */
+    overflow-y: scroll !important;
+    /* Always show scrollbar for clarity */
     padding: 0 8px 8px;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79, 84, 92, 0.6) transparent;
 }
 
 .emoji-grid-container::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    /* Wider for easier grabbing */
+}
+
+.emoji-grid-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 }
 
 .emoji-grid-container::-webkit-scrollbar-thumb {
-    background: var(--bg-modifier-hover);
-    border-radius: 3px;
+    background: rgba(79, 84, 92, 0.6);
+    border-radius: 4px;
+}
+
+.emoji-grid-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 84, 92, 0.8);
 }
 
 .emoji-category-section {
@@ -305,7 +326,9 @@
 .gif-picker {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100% !important;
+    max-height: 100% !important;
+    /* Ensure scrolling works */
 }
 
 .gif-search-box {
@@ -335,21 +358,38 @@
 
 .gif-grid {
     flex: 1;
-    overflow-y: auto;
+    min-height: 0 !important;
+    /* Critical for flex scroll! */
+    max-height: 280px !important;
+    /* Explicit max height */
+    overflow-y: scroll !important;
+    /* Always show scrollbar */
     padding: 0 8px 8px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     align-content: start;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79, 84, 92, 0.6) transparent;
 }
 
 .gif-grid::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+}
+
+.gif-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 }
 
 .gif-grid::-webkit-scrollbar-thumb {
-    background: var(--bg-modifier-hover);
-    border-radius: 3px;
+    background: rgba(79, 84, 92, 0.6);
+    border-radius: 4px;
+}
+
+.gif-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 84, 92, 0.8);
 }
 
 .gif-item {
@@ -386,16 +426,32 @@
 
 .sticker-picker {
     padding: 12px;
-    overflow-y: auto;
+    height: 100% !important;
+    max-height: 280px !important;
+    /* Explicit max height */
+    overflow-y: scroll !important;
+    /* Always show scrollbar */
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79, 84, 92, 0.6) transparent;
 }
 
 .sticker-picker::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+}
+
+.sticker-picker::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 }
 
 .sticker-picker::-webkit-scrollbar-thumb {
-    background: var(--bg-modifier-hover);
-    border-radius: 3px;
+    background: rgba(79, 84, 92, 0.6);
+    border-radius: 4px;
+}
+
+.sticker-picker::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 84, 92, 0.8);
 }
 
 .sticker-grid {
@@ -557,7 +613,7 @@
     overflow: hidden;
 }
 
-#chatApp .attachment-preview-container + .composer-box {
+#chatApp .attachment-preview-container+.composer-box {
     border-radius: 0 0 8px 8px;
 }
 
