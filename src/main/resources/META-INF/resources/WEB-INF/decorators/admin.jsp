@@ -19,6 +19,9 @@
     <!-- Realtime (SockJS + STOMP) -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
+    <!-- Chart.js for New Users Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body class="admin-body">
 <div class="admin-layout">
@@ -267,6 +270,7 @@
 <script src="${pageContext.request.contextPath}/admin/js/messages.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/roles.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/stats.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/new-users-chart.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/audit.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/settings.js" defer></script>
 </body>
