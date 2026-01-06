@@ -3640,10 +3640,10 @@
 
       const payload = {
         recipientId: friendId,
-        serverId: serverId,
+        serverId: Number(serverId),
         inviteCode: inviteCode
       };
-      console.log('[INVITE DEBUG] Sending invite request:', payload);
+      console.log('[INVITE DEBUG] Sending invite request:', JSON.stringify(payload));
 
       // Send invite notification via API (real-time WebSocket)
       const res = await fetch('/api/invites/send', {
@@ -3652,11 +3652,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAccessToken()}`
         },
-        body: JSON.stringify({
-          recipientId: friendId,
-          serverId: activeServerId,
-          inviteCode: inviteCode
-        })
+        body: JSON.stringify(payload)
       });
 
       console.log('[INVITE DEBUG] API response status:', res.status);

@@ -57,34 +57,16 @@ public class InviteNotificationController {
      */
     @PostMapping("/send")
     public ResponseEntity<MessageResponse> sendInvite(
-            @RequestBody Map<String, Object> requestBody,
+            @RequestBody @Valid vn.cococord.dto.request.SendInviteRequest request,
             Authentication authentication) {
 
-        log.info("[INVITE] Raw request body: {}", requestBody);
+        log.info("[INVITE] Raw request body: {}", request);
 
-        Long recipientId = null;
-        Long serverId = null;
-        String inviteCode = null;
-
-        try {
-            if (requestBody.get("recipientId") != null) {
-                recipientId = Long.valueOf(requestBody.get("recipientId").toString());
-            }
-            if (requestBody.get("serverId") != null) {
-                serverId = Long.valueOf(requestBody.get("serverId").toString());
-            }
-            inviteCode = (String) requestBody.get("inviteCode");
-        } catch (NumberFormatException e) {
-            log.error("Error parsing IDs", e);
-            throw new BadRequestException("Invalid ID format");
-        }
+        Long recipientId = request.getRecipientId();
+        Long serverId = request.getServerId();
+        String inviteCode = request.getInviteCode();
 
         log.info("[INVITE] Parsed IDs: recId={}, srvId={}, code={}", recipientId, serverId, inviteCode);
-
-        if (recipientId == null)
-            throw new BadRequestException("Recipient ID is required. Received keys: " + requestBody.keySet());
-        if (serverId == null)
-            throw new BadRequestException("Server ID is required. Received keys: " + requestBody.keySet());
 
         String senderUsername = authentication.getName();
         User sender = userService.getUserByUsername(senderUsername);
@@ -109,7 +91,6 @@ public class InviteNotificationController {
         }
 
         // Get or create invite code
-        // inviteCode variable is already extracted from requestBody above
         if (inviteCode == null || inviteCode.isEmpty()) {
             // Try to find existing invite or create new one
             List<InviteLink> existingInvites = inviteLinkRepository.findActiveByServerId(server.getId());
@@ -157,17 +138,6 @@ public class InviteNotificationController {
                 .metadata(metadataJson)
                 .isRead(false)
                 .build();
-
-        // DEBUG: Check for nulls before save
-        if (recipient == null)
-            log.error("[INVITE CRITICAL] Recipient is null!");
-        else
-            log.info("[INVITE DEBUG] Recipient ID: {}", recipient.getId());
-
-        if (server == null)
-            log.error("[INVITE CRITICAL] Server is null!");
-        else
-            log.info("[INVITE DEBUG] Server ID: {}", server.getId());
 
         log.info("[INVITE DEBUG] Saving notification...");
         try {
