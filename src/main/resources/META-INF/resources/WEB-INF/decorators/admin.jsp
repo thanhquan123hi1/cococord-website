@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
-<html lang="vi" data-theme="light">
+<html lang="vi" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;600;700;900&display=swap" rel="stylesheet">
 
     <!-- Admin CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/admin/css/admin.css">
@@ -256,6 +256,7 @@
 
 <!-- Page-specific modules - loaded once, activated by router -->
 <script src="${pageContext.request.contextPath}/admin/js/dashboard.js" defer></script>
+<script src="${pageContext.request.contextPath}/admin/js/dashboard-v2.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/presence.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/users.js" defer></script>
 <script src="${pageContext.request.contextPath}/admin/js/user-detail-modal.js" defer></script>

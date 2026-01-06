@@ -2548,8 +2548,8 @@ body {
     content: '\f023'; /* Bootstrap Icons lock */
     font-family: 'bootstrap-icons';
     position: absolute;
-    bottom: -2px;
-    right: -2px;
+  bottom: 4px;
+  right: 4px;
     font-size: 12px;
     color: var(--discord-yellow);
     background: var(--bg-tertiary);
@@ -2569,8 +2569,8 @@ body {
     content: '\f62a'; /* Bootstrap Icons slash-circle */
     font-family: 'bootstrap-icons';
     position: absolute;
-    bottom: -2px;
-    right: -2px;
+  bottom: 4px;
+  right: 4px;
     font-size: 12px;
     color: var(--discord-red);
     background: var(--bg-tertiary);

@@ -80,12 +80,15 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: border-radius var(--transition-normal),
-    background-color var(--transition-normal), transform var(--transition-fast);
+  transition: border-radius var(--transition-normal), background-color var(--transition-normal), transform var(--transition-fast);
   color: var(--text-normal);
   font-size: 20px;
   text-decoration: none;
-  overflow: hidden;
+  
+  /* --- SỬA Ở ĐÂY --- */
+  /* CŨ: overflow: hidden;  <-- Nguyên nhân gây lỗi */
+  overflow: visible;     /* <-- MỚI: Để icon trạng thái có thể "lòi" ra ngoài */
+  z-index: 10;           /* Đảm bảo server item nằm trên các thành phần nền khác nếu cần */
 }
 
 .server-item:hover {
@@ -118,6 +121,50 @@
 .server-item:hover .server-initial,
 .server-item.active .server-initial {
   color: white;
+}
+
+/* ===== SERVER STATUS INDICATORS (Lock / Suspend) ===== */
+/* Note: .server-item has overflow:hidden, so badges must be positioned inside */
+
+.server-item.server-locked::after,
+.server-item.server-suspended::after {
+  /* --- SETUP VỊ TRÍ & SIZE --- */
+  font-family: 'bootstrap-icons';
+  position: absolute;
+  bottom: -2px; /* Đẩy xuống thấp hơn một chút để ôm vào góc */
+  right: -2px;  /* Đẩy sang phải một chút */
+  
+  width: 25px;  
+  height: 25px;
+  font-size: 24px; 
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  background: var(--server-icon-bg, #2f3136);
+  border-radius: 40%; /* Hình tròn tuyệt đối */
+  border: 2px solid var(--server-list-bg, #202225); /* Tạo viền cắt (cutout) giúp icon nổi bật hơn */
+  z-index: 10;
+}
+
+/* --- TRẠNG THÁI LOCKED --- */
+.server-item.server-locked {
+  opacity: 0.85;
+}
+.server-item.server-locked::after {
+  content: '\f471'; 
+  color: var(--discord-yellow);
+}
+
+/* --- TRẠNG THÁI SUSPENDED --- */
+.server-item.server-suspended {
+  opacity: 0.55;
+  filter: grayscale(100%);
+}
+.server-item.server-suspended::after {
+  content: '\f62a'; /* slash-circle */
+  color: var(--discord-red);
 }
 
 /* ===== SERVER PILL INDICATOR (Left edge) ===== */

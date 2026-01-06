@@ -1,0 +1,1283 @@
+/**
+ * CoCoCord Admin Dashboard V2
+ * Inspired by SnowUI Dashboard - Supports both Light and Dark themes
+ * Adaptive color scheme with prominent overview cards
+ */
+
+/* ========================================
+   DASHBOARD V2 - CSS VARIABLES (Light Theme Default)
+   ======================================== */
+
+:root {
+  /* Dashboard V2 Colors - Light Theme */
+  --dash-bg: #f5f5f7;
+  --dash-bg-gradient: none;
+  
+  /* Primary Accent - Teal/Cyan for prominence */
+  --dash-primary: #0d9488;
+  --dash-primary-hover: #0f766e;
+  --dash-primary-muted: rgba(13, 148, 136, 0.15);
+  --dash-primary-glow: rgba(13, 148, 136, 0.1);
+  
+  /* Secondary Accents */
+  --dash-accent-blue: #6366f1;
+  --dash-accent-cyan: #06b6d4;
+  --dash-accent-green: #22c55e;
+  --dash-accent-purple: #8b5cf6;
+  
+  /* Card/Surface - More prominent with subtle shadow */
+  --dash-card-bg: #ffffff;
+  --dash-card-bg-alt: #f0f4ff;
+  --dash-card-bg-solid: #ffffff;
+  --dash-card-border: rgba(0, 0, 0, 0.08);
+  --dash-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --dash-card-radius: 20px;
+  --dash-card-radius-sm: 16px;
+  
+  /* Overview Card - Stronger colors for visibility */
+  --dash-overview-bg: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
+  --dash-overview-border: rgba(99, 102, 241, 0.2);
+  
+  /* Summary Card - Dark prominent style */
+  --dash-summary-bg: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --dash-summary-text: #ffffff;
+  
+  /* Text */
+  --dash-text: #1e293b;
+  --dash-text-muted: #64748b;
+  --dash-text-dim: #94a3b8;
+  
+  /* Status Colors */
+  --dash-success: #10b981;
+  --dash-warning: #f59e0b;
+  --dash-danger: #ef4444;
+  --dash-info: #3b82f6;
+  
+  /* Bar Chart Colors */
+  --dash-bar-primary: linear-gradient(180deg, #5eead4 0%, #14b8a6 100%);
+  --dash-bar-highlight: linear-gradient(180deg, #2dd4bf 0%, #0d9488 100%);
+  
+  /* Font */
+  --dash-font: 'Inter', -apple-system, sans-serif;
+  --dash-font-display: 'Inter', sans-serif;
+  
+  /* Spacing */
+  --dash-gap: 24px;
+  --dash-gap-sm: 16px;
+}
+
+/* ========================================
+   DASHBOARD V2 - DARK THEME VARIABLES
+   ======================================== */
+
+[data-theme="dark"] .dashboard-v2,
+.dashboard-v2[data-theme="dark"] {
+  --dash-bg: #0f1419;
+  --dash-bg-gradient: radial-gradient(ellipse at top right, rgba(13, 148, 136, 0.08) 0%, transparent 50%);
+  
+  /* Primary Accent - Brighter teal for dark mode */
+  --dash-primary: #14b8a6;
+  --dash-primary-hover: #2dd4bf;
+  --dash-primary-muted: rgba(20, 184, 166, 0.2);
+  --dash-primary-glow: rgba(20, 184, 166, 0.15);
+  
+  /* Card/Surface - Dark with glass effect */
+  --dash-card-bg: rgba(30, 41, 59, 0.8);
+  --dash-card-bg-alt: rgba(45, 55, 72, 0.6);
+  --dash-card-bg-solid: #1e293b;
+  --dash-card-border: rgba(255, 255, 255, 0.08);
+  --dash-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  
+  /* Overview Card - Darker prominent style */
+  --dash-overview-bg: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%);
+  --dash-overview-border: rgba(20, 184, 166, 0.3);
+  
+  /* Summary Card - Teal gradient for dark mode */
+  --dash-summary-bg: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  --dash-summary-text: #ffffff;
+  
+  /* Text - Light on dark */
+  --dash-text: #f1f5f9;
+  --dash-text-muted: #94a3b8;
+  --dash-text-dim: #64748b;
+  
+  /* Bar Chart Colors - Brighter for dark mode */
+  --dash-bar-primary: linear-gradient(180deg, rgba(94, 234, 212, 0.4) 0%, rgba(20, 184, 166, 0.7) 100%);
+  --dash-bar-highlight: linear-gradient(180deg, #5eead4 0%, #14b8a6 100%);
+}
+
+/* ========================================
+   DASHBOARD V2 - LAYOUT OVERRIDES
+   ======================================== */
+
+/* Override admin layout for dashboard page */
+.admin-page[data-page="dashboard"].dashboard-v2 {
+  background: var(--dash-bg);
+  background-image: var(--dash-bg-gradient);
+  min-height: 100vh;
+  padding: var(--dash-gap);
+  font-family: var(--dash-font);
+}
+
+/* ========================================
+   DASHBOARD V2 - PAGE HEADER
+   ======================================== */
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--dash-gap);
+  padding: 0;
+}
+
+.dash-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-greeting {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--dash-text);
+  font-family: var(--dash-font-display);
+  letter-spacing: -0.5px;
+}
+
+.dash-subtitle {
+  font-size: 14px;
+  color: var(--dash-text-muted);
+}
+
+.dash-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-user-greeting {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--dash-text-muted);
+}
+
+.dash-date-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--dash-text);
+  cursor: pointer;
+}
+
+.dash-date-select svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dash-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid transparent;
+}
+
+/* ========================================
+   DASHBOARD V2 - NAVIGATION TABS
+   ======================================== */
+
+.dash-nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--dash-gap);
+  flex-wrap: wrap;
+}
+
+.dash-nav-tab {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dash-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--dash-font);
+}
+
+.dash-nav-tab:hover {
+  color: var(--dash-text);
+}
+
+.dash-nav-tab.active {
+  background: var(--dash-primary);
+  color: white;
+}
+
+/* ========================================
+   DASHBOARD V2 - MAIN GRID LAYOUT
+   ======================================== */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--dash-gap);
+}
+
+.dash-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-gap);
+}
+
+.dash-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-gap);
+}
+
+/* ========================================
+   DASHBOARD V2 - OVERVIEW STAT CARDS ROW
+   ======================================== */
+
+.dash-overview-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--dash-gap-sm);
+  margin-bottom: var(--dash-gap);
+}
+
+.dash-overview-card {
+  background: var(--dash-card-bg);
+  border: 1px solid var(--dash-card-border);
+  border-radius: var(--dash-card-radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--dash-card-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-overview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--dash-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dash-overview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.dash-overview-card:hover::before {
+  opacity: 1;
+}
+
+.dash-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dash-overview-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dash-text-muted);
+  line-height: 20px;
+}
+
+.dash-overview-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-overview-icon.views {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+}
+
+.dash-overview-icon.visits {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4;
+}
+
+.dash-overview-icon.new-users {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.dash-overview-icon.active-users {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+}
+
+.dash-overview-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dash-text);
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.dash-overview-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.dash-overview-change.positive {
+  color: var(--dash-success);
+}
+
+.dash-overview-change.negative {
+  color: var(--dash-danger);
+}
+
+.dash-overview-change svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Dark theme adjustments for overview icons */
+[data-theme="dark"] .dash-overview-icon.views {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] .dash-overview-icon.visits {
+  background: rgba(6, 182, 212, 0.2);
+}
+
+[data-theme="dark"] .dash-overview-icon.new-users {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+[data-theme="dark"] .dash-overview-icon.active-users {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+/* ========================================
+   DASHBOARD V2 - MAIN CARDS
+   ======================================== */
+
+.dash-card {
+  background: var(--dash-card-bg);
+  border: 1px solid var(--dash-card-border);
+  border-radius: var(--dash-card-radius);
+  padding: var(--dash-gap);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--dash-card-shadow);
+}
+
+.dash-card-sm {
+  border-radius: var(--dash-card-radius-sm);
+  padding: 20px;
+}
+
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.dash-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dash-text);
+}
+
+.dash-view-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--dash-text-muted);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.dash-view-all:hover {
+  color: var(--dash-text);
+}
+
+.dash-view-all svg {
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+}
+
+/* Chart Tab Buttons */
+.dash-chart-tabs {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-chart-tab {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dash-text);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.dash-chart-tab.muted {
+  font-weight: 400;
+  color: var(--dash-text-muted);
+}
+
+.dash-chart-separator {
+  color: var(--dash-text-dim);
+  font-size: 14px;
+}
+
+.dash-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.dash-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--dash-text);
+}
+
+.dash-legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dash-legend-dot.this-year { background: var(--dash-primary); }
+.dash-legend-dot.last-year { background: var(--dash-accent-blue); }
+
+/* ========================================
+   DASHBOARD V2 - STATS CARDS
+   ======================================== */
+
+.dash-stats-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--dash-gap-sm);
+}
+
+.dash-stat-card {
+  background: var(--dash-card-bg-solid);
+  border-radius: var(--dash-card-radius-sm);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-stat-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--dash-text);
+}
+
+.dash-stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--dash-text);
+  font-family: var(--dash-font-display);
+}
+
+.dash-stat-change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.dash-stat-change.positive {
+  color: var(--dash-success);
+}
+
+.dash-stat-change.negative {
+  color: var(--dash-danger);
+}
+
+.dash-stat-change svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dash-stat-desc {
+  font-size: 12px;
+  color: var(--dash-text-muted);
+  line-height: 1.5;
+}
+
+/* ========================================
+   DASHBOARD V2 - LINE CHART
+   ======================================== */
+
+.dash-chart {
+  height: 246px;
+  position: relative;
+  padding-left: 40px;
+  padding-bottom: 30px;
+}
+
+.dash-chart-y-axis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--dash-text-muted);
+  text-align: right;
+  width: 32px;
+}
+
+.dash-chart-container {
+  height: 100%;
+  position: relative;
+}
+
+.dash-chart-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.dash-chart-x-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--dash-text-muted);
+  padding-top: 8px;
+}
+
+/* ========================================
+   DASHBOARD V2 - BAR CHART (Vertical)
+   ======================================== */
+
+.dash-bar-chart {
+  height: 200px;
+  position: relative;
+  padding-left: 40px;
+  padding-bottom: 30px;
+}
+
+.dash-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 100%;
+  gap: 12px;
+}
+
+.dash-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.dash-bar {
+  width: 100%;
+  max-width: 50px;
+  border-radius: 4px 4px 0 0;
+  background: var(--dash-primary);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.dash-bar.secondary {
+  background: var(--dash-accent-blue);
+}
+
+.dash-bar:hover {
+  opacity: 0.8;
+}
+
+.dash-bar-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--dash-text-muted);
+}
+
+.dash-bar-tooltip {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: white;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.dash-bar-wrapper:hover .dash-bar-tooltip {
+  opacity: 1;
+  visibility: hidden;
+}
+
+/* Old bar chart styles - kept for compatibility */
+.dash-chart-bars-old {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 100%;
+  gap: 12px;
+}
+
+.dash-bar-wrapper-old {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.dash-bar-old {
+  width: 100%;
+  max-width: 73px;
+  border-radius: 10px 10px 0 0;
+  background: var(--dash-bar-primary);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-bar-old.highlight {
+  background: var(--dash-bar-highlight);
+}
+
+.dash-bar-old:hover {
+  transform: scaleY(1.02);
+  filter: brightness(1.1);
+}
+
+.dash-bar-label-old {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--dash-text-muted);
+}
+
+.dash-bar-tooltip-old {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dash-card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dash-text);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.dash-bar-wrapper:hover .dash-bar-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========================================
+   DASHBOARD V2 - DONUT CHART
+   ======================================== */
+
+.dash-donut-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dash-donut {
+  width: 130px;
+  height: 130px;
+  position: relative;
+}
+
+.dash-donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.dash-donut-circle {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: round;
+}
+
+.dash-donut-bg {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.dash-donut-progress {
+  stroke: var(--dash-primary);
+  stroke-dasharray: 0 360;
+  transition: stroke-dasharray 1s ease;
+}
+
+.dash-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--dash-text);
+}
+
+.dash-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--dash-text);
+}
+
+.dash-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.dash-legend-dot.servers { background: #0c87a3; }
+.dash-legend-dot.users { background: #8f0; }
+.dash-legend-dot.channels { background: #4cc9f0; }
+.dash-legend-dot.messages { background: #25f77d; }
+
+/* ========================================
+   DASHBOARD V2 - ACTIVITY/TRANSACTIONS LIST
+   ======================================== */
+
+.dash-transactions-card {
+  background: var(--dash-card-bg);
+  border: 1px solid var(--dash-card-border);
+  border-radius: var(--dash-card-radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--dash-card-shadow);
+}
+
+.dash-transactions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--dash-card-border);
+  margin-bottom: 16px;
+}
+
+.dash-transactions-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dash-text);
+}
+
+.dash-transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  transition: background 0.2s ease;
+  border-radius: 12px;
+  margin: 0 -12px;
+}
+
+.dash-transaction-item:hover {
+  background: var(--dash-primary-muted);
+}
+
+.dash-transaction-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  color: white;
+}
+
+.dash-transaction-icon.server { background: linear-gradient(135deg, #5865f2, #7289da); }
+.dash-transaction-icon.user { background: linear-gradient(135deg, #3ba55c, #57f287); }
+.dash-transaction-icon.report { background: linear-gradient(135deg, #ed4245, #f04747); }
+.dash-transaction-icon.channel { background: linear-gradient(135deg, #faa61a, #f9a826); }
+.dash-transaction-icon.audit { background: linear-gradient(135deg, #5865f2, #99aab5); }
+
+.dash-transaction-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dash-transaction-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-transaction-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dash-text);
+  margin-bottom: 2px;
+}
+
+.dash-transaction-detail {
+  font-size: 12px;
+  color: var(--dash-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-transaction-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dash-text);
+}
+
+.dash-transaction-value.positive { color: var(--dash-success); }
+.dash-transaction-value.negative { color: var(--dash-danger); }
+.dash-transaction-value.warning { color: var(--dash-warning); }
+
+/* ========================================
+   DASHBOARD V2 - SUMMARY CARD (Platform Overview)
+   ======================================== */
+
+.dash-summary-card {
+  background: var(--dash-summary-bg);
+  border-radius: var(--dash-card-radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  min-height: 160px;
+}
+
+.dash-summary-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 80%;
+  height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.dash-summary-add {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.dash-summary-add:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dash-summary-add svg {
+  width: 18px;
+  height: 18px;
+  color: var(--dash-summary-text);
+}
+
+.dash-summary-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dash-summary-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--dash-summary-text);
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.dash-summary-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--dash-summary-text);
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.dash-summary-meta {
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================
+   DASHBOARD V2 - MINI SIDEBAR
+   ======================================== */
+
+.dash-mini-sidebar {
+  position: fixed;
+  left: var(--sidebar-width);
+  top: var(--header-height);
+  width: 56px;
+  height: calc(100vh - var(--header-height));
+  background: var(--dash-card-bg);
+  border-radius: 33px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  margin: 16px;
+  z-index: 50;
+}
+
+.dash-mini-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.dash-mini-nav-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--dash-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dash-mini-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--dash-text);
+}
+
+.dash-mini-nav-item.active {
+  background: var(--dash-primary);
+  color: white;
+}
+
+.dash-mini-nav-item svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ========================================
+   DASHBOARD V2 - SEARCH BAR
+   ======================================== */
+
+.dash-search {
+  background: var(--dash-card-bg);
+  border-radius: 40px;
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 570px;
+}
+
+.dash-search-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--dash-text-muted);
+  flex-shrink: 0;
+}
+
+.dash-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 18px;
+  color: var(--dash-text);
+  font-family: var(--dash-font);
+}
+
+.dash-search-input::placeholder {
+  color: var(--dash-text-muted);
+}
+
+/* ========================================
+   DASHBOARD V2 - RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1400px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dash-col-right {
+    order: -1;
+  }
+  
+  .dash-overview-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .dash-greeting {
+    font-size: 32px;
+  }
+  
+  .dash-stats-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .dash-overview-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .dash-overview-card {
+    padding: 16px 20px;
+  }
+  
+  .dash-overview-value {
+    font-size: 24px;
+  }
+  
+  .dash-nav-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+  }
+  
+  .dash-nav-tab {
+    flex-shrink: 0;
+    padding: 10px 24px;
+    font-size: 16px;
+  }
+  
+  .dash-transactions-card {
+    border-radius: 30px;
+    padding: 24px;
+  }
+  
+  .dash-donut-wrapper {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* ========================================
+   DASHBOARD V2 - ANIMATIONS
+   ======================================== */
+
+@keyframes dash-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dash-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dash-bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.dash-card {
+  animation: dash-fade-in 0.4s ease backwards;
+}
+
+.dash-card:nth-child(1) { animation-delay: 0.1s; }
+.dash-card:nth-child(2) { animation-delay: 0.15s; }
+.dash-card:nth-child(3) { animation-delay: 0.2s; }
+.dash-card:nth-child(4) { animation-delay: 0.25s; }
+
+.dash-overview-card {
+  animation: dash-scale-in 0.3s ease backwards;
+}
+
+.dash-overview-card:nth-child(1) { animation-delay: 0.05s; }
+.dash-overview-card:nth-child(2) { animation-delay: 0.1s; }
+.dash-overview-card:nth-child(3) { animation-delay: 0.15s; }
+.dash-overview-card:nth-child(4) { animation-delay: 0.2s; }
+
+.dash-stat-card {
+  animation: dash-scale-in 0.3s ease backwards;
+}
+
+.dash-stat-card:nth-child(1) { animation-delay: 0.1s; }
+.dash-stat-card:nth-child(2) { animation-delay: 0.15s; }
+.dash-stat-card:nth-child(3) { animation-delay: 0.2s; }
+.dash-stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+.dash-bar {
+  transform-origin: bottom;
+  animation: dash-bar-grow 0.6s ease backwards;
+}
+
+/* Value update animation */
+@keyframes dash-value-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.dash-value-update {
+  animation: dash-value-pulse 0.3s ease;
+}
+
+.dash-bar-wrapper:nth-child(1) .dash-bar { animation-delay: 0.2s; }
+.dash-bar-wrapper:nth-child(2) .dash-bar { animation-delay: 0.25s; }
+.dash-bar-wrapper:nth-child(3) .dash-bar { animation-delay: 0.3s; }
+.dash-bar-wrapper:nth-child(4) .dash-bar { animation-delay: 0.35s; }
+.dash-bar-wrapper:nth-child(5) .dash-bar { animation-delay: 0.4s; }
+.dash-bar-wrapper:nth-child(6) .dash-bar { animation-delay: 0.45s; }
+.dash-bar-wrapper:nth-child(7) .dash-bar { animation-delay: 0.5s; }
+
+.dash-transaction-item {
+  animation: dash-fade-in 0.3s ease backwards;
+}
+
+.dash-transaction-item:nth-child(1) { animation-delay: 0.3s; }
+.dash-transaction-item:nth-child(2) { animation-delay: 0.35s; }
+.dash-transaction-item:nth-child(3) { animation-delay: 0.4s; }
+.dash-transaction-item:nth-child(4) { animation-delay: 0.45s; }
+.dash-transaction-item:nth-child(5) { animation-delay: 0.5s; }
+
+/* ========================================
+   DASHBOARD V2 - REALTIME INDICATORS
+   ======================================== */
+
+.dash-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dash-success);
+  font-weight: 500;
+}
+
+.dash-live-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--dash-success);
+  border-radius: 50%;
+  animation: dash-pulse 2s infinite;
+}
+
+@keyframes dash-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* Value update animation */
+.dash-value-update {
+  animation: dash-value-flash 0.5s ease;
+}
+
+@keyframes dash-value-flash {
+  0% {
+    background: var(--dash-primary-muted);
+  }
+  100% {
+    background: transparent;
+  }
+}

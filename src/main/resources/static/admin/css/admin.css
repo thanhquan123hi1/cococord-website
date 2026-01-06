@@ -31,6 +31,9 @@
 @import url('settings.css');
 @import url('servers.css');
 
+/* Dashboard V2 - CosaFin Elite Inspired Design */
+@import url('dashboard-v2.css');
+
 /* States & Animations */
 @import url('skeleton.css');
 
@@ -39,3 +42,4 @@
 
 /* Responsive */
 @import url('responsive.css');
+;

@@ -4534,6 +4534,9 @@
         const qp = getQueryParams();
         await loadServers();
 
+        // Apply lock/suspend visual indicators on the global server bar
+        updateServerSidebarStatus();
+
         // Pick server - validate that requested server exists, fallback to first server
         let requestedServer = qp.serverId ? servers.find(s => String(s.id) === String(qp.serverId)) : null;
         activeServerId = requestedServer ? requestedServer.id : (servers.length ? servers[0].id : null);

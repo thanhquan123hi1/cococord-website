@@ -502,6 +502,15 @@ async function loadGlobalServers() {
     serverItem.setAttribute("title", server.name);
     serverItem.setAttribute("href", `/chat?serverId=${server.id}`);
 
+    // Status indicators (lock/suspend)
+    if (server.isSuspended) {
+      serverItem.classList.add("server-suspended");
+      serverItem.title = "Server đã bị đình chỉ";
+    } else if (server.isLocked) {
+      serverItem.classList.add("server-locked");
+      serverItem.title = "Server đang bị khóa tạm thời";
+    }
+
     if (server.iconUrl) {
       serverItem.innerHTML = `<img src="${server.iconUrl}" alt="${server.name}">`;
     } else {
