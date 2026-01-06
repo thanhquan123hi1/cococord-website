@@ -1860,19 +1860,102 @@
   color: #23a55a;
 }
 
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 768px) {
-  .nitro-plans {
-    flex-direction: column;
-    align-items: center;
-  }
+/* ==================== DM MESSAGE RICH CONTENT ==================== */
 
-  .nitro-plan {
-    width: 100%;
-    max-width: 320px;
-  }
+/* Sticker */
+.dm-message-body .message-sticker {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  display: block;
+  margin-top: 5px;
+  transition: transform 0.2s;
+}
+.dm-message-body .message-sticker:hover {
+  transform: scale(1.05);
+}
 
-  .shop-grid {
+/* GIF */
+.dm-message-body .message-gif {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  display: block;
+  margin-top: 5px;
+}
+
+/* Image */
+.dm-message-body .message-image {
+  max-width: 100%;
+  max-height: 350px;
+  border-radius: 8px;
+  display: block;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+/* Video */
+.dm-message-body .message-video {
+  max-width: 100%;
+  max-height: 350px;
+  border-radius: 8px;
+  display: block;
+  margin-top: 5px;
+}
+
+/* Audio */
+.dm-message-body .message-audio {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 5px;
+}
+
+/* Attachments */
+.dm-message-body .message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.dm-message-body .attachment-item {
+  display: inline-block;
+}
+
+.dm-message-body .attachment-image {
+  max-width: 300px;
+  max-height: 300px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.dm-message-body .attachment-video {
+  max-width: 400px;
+  max-height: 300px;
+  border-radius: 8px;
+}
+
+.dm-message-body .attachment-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--darker-bg);
+  border-radius: 4px;
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.dm-message-body .attachment-file:hover {
+  background: var(--light-bg);
+}
+
+.dm-message-body .attachment-file i {
+  font-size: 1.2rem;
+}
+
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 

@@ -583,11 +583,28 @@
         if (chatInputManager) chatInputManager.destroy();
         
         // Kiểm tra thư viện đã load chưa
-        if (typeof ChatInputManager === 'undefined') return;
+        if (typeof ChatInputManager === 'undefined') {
+            console.warn('[Messages] ChatInputManager not loaded');
+            return;
+        }
+
+        // Support both /app (dmComposer) and /messages (composer) pages
+        const composerEl = document.getElementById('dmComposer') || document.getElementById('composer');
+        const inputEl = document.getElementById('dmMessageInput') || document.getElementById('messageInput');
+        
+        if (!composerEl || !inputEl) {
+            console.warn('[Messages] Composer elements not found');
+            return;
+        }
+
+        const composerSelector = composerEl.id === 'dmComposer' ? '#dmComposer' : '#composer';
+        const inputSelector = inputEl.id === 'dmMessageInput' ? '#dmMessageInput' : '#messageInput';
+
+        console.log('[Messages] Initializing ChatInputManager with:', { composerSelector, inputSelector });
 
         chatInputManager = new ChatInputManager({
-            composerSelector: '#composer',
-            inputSelector: '#messageInput',
+            composerSelector: composerSelector,
+            inputSelector: inputSelector,
             attachBtnSelector: '#attachBtn',
             emojiBtnSelector: '#emojiBtn',
             gifBtnSelector: '#gifBtn',
@@ -603,8 +620,8 @@
                 }
             },
             // Gửi GIF
-            onSendGif: async (gifUrl) => {
-                await sendRichMessage(gifUrl, 'GIF');
+            onSendGif: async (gifUrl, gifData) => {
+                await sendRichMessage(gifUrl, 'GIF', gifData);
             },
             // Gửi Sticker
             onSendSticker: async (stickerId, stickerUrl) => {
@@ -614,6 +631,8 @@
             onTypingStart: () => sendTypingNotification(),
             onTypingEnd: () => sendStopTypingNotification()
         });
+        
+        console.log('[Messages] ChatInputManager initialized successfully');
     }
 
     // ==================== RICH MESSAGE ACTIONS ====================
@@ -1965,6 +1984,9 @@
         renderDmStart();
         renderMessages();
         connectPresenceAndDm();
+
+        // Initialize ChatInputManager for file/sticker/GIF/emoji buttons
+        initChatInputManager();
 
         if (state.dmGroupId) {
             scrollToBottom();

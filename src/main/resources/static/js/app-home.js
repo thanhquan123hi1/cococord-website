@@ -1721,6 +1721,9 @@
     // Connect WebSocket for real-time
     connectDmWebSocket();
 
+    // Initialize ChatInputManager for file/GIF/sticker/emoji buttons
+    initChatInputManager();
+
     // Focus input
     setTimeout(() => els.dmMessageInput()?.focus(), 100);
   }
@@ -1793,7 +1796,7 @@
         parts.push(renderDateSeparator(createdAt));
       }
 
-      const msgType = String(msg?.type || "").toUpperCase();
+      const msgType = String(msg?.type || "TEXT").toUpperCase();
       if (msgType === "SYSTEM") {
         parts.push(renderSystemDmRow(msg));
         continue;
@@ -1812,9 +1815,13 @@
       const isOwn = String(msg.senderId) === String(currentUserId);
       const isDeleted = msg.deleted === true || msg.isDeleted === true;
 
-      const contentHtml = isDeleted
-        ? `<div class="dm-message-body deleted"><i class="bi bi-slash-circle"></i> Tin nhắn đã bị xóa</div>`
-        : `<div class="dm-message-body">${escapeHtml(msg.content || "")}</div>`;
+      // Render content based on message type
+      let contentHtml;
+      if (isDeleted) {
+        contentHtml = `<div class="dm-message-body deleted"><i class="bi bi-slash-circle"></i> Tin nhắn đã bị xóa</div>`;
+      } else {
+        contentHtml = renderDmMessageContent(msg, msgType);
+      }
 
       const actionsHtml =
         !isDeleted && isOwn
@@ -1865,6 +1872,153 @@
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
+  }
+
+  /**
+   * Render DM message content based on type (TEXT, STICKER, GIF, IMAGE, FILE, etc.)
+   */
+  function renderDmMessageContent(msg, type) {
+    const content = msg.content || '';
+    let bodyHtml = '';
+
+    switch (type) {
+      case 'STICKER':
+        bodyHtml = `<img src="${escapeHtml(content)}" class="message-sticker" alt="Sticker" loading="lazy" />`;
+        break;
+
+      case 'GIF':
+        bodyHtml = renderGifContent(content, msg.metadata);
+        break;
+
+      case 'IMAGE':
+        if (content && !msg.attachments?.length) {
+          bodyHtml = `<a href="${escapeHtml(content)}" target="_blank"><img src="${escapeHtml(content)}" class="message-image" alt="Image" loading="lazy" /></a>`;
+        } else {
+          bodyHtml = renderTextWithMarkdown(content);
+        }
+        break;
+
+      case 'VIDEO':
+        if (content && content.match(/\.(mp4|webm|ogg)$/i)) {
+          bodyHtml = `<video src="${escapeHtml(content)}" controls class="message-video" preload="metadata"></video>`;
+        } else {
+          bodyHtml = renderTextWithMarkdown(content);
+        }
+        break;
+
+      case 'AUDIO':
+        if (content && content.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+          bodyHtml = `<audio src="${escapeHtml(content)}" controls class="message-audio"></audio>`;
+        } else {
+          bodyHtml = renderTextWithMarkdown(content);
+        }
+        break;
+
+      case 'TEXT':
+      case 'FILE':
+      default:
+        bodyHtml = renderTextWithMarkdown(content);
+        break;
+    }
+
+    // Add attachments if any
+    const attachmentsHtml = renderDmAttachments(msg);
+
+    return `<div class="dm-message-body markdown-content">${bodyHtml}${attachmentsHtml}</div>`;
+  }
+
+  /**
+   * Render text with markdown support
+   */
+  function renderTextWithMarkdown(content) {
+    if (!content || !content.trim()) return '';
+    return window.CocoCordMarkdown 
+      ? window.CocoCordMarkdown.render(content)
+      : escapeHtml(content);
+  }
+
+  /**
+   * Render GIF content - supports both .gif images and .mp4 videos
+   */
+  function renderGifContent(url, metadata) {
+    if (!url) return '';
+    
+    // Parse metadata
+    let gifData = null;
+    if (metadata) {
+      try {
+        gifData = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+      } catch (_) {}
+    }
+    
+    // Check if mp4/webm (Tenor/Giphy often use video)
+    const isMp4 = url.toLowerCase().includes('.mp4');
+    const isWebm = url.toLowerCase().includes('.webm');
+    
+    if (isMp4 || isWebm) {
+      return `<video src="${escapeHtml(url)}" class="message-gif" autoplay loop muted playsinline></video>`;
+    } else {
+      return `<img src="${escapeHtml(url)}" class="message-gif" alt="GIF" loading="lazy" />`;
+    }
+  }
+
+  /**
+   * Render attachments (images, files)
+   */
+  function renderDmAttachments(msg) {
+    // Try to parse attachments from metadata if not directly available
+    let attachments = msg.attachments;
+    
+    if (!attachments?.length && msg.metadata) {
+      try {
+        const meta = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata;
+        attachments = meta?.files || [];
+      } catch (_) {}
+    }
+
+    // Also check attachmentUrls
+    if (!attachments?.length && msg.attachmentUrls?.length) {
+      attachments = msg.attachmentUrls.map(url => ({
+        fileUrl: url,
+        fileName: url.split('/').pop(),
+        fileType: guessFileType(url)
+      }));
+    }
+
+    if (!attachments?.length) return '';
+
+    let html = '<div class="message-attachments">';
+    for (const att of attachments) {
+      const fileUrl = escapeHtml(att.fileUrl || att.url || '');
+      const fileName = escapeHtml(att.fileName || att.name || 'file');
+      const fileType = att.fileType || att.type || '';
+
+      if (fileType.startsWith('image/')) {
+        html += `<div class="attachment-item"><a href="${fileUrl}" target="_blank"><img src="${fileUrl}" alt="${fileName}" class="attachment-image" loading="lazy"></a></div>`;
+      } else if (fileType.startsWith('video/')) {
+        html += `<div class="attachment-item"><video src="${fileUrl}" controls class="attachment-video"></video></div>`;
+      } else {
+        html += `<div class="attachment-item"><a href="${fileUrl}" target="_blank" class="attachment-file"><i class="bi bi-file-earmark"></i> ${fileName}</a></div>`;
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  /**
+   * Guess file type from URL extension
+   */
+  function guessFileType(url) {
+    if (!url) return '';
+    const ext = url.split('.').pop()?.toLowerCase();
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+    const videoExts = ['mp4', 'webm', 'ogg', 'mov'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'm4a'];
+    
+    if (imageExts.includes(ext)) return 'image/' + ext;
+    if (videoExts.includes(ext)) return 'video/' + ext;
+    if (audioExts.includes(ext)) return 'audio/' + ext;
+    return 'application/octet-stream';
   }
 
   async function deleteDmMessage(messageId) {
@@ -2059,7 +2213,12 @@
         )}/messages`,
         {
           method: "POST",
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ 
+            content,
+            attachmentUrls: [],
+            type: 'TEXT',
+            metadata: null
+          }),
         }
       );
       if (input) input.value = "";
@@ -2074,6 +2233,197 @@
       } else {
         alert(err?.message || "Không thể gửi tin nhắn");
       }
+    }
+  }
+
+  // ===== ChatInputManager for DM (file/sticker/GIF/emoji) =====
+  let chatInputManager = null;
+
+  function initChatInputManager() {
+    if (chatInputManager) {
+      try { chatInputManager.destroy(); } catch (_) {}
+    }
+
+    if (typeof ChatInputManager === 'undefined') {
+      console.warn('[AppHome] ChatInputManager not loaded');
+      return;
+    }
+
+    const composerEl = document.getElementById('dmComposer');
+    const inputEl = document.getElementById('dmMessageInput');
+
+    if (!composerEl || !inputEl) {
+      console.warn('[AppHome] Composer elements not found');
+      return;
+    }
+
+    console.log('[AppHome] Initializing ChatInputManager');
+
+    chatInputManager = new ChatInputManager({
+      composerSelector: '#dmComposer',
+      inputSelector: '#dmMessageInput',
+      attachBtnSelector: '#attachBtn',
+      emojiBtnSelector: '#emojiBtn',
+      gifBtnSelector: '#gifBtn',
+      stickerBtnSelector: '#stickerBtn',
+
+      // Send text/file message
+      onSendMessage: async (text, files) => {
+        const filesToSend = files || (chatInputManager?.getAttachedFiles() || []);
+        if (filesToSend.length > 0) {
+          await uploadAndSendDmFiles(filesToSend, text);
+        } else if (text?.trim()) {
+          await sendDmMessageWithType(text, 'TEXT');
+        }
+      },
+      // Send GIF
+      onSendGif: async (gifUrl, gifData) => {
+        await sendDmRichMessage(gifUrl, 'GIF', gifData);
+      },
+      // Send Sticker
+      onSendSticker: async (stickerId, stickerUrl) => {
+        await sendDmRichMessage(stickerUrl, 'STICKER', { stickerId });
+      },
+      // Typing events (optional - can implement later)
+      onTypingStart: () => {},
+      onTypingEnd: () => {}
+    });
+
+    console.log('[AppHome] ChatInputManager initialized successfully');
+  }
+
+  /**
+   * Send DM message with specific type
+   */
+  async function sendDmMessageWithType(content, type, metadata = null) {
+    if (!state.activeDmGroupId || !content?.trim()) return;
+
+    try {
+      const message = await apiJson(
+        `/api/direct-messages/${encodeURIComponent(state.activeDmGroupId)}/messages`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            content: content,
+            attachmentUrls: [],
+            type: type,
+            metadata: metadata ? JSON.stringify(metadata) : null
+          }),
+        }
+      );
+
+      // Clear input after success
+      const input = els.dmMessageInput();
+      if (input) input.value = "";
+      if (chatInputManager) chatInputManager.clearAttachments?.();
+
+      // Add to messages if not duplicate
+      if (message && !state.dmMessages.find((m) => m.id === message.id)) {
+        state.dmMessages.push(message);
+        renderDmMessages();
+      }
+    } catch (err) {
+      ToastManager?.error?.(err?.message || "Không thể gửi tin nhắn");
+    }
+  }
+
+  /**
+   * Send rich message (GIF/Sticker)
+   */
+  async function sendDmRichMessage(content, type, metadata = null) {
+    if (!state.activeDmGroupId) return;
+
+    try {
+      const message = await apiJson(
+        `/api/direct-messages/${encodeURIComponent(state.activeDmGroupId)}/messages`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            content: content,
+            attachmentUrls: [],
+            type: type,
+            metadata: metadata ? JSON.stringify(metadata) : null
+          }),
+        }
+      );
+
+      if (message && !state.dmMessages.find((m) => m.id === message.id)) {
+        state.dmMessages.push(message);
+        renderDmMessages();
+      }
+    } catch (err) {
+      console.error(`[AppHome] Error sending ${type}:`, err);
+    }
+  }
+
+  /**
+   * Upload files and send DM with attachments
+   */
+  async function uploadAndSendDmFiles(files, textContent) {
+    if (!state.activeDmGroupId || !files?.length) return;
+
+    try {
+      const uploadedAttachments = [];
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
+          body: formData
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          uploadedAttachments.push({
+            fileName: data.fileName || file.name,
+            fileUrl: data.fileUrl,
+            fileType: data.fileType || file.type,
+            fileSize: data.fileSize || file.size
+          });
+        }
+      }
+
+      // Determine message type
+      let messageType = 'TEXT';
+      if (uploadedAttachments.length > 0) {
+        const hasImage = uploadedAttachments.some(att => att.fileType?.startsWith('image/'));
+        const hasVideo = uploadedAttachments.some(att => att.fileType?.startsWith('video/'));
+        messageType = hasImage ? 'IMAGE' : hasVideo ? 'VIDEO' : 'FILE';
+      }
+
+      const attachmentUrls = uploadedAttachments.map(att => att.fileUrl);
+      const metadata = uploadedAttachments.length > 0 
+        ? JSON.stringify({ files: uploadedAttachments })
+        : null;
+
+      const message = await apiJson(
+        `/api/direct-messages/${encodeURIComponent(state.activeDmGroupId)}/messages`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            content: textContent || '',
+            attachmentUrls: attachmentUrls,
+            type: messageType,
+            metadata: metadata
+          }),
+        }
+      );
+
+      // Clear input
+      const input = els.dmMessageInput();
+      if (input) input.value = "";
+      if (chatInputManager) chatInputManager.clearAttachments?.();
+
+      if (message && !state.dmMessages.find((m) => m.id === message.id)) {
+        state.dmMessages.push(message);
+        renderDmMessages();
+      }
+    } catch (err) {
+      console.error('[AppHome] Upload error:', err);
+      ToastManager?.error?.("Lỗi khi gửi file!");
     }
   }
 
