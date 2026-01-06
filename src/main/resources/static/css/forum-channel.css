@@ -1,0 +1,389 @@
+/**
+ * Forum Channel Styles
+ * - Tree display for posts
+ * - Post creation form
+ * - Forum post cards
+ */
+
+/* ==================== FORUM CHANNEL ICON ==================== */
+.channel-item[data-type="FORUM"] .channel-icon::before {
+    content: "\F3E2";
+    /* bi-chat-square-text */
+    font-family: "bootstrap-icons";
+}
+
+/* ==================== FORUM TREE STRUCTURE ==================== */
+.forum-tree {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.forum-tree-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-secondary, #2c2f33);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.forum-tree-header .forum-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    border-radius: 8px;
+    font-size: 16px;
+    color: var(--text-muted, #949ba4);
+}
+
+.forum-tree-header .forum-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-normal, #dbdee1);
+}
+
+.forum-tree-header .post-count {
+    font-size: 12px;
+    color: var(--text-muted, #949ba4);
+    margin-left: auto;
+}
+
+/* Tree branches */
+.forum-posts-tree {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16px;
+    padding-left: 16px;
+    border-left: 2px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.forum-post-branch {
+    position: relative;
+    padding: 8px 0;
+}
+
+.forum-post-branch::before {
+    content: "";
+    position: absolute;
+    left: -16px;
+    top: 20px;
+    width: 12px;
+    height: 2px;
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+}
+
+.forum-post-branch:last-child {
+    border-left: 2px solid transparent;
+}
+
+/* Post item in tree */
+.forum-post-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-secondary, #2c2f33);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.forum-post-item:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    transform: translateX(4px);
+}
+
+.forum-post-item .post-thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.forum-post-item .post-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.forum-post-item .post-title {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-normal, #dbdee1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.forum-post-item .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted, #949ba4);
+    margin-top: 2px;
+}
+
+.forum-post-item .post-author {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.forum-post-item .post-author img {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+}
+
+.forum-post-item .post-reactions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.forum-post-item .post-reactions span {
+    font-size: 12px;
+}
+
+/* Pinned post */
+.forum-post-item.pinned {
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.forum-post-item.pinned::after {
+    content: "\F43F";
+    /* bi-pin-fill */
+    font-family: "bootstrap-icons";
+    color: #ffd700;
+    font-size: 12px;
+    margin-left: auto;
+}
+
+/* ==================== CREATE POST BUTTON ==================== */
+.forum-create-post-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 16px;
+    background: var(--discord-primary, #5865f2);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.forum-create-post-btn:hover {
+    background: var(--discord-primary-hover, #4752c4);
+    transform: scale(1.01);
+}
+
+.forum-create-post-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==================== CREATE POST FORM ==================== */
+.forum-create-form {
+    background: var(--bg-secondary, #2c2f33);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.forum-create-form h4 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal, #dbdee1);
+}
+
+.forum-form-group {
+    margin-bottom: 16px;
+}
+
+.forum-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted, #949ba4);
+    margin-bottom: 8px;
+}
+
+.forum-form-label .char-count {
+    float: right;
+    font-weight: 400;
+    font-size: 11px;
+}
+
+.forum-form-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-tertiary, #1a1a1e);
+    border: 1px solid var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    border-radius: 6px;
+    color: var(--text-normal, #dbdee1);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.forum-form-input:focus {
+    border-color: var(--discord-primary, #5865f2);
+}
+
+.forum-form-input::placeholder {
+    color: var(--text-muted, #949ba4);
+}
+
+/* Image upload area */
+.forum-image-upload {
+    border: 2px dashed var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.forum-image-upload:hover {
+    border-color: var(--discord-primary, #5865f2);
+    background: rgba(88, 101, 242, 0.05);
+}
+
+.forum-image-upload.has-image {
+    padding: 12px;
+    border-style: solid;
+}
+
+.forum-image-upload .upload-icon {
+    font-size: 32px;
+    color: var(--text-muted, #949ba4);
+    margin-bottom: 8px;
+}
+
+.forum-image-upload .upload-text {
+    color: var(--text-muted, #949ba4);
+    font-size: 14px;
+}
+
+.forum-image-upload .upload-hint {
+    color: var(--text-muted, #949ba4);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.forum-image-upload .preview-image {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 6px;
+}
+
+/* Form actions */
+.forum-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.forum-form-actions .btn-cancel {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #949ba4);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.forum-form-actions .btn-cancel:hover {
+    background: var(--bg-modifier-hover, rgba(79, 84, 92, 0.4));
+    color: var(--text-normal, #dbdee1);
+}
+
+.forum-form-actions .btn-post {
+    padding: 10px 24px;
+    background: var(--discord-primary, #5865f2);
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.forum-form-actions .btn-post:hover:not(:disabled) {
+    background: var(--discord-primary-hover, #4752c4);
+}
+
+.forum-form-actions .btn-post:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== EMPTY STATE ==================== */
+.forum-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.forum-empty .empty-icon {
+    font-size: 48px;
+    color: var(--text-muted, #949ba4);
+    margin-bottom: 16px;
+}
+
+.forum-empty .empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-normal, #dbdee1);
+    margin-bottom: 8px;
+}
+
+.forum-empty .empty-text {
+    font-size: 14px;
+    color: var(--text-muted, #949ba4);
+    max-width: 300px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .forum-tree {
+        padding: 12px;
+    }
+
+    .forum-posts-tree {
+        margin-left: 8px;
+        padding-left: 12px;
+    }
+
+    .forum-post-item {
+        padding: 8px 10px;
+    }
+
+    .forum-post-item .post-thumbnail {
+        width: 40px;
+        height: 40px;
+    }
+}

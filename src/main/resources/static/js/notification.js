@@ -246,16 +246,16 @@ class InboxManager {
      */
     handleMentionEvent(mentionEvent) {
         console.log('Mention event received:', mentionEvent);
-        
+
         // Show browser notification for mention
         this.showMentionBrowserNotification(mentionEvent);
-        
+
         // Play mention sound (usually more prominent than regular notification)
         this.playMentionSound();
-        
+
         // Update mention badge if exists
         this.updateMentionBadge(mentionEvent);
-        
+
         // Emit custom event for other components to react
         window.dispatchEvent(new CustomEvent('mention-received', { detail: mentionEvent }));
     }
@@ -267,7 +267,7 @@ class InboxManager {
         if ('Notification' in window && Notification.permission === 'granted') {
             const displayName = mentionEvent.mentionerDisplayName || mentionEvent.mentionerUsername;
             const channelName = mentionEvent.channelName || 'a channel';
-            
+
             new Notification('Bạn được nhắc đến!', {
                 body: `${displayName} đã đề cập đến bạn trong #${channelName}`,
                 icon: mentionEvent.mentionerAvatarUrl || '/static/images/logo.png',
@@ -287,7 +287,7 @@ class InboxManager {
             // Fallback to regular notification sound if mention.mp3 doesn't exist
             const fallback = new Audio('/static/sounds/notification.mp3');
             fallback.volume = 0.5;
-            fallback.play().catch(() => {});
+            fallback.play().catch(() => { });
         });
     }
 
@@ -323,7 +323,7 @@ class InboxManager {
         // Optional: Add notification sound
         const audio = new Audio('/static/sounds/notification.mp3');
         audio.volume = 0.3;
-        audio.play().catch(() => {});
+        audio.play().catch(() => { });
     }
 
     updateUnreadCount(count) {
@@ -373,6 +373,14 @@ class InboxManager {
         container.querySelectorAll('.inbox-item').forEach((el) => {
             el.addEventListener('click', () => {
                 const id = el.getAttribute('data-id');
+                const notif = this.notifications.find(n => String(n?.id) === String(id));
+
+                // Special handling for SERVER_INVITE - show popup instead of redirect
+                if (notif && notif.type === 'SERVER_INVITE') {
+                    this.showServerInvitePopup(notif);
+                    return;
+                }
+
                 const href = this.resolveNotificationHref(id);
                 this.markAsRead(id).finally(() => {
                     this.close();
@@ -380,6 +388,179 @@ class InboxManager {
                 });
             });
         });
+    }
+
+    /**
+     * Show accept/decline popup for server invite notification
+     */
+    showServerInvitePopup(notif) {
+        // Parse metadata from notification
+        let metadata = {};
+        try {
+            if (notif.metadata) {
+                metadata = typeof notif.metadata === 'string'
+                    ? JSON.parse(notif.metadata)
+                    : notif.metadata;
+            }
+        } catch (_) { }
+
+        const serverName = metadata.serverName || 'Server';
+        const serverIconUrl = metadata.serverIconUrl || '/images/default-server.png';
+        const senderName = metadata.senderDisplayName || metadata.senderUsername || 'Ai đó';
+        const senderAvatarUrl = metadata.senderAvatarUrl || '/images/default-avatar.png';
+
+        // Remove any existing popup
+        document.querySelector('.invite-accept-popup')?.remove();
+
+        const popup = document.createElement('div');
+        popup.className = 'invite-accept-popup';
+        popup.innerHTML = `
+            <div class="invite-popup-content">
+                <div class="invite-popup-header">
+                    <i class="bi bi-envelope-paper-heart"></i>
+                    <h3>Lời mời vào Server</h3>
+                </div>
+                <div class="invite-popup-body">
+                    <div class="invite-sender">
+                        <img src="${this.escapeHtml(senderAvatarUrl)}" alt="avatar" class="sender-avatar" onerror="this.src='/images/default-avatar.png'">
+                        <div class="sender-info">
+                            <span class="sender-name">${this.escapeHtml(senderName)}</span>
+                            <span class="sender-action">mời bạn tham gia</span>
+                        </div>
+                    </div>
+                    <div class="invite-server">
+                        <img src="${this.escapeHtml(serverIconUrl)}" alt="server" class="server-icon" onerror="this.src='/images/default-server.png'">
+                        <span class="server-name">${this.escapeHtml(serverName)}</span>
+                    </div>
+                    <p class="invite-message">Bạn có muốn tham gia server này không?</p>
+                </div>
+                <div class="invite-popup-actions">
+                    <button class="btn-decline" type="button">
+                        <i class="bi bi-x-circle"></i> Từ chối
+                    </button>
+                    <button class="btn-accept" type="button">
+                        <i class="bi bi-check-circle"></i> Tham gia
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add styles if not exists
+        this.ensureInvitePopupStyles();
+
+        // Bind events
+        popup.querySelector('.btn-accept').addEventListener('click', () => this.acceptServerInvite(notif, popup));
+        popup.querySelector('.btn-decline').addEventListener('click', () => this.declineServerInvite(notif, popup));
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) popup.remove();
+        });
+
+        document.body.appendChild(popup);
+        requestAnimationFrame(() => popup.classList.add('show'));
+    }
+
+    async acceptServerInvite(notif, popup) {
+        try {
+            const token = localStorage.getItem('accessToken') || '';
+            const res = await fetch(`/api/invites/${notif.id}/accept`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            popup.remove();
+            this.close();
+
+            if (res.ok) {
+                const data = await res.json();
+                // Remove from local list
+                this.notifications = this.notifications.filter(n => n.id !== notif.id);
+                this.updateUnreadCount(Math.max(0, this.unreadCount - 1));
+                this.render();
+
+                if (window.ToastManager) {
+                    window.ToastManager.show(`Đã tham gia ${data.serverName || 'server'}!`, 'success');
+                }
+                // Reload servers and navigate
+                if (window.loadServers) await window.loadServers();
+                if (window.selectServer && data.serverId) window.selectServer(data.serverId);
+            } else {
+                const err = await res.json().catch(() => ({}));
+                if (window.ToastManager) {
+                    window.ToastManager.show(err.message || 'Không thể tham gia server', 'error');
+                }
+            }
+        } catch (e) {
+            console.error('[Inbox] Accept invite error:', e);
+            if (window.ToastManager) window.ToastManager.show('Lỗi khi tham gia server', 'error');
+        }
+    }
+
+    async declineServerInvite(notif, popup) {
+        try {
+            const token = localStorage.getItem('accessToken') || '';
+            await fetch(`/api/invites/${notif.id}/decline`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            popup.remove();
+            // Remove from local list
+            this.notifications = this.notifications.filter(n => n.id !== notif.id);
+            this.updateUnreadCount(Math.max(0, this.unreadCount - 1));
+            this.render();
+        } catch (e) {
+            console.error('[Inbox] Decline invite error:', e);
+            popup.remove();
+        }
+    }
+
+    ensureInvitePopupStyles() {
+        if (document.getElementById('invite-popup-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'invite-popup-styles';
+        style.textContent = `
+            .invite-accept-popup {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10001;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+            .invite-accept-popup.show { opacity: 1; }
+            .invite-popup-content {
+                background: #2b2d31;
+                border-radius: 12px;
+                max-width: 400px;
+                width: 90%;
+                padding: 24px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                transform: scale(0.9);
+                transition: transform 0.2s ease;
+            }
+            .invite-accept-popup.show .invite-popup-content { transform: scale(1); }
+            .invite-popup-header { text-align: center; margin-bottom: 20px; }
+            .invite-popup-header i { font-size: 48px; color: #5865f2; display: block; margin-bottom: 12px; }
+            .invite-popup-header h3 { color: #fff; margin: 0; font-size: 20px; }
+            .invite-sender { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+            .sender-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+            .sender-info { display: flex; flex-direction: column; }
+            .sender-name { color: #fff; font-weight: 600; }
+            .sender-action { color: #b5bac1; font-size: 13px; }
+            .invite-server { display: flex; align-items: center; gap: 12px; background: #1e1f22; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+            .server-icon { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; }
+            .server-name { color: #fff; font-weight: 600; font-size: 16px; }
+            .invite-message { color: #b5bac1; text-align: center; margin: 0 0 20px; font-size: 14px; }
+            .invite-popup-actions { display: flex; gap: 12px; }
+            .invite-popup-actions button { flex: 1; padding: 12px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease; }
+            .invite-popup-actions .btn-decline { background: #4e5058; color: #fff; }
+            .invite-popup-actions .btn-decline:hover { background: #6c6f78; }
+            .invite-popup-actions .btn-accept { background: #248046; color: #fff; }
+            .invite-popup-actions .btn-accept:hover { background: #1a6334; }
+        `;
+        document.head.appendChild(style);
     }
 
     resolveNotificationHref(notificationId) {
@@ -462,7 +643,7 @@ class InboxManager {
                     headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
                 });
             if (!resp || !resp.ok) return;
-            
+
             // Update local state
             const notif = this.notifications.find(n => n.id == id);
             if (notif) {
@@ -486,7 +667,7 @@ class InboxManager {
                     headers: { Authorization: 'Bearer ' + (localStorage.getItem('accessToken') || '') }
                 });
             if (!resp || !resp.ok) return;
-            
+
             // Update local state
             this.notifications.forEach(n => n.isRead = true);
             this.updateUnreadCount(0);
@@ -500,7 +681,7 @@ class InboxManager {
         const date = new Date(timestamp);
         const now = new Date();
         const seconds = Math.floor((now - date) / 1000);
-        
+
         if (seconds < 60) return 'Vừa xong';
         if (seconds < 3600) return `${Math.floor(seconds / 60)} phút trước`;
         if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ trước`;
