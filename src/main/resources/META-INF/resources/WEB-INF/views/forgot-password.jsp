@@ -1,214 +1,106 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
-<!-- Tailwind CSS CDN and custom animations -->
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap");
+<!-- Auth Glass CSS -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth-glass.css">
 
-    * {
-        font-family: "Outfit", sans-serif;
-    }
+<!-- Alert Container -->
+<div id="alert-container" class="auth-alert-container"></div>
 
-    @keyframes fade-in-up {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fade-in-up {
-        animation: fade-in-up 0.6s ease-out;
-    }
-
-    .gradient-bg {
-        background: linear-gradient(
-            135deg,
-            hsl(228, 58%, 12%) 0%,
-            hsl(228, 58%, 20%) 100%
-        );
-        position: relative;
-        overflow: hidden;
-    }
-
-    .blob {
-        position: absolute;
-        border-radius: 50%;
-        opacity: 0.1;
-        filter: blur(40px);
-    }
-
-    .blob-1 {
-        width: 400px;
-        height: 400px;
-        background: hsl(235, 86%, 65%);
-        top: -100px;
-        left: -100px;
-    }
-
-    .blob-2 {
-        width: 300px;
-        height: 300px;
-        background: hsl(280, 85%, 60%);
-        bottom: -50px;
-        right: -50px;
-    }
-
-    /* Auth alerts: use static CSS (Tailwind CDN won't generate dynamic classes created in JS) */
-    .cococord-alert-container {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 99999;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        max-width: calc(100vw - 2rem);
-    }
-
-    .cococord-alert {
-        width: 100%;
-        max-width: 420px;
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        border-radius: 0.75rem;
-        padding: 0.75rem 0.875rem;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-        backdrop-filter: blur(6px);
-        background: rgba(15, 23, 42, 0.95);
-        color: #f8fafc;
-    }
-
-    .cococord-alert__row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 0.75rem;
-    }
-
-    .cococord-alert__content {
-        color: inherit;
-        font-size: 0.95rem;
-        line-height: 1.35;
-        word-break: break-word;
-    }
-
-    .cococord-alert__close {
-        flex: 0 0 auto;
-        appearance: none;
-        background: transparent;
-        border: 1px solid currentColor;
-        border-radius: 0.5rem;
-        width: 2.25rem;
-        height: 2.25rem;
-        line-height: 2.1rem;
-        text-align: center;
-        font-size: 1.25rem;
-        font-weight: 700;
-        cursor: pointer;
-        opacity: 0.95;
-    }
-
-    .cococord-alert__close:hover {
-        opacity: 1;
-    }
-
-    .cococord-alert--success {
-        border-left: 4px solid rgba(34, 197, 94, 0.95);
-    }
-
-    .cococord-alert--danger {
-        border-left: 4px solid rgba(239, 68, 68, 0.95);
-    }
-</style>
-
-<div class="gradient-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 relative">
-    <!-- Background blobs -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-
-    <!-- Content -->
-    <div class="w-full max-w-md animate-fade-in-up relative z-10">
-        <!-- Card -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 sm:p-10">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[hsl(235,86%,65%)] to-[hsl(280,85%,60%)] mb-4">
-                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2a5 5 0 00-5 5v2H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 7V7a3 3 0 016 0v2H9zm3 4a2 2 0 00-1 3.732V18a1 1 0 002 0v-1.268A2 2 0 0012 13z"/>
-                    </svg>
-                </div>
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Quên mật khẩu</h1>
-                <p class="text-gray-600 text-sm sm:text-base">Nhập email để đặt lại mật khẩu</p>
+<div class="auth-glass-page">
+    <!-- Animated Background Orbs -->
+    <div class="auth-orb auth-orb-1"></div>
+    <div class="auth-orb auth-orb-2"></div>
+    <div class="auth-orb auth-orb-3"></div>
+    
+    <!-- Back to Home -->
+    <a href="${pageContext.request.contextPath}/" class="auth-back-home">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        <span>Trang chủ</span>
+    </a>
+    
+    <!-- Glass Card -->
+    <div class="auth-glass-card">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="auth-logo">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
             </div>
+            <h1 class="auth-title">Quên mật khẩu?</h1>
+            <p class="auth-subtitle">Nhập email để nhận link đặt lại mật khẩu</p>
+        </div>
 
-            <!-- Form -->
-            <form id="forgot-password-form" class="space-y-5">
-                <div>
-                    <label for="email" class="block text-sm font-semibold text-gray-800 mb-2">
-                        Email <span class="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="email"
-                        id="email"
+        <!-- Form -->
+        <form id="forgot-password-form" class="auth-form">
+            <!-- Email -->
+            <div class="auth-field">
+                <label for="email" class="auth-label">
+                    Email <span class="required">*</span>
+                </label>
+                <div class="auth-input-wrapper">
+                    <input 
+                        type="email" 
+                        id="email" 
                         name="email"
-                        required
-                        maxlength="150"
+                        class="auth-input"
                         placeholder="Nhập email đã đăng ký"
                         autocomplete="email"
-                        class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[hsl(235,86%,65%)] focus:border-transparent transition-all"
+                        maxlength="150"
+                        required
                     />
-                    <p class="text-xs text-gray-500 mt-1">Chúng tôi sẽ gửi link đặt lại mật khẩu qua email.</p>
                 </div>
+                <span class="auth-hint">Chúng tôi sẽ gửi link đặt lại mật khẩu qua email này.</span>
+            </div>
 
-                <button
-                    type="submit"
-                    id="submit-btn"
-                    class="w-full bg-gradient-to-r from-[hsl(235,86%,65%)] to-[hsl(280,85%,60%)] text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-[hsl(235,86%,65%)]/30 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[hsl(235,86%,65%)]"
-                >
-                    Gửi yêu cầu
-                </button>
+            <!-- Submit Button -->
+            <button type="submit" id="submit-btn" class="auth-btn auth-btn-primary" style="width: 100%;">
+                Gửi yêu cầu
+            </button>
+        </form>
 
-                <div class="text-center pt-2">
-                    <a href="${pageContext.request.contextPath}/login" class="text-[hsl(235,86%,65%)] hover:text-[hsl(235,86%,55%)] font-bold transition-colors">
-                        Quay lại đăng nhập
-                    </a>
-                </div>
-            </form>
+        <!-- Footer -->
+        <div class="auth-footer">
+            <p class="auth-footer-text">
+                Nhớ mật khẩu rồi? 
+                <a href="${pageContext.request.contextPath}/login" class="auth-footer-link">
+                    Quay lại đăng nhập
+                </a>
+            </p>
         </div>
     </div>
 </div>
 
 <script>
-    function setButtonLoading(btn, isLoading, loadingText, originalHtml) {
+    // Form utilities
+    function setButtonLoading(btn, isLoading, loadingText) {
         if (!btn) return;
+        if (!btn.dataset.originalHtml) {
+            btn.dataset.originalHtml = btn.innerHTML;
+        }
         if (isLoading) {
             btn.disabled = true;
-            btn.innerHTML =
-                '<span class="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>' +
-                loadingText;
+            btn.innerHTML = '<span class="spinner"></span>' + loadingText;
         } else {
             btn.disabled = false;
-            btn.innerHTML = originalHtml;
+            btn.innerHTML = btn.dataset.originalHtml;
         }
     }
 
     async function fetchJsonWithTimeout(url, options, timeoutMs) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
         try {
             const response = await fetch(url, { ...options, signal: controller.signal });
             const text = await response.text();
             let json = null;
             if (text) {
-                try {
-                    json = JSON.parse(text);
-                } catch {
-                    json = null;
-                }
+                try { json = JSON.parse(text); } catch { json = null; }
             }
             return { response, json };
         } finally {
@@ -216,83 +108,89 @@
         }
     }
 
-    function showAlert(message, type) {
-        let alertContainer = document.getElementById("alert-container");
-        if (!alertContainer) {
-            alertContainer = document.createElement("div");
-            alertContainer.id = "alert-container";
-            document.body.appendChild(alertContainer);
+    // Handle forgot password form submission
+    document.getElementById('forgot-password-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('submit-btn');
+        setButtonLoading(btn, true, 'Đang gửi...');
+
+        const email = document.getElementById('email').value.trim();
+
+        try {
+            const { response, json: data } = await fetchJsonWithTimeout(
+                '${pageContext.request.contextPath}/api/auth/forgot-password',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                },
+                15000
+            );
+
+            if (response.ok) {
+                showAlert('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.', 'success');
+                document.getElementById('forgot-password-form').reset();
+            } else {
+                let errorMessage = data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                if (data?.errors) {
+                    const errorList = Object.values(data.errors).join('<br>');
+                    errorMessage = errorList || errorMessage;
+                }
+                showAlert(errorMessage, 'danger');
+            }
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            if (error?.name === 'AbortError') {
+                showAlert('Yêu cầu gửi email quá lâu. Vui lòng thử lại.', 'danger');
+            } else {
+                showAlert('Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
+            }
+        } finally {
+            setButtonLoading(btn, false);
         }
+    });
 
-        alertContainer.classList.add("cococord-alert-container");
+    // Alert System
+    function showAlert(message, type = 'info') {
+        const icons = {
+            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+            danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+        };
+        const titles = { success: 'Thành công', danger: 'Lỗi', warning: 'Cảnh báo', info: 'Thông báo' };
 
-        const variantClass =
-            type === "success" ? "cococord-alert--success" : "cococord-alert--danger";
-        const alert = document.createElement("div");
-        alert.className = `cococord-alert ${variantClass} animate-fade-in-up`;
-        alert.setAttribute("role", "alert");
-        alert.innerHTML = `
-            <div class="cococord-alert__row">
-                <div class="cococord-alert__content">${message}</div>
-                <button type="button" class="cococord-alert__close" aria-label="Đóng">&times;</button>
+        const container = document.getElementById('alert-container');
+        if (!container) return;
+
+        const alertEl = document.createElement('div');
+        alertEl.className = `auth-alert auth-alert--${type}`;
+        alertEl.setAttribute('role', 'alert');
+        alertEl.innerHTML = `
+            <div class="auth-alert-row">
+                <div class="auth-alert-icon">${icons[type] || icons.info}</div>
+                <div class="auth-alert-content">
+                    <div class="auth-alert-title">${titles[type] || 'Thông báo'}</div>
+                    <div class="auth-alert-message">${message}</div>
+                </div>
+                <button type="button" class="auth-alert-close" aria-label="Đóng">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
+            <div class="auth-alert-progress"></div>
         `;
 
-        alert.querySelector(".cococord-alert__close")?.addEventListener("click", () => {
-            alert.remove();
-        });
-        alertContainer.appendChild(alert);
-        setTimeout(() => alert.remove(), 5000);
+        alertEl.querySelector('.auth-alert-close').addEventListener('click', () => removeAlert(alertEl));
+        container.appendChild(alertEl);
+        setTimeout(() => removeAlert(alertEl), 5000);
     }
 
-    document
-        .getElementById("forgot-password-form")
-        .addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const btn = document.getElementById("submit-btn");
-            const originalText = btn.innerHTML;
-            setButtonLoading(btn, true, "Đang gửi...", originalText);
-
-            const email = document.getElementById("email").value.trim();
-
-            try {
-                const { response, json: data } = await fetchJsonWithTimeout(
-                    "${pageContext.request.contextPath}/api/auth/forgot-password",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ email }),
-                    },
-                    15000
-                );
-
-                if (response.ok) {
-                    showAlert(
-                        "Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.",
-                        "success"
-                    );
-                    document.getElementById("forgot-password-form").reset();
-                } else {
-                    let errorMessage =
-                        data?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
-                    if (data?.errors) {
-                        const errorList = Object.values(data.errors).join("<br>");
-                        errorMessage = errorList || errorMessage;
-                    }
-                    showAlert(errorMessage, "danger");
-                }
-            } catch (error) {
-                console.error("Forgot password error:", error);
-                if (error?.name === "AbortError") {
-                    showAlert("Yêu cầu gửi email quá lâu. Vui lòng thử lại.", "danger");
-                } else {
-                    showAlert("Có lỗi xảy ra. Vui lòng thử lại sau.", "danger");
-                }
-            } finally {
-                setButtonLoading(btn, false, "", originalText);
-            }
-        });
+    function removeAlert(alert) {
+        if (!alert || !alert.parentNode) return;
+        alert.classList.add('removing');
+        setTimeout(() => alert.remove(), 300);
+    }
 </script>
