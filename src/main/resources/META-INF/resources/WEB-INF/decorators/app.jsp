@@ -48,7 +48,9 @@
     <!-- Skeleton Loading CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/skeleton.css?v=20260105a">
     <!-- Preload /app home assets to avoid flash + missing handlers on PJAX navigation -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260103a">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260106b">
+    <!-- Global Call Overlay CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/call-overlay.css?v=20260106b">
     
     <%
         if (sitemeshContent != null) {
@@ -186,7 +188,7 @@
     <script src="${pageContext.request.contextPath}/js/toast.js?v=20260105a"></script>
 
     <script src="${pageContext.request.contextPath}/js/app.js?v=20260105_release"></script>
-    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260105_release"></script>
+    <script src="${pageContext.request.contextPath}/js/app-home.js?v=20260106e"></script>
     <script src="${pageContext.request.contextPath}/js/server-sidebar.js?v=20260105_release"></script>
     <script src="${pageContext.request.contextPath}/js/chat.js?v=20260105_release"></script>
     <script src="${pageContext.request.contextPath}/js/chat-input-manager.js?v=20260105_release"></script>
@@ -196,6 +198,8 @@
     <script src="${pageContext.request.contextPath}/js/quick-switcher.js?v=20260105_release"></script>
     <!-- Notification system with global call subscription -->
     <script src="${pageContext.request.contextPath}/js/notification.js?v=20260105_release"></script>
+    <!-- Global Call Manager (WebRTC + Signaling) -->
+    <script src="${pageContext.request.contextPath}/js/call-manager.js?v=20260106k"></script>
    
 
     <%

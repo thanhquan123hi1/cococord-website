@@ -645,11 +645,11 @@
     </form>
   </main>
 
-  <!-- DM Call Overlay (Voice/Video) -->
+  <!-- DM Call Overlay (Voice/Video) - DEPRECATED: Now handled by global CallManager -->
   <div
     class="dm-call-overlay"
     id="dmCallOverlay"
-    style="display: none"
+    style="display: none !important"
     aria-hidden="true"
   >
     <div class="dm-call-surface">
