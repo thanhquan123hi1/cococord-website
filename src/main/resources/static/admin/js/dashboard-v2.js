@@ -136,7 +136,23 @@ var DashboardV2 = window.DashboardV2 || (function() {
     }
 
     try {
-      // Fetch summary data (overview stats)
+      // Fetch overview stats (KPI cards) from new endpoint
+      const overviewResponse = await fetch(`${CONFIG.apiBase}/stats/overview`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (overviewResponse.ok) {
+        const overviewData = await overviewResponse.json();
+        console.log('[DashboardV2] Overview data received:', overviewData);
+        updateOverviewKPIs(overviewData);
+      } else {
+        console.error('[DashboardV2] Overview API failed:', overviewResponse.status);
+      }
+      
+      // Fetch summary data (platform overview, resources, charts)
       const summaryResponse = await fetch(`${CONFIG.apiBase}/dashboard/summary`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -191,48 +207,64 @@ var DashboardV2 = window.DashboardV2 || (function() {
       console.error('[DashboardV2] Error fetching dashboard data:', err);
     }
   }
-
-  function updateDashboardFromAPI(data) {
-    // KPI Cards
-    updateStatElement('totalMessages', formatNumber(data.totalMessages || 0));
-    updateStatElement('totalUsers', formatNumber(data.totalUsers || 0));
-    updateStatElement('newUsersLast7Days', formatNumber(data.newUsersLast7Days || 0));
-    updateStatElement('onlineUsers', formatNumber(data.onlineUsers || 0));
+  
+  function updateOverviewKPIs(data) {
+    console.log('[DashboardV2] updateOverviewKPIs called with:', data);
+    // Update all KPI cards with guaranteed non-null values
+    const totalMessages = data.totalMessages ?? 0;
+    const totalUsers = data.totalUsers ?? 0;
+    const newUsersLast7Days = data.newUsersLast7Days ?? 0;
+    const onlineUsers = data.onlineUsers ?? 0;
     
-    // Growth indicators
-    const usersGrowth = data.usersGrowth || 0;
-    const messagesGrowth = data.messagesGrowth || 0;
-    const newUsersGrowth = data.newUsersGrowth || 0;
+    console.log('[DashboardV2] Extracted values:', {
+      totalMessages, totalUsers, newUsersLast7Days, onlineUsers
+    });
     
-    updateGrowthElement('usersGrowth', usersGrowth, 'so với tuần trước');
+    updateStatElement('totalMessages', formatNumber(totalMessages));
+    updateStatElement('totalUsers', formatNumber(totalUsers));
+    updateStatElement('newUsersLast7Days', formatNumber(newUsersLast7Days));
+    updateStatElement('onlineUsers', formatNumber(onlineUsers));
+    
+    // Update growth indicators with safe values
+    const growth = data.growth || {};
+    const messagesGrowth = growth.messages ?? 0;
+    const usersGrowth = growth.users ?? 0;
+    const newUsersGrowth = growth.newUsers ?? 0;
+    
     updateGrowthElement('messagesGrowth', messagesGrowth, 'so với tuần trước');
+    updateGrowthElement('usersGrowth', usersGrowth, 'so với tuần trước');
     updateGrowthElement('newUsersGrowth', newUsersGrowth, 'so với 7 ngày trước');
     
-    // Active users percent
-    const activePercent = data.totalUsers > 0 
-        ? Math.round((data.onlineUsers / data.totalUsers) * 100) 
+    // Calculate and display active users percentage
+    const activePercent = totalUsers > 0 
+        ? Math.round((onlineUsers / totalUsers) * 100) 
         : 0;
     updateStatElement('activeUsersPercent', `${activePercent}% tổng số người dùng`);
-    
+  }
+
+  function updateDashboardFromAPI(data) {
     // Platform Overview
-    updateStatElement('totalChannels', formatNumber(data.totalChannels || 0));
-    updateStatElement('totalServers', formatNumber(data.totalServers || 0));
-    updateStatElement('activeServers', formatNumber(data.activeServers || 0));
-    updateStatElement('lockedServers', formatNumber(data.lockedServers || 0));
+    updateStatElement('totalChannels', formatNumber(data.totalChannels ?? 0));
+    updateStatElement('totalServers', formatNumber(data.totalServers ?? 0));
+    updateStatElement('activeServers', formatNumber(data.activeServers ?? 0));
+    updateStatElement('lockedServers', formatNumber(data.lockedServers ?? 0));
     
     // Resources
-    updateStatElement('bannedUsers', formatNumber(data.bannedUsers || 0));
-    updateStatElement('suspendedServers', formatNumber(data.suspendedServers || 0));
-    updateStatElement('newServersToday', formatNumber(data.newServersToday || 0));
-    updateStatElement('activeUsers24h', formatNumber(data.activeUsers24h || 0));
-    updateStatElement('pendingReports', data.pendingReports || 0);
-    updateStatElement('activityCount', data.recentActivity?.length || 0);
+    updateStatElement('bannedUsers', formatNumber(data.bannedUsers ?? 0));
+    updateStatElement('suspendedServers', formatNumber(data.suspendedServers ?? 0));
+    updateStatElement('newServersToday', formatNumber(data.newServersToday ?? 0));
+    updateStatElement('activeUsers24h', formatNumber(data.activeUsers24h ?? 0));
+    updateStatElement('pendingReports', data.pendingReports ?? 0);
+    updateStatElement('activityCount', data.recentActivity?.length ?? 0);
     
-    // Update percentage bars
-    updateResourceBar('bannedUsersPercent', data.bannedUsers, data.totalUsers);
-    updateResourceBar('suspendedServersPercent', data.suspendedServers, data.totalServers);
-    updateResourceBar('newServersTodayPercent', data.newServersToday, data.totalServers, 20);
-    updateResourceBar('activeUsers24hPercent', data.activeUsers24h, data.totalUsers);
+    // Update percentage bars with safe calculations
+    const totalUsers = data.totalUsers ?? 1; // Avoid division by zero
+    const totalServers = data.totalServers ?? 1;
+    
+    updateResourceBar('bannedUsersPercent', data.bannedUsers ?? 0, totalUsers);
+    updateResourceBar('suspendedServersPercent', data.suspendedServers ?? 0, totalServers);
+    updateResourceBar('newServersTodayPercent', data.newServersToday ?? 0, totalServers, 20);
+    updateResourceBar('activeUsers24hPercent', data.activeUsers24h ?? 0, totalUsers);
     
     // Update Server Activity Chart
     if (data.serverActivityChart && data.serverActivityChart.length > 0) {
@@ -480,8 +512,6 @@ var DashboardV2 = window.DashboardV2 || (function() {
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
     return num.toString();
   }
-    });
-  }
 
   // ========================================
   // Overview Cards Update
@@ -528,6 +558,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function updateStatElement(statKey, value) {
     const el = document.querySelector(`[data-stat="${statKey}"]`);
+    console.log(`[DashboardV2] updateStatElement: ${statKey} = ${value}, element found:`, !!el);
     if (el && el.textContent !== value) {
       el.textContent = value;
       el.classList.add('dash-value-update');
@@ -936,8 +967,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
     refresh: fetchDashboardData,
     filterContent: filterContent
   };
-
-})();
+})(); // Close IIFE
 
 // Auto-initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {

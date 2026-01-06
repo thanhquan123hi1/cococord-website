@@ -47,6 +47,11 @@ public class AdminApiController {
         return ResponseEntity.ok(adminService.getDashboardSummary());
     }
 
+    @GetMapping("/stats/overview")
+    public ResponseEntity<OverviewStatsResponse> getOverviewStats() {
+        return ResponseEntity.ok(adminService.getOverviewStats());
+    }
+
     @GetMapping("/dashboard/stats")
     public ResponseEntity<AdminStatsResponse> getDetailedStats(
             @RequestParam(defaultValue = "week") String period) {
