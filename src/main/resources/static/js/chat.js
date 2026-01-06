@@ -698,17 +698,27 @@
      * Render a single message item (for VirtualScroller)
      */
     function renderMessageItem(msg, index) {
+        const prevMsg = index > 0 && messages[index - 1] ? messages[index - 1] : null;
+
+        const currentId = msg.userId || msg.senderId;
+        const prevId = prevMsg ? (prevMsg.userId || prevMsg.senderId) : null;
+        
+        // Tính khoảng thời gian giữa 2 tin nhắn
+        const currentTime = new Date(msg.createdAt || msg.timestamp).getTime();
+        const prevTime = prevMsg ? new Date(prevMsg.createdAt || prevMsg.timestamp).getTime() : 0;
+        
+        // Là tin nhắn nối tiếp nếu: cùng người gửi VÀ cách nhau dưới 5 phút (300000ms)
+        const isContinued = prevMsg && (currentId === prevId) && ((currentTime - prevTime) < 5 * 60 * 1000);
+        
         const displayName = msg.displayName || msg.username || 'User';
         const initial = displayName.trim().charAt(0).toUpperCase();
         
         // Render content based on message type
         let htmlContent = '';
         if (msg.type === 'STICKER') {
-            // Render sticker as image
             const stickerUrl = msg.content || '';
             htmlContent = `<img src="${escapeHtml(stickerUrl)}" class="message-sticker" alt="Sticker" loading="lazy" />`;
         } else {
-            // Render markdown content for regular messages
             const rawContent = msg.content || '';
             htmlContent = window.CocoCordMarkdown 
                 ? window.CocoCordMarkdown.render(rawContent)
@@ -761,16 +771,18 @@
         }
 
         return `
-            <div class="message-row" data-message-id="${msg.id}" data-user-id="${msg.userId || msg.senderId || ''}" data-username="${msg.username || ''}">
+            <div class="message-row ${isContinued ? 'continued' : ''}" data-message-id="${msg.id}" data-user-id="${msg.userId || msg.senderId || ''}" data-username="${msg.username || ''}">
                 <div class="message-avatar">
-                    ${msg.avatarUrl ? `<img src="${escapeHtml(msg.avatarUrl)}" alt="${escapeHtml(displayName)}">` : initial}
+                    ${!isContinued ? (msg.avatarUrl ? `<img src="${escapeHtml(msg.avatarUrl)}" alt="${escapeHtml(displayName)}">` : initial) : ''}
                 </div>
                 <div class="message-body">
+                    ${!isContinued ? `
                     <div class="message-header">
                         <span class="message-author" title="${escapeHtml(msg.username || 'user')}#${discriminatorFromId(msg.userId || msg.senderId)}">${escapeHtml(displayName)}</span>
                         <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
                         ${msg.editedAt ? '<span class="message-edited">(đã chỉnh sửa)</span>' : ''}
                     </div>
+                    ` : ''}
                     <div class="message-content markdown-content">
                         ${htmlContent}
                         ${attachmentsHtml}

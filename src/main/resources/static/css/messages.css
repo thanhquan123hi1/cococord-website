@@ -1621,9 +1621,11 @@ html, body {
 
 .message-row {
     display: flex;
-    padding: 2px 0;
+    padding: 1px 0;
     gap: 16px;
     border-radius: 4px;
+    padding-top: 1px;
+    padding-bottom: 1px;
 }
 
 .message-row:hover {
@@ -1631,8 +1633,8 @@ html, body {
 }
 
 .message-row.has-header {
-    margin-top: 16px;
-    padding-top: 4px;
+    margin-top: 8px;
+    padding-top: 2px;
 }
 
 .message-avatar {
@@ -1899,4 +1901,22 @@ html, body {
     .dm-sidebar {
         display: none;
     }
+}
+/* ==================== TIN NHẮN NHIỀU ĐOẠN VĂN ==================== */
+/* Loại bỏ khoảng cách mặc định giữa các đoạn văn trong tin nhắn */
+
+.message-content > p {
+    margin: 0; 
+}
+
+/* Nếu một tin nhắn có nhiều đoạn văn, chỉ tạo khoảng cách nhỏ giữa chúng */
+.message-content p + p {
+    margin-top: 4px;
+}
+
+/* Đảm bảo hình ảnh/video không bị đẩy xuống quá xa */
+.message-content img, 
+.message-content video {
+    margin-top: 4px;
+    margin-bottom: 2px;
 }
