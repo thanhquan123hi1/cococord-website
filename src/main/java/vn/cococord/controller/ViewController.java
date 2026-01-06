@@ -85,4 +85,9 @@ public class ViewController {
         // code.
         return "redirect:/app?invite=" + code;
     }
+
+    @GetMapping("/app/debug-call")
+    public String debugCall() {
+        return "app/debug-call"; // Debug call overlay page
+    }
 }
