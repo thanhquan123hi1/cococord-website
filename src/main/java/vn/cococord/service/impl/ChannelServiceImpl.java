@@ -48,7 +48,7 @@ public class ChannelServiceImpl implements IChannelService {
                 .orElseThrow(() -> new ResourceNotFoundException("Server not found with id: " + serverId));
 
         User user = getUserByUsername(username);
-        
+
         // Check if user has MANAGE_CHANNELS permission
         if (!permissionService.canManageChannels(user.getId(), serverId)) {
             throw new UnauthorizedException("You don't have permission to create channels");
@@ -62,10 +62,11 @@ public class ChannelServiceImpl implements IChannelService {
         if (request.getCategoryId() != null) {
             category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-            
+
             Long channelCount = categoryRepository.countChannelsByCategoryId(request.getCategoryId());
             if (channelCount >= MAX_CHANNELS_PER_CATEGORY) {
-                throw new BadRequestException("Category has reached maximum channel limit (" + MAX_CHANNELS_PER_CATEGORY + ")");
+                throw new BadRequestException(
+                        "Category has reached maximum channel limit (" + MAX_CHANNELS_PER_CATEGORY + ")");
             }
         }
 
@@ -149,7 +150,7 @@ public class ChannelServiceImpl implements IChannelService {
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
         User user = getUserByUsername(username);
-        
+
         // Check if user has MANAGE_CHANNELS permission
         if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
             throw new UnauthorizedException("You don't have permission to update channels");
@@ -171,6 +172,12 @@ public class ChannelServiceImpl implements IChannelService {
         if (request.getSlowMode() != null) {
             channel.setSlowMode(request.getSlowMode());
         }
+        if (request.getBitrate() != null) {
+            channel.setBitrate(request.getBitrate());
+        }
+        if (request.getUserLimit() != null) {
+            channel.setUserLimit(request.getUserLimit());
+        }
 
         channel = channelRepository.save(channel);
         log.info("Channel updated: {} by user: {}", channel.getName(), username);
@@ -189,7 +196,7 @@ public class ChannelServiceImpl implements IChannelService {
         }
 
         User user = getUserByUsername(username);
-        
+
         // Check if user has MANAGE_CHANNELS permission
         if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
             throw new UnauthorizedException("You don't have permission to delete channels");
@@ -205,7 +212,7 @@ public class ChannelServiceImpl implements IChannelService {
                 .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
         User user = getUserByUsername(username);
-        
+
         // Check if user has MANAGE_CHANNELS permission
         if (!permissionService.canManageChannels(user.getId(), channel.getServer().getId())) {
             throw new UnauthorizedException("You don't have permission to reorder channels");
@@ -233,7 +240,8 @@ public class ChannelServiceImpl implements IChannelService {
             return true;
         }
 
-        // For private channels, check VIEW_CHANNEL permission using ChannelPermission system
+        // For private channels, check VIEW_CHANNEL permission using ChannelPermission
+        // system
         User user = getUserByUsername(username);
         return permissionService.hasChannelPermission(user.getId(), channelId, "VIEW_CHANNEL");
     }
@@ -257,6 +265,8 @@ public class ChannelServiceImpl implements IChannelService {
                 .isNsfw(channel.getIsNsfw())
                 .isDefault(channel.getIsDefault())
                 .slowMode(channel.getSlowMode())
+                .bitrate(channel.getBitrate())
+                .userLimit(channel.getUserLimit())
                 .createdAt(channel.getCreatedAt())
                 .updatedAt(channel.getUpdatedAt())
                 .build();

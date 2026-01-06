@@ -653,4 +653,5 @@
     <script src="${pageContext.request.contextPath}/js/chat-input-manager.js?v=20260105"></script>
     <script src="${pageContext.request.contextPath}/js/header-toolbar.js?v=20260105"></script>
     <script src="${pageContext.request.contextPath}/js/server-settings.js?v=20260105"></script>
+    <script src="${pageContext.request.contextPath}/js/channel-settings.js?v=20260105"></script>
     <script src="${pageContext.request.contextPath}/js/chat.js?v=20260105"></script>
