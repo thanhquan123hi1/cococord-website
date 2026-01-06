@@ -1,7 +1,7 @@
 /**
  * Channel Settings Manager
- * Handles UI for channel settings modal (Overview, Permissions, Invites, Delete)
- * Refactored to use Centered Overlay UI
+ * Handles UI for channel settings modal (Overview, Permissions, Delete)
+ * Refactored: Vietnamese UI, Removed Invites/NSFW/Slowmode, Fixed DTO mapping
  */
 
 (function (window) {
@@ -23,7 +23,22 @@
                 // Fetch channel data
                 const channel = await this._fetchChannelData(channelId);
                 this.initialData = { ...channel };
-                this.currentData = { ...channel };
+
+                // Initialize Permissions State (Mock for now, defaulting to 'inherit')
+                this.initialData.permissions = {
+                    'view_channel': 'inherit',
+                    'send_messages': 'inherit',
+                    'attach_files': 'inherit',
+                    'embed_links': 'inherit',
+                    'read_message_history': 'inherit'
+                };
+
+                // Map backend fields to frontend state if needed
+                // Backend: name, topic, bitrate, userLimit
+                this.currentData = {
+                    ...channel,
+                    permissions: { ...this.initialData.permissions }
+                };
 
                 this._createModal();
                 this._renderOverview(); // Default tab
@@ -36,16 +51,82 @@
 
         async _fetchChannelData(channelId) {
             // Using global fetchWithAuth if available (from auth.js)
-            if (window.fetchWithAuth) {
-                const res = await window.fetchWithAuth(`/api/channels/${channelId}`);
-                if (!res.ok) throw new Error('Failed to fetch channel');
-                return await res.json();
-            } else {
-                // Fallback (might fail if auth required)
-                const res = await fetch(`/api/channels/${channelId}`);
-                if (!res.ok) throw new Error('Failed to fetch channel');
-                return res.json();
+            const headers = (window.fetchWithAuth) ? {} : { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` };
+            const fetchFn = window.fetchWithAuth || ((url, options) => fetch(url, { ...options, headers: { ...options?.headers, ...headers } }));
+
+            // 1. Fetch Basic Channel Info
+            const channelRes = await fetchFn(`/api/channels/${channelId}`);
+            if (!channelRes.ok) throw new Error('Failed to fetch channel');
+            const channel = await channelRes.json();
+
+            // 2. Fetch Permission Overrides
+            let overrides = [];
+            try {
+                const permRes = await fetchFn(`/api/channels/${channelId}/permissions`);
+                if (permRes.ok) {
+                    overrides = await permRes.json();
+                }
+            } catch (e) {
+                console.warn("Could not fetch permissions", e);
             }
+
+            // 3. Find @Everyone Role ID
+            // Automatic Method: Try to fetch server details if role not in context
+            let everyoneRoleId = null;
+            try {
+                // Try fetching server details to get fresh roles
+                const serverRes = await fetchFn(`/api/servers/${channel.serverId}`);
+                if (serverRes.ok) {
+                    const server = await serverRes.json();
+                    if (server.roles) {
+                        const defaultRole = server.roles.find(r => r.isDefault);
+                        if (defaultRole) everyoneRoleId = defaultRole.id;
+                    }
+                } else if (window.servers) {
+                    // Fallback to global state
+                    const server = window.servers.find(s => s.id == channel.serverId);
+                    if (server && server.roles) {
+                        const defaultRole = server.roles.find(r => r.isDefault);
+                        if (defaultRole) everyoneRoleId = defaultRole.id;
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not fetch server roles", e);
+            }
+
+            // 4. Map Overrides to UI State
+            // We only care about the @everyone role override for this simple UI
+            const myPermissions = {
+                'view_channel': 'inherit',
+                'send_messages': 'inherit',
+                'attach_files': 'inherit',
+                'embed_links': 'inherit',
+                'read_message_history': 'inherit'
+            };
+
+            if (everyoneRoleId) {
+                const override = overrides.find(o => Number(o.targetId) === Number(everyoneRoleId) && o.type === 'ROLE');
+                if (override) {
+                    // Map Allowed
+                    if (override.allowedPermissions) {
+                        override.allowedPermissions.forEach(p => {
+                            const key = p.toLowerCase();
+                            if (myPermissions[key] !== undefined) myPermissions[key] = 'allow';
+                        });
+                    }
+                    // Map Denied
+                    if (override.deniedPermissions) {
+                        override.deniedPermissions.forEach(p => {
+                            const key = p.toLowerCase();
+                            if (myPermissions[key] !== undefined) myPermissions[key] = 'deny';
+                        });
+                    }
+                }
+            }
+            channel.permissions = myPermissions;
+            channel.everyoneRoleId = everyoneRoleId; // Store for saving
+
+            return channel;
         }
 
         /**
@@ -61,14 +142,13 @@
                             <div class="cs-sidebar-content">
                                 <div class="cs-header">
                                     <span class="cs-channel-name"># ${this.escapeHtml(this.initialData.name)}</span>
-                                    <span class="cs-category text-uppercase">${this.initialData.type} CHANNEL</span>
+                                    <span class="cs-category text-uppercase">${this.initialData.type || 'TEXT'} CHANNEL</span>
                                 </div>
                                 <div class="cs-nav">
-                                    <div class="cs-nav-item active" data-tab="overview">Overview</div>
-                                    <div class="cs-nav-item" data-tab="permissions">Permissions</div>
-                                    <div class="cs-nav-item" data-tab="invites">Invites</div>
+                                    <div class="cs-nav-item active" data-tab="overview">Tổng quan</div>
+                                    <div class="cs-nav-item" data-tab="permissions">Quyền</div>
                                     <div class="cs-nav-separator"></div>
-                                    <div class="cs-nav-item danger" data-tab="delete">Delete Channel</div>
+                                    <div class="cs-nav-item danger" data-tab="delete">Xóa kênh</div>
                                 </div>
                             </div>
                         </div>
@@ -86,10 +166,10 @@
                             </div>
                             <div class="cs-save-bar" id="csSaveBar">
                                 <div class="cs-save-bar-content">
-                                    <span>Careful — you have unsaved changes!</span>
+                                    <span>Cẩn thận — bạn có thay đổi chưa lưu!</span>
                                     <div class="cs-save-actions">
-                                        <button class="cs-btn-reset">Reset</button>
-                                        <button class="cs-btn-save">Save Changes</button>
+                                        <button class="cs-btn-reset">Đặt lại</button>
+                                        <button class="cs-btn-save">Lưu thay đổi</button>
                                     </div>
                                 </div>
                             </div>
@@ -147,7 +227,6 @@
             const tab = target.dataset.tab;
             if (tab === 'overview') this._renderOverview();
             else if (tab === 'permissions') this._renderPermissions();
-            else if (tab === 'invites') this._renderInvites();
             else if (tab === 'delete') this._renderDelete();
         }
 
@@ -158,45 +237,23 @@
             const isVoice = this.initialData.type === 'VOICE';
 
             let html = `
-                <h3 class="cs-section-title">Overview</h3>
+                <h3 class="cs-section-title">Tổng quan</h3>
                 
                 <div class="cs-form-group">
-                    <label>CHANNEL NAME</label>
+                    <label>TÊN KÊNH</label>
                     <input type="text" class="cs-input" id="csNameInput" value="${this.escapeHtml(this.currentData.name)}">
                 </div>
 
                 <div class="cs-form-group">
-                    <label>CHANNEL TOPIC</label>
-                    <textarea class="cs-textarea" id="csTopicInput" placeholder="Let everyone know how to use this channel">${this.escapeHtml(this.currentData.topic || '')}</textarea>
-                </div>
-
-                <div class="cs-divider"></div>
-                
-                <div class="cs-form-group-row">
-                    <div class="cs-label-desc">
-                        <label>Age-Restricted Channel</label>
-                        <p>Users will need to confirm they are of over legal age to view this channel.</p>
-                    </div>
-                    <label class="cs-switch">
-                        <input type="checkbox" id="csNsfwInput" ${this.currentData.nsfw ? 'checked' : ''}>
-                        <span class="cs-slider-round"></span>
-                    </label>
-                </div>
-                
-                <div class="cs-form-group">
-                    <label>SLOWMODE</label>
-                    <div class="cs-range-wrapper">
-                        <input type="range" class="cs-range" id="csSlowmodeInput" min="0" max="21600" step="5" value="${this.currentData.rateLimitPerUser || 0}">
-                         <div class="cs-range-value" id="csSlowmodeValue">${this._formatDuration(this.currentData.rateLimitPerUser || 0)}</div>
-                    </div>
-                    <p class="cs-help-text">Members will be restricted to sending one message and creating one thread per this interval, unless they have Manage Channel or Manage Messages permissions.</p>
+                    <label>CHỦ ĐỀ KÊNH</label>
+                    <textarea class="cs-textarea" id="csTopicInput" placeholder="Cho mọi người biết cách sử dụng kênh này">${this.escapeHtml(this.currentData.topic || '')}</textarea>
                 </div>
             `;
 
             if (isVoice) {
                 html += `
                     <div class="cs-divider"></div>
-                    <h3 class="cs-section-title">Voice Settings</h3>
+                    <h3 class="cs-section-title">Cài đặt Thoại</h3>
                     
                     <div class="cs-form-group">
                         <label>BITRATE: <span id="csBitrateValue">${this.currentData.bitrate ? Math.round(this.currentData.bitrate / 1000) : 64}</span>kbps</label>
@@ -204,7 +261,7 @@
                     </div>
 
                     <div class="cs-form-group">
-                        <label>USER LIMIT: <span id="csUserLimitValue">${this.currentData.userLimit === 0 ? 'No Limit' : this.currentData.userLimit + ' users'}</span></label>
+                        <label>GIỚI HẠN NGƯỜI DÙNG: <span id="csUserLimitValue">${this.currentData.userLimit === 0 ? 'Không giới hạn' : this.currentData.userLimit + ' người dùng'}</span></label>
                         <input type="range" class="cs-range" id="csLimitInput" min="0" max="99" step="1" value="${this.currentData.userLimit || 0}">
                     </div>
                 `;
@@ -215,14 +272,6 @@
             // Bind Events
             this._bindInput('csNameInput', 'name');
             this._bindInput('csTopicInput', 'topic');
-            this._bindCheckbox('csNsfwInput', 'nsfw');
-
-            const slowmodeInput = document.getElementById('csSlowmodeInput');
-            slowmodeInput.addEventListener('input', (e) => {
-                const val = Number(e.target.value);
-                document.getElementById('csSlowmodeValue').textContent = this._formatDuration(val);
-                this._updateField('rateLimitPerUser', val);
-            });
 
             if (isVoice) {
                 const bitrateInput = document.getElementById('csBitrateInput');
@@ -235,7 +284,7 @@
                 const limitInput = document.getElementById('csLimitInput');
                 limitInput.addEventListener('input', (e) => {
                     const val = Number(e.target.value);
-                    document.getElementById('csUserLimitValue').textContent = val === 0 ? 'No Limit' : val + ' users';
+                    document.getElementById('csUserLimitValue').textContent = val === 0 ? 'Không giới hạn' : val + ' người dùng';
                     this._updateField('userLimit', val);
                 });
             }
@@ -244,33 +293,34 @@
         _renderPermissions() {
             const container = this.modal.querySelector('#csContentParams');
 
-            // Mock permissions list for UI demonstration
+            // Mock permissions list for UI demonstration - Translated to Vietnamese
             const permissions = [
-                { id: 'view_channel', name: 'View Channel', desc: 'Allows members to view this channel by default.' },
-                { id: 'send_messages', name: 'Send Messages', desc: 'Allows members to send messages in this channel.' },
-                { id: 'attach_files', name: 'Attach Files', desc: 'Allows members to upload files or media.' },
-                { id: 'embed_links', name: 'Embed Links', desc: 'Allows links to display preview cards.' },
-                { id: 'read_message_history', name: 'Read Message History', desc: 'Allows members to read previous messages.' }
+                { id: 'view_channel', name: 'Xem Kênh', desc: 'Cho phép thành viên xem kênh này (mặc định).' },
+                { id: 'send_messages', name: 'Gửi Tin Nhắn', desc: 'Cho phép thành viên gửi tin nhắn trong kênh này.' },
+                { id: 'attach_files', name: 'Đính Kèm File', desc: 'Cho phép thành viên tải lên tệp hoặc media.' },
+                { id: 'embed_links', name: 'Nhúng Liên Kết', desc: 'Cho phép hiển thị bản xem trước cho các liên kết.' },
+                { id: 'read_message_history', name: 'Đọc Lịch Sử Tin Nhắn', desc: 'Cho phép thành viên đọc các tin nhắn trước đó.' }
             ];
 
             let html = `
-                <h3 class="cs-section-title">Permissions</h3>
-                <p class="cs-section-desc">Advanced permissions settings for this channel. (Mock UI)</p>
+                <h3 class="cs-section-title">Quyền</h3>
+                <p class="cs-section-desc">Cài đặt quyền nâng cao cho kênh này.</p>
                 <div class="cs-divider"></div>
                 <div class="cs-perm-list">
             `;
 
             permissions.forEach(perm => {
+                const currentState = this.currentData.permissions[perm.id] || 'inherit';
                 html += `
-                    <div class="cs-perm-item">
+                    <div class="cs-perm-item" data-perm-id="${perm.id}">
                         <div class="cs-perm-info">
                             <div class="cs-perm-name">${perm.name}</div>
                             <div class="cs-perm-desc">${perm.desc}</div>
                         </div>
                         <div class="cs-perm-controls">
-                            <button class="cs-perm-btn deny"><i class="bi bi-x-lg"></i></button>
-                            <button class="cs-perm-btn inherit active"><i class="bi bi-slash-lg"></i></button>
-                            <button class="cs-perm-btn allow"><i class="bi bi-check-lg"></i></button>
+                            <button class="cs-perm-btn deny ${currentState === 'deny' ? 'active' : ''}" data-value="deny"><i class="bi bi-x-lg"></i></button>
+                            <button class="cs-perm-btn inherit ${currentState === 'inherit' ? 'active' : ''}" data-value="inherit"><i class="bi bi-slash-lg"></i></button>
+                            <button class="cs-perm-btn allow ${currentState === 'allow' ? 'active' : ''}" data-value="allow"><i class="bi bi-check-lg"></i></button>
                         </div>
                     </div>
                 `;
@@ -279,92 +329,32 @@
             html += `</div>`;
             container.innerHTML = html;
 
-            // Simple click feedback for UI demo
+            // Simple click feedback for UI demo and State Update
             container.querySelectorAll('.cs-perm-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const parent = this.parentElement;
+                btn.addEventListener('click', (e) => {
+                    const button = e.currentTarget;
+                    const parent = button.closest('.cs-perm-item');
+                    const permId = parent.dataset.permId;
+                    const value = button.dataset.value;
+
+                    // Update UI
                     parent.querySelectorAll('.cs-perm-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
+                    button.classList.add('active');
+
+                    // Update State
+                    this.currentData.permissions[permId] = value;
+                    this._checkDirty();
                 });
             });
-        }
-
-        async _renderInvites() {
-            const container = this.modal.querySelector('#csContentParams');
-            container.innerHTML = `<div class="cs-loader"><div class="spinner-border text-light" role="status"></div> Loading invites...</div>`;
-
-            try {
-                let invites = [];
-                // Mock API call if wrapper exists, else just empty or mock
-                if (window.fetchWithAuth) {
-                    const res = await window.fetchWithAuth(`/api/channels/${this.channelId}/invites`);
-                    if (res.ok) invites = await res.json();
-                }
-
-                // If no invites or API fail (handled by catch), default empty
-                if (!invites || invites.length === 0) {
-                    container.innerHTML = `
-                        <h3 class="cs-section-title">Invites</h3>
-                        <div class="cs-empty-state">
-                            <div class="cs-empty-icon"><i class="bi bi-envelope-paper"></i></div>
-                            <div class="cs-empty-text">No active invites for this channel.</div>
-                            <button class="cs-btn-primary mt-3" id="csCreateInvite">Create Invite</button>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Render Invites Table
-                let html = `
-                    <h3 class="cs-section-title">Invites</h3>
-                    <div class="cs-invites-table">
-                        <div class="cs-invites-header">
-                            <div class="col-inviter">INVITER</div>
-                            <div class="col-code">INVITE CODE</div>
-                            <div class="col-expires">EXPIRES</div>
-                            <div class="col-uses">USES</div>
-                            <div class="col-actions"></div>
-                        </div>
-                `;
-
-                invites.forEach(inv => {
-                    html += `
-                        <div class="cs-invite-row">
-                            <div class="col-inviter">
-                                <span class="cs-inviter-name">${this.escapeHtml(inv.inviter?.username || 'Unknown')}</span>
-                            </div>
-                            <div class="col-code">
-                                <span class="cs-code">${inv.code}</span>
-                            </div>
-                            <div class="col-expires">
-                                ${inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString() : 'Never'}
-                            </div>
-                            <div class="col-uses">
-                                ${inv.uses} / ${inv.maxUses || '∞'}
-                            </div>
-                            <div class="col-actions">
-                                <button class="cs-icon-btn text-danger" title="Revoke"><i class="bi bi-x-lg"></i></button>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                html += `</div>`;
-                container.innerHTML = html;
-
-            } catch (e) {
-                console.error("Error loading invites", e);
-                container.innerHTML = `<div class="text-danger">Failed to load invites.</div>`;
-            }
         }
 
         _renderDelete() {
             const container = this.modal.querySelector('#csContentParams');
             container.innerHTML = `
-                <h3 class="cs-section-title">Delete Channel</h3>
+                <h3 class="cs-section-title">Xóa Kênh</h3>
                 <div class="cs-delete-warning">
-                    <p>Are you sure you want to delete <strong>#${this.escapeHtml(this.initialData.name)}</strong>? This cannot be undone.</p>
-                    <button class="cs-btn-danger" id="csConfirmDelete">Delete Channel</button>
+                    <p>Bạn có chắc chắn muốn xóa kênh <strong>#${this.escapeHtml(this.initialData.name)}</strong>? Hành động này không thể hoàn tác.</p>
+                    <button class="cs-btn-danger" id="csConfirmDelete">Xóa Kênh</button>
                 </div>
              `;
             document.getElementById('csConfirmDelete').addEventListener('click', () => this._deleteChannel());
@@ -377,26 +367,30 @@
             if (el) el.addEventListener('input', (e) => this._updateField(field, e.target.value));
         }
 
-        _bindCheckbox(id, field) {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('change', (e) => this._updateField(field, e.target.checked));
-        }
-
         _updateField(key, value) {
             this.currentData[key] = value;
             this._checkDirty();
         }
 
         _checkDirty() {
-            const fields = ['name', 'topic', 'bitrate', 'userLimit', 'nsfw', 'rateLimitPerUser'];
-            this.isDirty = fields.some(f => {
+            const fields = ['name', 'topic', 'bitrate', 'userLimit'];
+            let isDirty = fields.some(f => {
                 const init = this.initialData[f];
                 const curr = this.currentData[f];
                 // Handle equality loosely for numbers/strings and nulls
                 return String(init ?? '') !== String(curr ?? '');
             });
 
+            // Check permissions dirty state
+            if (!isDirty && this.currentData.permissions) {
+                isDirty = Object.keys(this.initialData.permissions).some(key => {
+                    return this.initialData.permissions[key] !== this.currentData.permissions[key];
+                });
+            }
+
+            this.isDirty = isDirty;
             const saveBar = document.getElementById('csSaveBar');
+
             if (this.isDirty) saveBar.classList.add('visible');
             else saveBar.classList.remove('visible');
         }
@@ -404,75 +398,128 @@
         async _saveChanges() {
             const btn = this.modal.querySelector('.cs-btn-save');
             const originalText = btn.textContent;
-            btn.textContent = 'Saving...';
+            btn.textContent = 'Đang lưu...';
             btn.disabled = true;
 
             try {
-                // Construct patch payload (only changed fields)
-                // However, user requested PATCH /api/channels/{id} to save changes
-                const payload = {};
-                // We send full object or partial? Usually patch expects partial.
-                // For simplicity, let's send mapped fields.
-                ['name', 'topic', 'bitrate', 'userLimit', 'nsfw', 'rateLimitPerUser'].forEach(key => {
-                    if (this.currentData[key] !== undefined) {
-                        payload[key] = this.currentData[key];
+                let hasChanges = false;
+
+                // 1. Save Basic Settings
+                const basicFields = ['name', 'topic', 'bitrate', 'userLimit'];
+                const basicDirty = basicFields.some(f => String(this.initialData[f] ?? '') !== String(this.currentData[f] ?? ''));
+
+                if (basicDirty) {
+                    const payload = {};
+                    if (this.currentData.name !== undefined) payload.name = this.currentData.name;
+                    if (this.currentData.topic !== undefined) payload.topic = this.currentData.topic;
+                    if (this.currentData.bitrate !== undefined) payload.bitrate = this.currentData.bitrate;
+                    if (this.currentData.userLimit !== undefined) payload.userLimit = this.currentData.userLimit;
+
+                    const url = `/api/channels/${this.channelId}`;
+                    let res;
+                    if (window.fetchWithAuth) {
+                        res = await window.fetchWithAuth(url, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    } else {
+                        const token = localStorage.getItem('accessToken');
+                        res = await fetch(url, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
                     }
-                });
+                    if (!res.ok) throw new Error('Failed to save channel details');
 
-                const url = `/api/channels/${this.channelId}`;
-                let res;
+                    const updated = await res.json();
 
-                if (window.fetchWithAuth) {
-                    res = await window.fetchWithAuth(url, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                } else {
-                    const token = localStorage.getItem('accessToken');
-                    res = await fetch(url, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(payload)
-                    });
+                    // Carefully update initialData to preserve our extra fields (permissions, everyoneRoleId)
+                    Object.assign(this.initialData, updated);
+                    // currentData is already updated by user input, but better to sync with backend response for normalized values
+                    Object.assign(this.currentData, updated);
+                    hasChanges = true;
                 }
 
-                if (res.ok) {
-                    const updated = await res.json();
-                    this.initialData = { ...updated };
-                    this.currentData = { ...updated };
-                    this.isDirty = false;
-                    this._checkDirty();
-                    if (window.showToast) window.showToast('Channel settings saved!', 'success');
+                // 2. Save Permissions
+                const currentPerms = this.currentData.permissions;
+                const initPerms = this.initialData.permissions;
+                const permDirty = Object.keys(currentPerms).some(key => currentPerms[key] !== initPerms[key]);
 
-                    // Refresh channel list in UI
-                    if (window.loadServers) window.loadServers();
-                    if (window.renderChannelList && window.channels) {
-                        // Manually update local channel object to reflect change immediately without full reload
-                        const idx = window.channels.findIndex(c => c.id == this.channelId);
-                        if (idx !== -1) {
-                            window.channels[idx] = { ...window.channels[idx], ...updated };
-                            window.renderChannelList();
-                        }
+                if (permDirty) {
+                    if (!this.currentData.everyoneRoleId) {
+                        throw new Error('Cannot save permissions: Cannot find @everyone role ID');
                     }
-                    // Update header if active
+
+                    const roleId = this.currentData.everyoneRoleId;
+                    const allowed = [];
+                    const denied = [];
+
+                    Object.entries(currentPerms).forEach(([key, value]) => {
+                        const backendKey = key.toUpperCase();
+                        if (value === 'allow') allowed.push(backendKey);
+                        else if (value === 'deny') denied.push(backendKey);
+                    });
+
+                    const url = `/api/channels/${this.channelId}/permissions/roles/${roleId}`;
+                    const payload = {
+                        allowedPermissions: allowed,
+                        deniedPermissions: denied
+                    };
+
+                    let res;
+                    if (window.fetchWithAuth) {
+                        res = await window.fetchWithAuth(url, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    } else {
+                        const token = localStorage.getItem('accessToken');
+                        res = await fetch(url, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                    }
+                    if (!res.ok) throw new Error('Failed to save permissions');
+
+                    // Sync permission state
+                    this.initialData.permissions = { ...currentPerms };
+                    hasChanges = true;
+                }
+
+                // Synchronization Complete
+                if (hasChanges) {
+                    this.isDirty = false;
+                    this._checkDirty(); // Should now be false
+
+                    if (window.showToast) window.showToast('Đã lưu thay đổi!', 'success');
+
+                    // Refresh Global UI
+                    if (window.loadServers) window.loadServers();
                     if (window.activeChannelId == this.channelId) {
                         const nameEl = document.getElementById('channelName');
-                        if (nameEl) nameEl.textContent = updated.name;
+                        if (nameEl) nameEl.textContent = this.currentData.name;
                         const topicEl = document.getElementById('channelTopic');
-                        if (topicEl) topicEl.textContent = updated.topic || '';
+                        if (topicEl) topicEl.textContent = this.currentData.topic || '';
                     }
-
                 } else {
-                    const err = await res.json();
-                    if (window.showToast) window.showToast(err.message || 'Error saving changes', 'error');
+                    // No changes were actually detected/processable?
+                    this.isDirty = false;
+                    this._checkDirty();
                 }
+
             } catch (e) {
                 console.error(e);
-                if (window.showToast) window.showToast('Failed to connect to server', 'error');
+                if (window.showToast) window.showToast('Lỗi: ' + e.message, 'error');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -486,7 +533,7 @@
         }
 
         async _deleteChannel() {
-            if (!confirm(`Are you sure you want to delete #${this.initialData.name}?`)) return;
+            if (!confirm(`Bạn có chắc muốn xóa kênh #${this.initialData.name}?`)) return;
 
             try {
                 let res;
@@ -501,23 +548,16 @@
                 }
 
                 if (res.ok) {
-                    if (window.showToast) window.showToast('Channel deleted', 'success');
+                    if (window.showToast) window.showToast('Đã xóa kênh', 'success');
                     this.close();
                     if (window.loadServers) window.loadServers(); // Reload to refresh list
                     else location.reload();
                 } else {
-                    if (window.showToast) window.showToast('Failed to delete channel', 'error');
+                    if (window.showToast) window.showToast('Lỗi khi xóa kênh', 'error');
                 }
             } catch (e) {
                 console.error(e);
             }
-        }
-
-        _formatDuration(seconds) {
-            if (seconds === 0) return 'Off';
-            if (seconds < 60) return `${seconds}s`;
-            if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-            return `${Math.floor(seconds / 3600)}h`;
         }
 
         escapeHtml(text) {
@@ -694,26 +734,7 @@
                 .cs-perm-btn.inherit.active { background: #4e5058; border-color: #4e5058; color: #fff; }
                 .cs-perm-btn.allow.active { background: #23a559; border-color: #23a559; color: #fff; }
 
-                /* Invites Table */
-                .cs-invites-table { background: #2b2d31; border-radius: 8px; overflow: hidden; }
-                .cs-invites-header {
-                    display: flex; padding: 8px 16px; background: #1e1f22;
-                    color: #949ba4; font-size: 11px; font-weight: 700; text-transform: uppercase;
-                }
-                .cs-invite-row {
-                    display: flex; padding: 12px 16px; border-bottom: 1px solid #3f4147;
-                    align-items: center; color: #dbdee1; font-size: 14px;
-                }
-                .col-inviter { flex: 2; display: flex; align-items: center; }
-                .col-code { flex: 1.5; font-family: monospace; }
-                .col-expires { flex: 1.5; }
-                .col-uses { flex: 1; text-align: right; }
-                .col-actions { flex: 0.5; text-align: right; }
-                .cs-icon-btn { background: none; border: none; cursor: pointer; color: #b5bac1; }
-                .cs-icon-btn:hover { color: #dbdee1; }
-
-                /* Save Bar (Floating at bottom inside content-wrapper) */
-                .cs-save-bar {
+                 .cs-save-bar {
                     position: absolute; bottom: -80px; left: 20px; right: 40px; z-index: 10;
                     display: flex; justify-content: center;
                     transition: bottom 0.3s cubic-bezier(0.3, 2, 0.4, 0.8);
@@ -740,12 +761,6 @@
                     border-radius: 3px; font-weight: 500; cursor: pointer;
                 }
                 .cs-btn-danger:hover { background: #a1282c; }
-                
-                /* Empty States */
-                .cs-empty-state { text-align: center; padding: 40px; }
-                .cs-empty-icon { font-size: 48px; color: #4e5058; margin-bottom: 10px; }
-                .cs-empty-text { color: #949ba4; }
-                .cs-btn-primary { background: #5865f2; color: #fff; border: none; padding: 8px 16px; border-radius: 3px; }
             `;
             document.head.appendChild(style);
         }

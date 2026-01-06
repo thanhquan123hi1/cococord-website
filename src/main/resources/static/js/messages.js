@@ -865,6 +865,7 @@
                             <div class="message-body markdown-content">
                                 ${contentHtml}
                                 ${attachmentsHtml}
+                                ${window.MessageActionsManager ? window.MessageActionsManager.generateReactionsHtml(m.reactions || [], state.currentUser?.id) : ''}
                             </div>
                         </div>
                     </div>
@@ -878,6 +879,7 @@
                             <div class="message-body markdown-content">
                                 ${contentHtml}
                                 ${attachmentsHtml}
+                                ${window.MessageActionsManager ? window.MessageActionsManager.generateReactionsHtml(m.reactions || [], state.currentUser?.id) : ''}
                             </div>
                         </div>
                     </div>
@@ -1170,14 +1172,34 @@
                     stomp.subscribe(`/topic/dm/${state.dmGroupId}`, (msg) => {
                         try {
                             console.log('[WS-MSG] 📡 WebSocket message received on /topic/dm/' + state.dmGroupId);
-                            const m = JSON.parse(msg.body);
+                            const data = JSON.parse(msg.body);
+
+                            // Check for Event Wrapper (e.g. Reactions)
+                            let eventType = 'message.created';
+                            let payload = data;
+                            if (data && data.type && data.payload) {
+                                eventType = data.type;
+                                payload = data.payload;
+                            }
+
+                            if (eventType === 'MESSAGE_REACTION_UPDATED') {
+                                if (window.messageActionsInstance && window.MessageActionsManager) {
+                                    window.messageActionsInstance.handleReactionUpdate(payload, state.currentUser?.id);
+                                }
+                                return;
+                            }
+
+                            // If not a known event type, assume it's a message (legacy or direct DTO)
+                            const m = payload;
+
                             console.log('[WS-MSG] 📦 Parsed message:', { msgId: m?.id, content: m?.content?.substring(0, 50), sender: m?.senderUsername });
-                            if (!m) return;
+                            if (!m || !m.id) return; // Basic validation
 
                             // Check if message already exists (DUPLICATE CHECK)
                             const exists = state.messages.find(msg => msg.id === m.id);
                             if (exists) {
                                 console.warn('[WS-MSG] ⚠️ DUPLICATE VIA WEBSOCKET! Message already in state, ignoring:', m.id);
+                                // Optional: Update if it's an edit?
                                 return;
                             }
 
@@ -1841,6 +1863,20 @@
         }
     }
 
+    function initMessageActionsManager() {
+        if (window.MessageActionsManager) {
+            window.messageActionsInstance = new MessageActionsManager({
+                containerSelector: '#messagesArea',
+                messageSelector: '.message-row',
+                chatType: 'DM',
+                // Add any other config needed
+            });
+            console.log('[Messages] MessageActionsManager initialized');
+        } else {
+            console.warn('[Messages] MessageActionsManager not found');
+        }
+    }
+
     // ==================== INIT ====================
     async function init() {
         // CRITICAL: Force hide legacy call overlay immediately
@@ -1896,6 +1932,7 @@
 
         // Initialize ChatInputManager for file/sticker/GIF/emoji buttons
         initChatInputManager();
+        initMessageActionsManager();
 
         if (state.dmGroupId) {
             // Use requestAnimationFrame + setTimeout to ensure DOM is fully rendered before scrolling
