@@ -1173,29 +1173,27 @@ body {
 }
 
 #chatApp .message-avatar {
-  position: absolute;
-  left: 16px;
-  top: 2px;
-  width: 40px;
-  height: 40px;
-  margin-right: 16px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background-color: var(--discord-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  min-width: 40px;
+    width: 40px;          /* Bắt buộc có chiều rộng */
+    min-width: 40px;      /* Quan trọng: Ngăn không cho co lại khi rỗng */
+    height: 40px;
+    margin-right: 16px;   /* Khoảng cách giữa avatar và nội dung */
+    flex-shrink: 0;       /* Quan trọng: Không bị nén trong flexbox */
+    
+    /* Thêm để căn chỉnh placeholder (chữ cái đầu) đẹp hơn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--bg-modifier-selected); /* Màu nền nếu không có ảnh */
 }
 
+/* Đảm bảo ảnh bên trong (nếu có) luôn tròn và vừa khung */
 #chatApp .message-avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block; /* Sửa lỗi khoảng trắng thừa dưới ảnh */
 }
 
 #chatApp .message-body {
@@ -2478,4 +2476,34 @@ body {
 #chatApp .message-content video {
     margin-top: 4px;
     margin-bottom: 2px;
+}
+/* --- FIX SPACING & LAYOUT --- */
+
+/* 1. Giảm khoảng cách giữa các tin nhắn nối tiếp (continued) */
+#chatApp .message-row.continued {
+    margin-top: 2px !important;    /* Khoảng cách nhỏ giữa các dòng tin nhắn liên tiếp */
+    padding-top: 0 !important;
+}
+
+/* 2. Khoảng cách chuẩn cho tin nhắn mới (có avatar) */
+#chatApp .message-row {
+    margin-top: 16px;             /* Khoảng cách giữa các nhóm tin nhắn */
+    display: flex;                /* Đảm bảo layout flex hoạt động */
+    align-items: flex-start;      /* Căn nội dung theo dòng trên cùng */
+}
+
+/* 3. Xử lý margin của văn bản (quan trọng nhất để giảm độ cao dòng) */
+#chatApp .message-content {
+    line-height: 1.375rem;        /* Chiều cao dòng chuẩn Discord */
+    color: var(--text-normal);
+}
+
+#chatApp .message-content p {
+    margin-bottom: 0 !important;  /* Loại bỏ khoảng trắng dưới mỗi đoạn văn */
+    margin-top: 0 !important;
+}
+
+/* Nếu có nhiều đoạn văn trong 1 tin nhắn, tạo khoảng cách nhỏ */
+#chatApp .message-content p + p {
+    margin-top: 6px !important;
 }
