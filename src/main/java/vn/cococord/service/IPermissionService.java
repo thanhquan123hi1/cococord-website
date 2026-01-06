@@ -201,5 +201,25 @@ public interface IPermissionService {
     boolean canManageRoles(Long userId, Long serverId);
     
     boolean canManageServer(Long userId, Long serverId);
-}
 
+    // ===== ROLE PERMISSION MANAGEMENT =====
+    
+    /**
+     * Grant all permissions to a role (for Admin role)
+     * @param roleId Role ID
+     */
+    void grantAllPermissionsToRole(Long roleId);
+    
+    /**
+     * Grant specific permissions to a role
+     * @param roleId Role ID
+     * @param permissionNames Set of permission names
+     */
+    void grantPermissionsToRole(Long roleId, Set<String> permissionNames);
+    
+    /**
+     * Revoke all permissions from a role
+     * @param roleId Role ID
+     */
+    void revokeAllPermissionsFromRole(Long roleId);
+}

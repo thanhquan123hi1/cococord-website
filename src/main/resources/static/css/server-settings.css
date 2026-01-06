@@ -498,6 +498,22 @@
     background: var(--bg-modifier-selected, rgba(79, 84, 92, 0.6));
 }
 
+/* Locked roles (@Admin, @everyone) */
+.role-item.locked {
+    opacity: 0.9;
+}
+
+.role-item.locked .role-name {
+    font-weight: 600;
+}
+
+.role-lock-icon {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: auto;
+    margin-right: 8px;
+}
+
 .role-color {
     width: 12px;
     height: 12px;
@@ -584,6 +600,35 @@
 
 .btn-delete-role:hover {
     background: rgba(237, 66, 69, 0.1);
+}
+
+/* Role lock notice for @Admin */
+.role-lock-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+    color: #e74c3c;
+    font-size: 13px;
+}
+
+.role-lock-notice i {
+    font-size: 16px;
+}
+
+/* Invalid input styling */
+#roleNameInput.invalid {
+    border-color: var(--discord-red, #ed4245);
+    background: rgba(237, 66, 69, 0.05);
+}
+
+/* Disabled inputs */
+#roleNameInput:disabled,
+#roleColorInput:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .roles-editor-body {
@@ -1038,6 +1083,88 @@
     font-size: 12px;
     color: var(--text-muted);
     margin-right: 12px;
+}
+
+/* Role select dropdown for members */
+.member-role-select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    font-size: 12px;
+    color: var(--text-normal);
+    margin-right: 12px;
+    cursor: pointer;
+    min-width: 100px;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.member-role-select:hover {
+    border-color: var(--discord-blurple, #5865f2);
+}
+
+.member-role-select:focus {
+    outline: none;
+    border-color: var(--discord-blurple, #5865f2);
+    background: var(--bg-tertiary);
+}
+
+.member-role-select option {
+    background: var(--bg-secondary);
+    color: var(--text-normal);
+    padding: 8px;
+}
+
+/* Locked role display for server owner */
+.member-role-locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-right: 12px;
+}
+
+.member-role-locked i {
+    font-size: 10px;
+}
+
+/* Owner crown icon */
+.owner-crown {
+    color: #faa61a;
+    margin-left: 6px;
+    font-size: 12px;
+}
+
+/* Admin protected badge */
+.admin-protected {
+    opacity: 1 !important;
+}
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: #e74c3c;
+    font-size: 14px;
+}
+
+/* Highlight admin members */
+.member-item.is-admin {
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.member-item.is-admin:hover {
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.member-item.is-owner .member-name {
+    color: #faa61a;
 }
 
 .member-actions {

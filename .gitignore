@@ -54,3 +54,11 @@ discord-creator-hub-main
 *.tmp
 *.bak
 *.swp
+*.pdf
+*.docx
+*.xlsx
+*.pptx
+*.exe
+*.cmd
+mvnw
+mvnw.cmd

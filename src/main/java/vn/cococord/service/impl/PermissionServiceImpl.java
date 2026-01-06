@@ -43,6 +43,7 @@ public class PermissionServiceImpl implements IPermissionService {
     private final IChannelPermissionRepository channelPermissionRepository;
     private final IRoleRepository roleRepository;
     private final IUserRepository userRepository;
+    private final vn.cococord.repository.IPermissionRepository permissionRepository;
 
     // Special permissions
     private static final String ADMINISTRATOR = "ADMINISTRATOR";
@@ -562,5 +563,70 @@ public class PermissionServiceImpl implements IPermissionService {
         }
 
         return dto;
+    }
+
+    // ===== ROLE PERMISSION MANAGEMENT =====
+
+    @Override
+    @Transactional
+    public void grantAllPermissionsToRole(Long roleId) {
+        vn.cococord.entity.mysql.Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
+        
+        // Get all permissions from database
+        List<vn.cococord.entity.mysql.Permission> allPermissions = permissionRepository.findAll();
+        
+        // Delete existing role permissions
+        rolePermissionRepository.deleteByRoleId(roleId);
+        
+        // Grant all permissions
+        for (vn.cococord.entity.mysql.Permission permission : allPermissions) {
+            vn.cococord.entity.mysql.RolePermission rolePermission = vn.cococord.entity.mysql.RolePermission.builder()
+                    .role(role)
+                    .permission(permission)
+                    .isAllowed(true)
+                    .build();
+            rolePermissionRepository.save(rolePermission);
+        }
+        
+        log.info("Granted all permissions to role {}", role.getName());
+    }
+
+    @Override
+    @Transactional
+    public void grantPermissionsToRole(Long roleId, Set<String> permissionNames) {
+        vn.cococord.entity.mysql.Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
+        
+        for (String permissionName : permissionNames) {
+            vn.cococord.entity.mysql.Permission permission = permissionRepository.findByName(permissionName)
+                    .orElse(null);
+            
+            if (permission != null) {
+                // Check if already exists
+                boolean exists = rolePermissionRepository.findByRoleId(roleId).stream()
+                        .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
+                
+                if (!exists) {
+                    vn.cococord.entity.mysql.RolePermission rolePermission = vn.cococord.entity.mysql.RolePermission.builder()
+                            .role(role)
+                            .permission(permission)
+                            .isAllowed(true)
+                            .build();
+                    rolePermissionRepository.save(rolePermission);
+                }
+            } else {
+                log.warn("Permission not found: {}", permissionName);
+            }
+        }
+        
+        log.info("Granted permissions {} to role {}", permissionNames, role.getName());
+    }
+
+    @Override
+    @Transactional
+    public void revokeAllPermissionsFromRole(Long roleId) {
+        rolePermissionRepository.deleteByRoleId(roleId);
+        log.info("Revoked all permissions from role {}", roleId);
     }
 }
