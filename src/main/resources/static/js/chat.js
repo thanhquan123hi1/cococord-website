@@ -3477,23 +3477,36 @@
   let friendsList = [];
   let invitedFriends = new Set();
 
-  async function showInviteFriendsModal() {
-    if (!activeServerId) return;
+  async function showInviteFriendsModal(serverId = null) {
+    console.log('[INVITE DEBUG] showInviteFriendsModal called', { serverId, activeServerId });
 
-    const server = servers.find((s) => String(s.id) === String(activeServerId));
+    // Use parameter serverId or fall back to activeServerId
+    const targetServerId = serverId || activeServerId;
+    if (!targetServerId) {
+      console.warn('[INVITE DEBUG] No serverId available');
+      return;
+    }
+
+    const server = servers.find((s) => String(s.id) === String(targetServerId));
     const serverName = server?.name || "Máy chủ";
+    console.log('[INVITE DEBUG] Opening modal for server:', { targetServerId, serverName });
     invitedFriends.clear();
 
     const modal = document.getElementById("inviteFriendsModal");
     const serverNameEl = document.getElementById("inviteServerName");
     const searchInput = document.getElementById("inviteFriendSearch");
 
-    if (modal) modal.style.display = "flex";
+    if (modal) {
+      modal.style.display = "flex";
+      // Store serverId in modal dataset
+      modal.dataset.serverId = targetServerId;
+      console.log('[INVITE DEBUG] Set modal data-server-id:', modal.dataset.serverId);
+    }
     if (serverNameEl) serverNameEl.textContent = serverName;
     if (searchInput) searchInput.value = "";
 
     // Load friends and invite link
-    await Promise.all([loadFriendsForInvite(), generateInviteLink()]);
+    await Promise.all([loadFriendsForInvite(), generateInviteLink(targetServerId)]);
     renderInviteFriendsList();
   }
 
@@ -3514,11 +3527,12 @@
     }
   }
 
-  async function generateInviteLink() {
-    if (!activeServerId) return;
+  async function generateInviteLink(serverId = null) {
+    const targetServerId = serverId || activeServerId;
+    if (!targetServerId) return;
 
     try {
-      const invite = await apiPost(`/api/servers/${activeServerId}/invites`, {
+      const invite = await apiPost(`/api/servers/${targetServerId}/invites`, {
         maxUses: 0,
         expiresInDays: 7,
       });
@@ -3592,10 +3606,26 @@
   }
 
   async function inviteFriendFromChat(friendId) {
-    if (!activeServerId || !friendId) return;
+    console.log('[INVITE DEBUG] inviteFriendFromChat called', { friendId, activeServerId });
 
-    const server = servers.find((s) => String(s.id) === String(activeServerId));
+    // Get serverId from activeServerId or from modal data attribute
+    let serverId = activeServerId;
+    if (!serverId) {
+      const modal = document.getElementById('inviteFriendsModal');
+      const dataServerId = modal?.dataset?.serverId;
+      // Parse as Number because dataset always returns string
+      serverId = dataServerId ? Number(dataServerId) : null;
+      console.log('[INVITE DEBUG] Retrieved serverId from modal:', serverId, 'type:', typeof serverId);
+    }
+
+    if (!serverId || !friendId) {
+      console.warn('[INVITE DEBUG] Missing serverId or friendId', { serverId, friendId });
+      return;
+    }
+
+    const server = servers.find((s) => String(s.id) === String(serverId));
     const serverName = server?.name || "Máy chủ";
+    console.log('[INVITE DEBUG] Server found:', { serverId: server?.id, serverName });
 
     // Mark as invited immediately for better UX
     invitedFriends.add(friendId);
@@ -3606,6 +3636,14 @@
     try {
       // Get invite code from input
       const inviteCode = document.getElementById("inviteLinkInput")?.value?.split('/').pop() || "";
+      console.log('[INVITE DEBUG] Invite code:', inviteCode);
+
+      const payload = {
+        recipientId: friendId,
+        serverId: Number(serverId),
+        inviteCode: inviteCode
+      };
+      console.log('[INVITE DEBUG] Sending invite request:', JSON.stringify(payload));
 
       // Send invite notification via API (real-time WebSocket)
       const res = await fetch('/api/invites/send', {
@@ -3614,23 +3652,27 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAccessToken()}`
         },
-        body: JSON.stringify({
-          recipientId: friendId,
-          serverId: activeServerId,
-          inviteCode: inviteCode
-        })
+        body: JSON.stringify(payload)
       });
 
+      console.log('[INVITE DEBUG] API response status:', res.status);
       if (res.ok) {
+        const responseData = await res.json();
+        console.log('[INVITE DEBUG] Invite sent successfully:', responseData);
         showToast(`Đã gửi lời mời tới bạn bè tham gia ${serverName}`, 'success');
       } else {
         const error = await res.json();
+        console.error('[INVITE DEBUG] API error:', error);
         showToast(error.message || 'Không thể gửi lời mời', 'error');
         invitedFriends.delete(friendId);
         renderInviteFriendsList(document.getElementById("inviteFriendSearch")?.value || "");
       }
     } catch (err) {
-      console.error('[Invite] Error sending invite:', err);
+      console.error('[INVITE DEBUG] Exception caught:', err);
+      console.error('[INVITE DEBUG] Error details:', {
+        message: err.message,
+        stack: err.stack
+      });
       showToast("Không thể gửi lời mời", "error");
       invitedFriends.delete(friendId);
       renderInviteFriendsList(document.getElementById("inviteFriendSearch")?.value || "");

@@ -10,7 +10,7 @@
  * - Channel sidebar context menu (create category)
  */
 
-(function(window) {
+(function (window) {
     'use strict';
 
     // ==================== HeaderToolbar CLASS ====================
@@ -18,18 +18,18 @@
         constructor(options = {}) {
             // Main container
             this.chatApp = document.getElementById('chatApp');
-            
+
             // Header buttons
             this.membersToggleBtn = document.getElementById('membersToggleBtn');
             this.threadBtn = document.getElementById('threadBtn');
             this.pinBtn = document.getElementById('pinBtn');
             this.notifyBtn = document.getElementById('notifyBtn');
             this.helpBtn = document.getElementById('helpBtn');
-            
+
             // Sidebars
             this.membersSidebar = document.getElementById('membersSidebar');
             this.channelSidebar = document.querySelector('.channel-sidebar');
-            
+
             // State
             this.isMembersVisible = true;
             this.isChannelMuted = false;
@@ -37,13 +37,13 @@
             this.pinnedPopup = null;
             this.helpModal = null;
             this.channelContextMenu = null;
-            
+
             // Callbacks
             this.onLoadThreads = options.onLoadThreads || null;
             this.onLoadPinnedMessages = options.onLoadPinnedMessages || null;
             this.onToggleMute = options.onToggleMute || null;
             this.onCreateCategory = options.onCreateCategory || null;
-            
+
             // Initialize
             this._init();
         }
@@ -54,15 +54,15 @@
             this._createHelpModal();
             this._createChannelContextMenu();
             this._bindEvents();
-            
+
             console.log('[HeaderToolbar] Initialized');
         }
 
         // ==================== MEMBER LIST TOGGLE ====================
-        
+
         toggleMembersList() {
             this.isMembersVisible = !this.isMembersVisible;
-            
+
             if (this.isMembersVisible) {
                 this.chatApp.classList.remove('members-hidden');
                 this.membersToggleBtn?.classList.add('active');
@@ -70,19 +70,19 @@
                 this.chatApp.classList.add('members-hidden');
                 this.membersToggleBtn?.classList.remove('active');
             }
-            
+
             // Save preference
             localStorage.setItem('cococord_members_visible', this.isMembersVisible);
         }
 
         // ==================== THREADS SIDEBAR ====================
-        
+
         _createThreadsOverlay() {
             // Backdrop
             this.threadsBackdrop = document.createElement('div');
             this.threadsBackdrop.className = 'threads-overlay-backdrop';
             document.body.appendChild(this.threadsBackdrop);
-            
+
             // Overlay panel
             this.threadsOverlay = document.createElement('div');
             this.threadsOverlay.className = 'threads-overlay';
@@ -111,7 +111,7 @@
             this.threadsBackdrop.classList.add('show');
             this.threadsOverlay.classList.add('show');
             this.threadBtn?.classList.add('active');
-            
+
             // Load threads if callback provided
             if (this.onLoadThreads) {
                 this._loadThreads();
@@ -127,10 +127,10 @@
         async _loadThreads() {
             const content = this.threadsOverlay.querySelector('#threadsContent');
             content.innerHTML = '<div class="threads-loading" style="text-align:center;padding:20px;color:var(--text-muted)"><i class="bi bi-arrow-repeat spin"></i> Đang tải...</div>';
-            
+
             try {
                 const threads = await this.onLoadThreads();
-                
+
                 if (!threads || threads.length === 0) {
                     content.innerHTML = `
                         <div class="threads-empty">
@@ -144,7 +144,7 @@
                     `;
                     return;
                 }
-                
+
                 content.innerHTML = threads.map(thread => `
                     <div class="thread-item" data-thread-id="${thread.id}">
                         <div class="thread-item-header">
@@ -167,7 +167,7 @@
         }
 
         // ==================== PINNED MESSAGES POPUP ====================
-        
+
         _createPinnedPopup() {
             this.pinnedPopup = document.createElement('div');
             this.pinnedPopup.className = 'pinned-popup';
@@ -187,7 +187,7 @@
                     </div>
                 </div>
             `;
-            
+
             // Append to main content area for proper positioning
             const mainContent = document.querySelector('.main-content');
             if (mainContent) {
@@ -199,7 +199,7 @@
 
         togglePinnedPopup() {
             const isVisible = this.pinnedPopup.style.display !== 'none';
-            
+
             if (isVisible) {
                 this.hidePinnedPopup();
             } else {
@@ -210,7 +210,7 @@
         showPinnedPopup() {
             this.pinnedPopup.style.display = 'flex';
             this.pinBtn?.classList.add('active');
-            
+
             // Load pinned messages if callback provided
             if (this.onLoadPinnedMessages) {
                 this._loadPinnedMessages();
@@ -225,10 +225,10 @@
         async _loadPinnedMessages() {
             const content = this.pinnedPopup.querySelector('#pinnedContent');
             content.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="bi bi-arrow-repeat spin"></i> Đang tải...</div>';
-            
+
             try {
                 const messages = await this.onLoadPinnedMessages();
-                
+
                 if (!messages || messages.length === 0) {
                     content.innerHTML = `
                         <div class="pinned-empty">
@@ -239,14 +239,14 @@
                     `;
                     return;
                 }
-                
+
                 content.innerHTML = messages.map(msg => `
                     <div class="pinned-message" data-message-id="${msg.id}">
                         <div class="pinned-message-header">
                             <div class="pinned-message-avatar">
-                                ${msg.avatarUrl 
-                                    ? `<img src="${this._escapeHtml(msg.avatarUrl)}" alt="">` 
-                                    : (msg.displayName || msg.username || 'U').charAt(0).toUpperCase()}
+                                ${msg.avatarUrl
+                        ? `<img src="${this._escapeHtml(msg.avatarUrl)}" alt="">`
+                        : (msg.displayName || msg.username || 'U').charAt(0).toUpperCase()}
                             </div>
                             <span class="pinned-message-author">${this._escapeHtml(msg.displayName || msg.username)}</span>
                             <span class="pinned-message-time">${this._formatTime(msg.createdAt)}</span>
@@ -268,10 +268,10 @@
         }
 
         // ==================== NOTIFICATION TOGGLE ====================
-        
+
         toggleChannelNotification() {
             this.isChannelMuted = !this.isChannelMuted;
-            
+
             if (this.isChannelMuted) {
                 this.notifyBtn?.classList.add('muted');
                 this.notifyBtn.querySelector('i')?.classList.replace('bi-bell', 'bi-bell-slash');
@@ -281,18 +281,18 @@
                 this.notifyBtn.querySelector('i')?.classList.replace('bi-bell-slash', 'bi-bell');
                 this.notifyBtn.title = 'Tắt thông báo';
             }
-            
+
             // Callback
             if (this.onToggleMute) {
                 this.onToggleMute(this.isChannelMuted);
             }
-            
+
             // Show toast
             this._showToast(this.isChannelMuted ? 'Đã tắt thông báo kênh' : 'Đã bật thông báo kênh');
         }
 
         // ==================== HELP MODAL ====================
-        
+
         _createHelpModal() {
             this.helpModalOverlay = document.createElement('div');
             this.helpModalOverlay.className = 'help-modal-overlay';
@@ -344,7 +344,7 @@
         }
 
         // ==================== CHANNEL CONTEXT MENU ====================
-        
+
         _createChannelContextMenu() {
             this.channelContextMenu = document.createElement('div');
             this.channelContextMenu.className = 'channel-context-menu';
@@ -373,12 +373,12 @@
 
         showChannelContextMenu(x, y) {
             this.channelContextMenu.style.display = 'block';
-            
+
             // Position the menu
             const menuRect = this.channelContextMenu.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            
+
             // Adjust position if menu goes off screen
             if (x + menuRect.width > viewportWidth) {
                 x = viewportWidth - menuRect.width - 10;
@@ -386,7 +386,7 @@
             if (y + menuRect.height > viewportHeight) {
                 y = viewportHeight - menuRect.height - 10;
             }
-            
+
             this.channelContextMenu.style.left = x + 'px';
             this.channelContextMenu.style.top = y + 'px';
         }
@@ -396,20 +396,20 @@
         }
 
         // ==================== EVENT BINDING ====================
-        
+
         _bindEvents() {
             // Member list toggle
             this.membersToggleBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.toggleMembersList();
             });
-            
+
             // Threads button
             this.threadBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.showThreadsOverlay();
             });
-            
+
             // Threads overlay close
             this.threadsOverlay?.querySelector('.threads-close-btn')?.addEventListener('click', () => {
                 this.hideThreadsOverlay();
@@ -417,30 +417,30 @@
             this.threadsBackdrop?.addEventListener('click', () => {
                 this.hideThreadsOverlay();
             });
-            
+
             // Pin button
             this.pinBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.togglePinnedPopup();
             });
-            
+
             // Pinned popup close
             this.pinnedPopup?.querySelector('.pinned-close-btn')?.addEventListener('click', () => {
                 this.hidePinnedPopup();
             });
-            
+
             // Notification button
             this.notifyBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.toggleChannelNotification();
             });
-            
+
             // Help button
             this.helpBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.showHelpModal();
             });
-            
+
             // Help modal close
             this.helpModalOverlay?.querySelector('.help-modal-close')?.addEventListener('click', () => {
                 this.hideHelpModal();
@@ -453,7 +453,7 @@
                     this.hideHelpModal();
                 }
             });
-            
+
             // Channel sidebar context menu
             this.channelSidebar?.addEventListener('contextmenu', (e) => {
                 // Only show context menu on empty area or channel list
@@ -463,15 +463,15 @@
                     this.showChannelContextMenu(e.clientX, e.clientY);
                 }
             });
-            
+
             // Context menu item clicks
             this.channelContextMenu?.addEventListener('click', (e) => {
                 const item = e.target.closest('.context-item');
                 if (!item) return;
-                
+
                 const action = item.dataset.action;
                 this.hideChannelContextMenu();
-                
+
                 switch (action) {
                     case 'create-channel':
                         this._triggerCreateChannel();
@@ -487,14 +487,14 @@
                         break;
                 }
             });
-            
+
             // Hide context menu on click outside
             document.addEventListener('click', (e) => {
                 if (!this.channelContextMenu.contains(e.target)) {
                     this.hideChannelContextMenu();
                 }
             });
-            
+
             // Hide pinned popup on click outside
             document.addEventListener('click', (e) => {
                 if (this.pinnedPopup.style.display !== 'none' &&
@@ -503,7 +503,7 @@
                     this.hidePinnedPopup();
                 }
             });
-            
+
             // Jump to pinned message
             this.pinnedPopup?.addEventListener('click', (e) => {
                 const jumpBtn = e.target.closest('.pinned-message-jump');
@@ -515,14 +515,14 @@
                     }
                 }
             });
-            
+
             // Restore member list visibility preference
             const savedPref = localStorage.getItem('cococord_members_visible');
             if (savedPref === 'false') {
                 this.isMembersVisible = true; // Will be toggled to false
                 this.toggleMembersList();
             }
-            
+
             // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 // Escape to close overlays
@@ -539,7 +539,7 @@
         }
 
         // ==================== TRIGGER ACTIONS ====================
-        
+
         _triggerCreateChannel() {
             // Trigger existing create channel modal
             const createChannelBtn = document.getElementById('createChannelBtn');
@@ -554,7 +554,7 @@
                 const input = document.getElementById('categoryNameInput');
                 input?.focus();
             }
-            
+
             // Callback if provided
             if (this.onCreateCategory) {
                 this.onCreateCategory();
@@ -562,7 +562,24 @@
         }
 
         _triggerInvite() {
-            // Trigger existing invite modal
+            if (window.InviteModalManager) {
+                // Try to get server info
+                const urlParams = new URLSearchParams(window.location.search);
+                const serverId = urlParams.get('serverId');
+
+                // Try to find server name from UI
+                const serverNameEl = document.querySelector('.channel-sidebar-header h3') ||
+                    document.querySelector('.server-header') ||
+                    { textContent: 'Server' };
+                const serverName = serverNameEl.textContent.trim();
+
+                if (serverId) {
+                    window.InviteModalManager.openModal(serverId, serverName);
+                    return;
+                }
+            }
+
+            // Fallback to existing button if any
             const inviteBtn = document.getElementById('invitePeopleBtn');
             inviteBtn?.click();
         }
@@ -583,7 +600,7 @@
         }
 
         // ==================== UTILITIES ====================
-        
+
         _escapeHtml(str) {
             if (!str) return '';
             const div = document.createElement('div');
@@ -596,11 +613,11 @@
             const date = new Date(timestamp);
             const now = new Date();
             const diff = now - date;
-            
+
             if (diff < 60000) return 'Vừa xong';
             if (diff < 3600000) return Math.floor(diff / 60000) + ' phút trước';
             if (diff < 86400000) return Math.floor(diff / 3600000) + ' giờ trước';
-            
+
             return date.toLocaleDateString('vi-VN', {
                 day: '2-digit',
                 month: '2-digit',
@@ -614,16 +631,16 @@
             if (existingToast) {
                 existingToast.remove();
             }
-            
+
             const toast = document.createElement('div');
             toast.className = `chat-toast chat-toast-${type}`;
             toast.textContent = message;
             document.body.appendChild(toast);
-            
+
             requestAnimationFrame(() => {
                 toast.classList.add('show');
             });
-            
+
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
@@ -631,7 +648,7 @@
         }
 
         // ==================== PUBLIC API ====================
-        
+
         setChannelMuted(muted) {
             this.isChannelMuted = muted;
             if (muted) {

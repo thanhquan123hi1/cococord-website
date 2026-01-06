@@ -86,4 +86,11 @@ public interface IFriendService {
      * Check if user A has blocked user B
      */
     boolean hasBlocked(Long blockerId, Long blockedId);
+
+    // ===== SERVER FRIENDS =====
+
+    /**
+     * Get friends who are not member of a server
+     */
+    List<UserProfileResponse> getFriendsNotInServer(String username, Long serverId);
 }

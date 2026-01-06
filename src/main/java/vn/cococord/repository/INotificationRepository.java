@@ -12,37 +12,38 @@ import vn.cococord.entity.mysql.Notification;
 import java.util.List;
 
 @Repository
+// Trigger recompile
 public interface INotificationRepository extends JpaRepository<Notification, Long> {
 
-    // Find notifications by user ID ordered by creation time
-    Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+        // Find notifications by user ID ordered by creation time
+        Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
-    // Find unread notifications by user ID
-    List<Notification> findByUserIdAndIsReadFalseOrderByCreatedAtDesc(Long userId);
+        // Find unread notifications by user ID
+        List<Notification> findByUserIdAndIsReadFalseOrderByCreatedAtDesc(Long userId);
 
-    // Count unread notifications
-    long countByUserIdAndIsReadFalse(Long userId);
+        // Count unread notifications
+        long countByUserIdAndIsReadFalse(Long userId);
 
-    // Find notifications by user ID and type
-    List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(
-            Long userId, Notification.NotificationType type);
+        // Find notifications by user ID and type
+        List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(
+                        Long userId, Notification.NotificationType type);
 
-    // Mark all notifications as read for a user
-    @Modifying
-    @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.user.id = :userId AND n.isRead = false")
-    int markAllAsRead(@Param("userId") Long userId);
+        // Mark all notifications as read for a user
+        @Modifying
+        @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.user.id = :userId AND n.isRead = false")
+        int markAllAsRead(@Param("userId") Long userId);
 
-    // Mark specific notification as read
-    @Modifying
-    @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.id = :notificationId AND n.user.id = :userId")
-    int markAsRead(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
+        // Mark specific notification as read
+        @Modifying
+        @Query("UPDATE Notification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.id = :notificationId AND n.user.id = :userId")
+        int markAsRead(@Param("notificationId") Long notificationId, @Param("userId") Long userId);
 
-    // Delete old notifications (cleanup job)
-    @Modifying
-    @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.isRead = true AND n.createdAt < :cutoffDate")
-    int deleteOldReadNotifications(@Param("userId") Long userId,
-            @Param("cutoffDate") java.time.LocalDateTime cutoffDate);
+        // Delete old notifications (cleanup job)
+        @Modifying
+        @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.isRead = true AND n.createdAt < :cutoffDate")
+        int deleteOldReadNotifications(@Param("userId") Long userId,
+                        @Param("cutoffDate") java.time.LocalDateTime cutoffDate);
 
-    // Delete all notifications for a user
-    void deleteByUserId(Long userId);
+        // Delete all notifications for a user
+        void deleteByUserId(Long userId);
 }

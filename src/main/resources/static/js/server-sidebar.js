@@ -89,14 +89,14 @@
   }
 
   async function loadServers() {
-    servers = await apiGet("/api/servers"); 
+    servers = await apiGet("/api/servers");
     const existingServerItems = document.querySelectorAll(
       "#globalServerList a.server-item[data-server-id]"
     );
     if (existingServerItems.length === 0 && servers.length > 0) {
       renderServerList();
-    } 
-  } 
+    }
+  }
 
   // ==================== RENDERING ====================
   function renderServerList() {
@@ -115,7 +115,7 @@
         `.server-item[data-server-id="${server.id}"]`
       );
       if (existingItem) {
-        return; 
+        return;
       }
 
       const serverItem = createServerItem(server);
@@ -188,13 +188,13 @@
     if (currentPath === "/messages") {
       const homeBtn = el.serverList.querySelector(".home-btn");
       if (homeBtn) homeBtn.classList.add("active");
-    } 
+    }
 
     else if (currentPath === "/app" || currentPath.startsWith("/app/")) {
-       if (!serverId) { // Chỉ active Home nếu không có serverId
-           const homeBtn = el.serverList.querySelector(".home-btn") || document.getElementById("homeBtn");
-           if (homeBtn) homeBtn.classList.add("active");
-       }
+      if (!serverId) { // Chỉ active Home nếu không có serverId
+        const homeBtn = el.serverList.querySelector(".home-btn") || document.getElementById("homeBtn");
+        if (homeBtn) homeBtn.classList.add("active");
+      }
     }
     else if (serverId) {
       const serverItem = el.serverList.querySelector(
@@ -289,6 +289,73 @@
   // ==================== OTHERS ====================
   function showContextMenu(e, server) {
     e.preventDefault();
+
+    // Remove existing context menu if any
+    const existingMenu = document.querySelector('.server-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'server-context-menu';
+    menu.innerHTML = `
+        <div class="context-item" data-action="invite">
+            <i class="bi bi-person-plus"></i>
+            <span>Mời bạn bè</span>
+        </div>
+        <div class="context-item" data-action="settings">
+            <i class="bi bi-gear"></i>
+            <span>Cài đặt Server</span>
+        </div>
+        <div class="context-divider"></div>
+        <div class="context-item danger" data-action="leave">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Rời Server</span>
+        </div>
+    `;
+
+    // Position
+    menu.style.position = 'fixed';
+    menu.style.left = `${e.clientX}px`;
+    menu.style.top = `${e.clientY}px`;
+    menu.style.zIndex = '1000';
+    menu.style.background = '#111214';
+    menu.style.borderRadius = '4px';
+    menu.style.padding = '6px 8px';
+    menu.style.minWidth = '188px';
+    menu.style.boxShadow = '0 8px 16px rgba(0,0,0,0.24)';
+
+    // Add styles for items if not redundant with global css
+    // Assuming .context-item style exists from header-toolbar or global css
+
+    document.body.appendChild(menu);
+
+    // Close on click outside
+    const closeMenu = (ev) => {
+      if (!menu.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    // Delay to avoid immediate close
+    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+
+    // Handle clicks
+    menu.addEventListener('click', (ev) => {
+      const item = ev.target.closest('.context-item');
+      if (!item) return;
+      const action = item.dataset.action;
+
+      if (action === 'invite') {
+        if (window.InviteModalManager) {
+          window.InviteModalManager.openModal(server.id, server.name);
+        } else {
+          console.error('InviteModalManager not found');
+        }
+      }
+      // Handle other actions if needed...
+
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+    });
   }
 
   function initEventListeners() {

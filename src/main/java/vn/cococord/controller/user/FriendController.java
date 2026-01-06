@@ -79,6 +79,18 @@ public class FriendController {
     }
 
     /**
+     * GET /api/friends/not-in-server/{serverId}
+     * Get friends who are NOT in the specified server
+     */
+    @GetMapping("/not-in-server/{serverId}")
+    public ResponseEntity<List<UserProfileResponse>> getFriendsNotInServer(
+            @PathVariable Long serverId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        List<UserProfileResponse> friends = friendService.getFriendsNotInServer(userDetails.getUsername(), serverId);
+        return ResponseEntity.ok(friends);
+    }
+
+    /**
      * GET /api/friends/requests
      * Get all friend requests (sent and received)
      */

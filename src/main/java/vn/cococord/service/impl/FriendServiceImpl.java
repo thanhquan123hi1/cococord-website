@@ -40,6 +40,7 @@ public class FriendServiceImpl implements IFriendService {
     private final IUserRepository userRepository;
     private final INotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final vn.cococord.repository.IServerMemberRepository serverMemberRepository;
 
     private void sendFriendRealtimeEvent(Long userId, FriendRelationshipEvent event) {
         if (userId == null || event == null)
@@ -411,5 +412,29 @@ public class FriendServiceImpl implements IFriendService {
                 .status(user.getStatus() != null ? user.getStatus().name() : "OFFLINE")
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserProfileResponse> getFriendsNotInServer(String username, Long serverId) {
+        User user = getUserByUsername(username);
+        List<FriendRequest> friendships = friendRequestRepository.findAcceptedFriendships(user.getId());
+
+        List<User> friends = friendships.stream()
+                .map(fr -> fr.getSender().getId().equals(user.getId()) ? fr.getReceiver() : fr.getSender())
+                .collect(Collectors.toList());
+
+        if (friends.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Get IDs of friends who are already members
+        List<Long> memberIds = serverMemberRepository.findUserIdsByServerId(serverId);
+
+        // Filter and convert
+        return friends.stream()
+                .filter(friend -> !memberIds.contains(friend.getId()))
+                .map(this::convertToUserProfile)
+                .collect(Collectors.toList());
     }
 }
