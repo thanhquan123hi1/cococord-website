@@ -353,12 +353,30 @@
     function showIncomingCallView(callerInfo, isVideo) {
         createOverlayIfNeeded();
         
+        // Add/remove voice-call class based on call type
+        const overlay = document.getElementById('globalCallOverlay');
+        if (overlay) {
+            if (isVideo) {
+                overlay.classList.remove('voice-call');
+            } else {
+                overlay.classList.add('voice-call');
+            }
+        }
+        
         // Update UI
         const avatar = document.getElementById('callIncomingAvatar');
         const name = document.getElementById('callIncomingName');
         const type = document.getElementById('callIncomingType');
         
-        if (avatar) avatar.src = callerInfo?.avatarUrl || '/images/default-avatar.png';
+        if (avatar) {
+            const avatarUrl = callerInfo?.avatarUrl || '/images/default-avatar.png';
+            log('Setting incoming call avatar:', avatarUrl);
+            avatar.src = avatarUrl;
+            avatar.onerror = () => {
+                log('Avatar failed to load, using default');
+                avatar.src = '/images/default-avatar.png';
+            };
+        }
         if (name) name.textContent = callerInfo?.displayName || callerInfo?.username || 'Người dùng';
         if (type) {
             type.innerHTML = isVideo 
@@ -382,13 +400,20 @@
         
         createOverlayIfNeeded();
         
-        // Verify overlay exists
+        // Verify overlay exists and add/remove voice-call class
         const overlay = document.getElementById('globalCallOverlay');
         if (!overlay) {
             error('globalCallOverlay not found after createOverlayIfNeeded()');
             return;
         }
         log('Overlay found:', overlay);
+        
+        // Add/remove voice-call class based on call type
+        if (isVideo) {
+            overlay.classList.remove('voice-call');
+        } else {
+            overlay.classList.add('voice-call');
+        }
         
         // Update UI
         const avatar = document.getElementById('callOutgoingAvatar');
@@ -397,7 +422,15 @@
         
         log('Elements found:', { avatar: !!avatar, name: !!name, type: !!type });
         
-        if (avatar) avatar.src = targetInfo?.avatarUrl || '/images/default-avatar.png';
+        if (avatar) {
+            const avatarUrl = targetInfo?.avatarUrl || '/images/default-avatar.png';
+            log('Setting outgoing call avatar:', avatarUrl);
+            avatar.src = avatarUrl;
+            avatar.onerror = () => {
+                log('Avatar failed to load, using default');
+                avatar.src = '/images/default-avatar.png';
+            };
+        }
         if (name) name.textContent = targetInfo?.displayName || targetInfo?.username || 'Người dùng';
         if (type) {
             type.innerHTML = isVideo 
@@ -432,6 +465,16 @@
     function showActiveCallView(isVideo) {
         createOverlayIfNeeded();
         stopRingtone();
+        
+        // Add/remove voice-call class based on call type
+        const overlay = document.getElementById('globalCallOverlay');
+        if (overlay) {
+            if (isVideo) {
+                overlay.classList.remove('voice-call');
+            } else {
+                overlay.classList.add('voice-call');
+            }
+        }
         
         // Update UI
         const name = document.getElementById('callActiveName');
@@ -525,7 +568,7 @@
             };
 
             pc.ontrack = (e) => {
-                log('🎥 ============ Remote track received ============');
+                log('============ Remote track received ============');
                 log('Track kind:', e.track.kind);
                 log('Track id:', e.track.id);
                 log('Track enabled:', e.track.enabled);
@@ -542,7 +585,7 @@
                     state.remoteStream = stream;
                 } else {
                     // Fallback: create new stream and add track
-                    log('⚠️ No stream in event, creating new MediaStream');
+                    log('No stream in event, creating new MediaStream');
                     if (!state.remoteStream) {
                         state.remoteStream = new MediaStream();
                     }
@@ -550,7 +593,7 @@
                 }
                 
                 const currentTracks = state.remoteStream.getTracks();
-                log('📊 Remote stream current tracks:', currentTracks.map(t => ({
+                log('Remote stream current tracks:', currentTracks.map(t => ({
                     kind: t.kind, 
                     enabled: t.enabled,
                     muted: t.muted,
@@ -560,7 +603,7 @@
                 // Attach audio - critical for hearing the other person
                 // Use the working pattern from voice-manager.js
                 if (e.track.kind === 'audio' || state.remoteStream.getAudioTracks().length > 0) {
-                    log('🔊 Attaching remote audio stream');
+                    log('Attaching remote audio stream');
                     attachRemoteAudio(state.remoteStream);
                 }
 
@@ -569,7 +612,7 @@
                 log('Remote video element found:', !!remoteVideo, 'state.video:', state.video);
                 
                 if (remoteVideo && state.video && state.remoteStream.getVideoTracks().length > 0) {
-                    log('🎬 Attaching video stream to <video> element');
+                    log('Attaching video stream to <video> element');
                     remoteVideo.srcObject = state.remoteStream;
                     remoteVideo.muted = false; // Important: don't mute the video element's audio
                     remoteVideo.autoplay = true;
@@ -580,11 +623,11 @@
                     if (!remoteVideo) error('❌ callRemoteVideo element not found!');
                     if (!state.video) log('ℹ️ Not a video call, skipping video attachment');
                     if (state.remoteStream.getVideoTracks().length === 0) {
-                        warn('⚠️ No video tracks in remote stream yet');
+                        warn('No video tracks in remote stream yet');
                     }
                 }
                 
-                log('🎥 ============ ontrack handler complete ============');
+                log('============ ontrack handler complete ============');
             };
 
         pc.oniceconnectionstatechange = () => {
@@ -835,7 +878,7 @@
 
         // Fetch target user info if not provided
         if (!state.targetUser.avatarUrl) {
-            fetchUserInfo(evt.fromUserId);
+            await fetchUserInfo(evt.fromUserId);
         }
 
         // Subscribe to room-specific topic for this call
@@ -1349,16 +1392,30 @@
             });
             if (resp.ok) {
                 const user = await resp.json();
+                log('Fetched user info:', { id: user.id, username: user.username, hasAvatar: !!user.avatarUrl });
                 if (state.targetUser && String(state.targetUser.id) === String(userId)) {
                     state.targetUser = { ...state.targetUser, ...user };
-                    // Update UI
-                    const avatar = document.getElementById('callIncomingAvatar');
-                    const name = document.getElementById('callIncomingName');
-                    if (avatar) avatar.src = user.avatarUrl || '/images/default-avatar.png';
-                    if (name) name.textContent = user.displayName || user.username;
+                    // Update UI - check both incoming and outgoing avatar elements
+                    const incomingAvatar = document.getElementById('callIncomingAvatar');
+                    const outgoingAvatar = document.getElementById('callOutgoingAvatar');
+                    const incomingName = document.getElementById('callIncomingName');
+                    const outgoingName = document.getElementById('callOutgoingName');
+                    
+                    if (incomingAvatar) {
+                        incomingAvatar.src = user.avatarUrl || '/images/default-avatar.png';
+                        log('Updated incoming avatar');
+                    }
+                    if (outgoingAvatar) {
+                        outgoingAvatar.src = user.avatarUrl || '/images/default-avatar.png';
+                        log('Updated outgoing avatar');
+                    }
+                    if (incomingName) incomingName.textContent = user.displayName || user.username;
+                    if (outgoingName) outgoingName.textContent = user.displayName || user.username;
                 }
             }
-        } catch (_) { /* ignore */ }
+        } catch (err) {
+            log('Failed to fetch user info:', err);
+        }
     }
 
     function showToast(message, type = 'info') {

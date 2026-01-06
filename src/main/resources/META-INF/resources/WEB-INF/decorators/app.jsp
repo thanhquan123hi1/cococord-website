@@ -51,6 +51,8 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/app-home.css?v=20260106b">
     <!-- Global Call Overlay CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/call-overlay.css?v=20260106b">
+    <!-- Chat Input (GIF/Sticker/Emoji) CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat-input.css">
     
     <%
         if (sitemeshContent != null) {
