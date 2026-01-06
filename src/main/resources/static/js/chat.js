@@ -664,7 +664,7 @@
             onSave: (data) => {
                 // Reload server data after save
                 if (activeServerId) {
-                    loadServerData(activeServerId);
+                    loadServers();
                 }
             },
             
