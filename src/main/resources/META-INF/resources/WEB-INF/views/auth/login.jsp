@@ -221,6 +221,12 @@
                         document.cookie = cookieBase;
                     }
 
+                    // Show success notification
+                    showSuccessNotification('Đăng nhập thành công! Đang chuyển hướng...');
+                    setButtonLoading(btn, false);
+                    btn.innerHTML = 'Đăng nhập thành công!';
+                    btn.classList.add('success');
+
                     setTimeout(() => {
                         let next = null;
                         try {
@@ -269,6 +275,7 @@
                     
                     console.log('Final error message:', errorMessage);
                     setButtonLoading(btn, false);
+                    showErrorNotification(errorMessage);
                     isSubmitting = false;
                 }
             } catch (error) {
@@ -278,8 +285,56 @@
                     errorMessage = 'Yêu cầu hết thời gian chờ. Vui lòng thử lại.';
                 }
                 setButtonLoading(btn, false);
+                showErrorNotification(errorMessage);
                 isSubmitting = false;
             }
         });
     }
+    
+    // Check for registered query param from register page
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('registered') === 'true') {
+            showSuccessNotification('Đăng ký thành công! Hãy đăng nhập để tiếp tục.');
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+        if (params.get('reset') === 'true') {
+            showSuccessNotification('Đổi mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.');
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    })();
+
+    // Success notification function
+    function showSuccessNotification(message) {
+        showNotification(message, 'success');
+    }
+    
+    // Error notification function  
+    function showErrorNotification(message) {
+        showNotification(message, 'error');
+    }
+    
+    // Generic notification function
+    function showNotification(message, type) {
+        // Remove existing notification
+        const existing = document.querySelector('.auth-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = 'auth-notification auth-notification-' + type;
+        notification.innerHTML = '<span>' + message + '</span><button onclick="this.parentElement.remove()">&times;</button>';
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('auth-notification-fadeout');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+    }
 </script>
+
+<!-- Notification styles now in auth-glass.css -->

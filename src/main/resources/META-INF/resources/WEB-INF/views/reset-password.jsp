@@ -204,9 +204,11 @@
             const backendSuccess = data && typeof data === 'object' ? data.success : undefined;
 
             if (response.ok && backendSuccess !== false) {
-
+                showSuccessNotification('Đổi mật khẩu thành công! Đang chuyển hướng đến trang đăng nhập...');
+                btn.innerHTML = '✓ Đổi mật khẩu thành công!';
+                btn.classList.add('success');
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}/login';
+                    window.location.href = '${pageContext.request.contextPath}/login?reset=true';
                 }, 2000);
             } else {
                 console.log('Reset password failed response:', { response, data });
@@ -242,10 +244,44 @@
                 }
 
                 setButtonLoading(btn, false);
+                showErrorNotification(errorMessage);
             }
         } catch (error) {
             console.error('Reset password error:', error);
             setButtonLoading(btn, false);
+            showErrorNotification('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
         }
     });
+    
+    // Success notification function
+    function showSuccessNotification(message) {
+        showNotification(message, 'success');
+    }
+    
+    // Error notification function  
+    function showErrorNotification(message) {
+        showNotification(message, 'error');
+    }
+    
+    // Generic notification function
+    function showNotification(message, type) {
+        // Remove existing notification
+        const existing = document.querySelector('.auth-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = 'auth-notification auth-notification-' + type;
+        notification.innerHTML = '<span>' + message + '</span><button onclick="this.parentElement.remove()">&times;</button>';
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('auth-notification-fadeout');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+    }
 </script>
+
+<!-- Notification styles now in auth-glass.css -->

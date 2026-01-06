@@ -52,6 +52,9 @@
                         'slide-in-left': 'slideInLeft 0.8s ease-out forwards',
                         'float': 'float 6s ease-in-out infinite',
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scale-in': 'scaleIn 0.6s ease-out forwards',
+                        'bounce-slow': 'bounceSlow 3s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
                     },
                     keyframes: {
                         fadeInUp: {
@@ -69,6 +72,18 @@
                         float: {
                             '0%, 100%': { transform: 'translateY(0px)' },
                             '50%': { transform: 'translateY(-20px)' },
+                        },
+                        scaleIn: {
+                            from: { opacity: '0', transform: 'scale(0.9)' },
+                            to: { opacity: '1', transform: 'scale(1)' },
+                        },
+                        bounceSlow: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            from: { boxShadow: '0 0 20px rgba(37, 99, 235, 0.3)' },
+                            to: { boxShadow: '0 0 30px rgba(37, 99, 235, 0.6)' },
                         },
                     },
                 },
@@ -93,9 +108,38 @@
         
         /* Nav scroll effect */
         .nav-scrolled {
-            background: rgba(35, 39, 42, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            background: transparent;
+        }
+        
+        /* Glass Nav Container - Always Transparent */
+        .nav-glass-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        
+        .nav-link {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        
+        .nav-link:hover::after {
+            width: 60%;
         }
         
         /* Mobile menu */
@@ -113,36 +157,40 @@
     } %>
 </head>
 <body class="min-h-screen flex flex-col text-white">
-    <!-- Header/Navbar -->
-    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <!-- Logo -->
-            <a href="${pageContext.request.contextPath}/" class="flex items-center gap-3 group relative z-50">
-                <svg width="34" height="26" viewBox="0 0 28 22" fill="none" class="text-white group-hover:text-brand-blurple transition-colors">
-                    <path d="M23.7219 2.07962C21.9478 1.26571 20.0549 0.672392 18.0867 0.341797C17.8381 0.769092 17.5619 1.34839 17.3684 1.80395C15.2726 1.49921 13.195 1.49921 11.1356 1.80395C10.9421 1.34839 10.6577 0.769092 10.4073 0.341797C8.43722 0.672392 6.54244 1.26755 4.76837 2.08331C1.2244 7.31024 0.255336 12.4048 0.739867 17.4272C3.09888 19.1469 5.38583 20.2104 7.6363 20.9278C8.19118 20.1795 8.68601 19.3822 9.11303 18.5429C8.30091 18.2484 7.52296 17.8844 6.78676 17.4599C6.98034 17.3205 7.16949 17.1755 7.35421 17.0268C11.7899 19.0908 16.6241 19.0908 21.0055 17.0268C21.1921 17.1755 21.3812 17.3205 21.5729 17.4599C20.8349 17.8863 20.0551 18.2502 19.243 18.5447C19.67 19.3822 20.163 20.1814 20.7197 20.9297C22.9702 20.2122 25.2589 19.1488 27.6179 17.4272C28.1892 11.6183 26.6548 6.57169 23.7219 2.07962ZM9.34839 14.3283C7.99968 14.3283 6.89605 13.0864 6.89605 11.5883C6.89605 10.0903 7.97527 8.84662 9.34839 8.84662C10.7215 8.84662 11.8252 10.0885 11.8007 11.5883C11.8025 13.0864 10.7215 14.3283 9.34839 14.3283ZM19.0091 14.3283C17.6604 14.3283 16.5568 13.0864 16.5568 11.5883C16.5568 10.0903 17.636 8.84662 19.0091 8.84662C20.3823 8.84662 21.4859 10.0885 21.4614 11.5883C21.4614 13.0864 20.3823 14.3283 19.0091 14.3283Z" fill="currentColor"/>
-                </svg>
-                <span class="text-xl font-bold text-white hidden sm:inline">CoCoCord</span>
-            </a>
-
-            <!-- Desktop Navigation -->
-            <div class="hidden lg:flex items-center gap-8 relative z-50">
-                <a href="#features" class="text-white hover:underline transition font-medium text-sm">Tính năng</a>
-                <a href="#safety" class="text-white hover:underline transition font-medium text-sm">Bảo mật</a>
-                <a href="#support" class="text-white hover:underline transition font-medium text-sm">Hỗ trợ</a>
-            </div>
-
-            <!-- Right Side Buttons -->
-            <div class="flex gap-3 items-center relative z-50">
-                <a href="${pageContext.request.contextPath}/login" class="hidden sm:inline-block px-4 py-2 bg-white text-gray-900 rounded-full hover:bg-gray-100 hover:shadow-lg transition font-medium text-sm">
-                    Đăng nhập
+    <!-- Header/Navbar - Glass Effect Style -->
+    <nav class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 transition-all duration-500" id="navbar">
+        <div class="max-w-7xl mx-auto">
+            <div class="nav-glass-container flex items-center justify-between px-4 sm:px-6 py-2.5 rounded-2xl transition-all duration-300">
+                <!-- Logo -->
+                <a href="${pageContext.request.contextPath}/" class="flex items-center gap-2.5 group relative z-50">
+                    <div class="nav-logo-icon w-9 h-9 rounded-xl bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-all duration-300 group-hover:scale-105">
+                        <svg width="20" height="16" viewBox="0 0 28 22" fill="none" class="text-white">
+                            <path d="M23.7219 2.07962C21.9478 1.26571 20.0549 0.672392 18.0867 0.341797C17.8381 0.769092 17.5619 1.34839 17.3684 1.80395C15.2726 1.49921 13.195 1.49921 11.1356 1.80395C10.9421 1.34839 10.6577 0.769092 10.4073 0.341797C8.43722 0.672392 6.54244 1.26755 4.76837 2.08331C1.2244 7.31024 0.255336 12.4048 0.739867 17.4272C3.09888 19.1469 5.38583 20.2104 7.6363 20.9278C8.19118 20.1795 8.68601 19.3822 9.11303 18.5429C8.30091 18.2484 7.52296 17.8844 6.78676 17.4599C6.98034 17.3205 7.16949 17.1755 7.35421 17.0268C11.7899 19.0908 16.6241 19.0908 21.0055 17.0268C21.1921 17.1755 21.3812 17.3205 21.5729 17.4599C20.8349 17.8863 20.0551 18.2502 19.243 18.5447C19.67 19.3822 20.163 20.1814 20.7197 20.9297C22.9702 20.2122 25.2589 19.1488 27.6179 17.4272C28.1892 11.6183 26.6548 6.57169 23.7219 2.07962ZM9.34839 14.3283C7.99968 14.3283 6.89605 13.0864 6.89605 11.5883C6.89605 10.0903 7.97527 8.84662 9.34839 8.84662C10.7215 8.84662 11.8252 10.0885 11.8007 11.5883C11.8025 13.0864 10.7215 14.3283 9.34839 14.3283ZM19.0091 14.3283C17.6604 14.3283 16.5568 13.0864 16.5568 11.5883C16.5568 10.0903 17.636 8.84662 19.0091 8.84662C20.3823 8.84662 21.4859 10.0885 21.4614 11.5883C21.4614 13.0864 20.3823 14.3283 19.0091 14.3283Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-bold text-white hidden sm:inline group-hover:text-blue-300 transition-colors">CoCoCord</span>
                 </a>
-                
-                <!-- Mobile Menu Button -->
-                <button id="mobile-menu-btn" class="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </button>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center gap-1 relative z-50">
+                    <a href="#features" class="nav-link px-4 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 font-medium text-sm">Tính năng</a>
+                    <a href="#safety" class="nav-link px-4 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 font-medium text-sm">Bảo mật</a>
+                    <a href="#support" class="nav-link px-4 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 font-medium text-sm">Hỗ trợ</a>
+                </div>
+
+                <!-- Right Side Buttons -->
+                <div class="flex gap-2 sm:gap-3 items-center relative z-50">
+                    <a href="${pageContext.request.contextPath}/login" class="hidden sm:inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300 font-semibold text-sm">
+                        Đăng nhập
+                    </a>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 text-white hover:bg-white/10 rounded-xl transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>

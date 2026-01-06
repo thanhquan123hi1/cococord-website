@@ -5,27 +5,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-    /* Colors */
-    --glass-primary: hsl(235, 86%, 65%);
-    --glass-secondary: hsl(280, 85%, 60%);
-    --glass-accent: hsl(260, 80%, 58%);
-    --glass-dark: hsl(228, 58%, 12%);
-    --glass-darker: hsl(228, 58%, 8%);
-    --glass-light: hsl(228, 58%, 20%);
+    /* Colors - Figma Blue Glass Theme */
+    --glass-primary: #2563eb;  /* Bright Blue */
+    --glass-secondary: #1d4ed8; /* Deep Blue */
+    --glass-accent: #3b82f6; /* Sky Blue */
+    --glass-dark: #0f172a; /* Dark Navy */
+    --glass-darker: #020617; /* Near Black */
+    --glass-light: #1e3a5f; /* Light Navy */
+    
+    /* Figma Blue Palette */
+    --figma-blue-100: #dbeafe;
+    --figma-blue-200: #bfdbfe;
+    --figma-blue-300: #93c5fd;
+    --figma-blue-400: #60a5fa;
+    --figma-blue-500: #3b82f6;
+    --figma-blue-600: #2563eb;
+    --figma-blue-700: #1d4ed8;
+    --figma-blue-800: #1e40af;
+    --figma-blue-900: #1e3a8a;
     
     /* Glass */
-    --glass-bg: rgba(255, 255, 255, 0.08);
-    --glass-border: rgba(255, 255, 255, 0.15);
-    --glass-shadow: rgba(0, 0, 0, 0.3);
+    --glass-bg: rgba(30, 58, 138, 0.25);
+    --glass-border: rgba(96, 165, 250, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.4);
     
     /* Text */
     --text-white: #ffffff;
-    --text-muted: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.75);
     --text-placeholder: rgba(255, 255, 255, 0.5);
     
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, var(--glass-primary), var(--glass-secondary));
-    --gradient-bg: linear-gradient(135deg, hsl(260, 60%, 15%) 0%, hsl(240, 50%, 10%) 50%, hsl(220, 60%, 8%) 100%);
+    /* Gradients - Figma Blue Style */
+    --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --gradient-bg: linear-gradient(160deg, #0f4c9b 0%, #0a2463 30%, #051937 60%, #020617 100%);
+    
+    /* Notification colors - Figma Blue Theme */
+    --notification-success: #3b82f6;
+    --notification-error: #ef4444;
+    --notification-info: #3b82f6;
+    --notification-warning: #f59e0b;
 }
 
 /* ==================== BASE STYLES ==================== */
@@ -399,17 +416,19 @@
 }
 
 .auth-btn-primary {
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
     color: white;
     box-shadow: 
-        0 8px 20px -5px rgba(114, 100, 255, 0.5),
+        0 8px 20px -5px rgba(30, 64, 175, 0.5),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    transition: all 0.3s ease;
 }
 
 .auth-btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
     box-shadow: 
-        0 12px 30px -5px rgba(114, 100, 255, 0.6),
+        0 12px 30px -5px rgba(37, 99, 235, 0.6),
         0 0 0 1px rgba(255, 255, 255, 0.15) inset;
 }
 
@@ -420,6 +439,13 @@
 .auth-btn-primary:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+}
+
+/* IMPORTANT: Prevent button color change on success */
+.auth-btn-primary.success,
+.auth-btn-primary[data-success="true"],
+form.success .auth-btn-primary {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%) !important;
 }
 
 /* Button shimmer */
@@ -619,30 +645,137 @@
     to { width: 0%; }
 }
 
-/* Alert Types */
+/* Alert Types - Figma Blue Style (Simple Text Only) */
 .auth-alert--success {
-    border-left: 3px solid #22c55e;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: none;
+    border-radius: 12px;
 }
-.auth-alert--success .auth-alert-icon { color: #22c55e; }
-.auth-alert--success .auth-alert-progress { background: #22c55e; }
+.auth-alert--success .auth-alert-title,
+.auth-alert--success .auth-alert-message { color: #ffffff; }
+.auth-alert--success .auth-alert-progress { background: rgba(255,255,255,0.3); }
 
 .auth-alert--danger {
-    border-left: 3px solid #ef4444;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    border-radius: 12px;
 }
-.auth-alert--danger .auth-alert-icon { color: #ef4444; }
-.auth-alert--danger .auth-alert-progress { background: #ef4444; }
+.auth-alert--danger .auth-alert-title,
+.auth-alert--danger .auth-alert-message { color: #ffffff; }
+.auth-alert--danger .auth-alert-progress { background: rgba(255,255,255,0.3); }
 
 .auth-alert--warning {
-    border-left: 3px solid #f59e0b;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    border-radius: 12px;
 }
-.auth-alert--warning .auth-alert-icon { color: #f59e0b; }
-.auth-alert--warning .auth-alert-progress { background: #f59e0b; }
+.auth-alert--warning .auth-alert-title,
+.auth-alert--warning .auth-alert-message { color: #ffffff; }
+.auth-alert--warning .auth-alert-progress { background: rgba(255,255,255,0.3); }
 
 .auth-alert--info {
-    border-left: 3px solid #3b82f6;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    border-radius: 12px;
 }
-.auth-alert--info .auth-alert-icon { color: #3b82f6; }
-.auth-alert--info .auth-alert-progress { background: #3b82f6; }
+.auth-alert--info .auth-alert-title,
+.auth-alert--info .auth-alert-message { color: #ffffff; }
+.auth-alert--info .auth-alert-progress { background: rgba(255,255,255,0.3); }
+
+/* Hide icons in alerts - text only style */
+.auth-alert .auth-alert-icon { display: none; }
+
+/* ==================== NOTIFICATIONS - Figma Blue Theme ==================== */
+.auth-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 400px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.auth-notification-success {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.auth-notification-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.auth-notification-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.auth-notification-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.auth-notification button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.auth-notification button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.auth-notification-fadeout {
+    animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 /* ==================== BACK TO HOME ==================== */
 .auth-back-home {
@@ -705,7 +838,7 @@
     height: 20px;
 }
 
-/* ==================== SUCCESS STATE ==================== */
+/* ==================== SUCCESS STATE - Figma Blue Theme ==================== */
 .auth-success-icon {
     display: inline-flex;
     align-items: center;
@@ -713,9 +846,9 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #22c55e, #10b981);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     margin-bottom: 1.5rem;
-    box-shadow: 0 10px 30px -5px rgba(34, 197, 94, 0.5);
+    box-shadow: 0 10px 30px -5px rgba(59, 130, 246, 0.5);
     animation: successPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

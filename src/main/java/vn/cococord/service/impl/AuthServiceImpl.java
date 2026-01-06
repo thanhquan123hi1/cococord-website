@@ -274,6 +274,11 @@ public class AuthServiceImpl implements IAuthService {
             throw new BadRequestException("Reset token has expired");
         }
 
+        // Check if new password is same as current password
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("Mật khẩu mới không được trùng với mật khẩu cũ");
+        }
+
         // Update password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetPasswordToken(null);

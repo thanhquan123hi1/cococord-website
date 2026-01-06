@@ -123,6 +123,17 @@
                     </button>
                 </div>
                 <span class="auth-hint">Gồm chữ hoa, chữ thường, số và ký tự đặc biệt</span>
+                <!-- Password strength indicator -->
+                <div id="password-strength" class="password-strength" style="display: none;">
+                    <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+                    <ul class="strength-rules">
+                        <li id="rule-length"><span class="rule-icon">○</span> Ít nhất 8 ký tự</li>
+                        <li id="rule-upper"><span class="rule-icon">○</span> Có chữ in hoa (A-Z)</li>
+                        <li id="rule-lower"><span class="rule-icon">○</span> Có chữ thường (a-z)</li>
+                        <li id="rule-number"><span class="rule-icon">○</span> Có số (0-9)</li>
+                        <li id="rule-special"><span class="rule-icon">○</span> Có ký tự đặc biệt (@$!%*?&)</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Confirm Password -->
@@ -235,7 +246,14 @@
         const confirmPassword = document.getElementById('confirmPassword').value;
         
         if (password !== confirmPassword) {
-            alert('Mật khẩu xác nhận không khớp!');
+            showErrorNotification('Mật khẩu xác nhận không khớp!');
+            return;
+        }
+        
+        // Validate password strength before submitting
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            showErrorNotification('Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)');
             return;
         }
         
@@ -263,9 +281,14 @@
             const backendSuccess = data && typeof data === 'object' ? data.success : undefined;
 
             if (response.ok && backendSuccess !== false) {
+                // Show success notification
+                showSuccessNotification('Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...');
+                setButtonLoading(btn, false);
+                btn.innerHTML = '✓ Đăng ký thành công!';
+                btn.classList.add('success');
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}/login';
-                }, 1500);
+                    window.location.href = '${pageContext.request.contextPath}/login?registered=true';
+                }, 2000);
             } else {
                 console.log('Register failed response:', { response, data });
                 let alertType = 'danger';
@@ -307,10 +330,151 @@
                 }
                 
                 setButtonLoading(btn, false);
+                showErrorNotification(errorMessage);
             }
         } catch (error) {
             console.error('Register error:', error);
             setButtonLoading(btn, false);
+            showErrorNotification('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
         }
     });
+
+    // Success notification function
+    function showSuccessNotification(message) {
+        showNotification(message, 'success');
+    }
+    
+    // Error notification function  
+    function showErrorNotification(message) {
+        showNotification(message, 'error');
+    }
+    
+    // Generic notification function
+    function showNotification(message, type) {
+        // Remove existing notification
+        const existing = document.querySelector('.auth-notification');
+        if (existing) existing.remove();
+        
+        const notification = document.createElement('div');
+        notification.className = 'auth-notification auth-notification-' + type;
+        notification.innerHTML = '<span>' + message + '</span><button onclick="this.parentElement.remove()">&times;</button>';
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('auth-notification-fadeout');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+    }
+</script>
+
+<!-- Notification styles now in auth-glass.css -->
+
+<style>
+    /* Password strength indicator styles */
+    .password-strength {
+        margin-top: 8px;
+        padding: 12px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .strength-bar {
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    .strength-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+    .strength-fill.weak { width: 20%; background: #ef4444; }
+    .strength-fill.fair { width: 40%; background: #f97316; }
+    .strength-fill.good { width: 60%; background: #eab308; }
+    .strength-fill.strong { width: 80%; background: #22c55e; }
+    .strength-fill.excellent { width: 100%; background: #10b981; }
+    
+    .strength-rules {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        font-size: 12px;
+    }
+    .strength-rules li {
+        color: rgba(255,255,255,0.5);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s ease;
+    }
+    .strength-rules li.passed {
+        color: #22c55e;
+    }
+    .strength-rules li.passed .rule-icon {
+        color: #22c55e;
+    }
+    .rule-icon {
+        font-size: 10px;
+    }
+</style>
+
+<script>
+    // Password strength validation
+    const passwordInput = document.getElementById('password');
+    const strengthContainer = document.getElementById('password-strength');
+    const strengthFill = document.getElementById('strength-fill');
+    
+    passwordInput.addEventListener('focus', function() {
+        strengthContainer.style.display = 'block';
+    });
+    
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        validatePasswordStrength(password);
+    });
+    
+    function validatePasswordStrength(password) {
+        const rules = {
+            length: password.length >= 8,
+            upper: /[A-Z]/.test(password),
+            lower: /[a-z]/.test(password),
+            number: /\d/.test(password),
+            special: /[@$!%*?&]/.test(password)
+        };
+        
+        // Update rule indicators
+        Object.keys(rules).forEach(rule => {
+            const el = document.getElementById('rule-' + rule);
+            if (el) {
+                if (rules[rule]) {
+                    el.classList.add('passed');
+                    el.querySelector('.rule-icon').textContent = '✓';
+                } else {
+                    el.classList.remove('passed');
+                    el.querySelector('.rule-icon').textContent = '○';
+                }
+            }
+        });
+        
+        // Calculate strength
+        const passedCount = Object.values(rules).filter(Boolean).length;
+        strengthFill.className = 'strength-fill';
+        if (passedCount === 0) strengthFill.className = 'strength-fill';
+        else if (passedCount === 1) strengthFill.classList.add('weak');
+        else if (passedCount === 2) strengthFill.classList.add('fair');
+        else if (passedCount === 3) strengthFill.classList.add('good');
+        else if (passedCount === 4) strengthFill.classList.add('strong');
+        else if (passedCount === 5) strengthFill.classList.add('excellent');
+        
+        return passedCount === 5;
+    }
 </script>
