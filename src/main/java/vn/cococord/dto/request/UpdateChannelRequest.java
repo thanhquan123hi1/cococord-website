@@ -29,4 +29,8 @@ public class UpdateChannelRequest {
     private Boolean isNsfw;
 
     private Integer slowMode;
+
+    private Integer bitrate;
+
+    private Integer userLimit;
 }

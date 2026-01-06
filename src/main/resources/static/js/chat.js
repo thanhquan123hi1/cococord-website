@@ -303,6 +303,24 @@
       .toLowerCase();
   }
 
+  function canManageChannel(channel) {
+    if (!currentUser || !activeServerId) return false;
+
+    // 1. Server Owner
+    const server = servers.find(s => String(s.id) === String(activeServerId));
+    if (server && String(server.ownerId) === String(currentUser.id)) return true;
+
+    // 2. Admin Role
+    // Find current user membership in loaded members list
+    const member = members.find(m => String(m.userId) === String(currentUser.id));
+    if (member) {
+      if (member.roleName === '@Admin') return true;
+      // TODO: Check specific MANAGE_CHANNELS permission if available in future
+    }
+
+    return false;
+  }
+
   function isNewServerOnboardingContext(channel) {
     if (!activeServerId || !channel) return false;
     // Heuristic: brand-new server has only default text+voice channels and no custom categories
@@ -1088,12 +1106,15 @@
           ? '<i class="bi bi-star-fill channel-default-icon" title="Kênh mặc định"></i>'
           : ""
         }
-                <button class="channel-settings-btn" title="Cài đặt kênh" onclick="event.stopPropagation();">
+                ${canManageChannel(c) ?
+          `<button class="channel-settings-btn" title="Cài đặt kênh" onclick="event.stopPropagation(); window.ChannelSettingsManager ? window.ChannelSettingsManager.open('${c.id}') : console.error('ChannelSettingsManager not loaded');">
                     <i class="bi bi-gear"></i>
-                </button>
+                </button>` : ''
+        }
             `;
 
       const channelId = c.id;
+
       if (isVoice) {
         item.addEventListener("click", () => joinVoiceChannel(channelId));
       } else {
