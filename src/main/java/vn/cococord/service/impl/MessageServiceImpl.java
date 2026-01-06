@@ -65,7 +65,7 @@ public class MessageServiceImpl implements IMessageService {
         // Validate that either content or attachments is present
         boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
         boolean hasAttachments = request.getAttachments() != null && !request.getAttachments().isEmpty();
-        
+
         if (!hasContent && !hasAttachments) {
             throw new IllegalArgumentException("Message must have either content or attachments");
         }
@@ -93,8 +93,8 @@ public class MessageServiceImpl implements IMessageService {
 
         // Broadcast to channel via WebSocket
         ChatMessageResponse response = convertToResponse(message);
-        messagingTemplate.convertAndSend("/topic/channel/" + request.getChannelId(), 
-            new WebSocketEvent("message.created", response));
+        messagingTemplate.convertAndSend("/topic/channel/" + request.getChannelId(),
+                new WebSocketEvent("message.created", response));
 
         return response;
     }
@@ -132,8 +132,8 @@ public class MessageServiceImpl implements IMessageService {
 
         // Broadcast update via WebSocket
         ChatMessageResponse response = convertToResponse(message);
-        messagingTemplate.convertAndSend("/topic/channel/" + message.getChannelId(), 
-            new WebSocketEvent("message.updated", response));
+        messagingTemplate.convertAndSend("/topic/channel/" + message.getChannelId(),
+                new WebSocketEvent("message.updated", response));
 
         return response;
     }
@@ -148,21 +148,21 @@ public class MessageServiceImpl implements IMessageService {
 
         // Check if user is message author or has MANAGE_MESSAGES permission
         boolean isAuthor = message.getUserId().equals(user.getId());
-        boolean hasManagePermission = serverId != null && 
-            permissionService.hasPermission(user.getId(), serverId, "MANAGE_MESSAGES");
-        
+        boolean hasManagePermission = serverId != null &&
+                permissionService.hasPermission(user.getId(), serverId, "MANAGE_MESSAGES");
+
         if (!isAuthor && !hasManagePermission) {
             throw new UnauthorizedException("You can only delete your own messages or need MANAGE_MESSAGES permission");
         }
 
         Long channelId = message.getChannelId();
         messageRepository.delete(message);
-        log.info("Message deleted by user: {} (author: {}, hasPermission: {}), messageId: {}", 
-            username, isAuthor, hasManagePermission, messageId);
+        log.info("Message deleted by user: {} (author: {}, hasPermission: {}), messageId: {}",
+                username, isAuthor, hasManagePermission, messageId);
 
         // Broadcast deletion via WebSocket
-        messagingTemplate.convertAndSend("/topic/channel/" + channelId + "/delete", 
-            messageId);
+        messagingTemplate.convertAndSend("/topic/channel/" + channelId + "/delete",
+                messageId);
     }
 
     @Override
@@ -230,12 +230,29 @@ public class MessageServiceImpl implements IMessageService {
 
         // Limit to 20 unique reactions
         if (message.getReactions().size() > 20) {
-
-        // Broadcast reaction update via WebSocket
-        messagingTemplate.convertAndSend("/topic/channel/" + message.getChannelId(), 
-            new WebSocketEvent("reaction.added", new ReactionEvent(messageId, emoji, user.getId(), user.getUsername())));
             throw new UnauthorizedException("Maximum 20 unique reactions allowed per message");
         }
+
+        messageRepository.save(message);
+
+        // Find the updated reaction to get the correct count
+        Message.Reaction targetReaction = message.getReactions().stream()
+                .filter(r -> r.getEmoji().equals(emoji))
+                .findFirst()
+                .orElse(null);
+        int finalCount = targetReaction != null ? targetReaction.getCount() : 0;
+
+        // Broadcast reaction update via WebSocket
+        messagingTemplate.convertAndSend("/topic/channel/" + message.getChannelId(),
+                new WebSocketEvent("MESSAGE_REACTION_UPDATED",
+                        ReactionEvent.builder()
+                                .messageId(messageId)
+                                .emoji(emoji)
+                                .userId(user.getId())
+                                .username(user.getUsername())
+                                .action("ADD")
+                                .count(finalCount)
+                                .build()));
 
         messageRepository.save(message);
         log.info("Reaction added to message: {} by user: {}, emoji: {}", messageId, username, emoji);
@@ -261,15 +278,60 @@ public class MessageServiceImpl implements IMessageService {
             }
         });
 
-        // Remove reactions with zero count
+        // Remove reactions with zero count, but FIRST broadcast the removal
+        // If we remove the reaction object entirely, the frontend might need to know
+        // the count is 0
+        // But usually we broadcast the updated state or the event "removed"
 
         // Broadcast reaction removal via WebSocket
-        messagingTemplate.convertAndSend("/topic/channel/" + message.getChannelId(), 
-            new WebSocketEvent("reaction.removed", new ReactionEvent(messageId, emoji, user.getId(), user.getUsername())));
+        // We haven't removed the reaction object yet (unless count is 0), so we can get
+        // keys.
+        // But `removeIf` is called AFTER. Wait, my code shows `removeIf` after
+        // broadcast.
+        // So I can get the count.
+
+        // I need to find the specific reaction to get the count.
+        int count = message.getReactions().stream()
+                .filter(r -> r.getEmoji().equals(emoji))
+                .findFirst()
+                .map(r -> r.getUserIds().size()) // Correct count after removal (lines 262-265 removed user)
+                .orElse(0);
+
+        messagingTemplate.convertAndSend("/topic/channel/" + message.getChannelId(),
+                new WebSocketEvent("MESSAGE_REACTION_UPDATED",
+                        ReactionEvent.builder()
+                                .messageId(messageId)
+                                .emoji(emoji)
+                                .userId(user.getId())
+                                .username(user.getUsername())
+                                .action("REMOVE")
+                                .count(count)
+                                .build()));
+
         message.getReactions().removeIf(r -> r.getCount() == 0 || r.getUserIds().isEmpty());
 
         messageRepository.save(message);
         log.info("Reaction removed from message: {} by user: {}, emoji: {}", messageId, username, emoji);
+    }
+
+    @Override
+    @Transactional
+    public void toggleReaction(String messageId, String emoji, String username) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
+        User user = getUserByUsername(username);
+
+        boolean hasReacted = false;
+        if (message.getReactions() != null) {
+            hasReacted = message.getReactions().stream()
+                    .anyMatch(r -> r.getEmoji().equals(emoji) && r.getUserIds().contains(user.getId()));
+        }
+
+        if (hasReacted) {
+            removeReaction(messageId, emoji, username);
+        } else {
+            addReaction(messageId, emoji, username);
+        }
     }
 
     @Override
@@ -396,6 +458,7 @@ public class MessageServiceImpl implements IMessageService {
 
     /**
      * Extract mentioned user IDs from message content using regex pattern <@userId>
+     * 
      * @param content The message content
      * @return List of unique mentioned user IDs
      */
@@ -420,11 +483,13 @@ public class MessageServiceImpl implements IMessageService {
     }
 
     /**
-     * Process mentions: create notifications and send WebSocket events to mentioned users
-     * @param mentioner The user who mentioned others
+     * Process mentions: create notifications and send WebSocket events to mentioned
+     * users
+     * 
+     * @param mentioner        The user who mentioned others
      * @param mentionedUserIds List of mentioned user IDs
-     * @param channelId The channel where the message was sent
-     * @param messageId The message ID containing the mentions
+     * @param channelId        The channel where the message was sent
+     * @param messageId        The message ID containing the mentions
      */
     private void processMentions(User mentioner, List<Long> mentionedUserIds, Long channelId, String messageId) {
         // Get channel info for notification
@@ -450,8 +515,8 @@ public class MessageServiceImpl implements IMessageService {
             // 1. Create notification in database
             try {
                 notificationService.sendMentionNotification(mentioner, mentionedUser, channelId, channelName);
-                log.info("Created mention notification: mentioner={}, mentioned={}, channelId={}", 
-                    mentioner.getUsername(), mentionedUser.getUsername(), channelId);
+                log.info("Created mention notification: mentioner={}, mentioned={}, channelId={}",
+                        mentioner.getUsername(), mentionedUser.getUsername(), channelId);
             } catch (Exception e) {
                 log.error("Failed to create mention notification for user {}: {}", mentionedUserId, e.getMessage());
             }
@@ -471,9 +536,8 @@ public class MessageServiceImpl implements IMessageService {
                         .build();
 
                 messagingTemplate.convertAndSend(
-                    "/topic/user." + mentionedUserId + ".mention", 
-                    mentionEvent
-                );
+                        "/topic/user." + mentionedUserId + ".mention",
+                        mentionEvent);
                 log.debug("Sent mention WebSocket event to user {}", mentionedUserId);
             } catch (Exception e) {
                 log.error("Failed to send mention WebSocket event to user {}: {}", mentionedUserId, e.getMessage());

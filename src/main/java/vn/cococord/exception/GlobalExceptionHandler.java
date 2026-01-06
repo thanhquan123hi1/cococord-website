@@ -173,9 +173,13 @@ public class GlobalExceptionHandler {
     /**
      * Handle all other exceptions
      */
+    /**
+     * Handle all other exceptions
+     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<MessageResponse> handleGlobalException(Exception ex) {
-        log.error("Unexpected error occurred", ex);
+    public ResponseEntity<MessageResponse> handleGlobalException(Exception ex,
+            jakarta.servlet.http.HttpServletRequest request) {
+        log.error("Unexpected error occurred at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(MessageResponse.error("Error: " + ex.getClass().getSimpleName() + ": " + ex.getMessage()));

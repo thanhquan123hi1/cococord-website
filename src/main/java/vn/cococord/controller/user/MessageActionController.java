@@ -39,7 +39,7 @@ public class MessageActionController {
             Authentication authentication) {
         String username = authentication.getName();
         log.info("File upload requested by user: {}, filename: {}", username, file.getOriginalFilename());
-        
+
         FileUploadResponse response = fileStorageService.uploadFile(file, username);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -48,14 +48,14 @@ public class MessageActionController {
      * Add reaction to a message
      */
     @PostMapping("/messages/{messageId}/reactions")
-    public ResponseEntity<MessageResponse> addReaction(
+    public ResponseEntity<MessageResponse> toggleReaction(
             @PathVariable String messageId,
             @Valid @RequestBody AddReactionRequest request,
             Authentication authentication) {
         String username = authentication.getName();
-        messageService.addReaction(messageId, request.getEmoji(), username);
-        
-        return ResponseEntity.ok(new MessageResponse("Reaction added successfully"));
+        messageService.toggleReaction(messageId, request.getEmoji(), username);
+
+        return ResponseEntity.ok(new MessageResponse("Reaction toggled successfully"));
     }
 
     /**
@@ -68,7 +68,7 @@ public class MessageActionController {
             Authentication authentication) {
         String username = authentication.getName();
         messageService.removeReaction(messageId, emoji, username);
-        
+
         return ResponseEntity.ok(new MessageResponse("Reaction removed successfully"));
     }
 
@@ -81,7 +81,7 @@ public class MessageActionController {
             Authentication authentication) {
         String username = authentication.getName();
         messageService.pinMessage(messageId, username);
-        
+
         return ResponseEntity.ok(new MessageResponse("Message pinned successfully"));
     }
 
@@ -94,7 +94,7 @@ public class MessageActionController {
             Authentication authentication) {
         String username = authentication.getName();
         messageService.unpinMessage(messageId, username);
-        
+
         return ResponseEntity.ok(new MessageResponse("Message unpinned successfully"));
     }
 }

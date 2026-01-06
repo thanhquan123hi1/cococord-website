@@ -43,6 +43,11 @@ public interface IMessageService {
      */
     void unpinMessage(String messageId, String username);
 
+    /**
+     * Toggle reaction (add if not present, remove if present)
+     */
+    void toggleReaction(String messageId, String emoji, String username);
+
     Message convertToEntity(SendMessageRequest request, Long userId, String username, String displayName,
             String avatarUrl);
 

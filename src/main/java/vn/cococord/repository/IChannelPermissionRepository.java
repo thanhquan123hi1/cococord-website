@@ -32,25 +32,18 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @param userId    ID của user
         * @return Optional chứa ChannelPermission nếu tồn tại
         */
-       default Optional<ChannelPermission> findByChannelIdAndUserId(Long channelId, Long userId) {
-              return findByChannelIdAndTargetTypeAndTargetId(channelId, TargetType.USER, userId);
+       default Optional<ChannelPermission> findByChannelIdAndRoleId(Long channelId, Long roleId) {
+              return findByChannel_IdAndTargetTypeAndTargetId(channelId, TargetType.ROLE, roleId);
        }
 
-       /**
-        * Tìm permission override cho một Role cụ thể trong channel
-        * 
-        * @param channelId ID của channel
-        * @param roleId    ID của role
-        * @return Optional chứa ChannelPermission nếu tồn tại
-        */
-       default Optional<ChannelPermission> findByChannelIdAndRoleId(Long channelId, Long roleId) {
-              return findByChannelIdAndTargetTypeAndTargetId(channelId, TargetType.ROLE, roleId);
+       default Optional<ChannelPermission> findByChannelIdAndUserId(Long channelId, Long userId) {
+              return findByChannel_IdAndTargetTypeAndTargetId(channelId, TargetType.USER, userId);
        }
 
        /**
         * Internal generic finder
         */
-       Optional<ChannelPermission> findByChannelIdAndTargetTypeAndTargetId(Long channelId, TargetType targetType,
+       Optional<ChannelPermission> findByChannel_IdAndTargetTypeAndTargetId(Long channelId, TargetType targetType,
                      Long targetId);
 
        /**
@@ -63,13 +56,21 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @return Danh sách permission overrides
         */
        @Query("SELECT cp FROM ChannelPermission cp WHERE cp.channel.id = :channelId " +
-                     "AND ((cp.targetType = vn.cococord.entity.mysql.ChannelPermission.TargetType.USER AND cp.targetId = :userId) "
+                     "AND ((cp.targetType = :userType AND cp.targetId = :userId) "
                      +
-                     "OR (cp.targetType = vn.cococord.entity.mysql.ChannelPermission.TargetType.ROLE AND cp.targetId IN :roleIds))")
+                     "OR (cp.targetType = :roleType AND cp.targetId IN :roleIds))")
        List<ChannelPermission> findByChannelIdAndUserIdOrRoleIds(
                      @Param("channelId") Long channelId,
                      @Param("userId") Long userId,
-                     @Param("roleIds") List<Long> roleIds);
+                     @Param("roleIds") List<Long> roleIds,
+                     @Param("userType") TargetType userType,
+                     @Param("roleType") TargetType roleType);
+
+       // Default method to inject enum types
+       default List<ChannelPermission> findByChannelIdAndUserIdOrRoleIds(Long channelId, Long userId,
+                     List<Long> roleIds) {
+              return findByChannelIdAndUserIdOrRoleIds(channelId, userId, roleIds, TargetType.USER, TargetType.ROLE);
+       }
 
        /**
         * Tìm tất cả role-based permission overrides trong channel
@@ -136,16 +137,26 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @return Danh sách channel IDs
         */
        @Query("SELECT DISTINCT cp.channel.id FROM ChannelPermission cp " +
-                     "WHERE cp.targetType = 'ROLE' AND cp.targetId = :roleId")
-       List<Long> findChannelIdsByRoleId(@Param("roleId") Long roleId);
+                     "WHERE cp.targetType = :targetType AND cp.targetId = :roleId")
+       List<Long> findChannelIdsByRoleId(@Param("roleId") Long roleId, @Param("targetType") TargetType targetType);
+
+       default List<Long> findChannelIdsByRoleId(Long roleId) {
+              return findChannelIdsByRoleId(roleId, TargetType.ROLE);
+       }
 
        /**
         * Xóa tất cả permission overrides của một role (khi xóa role)
         * 
         * @param roleId ID của role
         */
-       @Query("DELETE FROM ChannelPermission cp WHERE cp.targetType = 'ROLE' AND cp.targetId = :roleId")
-       void deleteByRoleId(@Param("roleId") Long roleId);
+       @org.springframework.data.jpa.repository.Modifying
+       @org.springframework.transaction.annotation.Transactional
+       @Query("DELETE FROM ChannelPermission cp WHERE cp.targetType = :targetType AND cp.targetId = :roleId")
+       void deleteByRoleId(@Param("roleId") Long roleId, @Param("targetType") TargetType targetType);
+
+       default void deleteByRoleId(Long roleId) {
+              deleteByRoleId(roleId, TargetType.ROLE);
+       }
 
        /**
         * Xóa tất cả permission overrides của một user trong server (khi kick/ban user)
@@ -153,7 +164,14 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @param userId   ID của user
         * @param serverId ID của server
         */
-       @Query("DELETE FROM ChannelPermission cp WHERE cp.targetType = 'USER' " +
+       @org.springframework.data.jpa.repository.Modifying
+       @org.springframework.transaction.annotation.Transactional
+       @Query("DELETE FROM ChannelPermission cp WHERE cp.targetType = :userType " +
                      "AND cp.targetId = :userId AND cp.channel.server.id = :serverId")
-       void deleteByUserIdAndServerId(@Param("userId") Long userId, @Param("serverId") Long serverId);
+       void deleteByUserIdAndServerId(@Param("userId") Long userId, @Param("serverId") Long serverId,
+                     @Param("userType") TargetType userType);
+
+       default void deleteByUserIdAndServerId(Long userId, Long serverId) {
+              deleteByUserIdAndServerId(userId, serverId, TargetType.USER);
+       }
 }
