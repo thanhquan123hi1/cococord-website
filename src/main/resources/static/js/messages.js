@@ -41,13 +41,13 @@
     const els = {
         // Server bar
         serverList: () => document.getElementById('serverList'),
-        
+
         // DM sidebar
         globalSearch: () => document.getElementById('globalSearch'),
         dmList: () => document.getElementById('dmList'),
-        
+
         // User panel - REMOVED, now handled by UserPanel component (user-panel.js)
-        
+
         // Main content
         dmTitle: () => document.getElementById('dmTitle'),
         headerStatus: () => document.getElementById('headerStatus'),
@@ -62,7 +62,7 @@
         dmStartInfo: () => document.getElementById('dmStartInfo'),
         composer: () => document.getElementById('composer'),
         messageInput: () => document.getElementById('messageInput'),
-        
+
         // Profile panel
         profilePanel: () => document.getElementById('profilePanel'),
         profileAvatar: () => document.getElementById('profileAvatar'),
@@ -128,21 +128,21 @@
         const date = new Date(dateStr);
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
-        
+
         const time = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        
+
         if (isToday) {
             return `Hôm nay lúc ${time}`;
         }
-        
+
         const yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
         const isYesterday = date.toDateString() === yesterday.toDateString();
-        
+
         if (isYesterday) {
             return `Hôm qua lúc ${time}`;
         }
-        
+
         return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ` ${time}`;
     }
 
@@ -155,35 +155,35 @@
         if (window.ServerSidebar && window.ServerSidebar.navigateToServerWithChannel) {
             return window.ServerSidebar.navigateToServerWithChannel(serverId);
         }
-        
+
         // Fallback nếu ServerSidebar chưa load
         try {
             console.log('[Messages -> Server] Fetching channels for server:', serverId);
             const channels = await apiJson(`/api/servers/${serverId}/channels`);
-            
+
             if (!channels || channels.length === 0) {
                 console.warn('[Messages -> Server] No channels found, navigating without channelId');
                 window.location.href = `/chat?serverId=${encodeURIComponent(serverId)}`;
                 return;
             }
-            
+
             // Tìm general channel
-            let targetChannel = channels.find(ch => 
+            let targetChannel = channels.find(ch =>
                 ch.name && ch.name.toLowerCase() === 'general'
             );
-            
+
             // Nếu không có general, tìm TEXT channel đầu tiên
             if (!targetChannel) {
-                targetChannel = channels.find(ch => 
+                targetChannel = channels.find(ch =>
                     ch.type && ch.type.toUpperCase() === 'TEXT'
                 );
             }
-            
+
             // Nếu vẫn không có, lấy channel đầu tiên
             if (!targetChannel) {
                 targetChannel = channels[0];
             }
-            
+
             console.log('[Messages -> Server] Navigating to channel:', targetChannel);
             window.location.href = `/chat?serverId=${encodeURIComponent(serverId)}&channelId=${encodeURIComponent(targetChannel.id)}`;
         } catch (err) {
@@ -201,7 +201,7 @@
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         // Only set Content-Type for requests with body
         if (options.body) {
             headers['Content-Type'] = 'application/json';
@@ -324,13 +324,13 @@
     // TYPING INDICATOR ====================
     function renderTypingIndicator() {
         let indicator = document.getElementById('typingIndicator');
-        const container = els.messagesArea(); 
-        
+        const container = els.messagesArea();
+
         if (state.typingUsers.size === 0) {
             if (indicator) indicator.remove();
             return;
         }
-        
+
         // Create if not exists
         if (!indicator && container) {
             indicator = document.createElement('div');
@@ -342,7 +342,7 @@
             // Let's append to messagesArea
             container.appendChild(indicator);
         }
-        
+
         if (!indicator) return;
 
         const users = Array.from(state.typingUsers.values());
@@ -351,7 +351,7 @@
                 ${u.avatarUrl ? `<img src="${escapeHtml(u.avatarUrl)}" alt="">` : escapeHtml((u.displayName || 'U').charAt(0).toUpperCase())}
             </div>
         `).join('');
-        
+
         let text = '';
         if (users.length === 1) {
             text = `<strong>${escapeHtml(users[0].displayName)}</strong> đang nhập...`;
@@ -360,7 +360,7 @@
         } else if (users.length > 2) {
             text = `<strong>${escapeHtml(users[0].displayName)}</strong> và ${users.length - 1} người khác đang nhập...`;
         }
-        
+
         indicator.innerHTML = `
             <div class="typing-avatars">${avatarsHtml}</div>
             <div class="typing-dots">
@@ -368,7 +368,7 @@
             </div>
             <div class="typing-text">${text}</div>
         `;
-        
+
         // Scroll to see typing if near bottom
         scrollToBottom();
     }
@@ -376,17 +376,17 @@
     function addTypingUser(username, displayName, avatarUrl) {
         // Don't show own typing
         if (state.currentUser && username === state.currentUser.username) return;
-        
+
         // Clear existing timeout
         const existing = state.typingUsers.get(username);
         if (existing?.timeout) clearTimeout(existing.timeout);
-        
+
         // Set new timeout (auto-hide after 5 seconds if no new event)
         const timeout = setTimeout(() => {
             state.typingUsers.delete(username);
             renderTypingIndicator();
         }, 5000);
-        
+
         state.typingUsers.set(username, { displayName, avatarUrl, timeout });
         renderTypingIndicator();
     }
@@ -401,7 +401,7 @@
     // Send typing notification
     function sendTypingNotification() {
         if (!state.stomp || !state.stomp.connected || !state.dmGroupId) return;
-        
+
         // Send "start typing" if not already typing
         if (!state.isCurrentlyTyping) {
             state.isCurrentlyTyping = true;
@@ -413,13 +413,13 @@
                 }));
             } catch (_) { /* ignore */ }
         }
-        
+
         if (state.stopTypingTimeout) clearTimeout(state.stopTypingTimeout);
-        
+
         state.stopTypingTimeout = setTimeout(() => {
             sendStopTypingNotification();
         }, 2000);
-        
+
         if (state.typingTimeout) clearTimeout(state.typingTimeout);
         state.typingTimeout = setTimeout(() => {
             const input = els.messageInput();
@@ -431,7 +431,7 @@
 
     function sendStopTypingNotification() {
         if (!state.stomp || !state.stomp.connected || !state.dmGroupId) return;
-        
+
         if (state.isCurrentlyTyping) {
             state.isCurrentlyTyping = false;
             try {
@@ -466,7 +466,7 @@
             a.className = 'server-btn server';
             a.href = href;
             a.title = name;
-            
+
             // Fetch channels trước khi navigate
             a.addEventListener('click', async (e) => {
                 e.preventDefault();
@@ -505,8 +505,8 @@
         container.innerHTML = items
             .map((it) => {
                 const online = isOnline(it);
-                const avatar = it.avatarUrl 
-                    ? `<img src="${escapeHtml(it.avatarUrl)}" alt="">` 
+                const avatar = it.avatarUrl
+                    ? `<img src="${escapeHtml(it.avatarUrl)}" alt="">`
                     : escapeHtml((it.displayName || it.username || 'U').charAt(0).toUpperCase());
                 const unread = Number(it.unreadCount || 0);
                 const active = state.dmGroupId && String(it.dmGroupId) === String(state.dmGroupId);
@@ -583,7 +583,7 @@
     // ==================== INITIALIZATION ====================
     function initChatInputManager() {
         if (chatInputManager) chatInputManager.destroy();
-        
+
         // Kiểm tra thư viện đã load chưa
         if (typeof ChatInputManager === 'undefined') {
             console.warn('[Messages] ChatInputManager not loaded');
@@ -593,7 +593,7 @@
         // Support both /app (dmComposer) and /messages (composer) pages
         const composerEl = document.getElementById('dmComposer') || document.getElementById('composer');
         const inputEl = document.getElementById('dmMessageInput') || document.getElementById('messageInput');
-        
+
         if (!composerEl || !inputEl) {
             console.warn('[Messages] Composer elements not found');
             return;
@@ -611,7 +611,7 @@
             emojiBtnSelector: '#emojiBtn',
             gifBtnSelector: '#gifBtn',
             stickerBtnSelector: '#stickerBtn',
-            
+
             // Gửi tin nhắn (Text + File)
             onSendMessage: async (text, files) => {
                 const filesToSend = files || chatInputManager.getAttachedFiles();
@@ -633,7 +633,7 @@
             onTypingStart: () => sendTypingNotification(),
             onTypingEnd: () => sendStopTypingNotification()
         });
-        
+
         console.log('[Messages] ChatInputManager initialized successfully');
     }
 
@@ -647,14 +647,14 @@
             for (const file of files) {
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 // Gọi API upload (dùng chung với server chat)
                 const res = await fetch('/api/upload', {
-                    method: 'POST', 
+                    method: 'POST',
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
                     body: formData
                 });
-                
+
                 if (res.ok) {
                     const data = await res.json();
                     uploadedAttachments.push({
@@ -671,7 +671,7 @@
             if (uploadedAttachments.length > 0) {
                 const hasImage = uploadedAttachments.some(att => att.fileType && att.fileType.startsWith('image/'));
                 const hasVideo = uploadedAttachments.some(att => att.fileType && att.fileType.startsWith('video/'));
-                
+
                 if (hasImage) {
                     messageType = 'IMAGE';
                 } else if (hasVideo) {
@@ -685,7 +685,7 @@
             const attachmentUrls = uploadedAttachments.map(att => att.fileUrl);
 
             // Build metadata with file details
-            const metadata = uploadedAttachments.length > 0 
+            const metadata = uploadedAttachments.length > 0
                 ? JSON.stringify({ files: uploadedAttachments })
                 : null;
 
@@ -705,9 +705,9 @@
                 chatInputManager.clearAttachments();
                 if (chatInputManager.inputEl) chatInputManager.inputEl.value = '';
             }
-            
+
             // Load lại tin nhắn mới nhất (hoặc chờ websocket)
-            await loadDmGroupAndMessages(); 
+            await loadDmGroupAndMessages();
 
         } catch (e) {
             console.error("Upload error:", e);
@@ -739,7 +739,21 @@
         }
     }
     function handleNewMessage(msg) {
+        console.log('[MSG-HANDLE] 📨 handleNewMessage called:', {
+            msgId: msg?.id,
+            content: msg?.content?.substring(0, 50),
+            currentCount: state.messages.length,
+            stackTrace: new Error().stack.substring(0, 200)
+        });
+
+        // Check if message already exists
+        const exists = state.messages.find(m => m.id === msg.id);
+        if (exists) {
+            console.warn('[MSG-HANDLE] ⚠️ DUPLICATE DETECTED! Message already exists in state:', msg.id);
+        }
+
         state.messages.push(msg);
+        console.log('[MSG-HANDLE] ✅ Message added to state, new count:', state.messages.length);
         renderMessages();
         scrollToBottom();
     }
@@ -747,7 +761,7 @@
 
     function renderAttachments(msg) {
         if (!msg.attachments || msg.attachments.length === 0) return '';
-        
+
         let html = '<div class="message-attachments">';
         msg.attachments.forEach(att => {
             // Kiểm tra nếu là ảnh thì hiển thị thumbnail
@@ -792,11 +806,12 @@
     }
 
     function renderMessages() {
-        const container = document.getElementById('messagesArea'); 
+        console.log('[MSG-RENDER] 🎨 renderMessages called, message count:', state.messages.length);
+        const container = document.getElementById('messagesArea');
         if (!container) return;
         const emptyState = els.emptyState();
         const composer = els.composer();
-        
+
         if (!state.dmGroupId) {
             if (composer) composer.style.display = 'none';
             if (emptyState) emptyState.style.display = 'flex';
@@ -816,13 +831,13 @@
         const html = state.messages.map((m, index) => {
             // Logic gộp tin nhắn (Header) - so sánh với tin nhắn trước
             const prev = state.messages[index - 1];
-            const isSeq = prev && 
-                prev.senderId === m.senderId && 
+            const isSeq = prev &&
+                prev.senderId === m.senderId &&
                 (new Date(m.createdAt || m.timestamp) - new Date(prev.createdAt || prev.timestamp) < 5 * 60 * 1000);
-            
+
             // Render content based on message type
             const contentHtml = renderMessageContent(m);
-            
+
             // Render attachments (file, image, video)
             const attachmentsHtml = renderAttachments(m);
 
@@ -837,10 +852,10 @@
                 return `
                     <div class="message-row has-header" id="msg-${m.id}" data-message-id="${m.id}">
                         <div class="message-avatar">
-                            ${senderAvatar && senderAvatar !== '/images/default-avatar.png' 
-                                ? `<img src="${escapeHtml(senderAvatar)}" alt="Avatar">`
-                                : `<div class="avatar-placeholder">${avatarInitial}</div>`
-                            }
+                            ${senderAvatar && senderAvatar !== '/images/default-avatar.png'
+                        ? `<img src="${escapeHtml(senderAvatar)}" alt="Avatar">`
+                        : `<div class="avatar-placeholder">${avatarInitial}</div>`
+                    }
                         </div>
                         <div class="message-content-wrapper">
                             <div class="message-header">
@@ -858,7 +873,7 @@
                 // Tin nhắn nối tiếp (Không Avatar)
                 return `
                     <div class="message-row is-sequence" id="msg-${m.id}" data-message-id="${m.id}">
-                        <div class="timestamp-hover">${new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div class="timestamp-hover">${new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                         <div class="message-content-wrapper">
                             <div class="message-body markdown-content">
                                 ${contentHtml}
@@ -879,16 +894,16 @@
     function renderMessageContent(msg) {
         const type = (msg.type || 'TEXT').toUpperCase();
         const content = msg.content || '';
-        
+
         switch (type) {
             case 'STICKER':
                 // Sticker: hiển thị ảnh với class đặc biệt
                 return `<img src="${escapeHtml(content)}" class="message-sticker" alt="Sticker" loading="lazy" />`;
-            
+
             case 'GIF':
                 // GIF: detect format và render phù hợp
                 return renderGifContent(content, msg.metadata);
-            
+
             case 'IMAGE':
                 // Single image (không có attachments riêng)
                 if (content && !msg.attachments?.length) {
@@ -896,25 +911,25 @@
                 }
                 // Nếu có attachments thì text content vẫn render bình thường
                 return renderTextContent(content);
-            
+
             case 'VIDEO':
                 // Video inline
                 if (content && content.match(/\.(mp4|webm|ogg)$/i)) {
                     return `<video src="${escapeHtml(content)}" controls class="message-video" preload="metadata"></video>`;
                 }
                 return renderTextContent(content);
-            
+
             case 'AUDIO':
                 // Audio player
                 if (content && content.match(/\.(mp3|wav|ogg|m4a)$/i)) {
                     return `<audio src="${escapeHtml(content)}" controls class="message-audio"></audio>`;
                 }
                 return renderTextContent(content);
-            
+
             case 'SYSTEM':
                 // System message (join, leave, etc.)
                 return `<div class="system-message"><em>${escapeHtml(content)}</em></div>`;
-            
+
             case 'TEXT':
             case 'FILE':
             default:
@@ -928,7 +943,7 @@
      */
     function renderTextContent(content) {
         if (!content || !content.trim()) return '';
-        return window.CocoCordMarkdown 
+        return window.CocoCordMarkdown
             ? window.CocoCordMarkdown.render(content)
             : escapeHtml(content);
     }
@@ -938,7 +953,7 @@
      */
     function renderGifContent(url, metadata) {
         if (!url) return '';
-        
+
         // Parse metadata if string
         let gifData = null;
         if (metadata) {
@@ -946,11 +961,11 @@
                 gifData = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
             } catch (e) { /* ignore */ }
         }
-        
+
         // Check if URL is mp4 (Tenor often uses mp4 for "GIFs")
         const isMp4 = url.toLowerCase().endsWith('.mp4') || url.includes('.mp4');
         const isWebm = url.toLowerCase().endsWith('.webm');
-        
+
         if (isMp4 || isWebm) {
             // Video-based GIF: autoplay, loop, muted, no controls
             return `
@@ -975,26 +990,31 @@
     // ==================== ACTIONS ====================
     async function sendMessage(content) {
         if (!content.trim()) return;
-        
+
+        console.log('[MSG-SEND] 🚀 Sending message via REST API:', { content: content.substring(0, 50), dmGroupId: state.dmGroupId });
+
         try {
             const msg = await apiJson(`/api/direct-messages/${state.dmGroupId}/messages`, {
                 method: 'POST',
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     content: content,
                     attachmentUrls: [],
                     type: 'TEXT',
                     metadata: null
                 })
             });
-            
+
+            console.log('[MSG-SEND] ✅ REST API response received:', { msgId: msg?.id, content: msg?.content?.substring(0, 50) });
+
             if (msg) {
+                console.log('[MSG-SEND] 📝 Calling handleNewMessage from REST response (POTENTIAL DUPLICATE SOURCE #1)');
                 handleNewMessage(msg);
                 if (chatInputManager && chatInputManager.inputEl) {
                     chatInputManager.inputEl.value = ''; // Xóa input sau khi gửi thành công
                 }
             }
         } catch (err) {
-            console.error('Lỗi gửi tin nhắn:', err);
+            console.error('[MSG-SEND] ❌ Lỗi gửi tin nhắn:', err);
         }
     }
 
@@ -1017,21 +1037,21 @@
 
     async function startCall({ video }) {
         console.log('[Messages] ⚡ startCall() called, video:', video);
-        
+
         // Delegate to global CallManager
         if (!window.CoCoCordCallManager) {
             console.error('[Messages] CoCoCordCallManager not loaded');
             return;
         }
-        
+
         console.log('[Messages] CallManager found, preparing call data...');
-        
+
         const roomId = getCallRoomId();
         if (!roomId || !state.otherUser) {
             console.warn('[Messages] Cannot start call: missing roomId or otherUser');
             return;
         }
-        
+
         const targetUserId = state.otherUser.id;
         const targetUser = {
             id: state.otherUser.id,
@@ -1039,14 +1059,14 @@
             displayName: state.otherUser.displayName || state.otherUser.username,
             avatarUrl: state.otherUser.avatarUrl
         };
-        
+
         console.log('[Messages] Calling CallManager.startCall() with:', {
             targetUserId,
             roomId,
             targetUser: targetUser.username,
             video
         });
-        
+
         try {
             const success = await window.CoCoCordCallManager.startCall(targetUserId, roomId, targetUser, video);
             console.log('[Messages] CallManager.startCall() returned:', success);
@@ -1064,7 +1084,7 @@
         if (window.CoCoCordCallManager) {
             window.CoCoCordCallManager.endCall(sendHangup);
         }
-        
+
         // Also hide any legacy overlay on this page
         hideCallOverlay();
     }
@@ -1146,20 +1166,34 @@
                 });
 
                 if (state.dmGroupId) {
+                    console.log('[WS-SUB] 🔌 Subscribing to /topic/dm/' + state.dmGroupId);
                     stomp.subscribe(`/topic/dm/${state.dmGroupId}`, (msg) => {
                         try {
+                            console.log('[WS-MSG] 📡 WebSocket message received on /topic/dm/' + state.dmGroupId);
                             const m = JSON.parse(msg.body);
+                            console.log('[WS-MSG] 📦 Parsed message:', { msgId: m?.id, content: m?.content?.substring(0, 50), sender: m?.senderUsername });
                             if (!m) return;
+
+                            // Check if message already exists (DUPLICATE CHECK)
+                            const exists = state.messages.find(msg => msg.id === m.id);
+                            if (exists) {
+                                console.warn('[WS-MSG] ⚠️ DUPLICATE VIA WEBSOCKET! Message already in state, ignoring:', m.id);
+                                return;
+                            }
+
+                            console.log('[WS-MSG] 📝 Adding WebSocket message to state (POTENTIAL DUPLICATE SOURCE #2)');
                             // Append live message
                             state.messages.push(m);
                             renderMessages();
                             scrollToBottom();
-                        } catch (_) { /* ignore */ }
+                        } catch (err) {
+                            console.error('[WS-MSG] ❌ Error parsing WebSocket message:', err);
+                        }
                     });
 
                     // NOTE: Call signaling subscription removed - now handled globally by CoCoCordCallManager
                     // The global call manager subscribes to /topic/user.{userId}.calls on app load
-                    
+
                     // Typing events for this DM
                     stomp.subscribe(`/topic/dm/${state.dmGroupId}/typing`, (msg) => {
                         try {
@@ -1337,7 +1371,7 @@
             option.addEventListener('click', () => {
                 document.querySelectorAll('.channel-type-option').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
-                
+
                 const type = option.getAttribute('data-type');
                 const icon = document.getElementById('channelNameIcon');
                 if (icon) {
@@ -1355,8 +1389,8 @@
                 const isMuted = muteBtn.getAttribute('data-muted') === 'true';
                 muteBtn.setAttribute('data-muted', !isMuted);
                 muteBtn.classList.toggle('muted', !isMuted);
-                muteBtn.innerHTML = !isMuted 
-                    ? '<i class="bi bi-mic-mute-fill"></i>' 
+                muteBtn.innerHTML = !isMuted
+                    ? '<i class="bi bi-mic-mute-fill"></i>'
                     : '<i class="bi bi-mic-fill"></i>';
                 muteBtn.title = !isMuted ? 'Bật tiếng' : 'Tắt tiếng';
             });
@@ -1367,8 +1401,8 @@
                 const isDeafened = deafenBtn.getAttribute('data-deafened') === 'true';
                 deafenBtn.setAttribute('data-deafened', !isDeafened);
                 deafenBtn.classList.toggle('deafened', !isDeafened);
-                deafenBtn.innerHTML = !isDeafened 
-                    ? '<i class="bi bi-headphones"></i><span style="position:absolute;width:2px;height:20px;background:var(--discord-red);transform:rotate(45deg);"></span>' 
+                deafenBtn.innerHTML = !isDeafened
+                    ? '<i class="bi bi-headphones"></i><span style="position:absolute;width:2px;height:20px;background:var(--discord-red);transform:rotate(45deg);"></span>'
                     : '<i class="bi bi-headphones"></i>';
                 deafenBtn.title = !isDeafened ? 'Bật âm thanh' : 'Tắt âm thanh';
                 deafenBtn.style.position = !isDeafened ? 'relative' : '';
@@ -1379,7 +1413,7 @@
         callEls.voiceBtn()?.addEventListener('click', async () => {
             console.log('[Messages] 🎤 Voice call button clicked');
             console.log('[Messages] dmGroupId:', state.dmGroupId, 'otherUser:', state.otherUser?.username);
-            
+
             if (!state.dmGroupId || !state.otherUser) return;
             try {
                 await startCall({ video: false });
@@ -1392,7 +1426,7 @@
         callEls.videoBtn()?.addEventListener('click', async () => {
             console.log('[Messages] 📹 Video call button clicked');
             console.log('[Messages] dmGroupId:', state.dmGroupId, 'otherUser:', state.otherUser?.username);
-            
+
             if (!state.dmGroupId || !state.otherUser) return;
             try {
                 await startCall({ video: true });
@@ -1466,10 +1500,10 @@
         const step1 = document.getElementById('createServerStep1');
         const step2 = document.getElementById('createServerStep2');
         const input = document.getElementById('serverNameInput');
-        
+
         if (step1) step1.style.display = 'none';
         if (step2) step2.style.display = 'flex';
-        
+
         // Set default name based on template
         const templateNames = {
             'custom': 'Máy chủ của ' + (state.currentUser?.displayName || state.currentUser?.username || 'bạn'),
@@ -1478,7 +1512,7 @@
             'study': 'Nhóm Học tập',
             'friends': 'Nhóm Bạn bè'
         };
-        
+
         if (input) {
             input.value = templateNames[template] || templateNames['custom'];
             setTimeout(() => input.focus(), 100);
@@ -1562,12 +1596,12 @@
     function showCreateChannelModal(serverId, categoryId = null, categoryName = null) {
         createChannelServerId = serverId;
         createChannelCategoryId = categoryId;
-        
+
         const modal = document.getElementById('createChannelModal');
         const input = document.getElementById('channelNameInput');
         const categoryLabel = document.getElementById('channelCategoryName');
         const privateToggle = document.getElementById('privateChannelToggle');
-        
+
         if (modal) modal.style.display = 'flex';
         if (input) {
             input.value = '';
@@ -1579,7 +1613,7 @@
         if (privateToggle) {
             privateToggle.checked = false;
         }
-        
+
         // Reset channel type to text
         document.querySelectorAll('.channel-type-option').forEach(o => o.classList.remove('selected'));
         document.querySelector('.channel-type-option[data-type="text"]')?.classList.add('selected');
@@ -1603,7 +1637,7 @@
         const input = document.getElementById('channelNameInput');
         const privateToggle = document.getElementById('privateChannelToggle');
         const selectedType = document.querySelector('.channel-type-option.selected');
-        
+
         let name = (input?.value || '').trim();
         if (!name) {
             input?.focus();
@@ -1626,7 +1660,7 @@
                     isPrivate
                 })
             });
-            
+
             if (channel?.id) {
                 hideCreateChannelModal();
                 // Reload or navigate to the new channel
@@ -1652,7 +1686,7 @@
         const modal = document.getElementById('inviteFriendsModal');
         const serverNameEl = document.getElementById('inviteServerName');
         const searchInput = document.getElementById('inviteFriendSearch');
-        
+
         if (modal) modal.style.display = 'flex';
         if (serverNameEl) serverNameEl.textContent = inviteServerName;
         if (searchInput) searchInput.value = '';
@@ -1683,13 +1717,13 @@
 
     async function generateInviteLink() {
         if (!inviteServerId) return;
-        
+
         try {
             const invite = await apiJson(`/api/servers/${encodeURIComponent(inviteServerId)}/invites`, {
                 method: 'POST',
                 body: JSON.stringify({ maxUses: 0, expiresInDays: 7 })
             });
-            
+
             inviteCode = invite?.code || '';
             const linkInput = document.getElementById('inviteLinkInput');
             if (linkInput && inviteCode) {
@@ -1721,13 +1755,13 @@
         }
 
         container.innerHTML = filtered.map(friend => {
-            const avatarHtml = friend.avatarUrl 
+            const avatarHtml = friend.avatarUrl
                 ? `<img src="${escapeHtml(friend.avatarUrl)}" alt="">`
                 : `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">${escapeHtml((friend.displayName || friend.username || 'U').charAt(0).toUpperCase())}</span>`;
-            
+
             const isInvited = invitedFriends.has(friend.id);
             const online = isOnline(friend);
-            
+
             return `
                 <div class="invite-friend-row" data-friend-id="${friend.id}">
                     <div class="invite-friend-avatar">
@@ -1749,7 +1783,7 @@
 
     async function inviteFriend(friendId) {
         if (!inviteServerId || !friendId) return;
-        
+
         // Mark as invited immediately for better UX
         invitedFriends.add(friendId);
         renderInviteFriendsList(document.getElementById('inviteFriendSearch')?.value || '');
@@ -1762,7 +1796,7 @@
                 const dmGroup = await apiJson(`/api/direct-messages/find-or-create?userId=${encodeURIComponent(friendId)}`, {
                     method: 'POST'
                 });
-                
+
                 if (dmGroup?.id) {
                     const inviteLink = document.getElementById('inviteLinkInput')?.value || '';
                     await apiJson(`/api/direct-messages/${encodeURIComponent(dmGroup.id)}/messages`, {
@@ -1786,7 +1820,7 @@
     async function copyInviteLink() {
         const linkInput = document.getElementById('inviteLinkInput');
         const copyBtn = document.getElementById('copyInviteLinkBtn');
-        
+
         if (!linkInput?.value) return;
 
         try {
@@ -1817,7 +1851,7 @@
             legacyOverlay.style.opacity = '0';
             legacyOverlay.style.pointerEvents = 'none';
             legacyOverlay.setAttribute('aria-hidden', 'true');
-            
+
             // Add mutation observer to prevent any script from showing it
             const observer = new MutationObserver((mutations) => {
                 for (const mutation of mutations) {
@@ -1834,7 +1868,7 @@
             });
             observer.observe(legacyOverlay, { attributes: true, attributeFilter: ['style'] });
         }
-        
+
         wireEvents();
         readQuery();
 
