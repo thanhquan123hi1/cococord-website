@@ -1,612 +1,294 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CoCoCord - Kết nối mọi người, mọi lúc, mọi nơi</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              discord: {
-                blurple: "hsl(235 86% 65%)",
-                dark: "hsl(228 58% 12%)",
-                darker: "hsl(228 58% 8%)",
-                light: "hsl(228 58% 25%)",
-                green: "hsl(139 47% 44%)",
-                yellow: "hsl(38 96% 54%)",
-                pink: "hsl(349 55% 60%)",
-              },
-            },
-            fontFamily: {
-              display: ["Outfit", "sans-serif"],
-            },
-            animation: {
-              "fade-in-up": "fadeInUp 0.8s ease-out forwards",
-              "slide-in-right": "slideInRight 0.8s ease-out forwards",
-              float: "float 6s ease-in-out infinite",
-            },
-            keyframes: {
-              fadeInUp: {
-                from: { opacity: "0", transform: "translateY(30px)" },
-                to: { opacity: "1", transform: "translateY(0)" },
-              },
-              slideInRight: {
-                from: { opacity: "0", transform: "translateX(50px)" },
-                to: { opacity: "1", transform: "translateX(0)" },
-              },
-              float: {
-                "0%, 100%": { transform: "translateY(0px)" },
-                "50%": { transform: "translateY(-20px)" },
-              },
-            },
-          },
-        },
-      };
-    </script>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+<title>CoCoCord - Nơi kết nối cộng đồng của bạn</title>
 
-      html {
-        scroll-behavior: smooth;
-      }
+<head>
+<style>
+    /* Hero section background */
+    .hero-section {
+        background-color: #404eed;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Decorative clouds/shapes */
+    .hero-bg-image {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100%;
+        background-image: 
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2323272a' fill-opacity='1' d='M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,218.7C672,235,768,245,864,234.7C960,224,1056,192,1152,181.3C1248,171,1344,181,1392,186.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: bottom;
+        background-size: 100% auto;
+    }
+    
+    /* Feature sections */
+    .feature-section-light {
+        background-color: #f6f6f6;
+    }
+    
+    .feature-section-dark {
+        background-color: #23272a;
+    }
+    
+    /* CTA section */
+    .cta-section {
+        background-color: #f6f6f6;
+        position: relative;
+    }
+    
+    .cta-bg {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200'%3E%3Cpath fill='%235865f2' d='M0,128L60,122.7C120,117,240,107,360,112C480,117,600,139,720,138.7C840,139,960,117,1080,112C1200,107,1320,117,1380,122.7L1440,128L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: top;
+        background-size: 100% auto;
+    }
+</style>
+</head>
 
-      body {
-        background: linear-gradient(
-          180deg,
-          hsl(235 65% 35%) 0%,
-          hsl(228 58% 20%) 50%,
-          hsl(228 58% 12%) 100%
-        );
-        min-height: 100vh;
-        font-family: "Outfit", sans-serif;
-        color: #ffffff;
-      }
-
-      .discord-headline {
-        font-weight: 900;
-        font-style: italic;
-        letter-spacing: -0.025em;
-        text-shadow: 0 4px 30px hsl(235 86% 65% / 0.3);
-        line-height: 1.1;
-      }
-
-      .animation-delay-200 {
-        animation-delay: 200ms;
-      }
-
-      .animation-delay-400 {
-        animation-delay: 400ms;
-      }
-
-      .animation-delay-600 {
-        animation-delay: 600ms;
-      }
-
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes slideInRight {
-        from {
-          opacity: 0;
-          transform: translateX(50px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-20px);
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Navbar -->
-
-    <!-- Hero Section -->
-    <section
-      class="relative w-full pt-32 pb-20 flex items-center overflow-hidden min-h-screen"
-    >
-      <!-- Animated Background Elements -->
-      <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          class="absolute -top-40 -left-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-float"
-        ></div>
-        <div
-          class="absolute top-1/3 -right-20 w-72 h-72 bg-pink-600 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-float"
-          style="animation-delay: 2s"
-        ></div>
-        <div
-          class="absolute bottom-0 left-1/3 w-96 h-96 bg-purple-600 rounded-full mix-blend-screen filter blur-3xl opacity-20 animation-delay-400"
-        ></div>
-      </div>
-
-      <div class="relative w-full max-w-7xl mx-auto px-4 sm:px-6">
-        <div
-          class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center"
-        >
-          <!-- Left Content -->
-          <div
-            class="text-center lg:text-left space-y-6 lg:space-y-8 order-2 lg:order-1"
-          >
-            <div class="animate-fade-in-up">
-              <h1
-                class="discord-headline text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight"
-              >
-                Group Chat<br />
-                <span
-                  class="bg-gradient-to-r pr-4 from-blue-400 via-blue-300 to-purple-400 bg-clip-text text-transparent"
-                >
-                  That's All</span
-                ><br />
-                <span
-                  class="bg-gradient-to-r pr-4 from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent"
-                >
-                  Fun & Games
-                </span>
-              </h1>
-            </div>
-
-            <div class="animate-fade-in-up animation-delay-200">
-              <p
-                class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-lg leading-relaxed mx-auto lg:mx-0"
-              >
-                CoCoCord là nơi tuyệt vời để chơi game và chilled với bạn bè.
-              </p>
-            </div>
-
-            <div class="animate-fade-in-up animation-delay-400">
-              <div
-                class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:center"
-              >
-                <a
-                  href="/register"
-                  class="px-6 sm:px-8 py-3 bg-white text-gray-900 font-bold rounded-full hover:scale-105 transition-transform flex items-center justify-center gap-2 text-sm sm:text-base"
-                >
-                  <svg
-                    class="w-4 h-4 sm:w-5 sm:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    ></path>
-                  </svg>
-                  Download
+<!-- Hero Section -->
+<section class="hero-section min-h-screen flex items-center justify-center pt-20 pb-40 px-6 relative">
+    <div class="hero-bg-image"></div>
+    
+    <div class="relative z-10 max-w-4xl mx-auto text-center">
+        <div class="animate-fade-in-up">
+            <h1 class="discord-headline text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white mb-8 uppercase">
+                Hãy tưởng tượng<br>một nơi...
+            </h1>
+        </div>
+        
+        <div class="animate-fade-in-up animation-delay-200">
+            <p class="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-10 leading-relaxed">
+                ...nơi bạn có thể thuộc về một câu lạc bộ sau giờ học, một nhóm game, hoặc một cộng đồng nghệ thuật toàn cầu. Nơi bạn và bạn bè có thể dành thời gian bên nhau. Một nơi giúp bạn dễ dàng trò chuyện hàng ngày và giao lưu thường xuyên hơn.
+            </p>
+        </div>
+        
+        <div class="animate-fade-in-up animation-delay-400">
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="${pageContext.request.contextPath}/register" class="w-full sm:w-auto px-8 py-4 bg-white text-dark-900 font-semibold rounded-full hover:shadow-xl hover:text-brand-blurple transition-all flex items-center justify-center gap-2 text-base">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Tải xuống cho Windows
                 </a>
-                <a
-                  href="/login"
-                  class="px-6 sm:px-8 py-3 border-2 border-white text-white font-bold rounded-full hover:bg-white/10 transition-colors flex items-center justify-center text-sm sm:text-base"
-                >
-                  Open Browser App
+                <a href="${pageContext.request.contextPath}/login" class="w-full sm:w-auto px-8 py-4 bg-dark-800 text-white font-semibold rounded-full hover:bg-dark-700 transition-all text-base">
+                    Mở CoCoCord trên trình duyệt
                 </a>
-              </div>
             </div>
-          </div>
+        </div>
+    </div>
+</section>
 
-          <!-- Right Content - App Preview -->
-          <div
-            class="hidden lg:flex order-1 lg:order-2 animate-slide-in-right animation-delay-600 justify-center"
-          >
-            <div class="w-full max-w-xl">
-              <!-- Main Preview Window -->
-              <div
-                class="rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-gray-900 to-black border border-gray-800/50"
-              >
-                <div class="bg-gradient-to-b from-gray-800 to-gray-900 p-4">
-                  <!-- Window Controls -->
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-
-                  <!-- Content -->
-                  <div class="flex gap-2 bg-gray-900 rounded-lg h-72">
-                    <!-- Servers Sidebar -->
-                    <div
-                      class="w-14 flex flex-col gap-2 items-center py-2 border-r border-gray-700"
-                    >
-                      <div
-                        class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm"
-                      >
-                        🎮
-                      </div>
-                      <div
-                        class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs font-semibold"
-                      >
-                        GC
-                      </div>
-                      <div
-                        class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm"
-                      >
-                        💬
-                      </div>
-                    </div>
-
-                    <!-- Channels Sidebar -->
-                    <div
-                      class="hidden sm:flex w-36 bg-gray-800/50 p-2 border-r border-gray-700 flex-col"
-                    >
-                      <div
-                        class="text-xs font-bold text-gray-400 uppercase mb-2"
-                      >
-                        Gaming
-                      </div>
-                      <div class="space-y-1 text-xs">
-                        <div
-                          class="text-white py-1.5 px-2 rounded bg-blue-600/20 cursor-pointer font-medium"
-                        >
-                          # general
+<!-- Feature 1: Create an invite-only place -->
+<section id="features" class="feature-section-light py-20 md:py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Image/Illustration -->
+            <div class="order-2 lg:order-1 animate-slide-in-left">
+                <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                    <div class="bg-dark-700 p-4">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-3 h-3 rounded-full bg-brand-red"></div>
+                            <div class="w-3 h-3 rounded-full bg-brand-yellow"></div>
+                            <div class="w-3 h-3 rounded-full bg-brand-green"></div>
                         </div>
-                        <div
-                          class="text-gray-400 py-1.5 px-2 rounded hover:bg-gray-700/50 cursor-pointer"
-                        >
-                          🔊 voice
-                        </div>
-                        <div
-                          class="text-gray-400 py-1.5 px-2 rounded hover:bg-gray-700/50 cursor-pointer"
-                        >
-                          # games
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Chat Area -->
-                    <div class="flex-1 flex flex-col p-3">
-                      <div
-                        class="text-xs font-semibold text-white mb-2 border-b border-gray-700 pb-1"
-                      >
-                        # general
-                      </div>
-                      <div class="space-y-2 flex-1 overflow-hidden text-xs">
-                        <div class="flex gap-2">
-                          <div
-                            class="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-red-500 flex-shrink-0"
-                          ></div>
-                          <div class="min-w-0">
-                            <div class="flex items-baseline gap-1">
-                              <span class="text-white font-semibold"
-                                >Negav</span
-                              >
-                              <span class="text-gray-500">10:45</span>
+                        <div class="flex gap-3">
+                            <!-- Servers sidebar -->
+                            <div class="w-16 bg-dark-900 rounded-lg p-2 space-y-2">
+                                <div class="w-12 h-12 rounded-2xl bg-brand-blurple flex items-center justify-center text-2xl">🎮</div>
+                                <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center text-white text-sm font-bold">GC</div>
+                                <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center text-xl">📚</div>
+                                <div class="w-12 h-12 rounded-full bg-dark-600 flex items-center justify-center text-2xl text-dark-400">+</div>
                             </div>
-                            <p class="text-gray-300">Ai chơi khum?</p>
-                          </div>
-                        </div>
-                        <div class="flex gap-2">
-                          <div
-                            class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex-shrink-0"
-                          ></div>
-                          <div class="min-w-0">
-                            <div class="flex items-baseline gap-1">
-                              <span class="text-white font-semibold">J97</span>
-                              <span class="text-gray-500">10:46</span>
+                            <!-- Channels -->
+                            <div class="flex-1 bg-dark-800 rounded-lg p-3">
+                                <div class="text-dark-300 text-xs font-bold uppercase mb-2">Kênh văn bản</div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 text-white bg-dark-600/50 rounded px-2 py-1.5 text-sm"># chào-mừng</div>
+                                    <div class="flex items-center gap-2 text-dark-300 px-2 py-1.5 text-sm hover:bg-dark-600/30 rounded cursor-pointer"># tán-gẫu</div>
+                                    <div class="flex items-center gap-2 text-dark-300 px-2 py-1.5 text-sm hover:bg-dark-600/30 rounded cursor-pointer"># game</div>
+                                </div>
+                                <div class="text-dark-300 text-xs font-bold uppercase mt-4 mb-2">Kênh thoại</div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 text-dark-300 px-2 py-1.5 text-sm hover:bg-dark-600/30 rounded cursor-pointer">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                        Phòng chung
+                                    </div>
+                                </div>
                             </div>
-                            <p class="text-gray-300">OK nè!</p>
-                          </div>
                         </div>
-                      </div>
-                      <div
-                        class="mt-2 p-2 bg-gray-700/30 rounded text-xs text-gray-400 border border-gray-600"
-                      >
-                        <input
-                          type="text"
-                          placeholder="..."
-                          class="w-full bg-transparent outline-none text-white placeholder-gray-600 text-xs"
-                        />
-                      </div>
                     </div>
-                  </div>
                 </div>
-              </div>
             </div>
-          </div>
+            
+            <!-- Text content -->
+            <div class="order-1 lg:order-2 animate-slide-in-right">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-dark-900 mb-6 leading-tight">
+                    Tạo một không gian<br>chỉ dành cho bạn bè
+                </h2>
+                <p class="text-lg text-dark-500 leading-relaxed">
+                    Máy chủ CoCoCord được tổ chức thành các kênh theo chủ đề, nơi bạn có thể cộng tác, chia sẻ và chỉ đơn giản là nói về ngày của bạn mà không làm nghẽn chat nhóm.
+                </p>
+            </div>
         </div>
-      </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Features Section -->
-    <section id="features" class="py-32 px-6 relative">
-      <!-- Background Gradient -->
-      <div
-        class="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/10 to-transparent pointer-events-none"
-      ></div>
-
-      <div class="relative max-w-7xl mx-auto">
-        <!-- Feature 1: Create Invite-Only -->
-        <!--
-        <div class="grid lg:grid-cols-2 gap-16 items-center mb-40">
-          <div class="space-y-8">
-            <div>
-              <h2
-                class="discord-headline text-4xl md:text-5xl lg:text-6xl text-white mb-6"
-              >
-                Create an<br />invite-only<br />place where<br />you belong
-              </h2>
+<!-- Feature 2: Where hanging out is easy -->
+<section class="feature-section-dark py-20 md:py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Text content -->
+            <div class="animate-slide-in-left">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+                    Nơi giao lưu<br>thật dễ dàng
+                </h2>
+                <p class="text-lg text-dark-300 leading-relaxed">
+                    Vào một kênh thoại khi bạn rảnh. Bạn bè trong máy chủ có thể thấy bạn đang online và nhảy vào nói chuyện ngay mà không cần gọi điện.
+                </p>
             </div>
-            <p
-              class="text-lg md:text-xl text-gray-300 leading-relaxed max-w-lg"
-            >
-              Discord servers are organized into topic-based channels where you
-              can collaborate, share, and just talk about your day without
-              clogging up a group chat.
-            </p>
-          </div>
-          <div
-            class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700/50"
-          >
-            <div class="grid grid-cols-3 gap-4">
-              <div
-                class="aspect-square rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-5xl hover:scale-110 transition-transform cursor-pointer shadow-lg"
-              >
-                🎮
-              </div>
-              <div
-                class="aspect-square rounded-2xl bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-5xl hover:scale-110 transition-transform cursor-pointer shadow-lg"
-              >
-                🎵
-              </div>
-              <div
-                class="aspect-square rounded-2xl bg-gradient-to-br from-pink-600 to-pink-500 flex items-center justify-center text-5xl hover:scale-110 transition-transform cursor-pointer shadow-lg"
-              >
-                🎨
-              </div>
-              <div
-                class="aspect-square rounded-2xl bg-gradient-to-br from-yellow-600 to-yellow-500 flex items-center justify-center text-5xl hover:scale-110 transition-transform cursor-pointer shadow-lg"
-              >
-                📚
-              </div>
-              <div
-                class="aspect-square rounded-2xl bg-gradient-to-br from-purple-600 to-purple-500 flex items-center justify-center text-5xl hover:scale-110 transition-transform cursor-pointer shadow-lg"
-              >
-                ⚡
-              </div>
-              <div
-                class="aspect-square rounded-2xl bg-gray-700 flex items-center justify-center text-3xl hover:scale-110 transition-transform cursor-pointer shadow-lg text-gray-400"
-              >
-                +
-              </div>
-            </div>
-          </div>
-        </div>
-        -->
-
-        <!-- Feature 2: Hanging Out -->
-        <div
-          class="grid lg:grid-cols-2 gap-16 items-center lg:grid-flow-dense mb-40"
-        >
-          <div
-            class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700/50 lg:col-start-2"
-          >
-            <div class="space-y-4">
-              <div
-                class="bg-gray-900/60 rounded-2xl p-6 border border-gray-700"
-              >
-                <div class="flex items-center gap-3 mb-4">
-                  <div
-                    class="w-3 h-3 rounded-full bg-green-500 animate-pulse"
-                  ></div>
-                  <span class="text-white font-bold text-lg"
-                    >🔊 Voice Channels</span
-                  >
+            
+            <!-- Voice channel illustration -->
+            <div class="animate-slide-in-right">
+                <div class="bg-dark-800 rounded-2xl p-6 shadow-2xl">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-3 h-3 rounded-full bg-brand-green animate-pulse"></div>
+                        <span class="text-white font-bold text-lg">🔊 Kênh thoại chung</span>
+                    </div>
+                    <div class="space-y-4 pl-4">
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-red-500"></div>
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-green rounded-full border-2 border-dark-800"></div>
+                            </div>
+                            <div>
+                                <div class="text-white font-semibold">Minh Anh</div>
+                                <div class="text-xs text-brand-green flex items-center gap-1">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-brand-green animate-pulse"></span>
+                                    Đang nói
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500"></div>
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-green rounded-full border-2 border-dark-800"></div>
+                            </div>
+                            <div>
+                                <div class="text-white font-semibold">Hoàng Nam</div>
+                                <div class="text-xs text-dark-400">Đang nghe</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500"></div>
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-dark-400 rounded-full border-2 border-dark-800"></div>
+                            </div>
+                            <div>
+                                <div class="text-white font-semibold">Thu Hà</div>
+                                <div class="text-xs text-dark-400">Tắt mic</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="space-y-3 pl-4">
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-red-500"
-                    ></div>
-                    <div>
-                      <div class="text-white font-semibold text-sm">Sarah</div>
-                      <div
-                        class="text-xs text-green-400 flex items-center gap-1"
-                      >
-                        <span class="w-2 h-2 rounded-full bg-green-400"></span>
-                        Speaking
-                      </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature 3: From few to a fandom -->
+<section class="feature-section-light py-20 md:py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Moderation illustration -->
+            <div class="order-2 lg:order-1 animate-slide-in-left">
+                <div class="bg-white rounded-2xl shadow-2xl p-8">
+                    <h3 class="text-dark-900 font-bold text-xl mb-6">Quản lý vai trò thành viên</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="px-5 py-2.5 rounded-full text-white font-semibold text-sm bg-gradient-to-r from-red-600 to-red-500 shadow-lg">👑 Admin</span>
+                        <span class="px-5 py-2.5 rounded-full text-white font-semibold text-sm bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg">🛡️ Moderator</span>
+                        <span class="px-5 py-2.5 rounded-full text-white font-semibold text-sm bg-gradient-to-r from-yellow-500 to-amber-500 shadow-lg">⭐ VIP</span>
+                        <span class="px-5 py-2.5 rounded-full text-white font-semibold text-sm bg-gradient-to-r from-green-600 to-green-500 shadow-lg">✓ Member</span>
+                        <span class="px-5 py-2.5 rounded-full text-white font-semibold text-sm bg-gradient-to-r from-purple-600 to-purple-500 shadow-lg">🎮 Gamer</span>
+                        <span class="px-5 py-2.5 rounded-full text-white font-semibold text-sm bg-gradient-to-r from-pink-500 to-rose-500 shadow-lg">🎨 Artist</span>
                     </div>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500"
-                    ></div>
-                    <div>
-                      <div class="text-white font-semibold text-sm">Mike</div>
-                      <div class="text-xs text-gray-400">Listening</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-600 to-orange-500"
-                    ></div>
-                    <div>
-                      <div class="text-white font-semibold text-sm">Jordan</div>
-                      <div class="text-xs text-gray-400">Muted</div>
-                    </div>
-                  </div>
+                    <p class="text-dark-400 text-sm mt-6">Tùy chỉnh vai trò và quyền hạn cho cộng đồng của bạn</p>
                 </div>
-              </div>
             </div>
-          </div>
-          <div class="lg:col-start-1 lg:row-start-1 space-y-8">
-            <div>
-              <h2
-                class="discord-headline text-4xl md:text-5xl lg:text-6xl text-white mb-6"
-              >
-                Where hanging<br />out is easy
-              </h2>
+            
+            <!-- Text content -->
+            <div class="order-1 lg:order-2 animate-slide-in-right">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-dark-900 mb-6 leading-tight">
+                    Từ vài người<br>đến cả cộng đồng
+                </h2>
+                <p class="text-lg text-dark-500 leading-relaxed">
+                    Quản lý bất kỳ cộng đồng nào với các công cụ kiểm duyệt và quyền truy cập tùy chỉnh. Cấp quyền đặc biệt cho thành viên, thiết lập kênh riêng tư và nhiều hơn nữa.
+                </p>
             </div>
-            <p
-              class="text-lg md:text-xl text-gray-300 leading-relaxed max-w-lg"
-            >
-              Grab a seat in a voice channel when you're free. Friends in your
-              server can see you're around and instantly pop in to talk without
-              having to call.
-            </p>
-          </div>
         </div>
+    </div>
+</section>
 
-        <!-- Feature 3: Moderation -->
-        <div class="grid lg:grid-cols-2 gap-16 items-center">
-          <div class="space-y-8">
-            <div>
-              <h2
-                class="discord-headline text-4xl md:text-5xl lg:text-6xl text-white mb-6"
-              >
-                From few to<br />a fandom
-              </h2>
+<!-- Feature 4: Reliable tech -->
+<section id="safety" class="feature-section-dark py-20 md:py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Text content -->
+            <div class="animate-slide-in-left">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+                    Công nghệ<br>đáng tin cậy
+                </h2>
+                <p class="text-lg text-dark-300 leading-relaxed">
+                    Độ trễ thấp, chất lượng âm thanh và video tuyệt vời. Từ cuộc họp nhóm đến buổi stream game - CoCoCord mang đến trải nghiệm mượt mà nhất.
+                </p>
             </div>
-            <p
-              class="text-lg md:text-xl text-gray-300 leading-relaxed max-w-lg"
-            >
-              Get any community running with moderation tools and custom member
-              access. Give members special powers, set up private channels, and
-              more.
-            </p>
-          </div>
-          <div
-            class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 border border-gray-700/50"
-          >
-            <div class="flex flex-wrap gap-4 justify-center">
-              <span
-                class="px-6 py-3 rounded-full text-white font-bold text-sm bg-gradient-to-r from-red-600 to-red-500 shadow-lg hover:scale-105 transition-transform cursor-pointer border border-red-500/50"
-                >Admin</span
-              >
-              <span
-                class="px-6 py-3 rounded-full text-white font-bold text-sm bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg hover:scale-105 transition-transform cursor-pointer border border-blue-500/50"
-                >Moderator</span
-              >
-              <span
-                class="px-6 py-3 rounded-full text-white font-bold text-sm bg-gradient-to-r from-yellow-600 to-yellow-500 shadow-lg hover:scale-105 transition-transform cursor-pointer border border-yellow-500/50"
-                >VIP</span
-              >
-              <span
-                class="px-6 py-3 rounded-full text-white font-bold text-sm bg-gradient-to-r from-green-600 to-green-500 shadow-lg hover:scale-105 transition-transform cursor-pointer border border-green-500/50"
-                >Member</span
-              >
+            
+            <!-- Tech illustration -->
+            <div class="animate-slide-in-right">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-dark-800 rounded-xl p-6 text-center">
+                        <div class="text-4xl mb-3">🎥</div>
+                        <div class="text-white font-bold">Video HD</div>
+                        <div class="text-dark-400 text-sm">Chất lượng cao</div>
+                    </div>
+                    <div class="bg-dark-800 rounded-xl p-6 text-center">
+                        <div class="text-4xl mb-3">🎧</div>
+                        <div class="text-white font-bold">Âm thanh rõ</div>
+                        <div class="text-dark-400 text-sm">Khử tiếng ồn</div>
+                    </div>
+                    <div class="bg-dark-800 rounded-xl p-6 text-center">
+                        <div class="text-4xl mb-3">📱</div>
+                        <div class="text-white font-bold">Đa nền tảng</div>
+                        <div class="text-dark-400 text-sm">Web, Mobile, Desktop</div>
+                    </div>
+                    <div class="bg-dark-800 rounded-xl p-6 text-center">
+                        <div class="text-4xl mb-3">🔒</div>
+                        <div class="text-white font-bold">Bảo mật</div>
+                        <div class="text-dark-400 text-sm">Mã hóa đầu cuối</div>
+                    </div>
+                </div>
             </div>
-            <p class="text-center text-gray-400 text-sm mt-8">
-              Customize roles and permissions for your community
-            </p>
-          </div>
         </div>
-      </div>
-    </section>
+    </div>
+</section>
 
-    <!-- CTA Section -->
-    <section class="py-40 px-6 relative overflow-hidden">
-      <!-- Background Elements -->
-      <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/30 rounded-full blur-3xl"
-        ></div>
-        <div
-          class="absolute top-1/4 right-0 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl"
-        ></div>
-      </div>
-
-      <div class="relative max-w-4xl mx-auto text-center">
-        <div class="space-y-8 animate-fade-in-up">
-          <h2
-            class="discord-headline text-5xl md:text-6xl lg:text-7xl text-white leading-tight"
-          >
-            Ready to start<br />your journey?
-          </h2>
-
-          <p
-            class="text-2xl md:text-3xl text-gray-300 max-w-2xl mx-auto leading-relaxed"
-          >
-            Join millions of people using Discord to talk, play games, and build
-            communities.
-          </p>
-
-          <div class="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <a
-              href="/register"
-              class="group px-10 py-4 bg-white text-gray-900 font-bold rounded-full hover:scale-105 transition-transform flex items-center justify-center gap-2 text-lg"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                ></path>
-              </svg>
-              Download for Windows
-            </a>
-            <a
-              href="/login"
-              class="px-10 py-4 border-2 border-white text-white font-bold rounded-full hover:bg-white/10 transition-colors text-lg"
-            >
-              Open CoCoCord in your browser
-            </a>
-          </div>
-        </div>
-
-        <!-- Decorative Elements -->
-        <div class="flex justify-center gap-12 mt-24 opacity-60">
-          <div
-            class="w-20 h-20 rounded-full bg-pink-600/20 flex items-center justify-center text-4xl animate-float"
-          >
-            💬
-          </div>
-          <div
-            class="w-20 h-20 rounded-full bg-blue-600/20 flex items-center justify-center text-4xl animate-float animation-delay-200"
-          >
-            🎮
-          </div>
-          <div
-            class="w-20 h-20 rounded-full bg-green-600/20 flex items-center justify-center text-4xl animate-float animation-delay-400"
-          >
-            🎧
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <script>
-      if (typeof window.forceInitAppHome === "function") {
-        window.forceInitAppHome();
-      }
-    </script>
-  </body>
-</html>
+<!-- CTA Section -->
+<section id="support" class="cta-section pt-32 pb-20 px-6">
+    <div class="cta-bg absolute inset-0"></div>
+    <div class="relative z-10 max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-dark-900 mb-8">
+            Sẵn sàng bắt đầu hành trình?
+        </h2>
+        <p class="text-lg text-dark-500 mb-10 max-w-2xl mx-auto">
+            Hàng triệu người đang sử dụng CoCoCord để nói chuyện, chơi game và xây dựng cộng đồng. Tham gia ngay hôm nay!
+        </p>
+        <a href="${pageContext.request.contextPath}/register" class="inline-flex items-center gap-2 px-10 py-4 bg-brand-blurple text-white font-semibold rounded-full hover:bg-brand-blurple-dark hover:shadow-xl transition-all text-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Tải xuống cho Windows
+        </a>
+    </div>
+</section>

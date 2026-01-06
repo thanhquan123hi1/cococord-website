@@ -1,13 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
 <!-- Auth Glass CSS -->
 <link rel="stylesheet" href="${pageContext.request.contextPath}/css/auth-glass.css">
-
-<!-- Alert Container -->
-<div id="alert-container" class="auth-alert-container"></div>
+</head>
 
 <div class="auth-glass-page">
     <!-- Animated Background Orbs -->
@@ -114,10 +113,8 @@
     const token = urlParams.get('token');
     
     if (!token) {
-        showAlert('Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.', 'danger');
-        setTimeout(() => {
-            window.location.href = '${pageContext.request.contextPath}/forgot-password';
-        }, 3000);
+        alert('Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+        window.location.href = '${pageContext.request.contextPath}/forgot-password';
     } else {
         document.getElementById('token').value = token;
     }
@@ -180,7 +177,7 @@
         const confirmPassword = document.getElementById('confirmPassword').value;
         
         if (newPassword !== confirmPassword) {
-            showAlert('Mật khẩu xác nhận không khớp!', 'danger');
+            alert('Mật khẩu xác nhận không khớp!');
             return;
         }
         
@@ -207,82 +204,48 @@
             const backendSuccess = data && typeof data === 'object' ? data.success : undefined;
 
             if (response.ok && backendSuccess !== false) {
-                const suffix = (data && typeof data.message === 'string' && data.message.trim()) ? ` ${data.message.trim()}` : '';
-                showAlert(`${actionName} thành công!${suffix} Đang chuyển đến trang đăng nhập...`, 'success');
+
                 setTimeout(() => {
                     window.location.href = '${pageContext.request.contextPath}/login';
                 }, 2000);
             } else {
-                let errorMessage = `${actionName} thất bại. Vui lòng thử lại.`;
+                console.log('Reset password failed response:', { response, data });
+                let errorMessage = 'Đặt lại mật khẩu thất bại. Vui lòng thử lại.';
 
-                if (data && typeof data === 'object') {
-                    if (typeof data.message === 'string' && data.message.trim()) {
-                        errorMessage = `${actionName} thất bại: ${data.message.trim()}`;
+                if (data) {
+                    // Check for message field
+                    if (data.message && typeof data.message === 'string' && data.message.trim()) {
+                        errorMessage = data.message.trim();
                     }
-                    if (data.errors && typeof data.errors === 'object') {
+                    // Check for error field
+                    else if (data.error && typeof data.error === 'string' && data.error.trim()) {
+                        errorMessage = data.error.trim();
+                    }
+                    // Check for errors object
+                    else if (data.errors && typeof data.errors === 'object') {
                         const errorValues = Object.values(data.errors)
-                            .filter(v => typeof v === 'string' && v.trim())
+                            .filter(v => v && typeof v === 'string' && v.trim())
                             .map(v => v.trim());
                         if (errorValues.length > 0) {
-                            errorMessage = `${actionName} thất bại:<br>${errorValues.join('<br>')}`;
+                            errorMessage = errorValues.join('<br>');
                         }
                     }
                 }
+                
+                // Handle specific status codes
+                if (response.status === 400) {
+                    errorMessage = 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.';
+                } else if (response.status === 404) {
+                    errorMessage = 'Token không hợp lệ.';
+                } else if (response.status >= 500) {
+                    errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
+                }
 
-                showAlert(errorMessage, 'danger');
                 setButtonLoading(btn, false);
             }
         } catch (error) {
             console.error('Reset password error:', error);
-            if (error?.name === 'AbortError') {
-                showAlert('Đặt lại mật khẩu thất bại: Yêu cầu quá lâu. Vui lòng thử lại.', 'danger');
-            } else {
-                showAlert('Đặt lại mật khẩu thất bại: Có lỗi xảy ra. Vui lòng thử lại sau.', 'danger');
-            }
             setButtonLoading(btn, false);
         }
     });
-
-    // Alert System
-    function showAlert(message, type = 'info') {
-        const icons = {
-            success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-            danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-            warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
-            info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
-        };
-        const titles = { success: 'Thành công', danger: 'Lỗi', warning: 'Cảnh báo', info: 'Thông báo' };
-
-        const container = document.getElementById('alert-container');
-        if (!container) return;
-
-        const alertEl = document.createElement('div');
-        alertEl.className = `auth-alert auth-alert--${type}`;
-        alertEl.setAttribute('role', 'alert');
-        alertEl.innerHTML = `
-            <div class="auth-alert-row">
-                <div class="auth-alert-icon">${icons[type] || icons.info}</div>
-                <div class="auth-alert-content">
-                    <div class="auth-alert-title">${titles[type] || 'Thông báo'}</div>
-                    <div class="auth-alert-message">${message}</div>
-                </div>
-                <button type="button" class="auth-alert-close" aria-label="Đóng">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="auth-alert-progress"></div>
-        `;
-
-        alertEl.querySelector('.auth-alert-close').addEventListener('click', () => removeAlert(alertEl));
-        container.appendChild(alertEl);
-        setTimeout(() => removeAlert(alertEl), 5000);
-    }
-
-    function removeAlert(alert) {
-        if (!alert || !alert.parentNode) return;
-        alert.classList.add('removing');
-        setTimeout(() => alert.remove(), 300);
-    }
 </script>
