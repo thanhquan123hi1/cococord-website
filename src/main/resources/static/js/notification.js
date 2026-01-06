@@ -612,7 +612,18 @@ class InboxManager {
     createItemHtml(notif) {
         const unreadClass = notif && notif.isRead === false ? 'unread' : '';
         const timeAgo = this.formatTimeAgo(notif && notif.createdAt);
-        const msg = this.escapeHtml((notif && notif.message) || '');
+        
+        let rawMsg = (notif && notif.message) || '';
+        // Fix for GIF/Sticker URLs showing as raw text
+        if (rawMsg.includes('media.tenor.com') || rawMsg.endsWith('.gif')) {
+            rawMsg = 'Đã gửi một GIF';
+        } else if (rawMsg.includes('/stickers/') || rawMsg.includes('sticker') || rawMsg.includes('data:image/svg') || rawMsg.includes('class="message-sticker"')) {
+            rawMsg = 'Đã gửi một nhãn dán';
+        } else if (rawMsg.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i)) {
+            rawMsg = 'Đã gửi một hình ảnh';
+        }
+
+        const msg = this.escapeHtml(rawMsg);
         const link = (notif && notif.link) ? String(notif.link) : '';
         return `
             <div class="inbox-item ${unreadClass}" data-id="${notif && notif.id != null ? String(notif.id) : ''}" data-link="${this.escapeHtml(link)}">
