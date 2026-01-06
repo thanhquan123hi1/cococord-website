@@ -525,46 +525,66 @@
             };
 
             pc.ontrack = (e) => {
-                log('🎥 Remote track received:', e.track.kind, 'id:', e.track.id);
-                log('Track enabled:', e.track.enabled, 'readyState:', e.track.readyState);
-                log('Event streams available:', e.streams?.length || 0);
+                log('🎥 ============ Remote track received ============');
+                log('Track kind:', e.track.kind);
+                log('Track id:', e.track.id);
+                log('Track enabled:', e.track.enabled);
+                log('Track muted:', e.track.muted);
+                log('Track readyState:', e.track.readyState);
+                log('Streams available:', e.streams?.length || 0);
                 
                 // Use the stream from the event directly (like voice-manager.js does)
                 // This is more reliable than creating a new MediaStream
                 const stream = e.streams?.[0];
                 if (stream) {
-                    log('Using stream from event.streams[0], id:', stream.id);
+                    log('✅ Using stream from event.streams[0], id:', stream.id);
+                    log('Stream tracks in event:', stream.getTracks().map(t => t.kind));
                     state.remoteStream = stream;
                 } else {
                     // Fallback: create new stream and add track
-                    log('No stream in event, creating new MediaStream');
+                    log('⚠️ No stream in event, creating new MediaStream');
                     if (!state.remoteStream) {
                         state.remoteStream = new MediaStream();
                     }
                     state.remoteStream.addTrack(e.track);
                 }
                 
-                log('Remote stream tracks:', state.remoteStream.getTracks().map(t => ({kind: t.kind, enabled: t.enabled})));
+                const currentTracks = state.remoteStream.getTracks();
+                log('📊 Remote stream current tracks:', currentTracks.map(t => ({
+                    kind: t.kind, 
+                    enabled: t.enabled,
+                    muted: t.muted,
+                    readyState: t.readyState
+                })));
 
                 // Attach audio - critical for hearing the other person
                 // Use the working pattern from voice-manager.js
-                attachRemoteAudio(state.remoteStream);
+                if (e.track.kind === 'audio' || state.remoteStream.getAudioTracks().length > 0) {
+                    log('🔊 Attaching remote audio stream');
+                    attachRemoteAudio(state.remoteStream);
+                }
 
                 // Attach video element if video call
                 const remoteVideo = document.getElementById('callRemoteVideo');
                 log('Remote video element found:', !!remoteVideo, 'state.video:', state.video);
+                
                 if (remoteVideo && state.video && state.remoteStream.getVideoTracks().length > 0) {
-                    log('Attaching video stream to <video> element');
+                    log('🎬 Attaching video stream to <video> element');
                     remoteVideo.srcObject = state.remoteStream;
                     remoteVideo.muted = false; // Important: don't mute the video element's audio
                     remoteVideo.autoplay = true;
                     remoteVideo.playsInline = true;
                     remoteVideo.play().catch(err => warn('Video play failed:', err));
-                    log('Remote video attached, srcObject:', !!remoteVideo.srcObject);
+                    log('✅ Remote video attached, srcObject:', !!remoteVideo.srcObject);
                 } else {
-                    if (!remoteVideo) error('callRemoteVideo element not found!');
-                    if (!state.video) log('Not a video call, skipping video attachment');
+                    if (!remoteVideo) error('❌ callRemoteVideo element not found!');
+                    if (!state.video) log('ℹ️ Not a video call, skipping video attachment');
+                    if (state.remoteStream.getVideoTracks().length === 0) {
+                        warn('⚠️ No video tracks in remote stream yet');
+                    }
                 }
+                
+                log('🎥 ============ ontrack handler complete ============');
             };
 
         pc.oniceconnectionstatechange = () => {
@@ -612,12 +632,23 @@
     async function ensureLocalMedia(video) {
         if (state.localStream) {
             log('✅ Using existing local stream');
-            log('📊 Existing stream tracks:', state.localStream.getTracks().map(t => ({
+            const tracks = state.localStream.getTracks();
+            log('📊 Existing stream tracks:', tracks.map(t => ({
                 kind: t.kind,
                 enabled: t.enabled,
+                muted: t.muted,
                 readyState: t.readyState,
                 label: t.label
             })));
+            
+            // Verify and re-enable tracks if needed
+            tracks.forEach(track => {
+                if (!track.enabled) {
+                    log('⚠️ Re-enabling disabled track:', track.kind);
+                    track.enabled = true;
+                }
+            });
+            
             return state.localStream;
         }
 
@@ -630,17 +661,24 @@
             });
 
             log('✅ getUserMedia successful!');
-            log('📊 New stream tracks:', state.localStream.getTracks().map(t => ({
+            const tracks = state.localStream.getTracks();
+            log('📊 New stream tracks:', tracks.map(t => ({
                 kind: t.kind,
                 enabled: t.enabled,
+                muted: t.muted,
                 readyState: t.readyState,
                 label: t.label
             })));
 
-            // Verify tracks are enabled
-            state.localStream.getTracks().forEach(track => {
+            // Verify tracks are enabled and not muted
+            tracks.forEach(track => {
                 if (!track.enabled) {
                     error('❌ Track is disabled:', track.kind);
+                    track.enabled = true; // Force enable
+                    log('🔧 Force enabled track:', track.kind);
+                }
+                if (track.muted) {
+                    warn('⚠️ Track is muted (browser/OS level):', track.kind);
                 }
                 if (track.readyState !== 'live') {
                     error('❌ Track is not live:', track.kind, track.readyState);
@@ -1021,6 +1059,14 @@
         // Create OFFER immediately after adding tracks (WebRTC standard flow)
         try {
             log('Creating OFFER immediately after addTrack...');
+            
+            // Verify tracks before creating offer
+            const senders = state.pc.getSenders();
+            log('📊 Verify before createOffer:');
+            log('  - Total senders:', senders.length);
+            log('  - Audio sender:', !!senders.find(s => s.track?.kind === 'audio'));
+            log('  - Video sender:', video ? !!senders.find(s => s.track?.kind === 'video') : 'N/A');
+            
             const offer = await state.pc.createOffer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: video
