@@ -1,16 +1,22 @@
 package vn.cococord.entity.mongodb;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Document(collection = "direct_messages")
 @CompoundIndex(def = "{'dmGroupId': 1, 'createdAt': -1}")
@@ -50,6 +56,13 @@ public class DirectMessage {
     private Boolean callVideo;
 
     private Integer callDurationSeconds;
+
+    /**
+     * JSON string containing additional metadata for sticker/gif/rich content
+     * Example for sticker: {"stickerId": "123", "packId": "456"}
+     * Example for GIF: {"gifId": "abc", "source": "tenor"}
+     */
+    private String metadata;
 
     // For reply
     private String parentMessageId;
@@ -99,6 +112,8 @@ public class DirectMessage {
         FILE,
         AUDIO,
         VIDEO,
+        STICKER,
+        GIF,
         SYSTEM
     }
 

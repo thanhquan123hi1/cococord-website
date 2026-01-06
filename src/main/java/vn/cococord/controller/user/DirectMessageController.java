@@ -243,7 +243,7 @@ public class DirectMessageController {
     }
 
     /**
-     * Send a direct message
+     * Send a direct message with support for file, sticker, GIF
      */
     @PostMapping("/{dmGroupId}/messages")
     public ResponseEntity<DirectMessage> sendMessage(
@@ -251,16 +251,18 @@ public class DirectMessageController {
             @Valid @RequestBody SendDirectMessageRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = getUserIdFromUsername(userDetails.getUsername());
-        log.info("[DM-REST] 📨 User {} sending message to dmGroupId={}", userId, dmGroupId);
+        log.info("[DM-REST] 📨 User {} sending message to dmGroupId={}, type={}", userId, dmGroupId, request.getType());
         log.info("[DM-REST] Message content: {}", request.getContent());
 
         DirectMessage message = directMessageService.sendDirectMessageWithAttachments(
                 dmGroupId,
                 userId,
                 request.getContent(),
-                request.getAttachmentUrls());
+                request.getAttachmentUrls(),
+                request.getType(),
+                request.getMetadata());
 
-        log.info("[DM-REST] ✅ Message saved with id={}", message.getId());
+        log.info("[DM-REST] ✅ Message saved with id={}, type={}", message.getId(), message.getType());
 
         // Broadcast to WebSocket topic for real-time delivery to ALL participants
         String destination = "/topic/dm/" + dmGroupId;

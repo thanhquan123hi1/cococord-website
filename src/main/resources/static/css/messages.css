@@ -2275,6 +2275,47 @@ html, body {
     margin-top: 5px;
 }
 
+/* Image (single image message) */
+.message-image {
+    max-width: 100%;
+    max-height: 350px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 5px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.message-image:hover {
+    opacity: 0.9;
+}
+
+/* Video (inline video message) */
+.message-video {
+    max-width: 100%;
+    max-height: 350px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Audio (inline audio message) */
+.message-audio {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 5px;
+}
+
+/* System message (join, leave, etc.) */
+.system-message {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 4px 0;
+}
+.system-message em {
+    font-style: italic;
+}
+
 /* Attachments */
 .message-attachments {
     display: flex;

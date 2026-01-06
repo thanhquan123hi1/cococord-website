@@ -1,11 +1,12 @@
 package vn.cococord.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import vn.cococord.entity.mongodb.DirectMessage;
 import vn.cococord.entity.mysql.DirectMessageGroup;
-
-import java.util.List;
 
 /**
  * Service interface for Direct Message operations (1-1 and Group DM)
@@ -68,6 +69,20 @@ public interface IDirectMessageService {
      */
     DirectMessage sendDirectMessageWithAttachments(Long dmGroupId, Long senderId, String content,
             List<String> attachmentUrls);
+
+    /**
+     * Send message with attachments, type and metadata (supports sticker, GIF, etc.)
+     * 
+     * @param dmGroupId      the DM group ID
+     * @param senderId       the sender's user ID
+     * @param content        the message content (for sticker/gif, this is the URL)
+     * @param attachmentUrls list of attachment URLs
+     * @param type           message type: TEXT, IMAGE, FILE, STICKER, GIF, AUDIO, VIDEO
+     * @param metadata       JSON string with additional metadata for sticker/gif
+     * @return the saved DirectMessage
+     */
+    DirectMessage sendDirectMessageWithAttachments(Long dmGroupId, Long senderId, String content,
+            List<String> attachmentUrls, String type, String metadata);
 
     /**
      * Get messages in DM group with pagination
