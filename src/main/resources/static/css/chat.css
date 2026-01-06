@@ -1143,22 +1143,6 @@ body {
   color: var(--status-online);
 }
 
-/* Message Row */
-#chatApp .message-row {
-  display: flex;
-  padding: 1px 48px 1px 72px;
-  position: relative;
-  margin-top: 6px;
-}
-
-#chatApp .message-row:hover {
-  background-color: var(--bg-modifier-hover);
-}
-
-#chatApp .message-row.continued {
-  margin-top: 0;
-  padding-top: 1px;
-}
 
 #chatApp .message-row.continued .message-avatar {
   display: none;
@@ -1172,20 +1156,6 @@ body {
   display: block;
 }
 
-#chatApp .message-avatar {
-    width: 40px;          /* Bắt buộc có chiều rộng */
-    min-width: 40px;      /* Quan trọng: Ngăn không cho co lại khi rỗng */
-    height: 40px;
-    margin-right: 16px;   /* Khoảng cách giữa avatar và nội dung */
-    flex-shrink: 0;       /* Quan trọng: Không bị nén trong flexbox */
-    
-    /* Thêm để căn chỉnh placeholder (chữ cái đầu) đẹp hơn */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: var(--bg-modifier-selected); /* Màu nền nếu không có ảnh */
-}
 
 /* Đảm bảo ảnh bên trong (nếu có) luôn tròn và vừa khung */
 #chatApp .message-avatar img {
@@ -1196,15 +1166,12 @@ body {
     display: block; /* Sửa lỗi khoảng trắng thừa dưới ảnh */
 }
 
-#chatApp .message-body {
-  flex: 1;
-  min-width: 0;
-}
+
 
 #chatApp .message-header {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
 }
 
 #chatApp .message-author {
@@ -1234,8 +1201,8 @@ body {
 
 #chatApp .message-content {
   color: var(--text-normal);
-  font-size: 16px;
-  line-height: 1.375;
+  font-size: 1rem;
+  line-height: 1.375rem;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -1343,6 +1310,172 @@ body {
 #chatApp .attachment-file-size {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ==================== MESSAGES FIXES ==================== */
+/* --- FIX SPACING CHAT SERVER --- */
+
+/* Loại bỏ margin thừa của các thẻ p trong nội dung tin nhắn */
+#chatApp .message-content p {
+    margin: 0 !important;
+    display: block !important; 
+    min-height: 1.375rem;
+}
+
+/* Tạo khoảng cách nhỏ nếu tin nhắn có nhiều đoạn văn */
+#chatApp .message-content p + p {
+    margin-top: 4px !important;
+}
+
+/* Đảm bảo ảnh/video không bị đẩy quá xa */
+#chatApp .message-content img,
+#chatApp .message-content video {
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+/* ================================================================= */
+/* === SỬA LỖI LAYOUT CHAT DISCORD (CĂN CHỈNH & GIÃN DÒNG) === */
+/* ================================================================= */
+
+/* 1. KHUNG BAO NGOÀI TIN NHẮN */
+#chatApp .message-row {
+    display: flex !important;
+    position: relative !important;
+    padding: 2px 16px !important; 
+    margin-top: 17px !important;
+    width: 100%;
+    box-sizing: border-box;
+    transition: background-color 0.1s;
+}
+
+#chatApp .message-row:hover {
+    background-color: rgba(4, 4, 5, 0.07);
+}
+
+#chatApp .message-row.continued {
+    margin-top: 0 !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
+/* 2. KHUNG AVATAR */
+#chatApp .message-avatar {
+    width: 40px !important;
+    min-width: 40px !important; 
+    height: 40px !important;
+    margin-right: 16px !important;
+    flex-shrink: 0 !important;
+    
+    /* Căn chỉnh ảnh */
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Avatar luôn nằm ở đầu dòng */
+    margin-top: 2px; /* Tinh chỉnh nhỏ để khớp dòng chữ đầu tiên */
+    cursor : pointer;
+}
+
+#chatApp .message-avatar img,
+#chatApp .message-avatar .avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.1s;
+}
+
+#chatApp .message-avatar .avatar-placeholder {
+    background-color: var(--discord-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+#chatApp .timestamp-hover {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px; /* Bằng chiều rộng avatar */
+    text-align: center; /* Căn giữa số giờ */
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 40px; /* Căn giữa theo chiều dọc của ô 40px */
+    user-select: none;
+}
+
+/* Khi hover vào dòng tin nhắn -> Hiện timestamp bên trái */
+#chatApp .message-row:hover .timestamp-hover {
+    display: block !important;
+}
+
+#chatApp .message-avatar:hover img {
+    opacity: 0.8;
+}
+
+#chatApp .message-row.continued .message-avatar {
+    height: auto !important; /* Cho phép chiều cao linh hoạt */
+}
+
+/* 4. KHUNG NỘI DUNG VĂN BẢN */
+#chatApp .message-body {
+    flex: 1;      /* Chiếm toàn bộ không gian còn lại */
+    min-width: 0; /* Fix lỗi layout flexbox khi text quá dài */
+}
+
+/* 5. XỬ LÝ VĂN BẢN (FIX LỖI GIÃN DÒNG QUÁ RỘNG) */
+#chatApp .message-content {
+    color: var(--text-normal);
+    font-size: 1rem;
+    line-height: 1.375rem; /* Chiều cao dòng chuẩn Discord */
+    word-wrap: break-word; 
+    white-space: pre-wrap; /* Quan trọng: Giữ xuống dòng của user */
+}
+
+
+
+/* 6. HEADER TIN NHẮN (TÊN + GIỜ) */
+#chatApp .message-header {
+    display: flex;
+    align-items: center;
+    line-height: 1.375rem;
+    margin-bottom: 2px; /* Khoảng cách nhỏ giữa tên và nội dung chat */
+}
+
+#chatApp .message-author {
+    font-weight: 600;
+    color : var(--text-normal);
+    margin-right: 0.25rem;
+    cursor: pointer;
+}
+
+#chatApp .message-author:hover {
+    text-decoration: underline;
+}
+
+#chatApp .message-timestamp {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 0.25rem;
+}
+
+#chatApp .message-content > *:first-child { margin-top: 0 !important; }
+#chatApp .message-content > *:last-child { margin-bottom: 0 !important; }
+
+#chatApp .message-row.continued .message-avatar img,
+#chatApp .message-row.continued .message-avatar .avatar-placeholder {
+    opacity: 0 !important; 
+    visibility: hidden !important; 
+}
+
+
+#chatApp .message-content {
+    line-height: 1.375rem;
+    white-space: pre-wrap; /* Giữ xuống dòng của user */
 }
 
 /* ==================== CHAT COMPOSER ==================== */
@@ -2457,53 +2590,4 @@ body {
 .channel-sidebar .disabled-action:hover,
 .server-dropdown .disabled-action:hover {
     background: transparent !important;
-}
-
-/* --- FIX SPACING CHAT SERVER --- */
-
-/* Loại bỏ margin thừa của các thẻ p trong nội dung tin nhắn */
-#chatApp .message-content p {
-    margin: 0;
-}
-
-/* Tạo khoảng cách nhỏ nếu tin nhắn có nhiều đoạn văn */
-#chatApp .message-content p + p {
-    margin-top: 4px;
-}
-
-/* Đảm bảo ảnh/video không bị đẩy quá xa */
-#chatApp .message-content img,
-#chatApp .message-content video {
-    margin-top: 4px;
-    margin-bottom: 2px;
-}
-/* --- FIX SPACING & LAYOUT --- */
-
-/* 1. Giảm khoảng cách giữa các tin nhắn nối tiếp (continued) */
-#chatApp .message-row.continued {
-    margin-top: 2px !important;    /* Khoảng cách nhỏ giữa các dòng tin nhắn liên tiếp */
-    padding-top: 0 !important;
-}
-
-/* 2. Khoảng cách chuẩn cho tin nhắn mới (có avatar) */
-#chatApp .message-row {
-    margin-top: 16px;             /* Khoảng cách giữa các nhóm tin nhắn */
-    display: flex;                /* Đảm bảo layout flex hoạt động */
-    align-items: flex-start;      /* Căn nội dung theo dòng trên cùng */
-}
-
-/* 3. Xử lý margin của văn bản (quan trọng nhất để giảm độ cao dòng) */
-#chatApp .message-content {
-    line-height: 1.375rem;        /* Chiều cao dòng chuẩn Discord */
-    color: var(--text-normal);
-}
-
-#chatApp .message-content p {
-    margin-bottom: 0 !important;  /* Loại bỏ khoảng trắng dưới mỗi đoạn văn */
-    margin-top: 0 !important;
-}
-
-/* Nếu có nhiều đoạn văn trong 1 tin nhắn, tạo khoảng cách nhỏ */
-#chatApp .message-content p + p {
-    margin-top: 6px !important;
 }

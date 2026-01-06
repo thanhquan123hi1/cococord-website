@@ -695,101 +695,64 @@
     }
 
     /**
-     * Render a single message item (for VirtualScroller)
+     * Render a single message item (Fix layout template string)
      */
     function renderMessageItem(msg, index) {
+        if (!msg) return '';
+        // --- LOGIC ---
         const prevMsg = index > 0 && messages[index - 1] ? messages[index - 1] : null;
-
-        const currentId = msg.userId || msg.senderId;
-        const prevId = prevMsg ? (prevMsg.userId || prevMsg.senderId) : null;
-        
-        // Tính khoảng thời gian giữa 2 tin nhắn
+        const currentId = String(msg.userId || msg.senderId || '');
+        const prevId = prevMsg ? String(prevMsg.userId || prevMsg.senderId || '') : null;
         const currentTime = new Date(msg.createdAt || msg.timestamp).getTime();
         const prevTime = prevMsg ? new Date(prevMsg.createdAt || prevMsg.timestamp).getTime() : 0;
-        
-        // Là tin nhắn nối tiếp nếu: cùng người gửi VÀ cách nhau dưới 5 phút (300000ms)
+
         const isContinued = prevMsg && (currentId === prevId) && ((currentTime - prevTime) < 5 * 60 * 1000);
-        
+
         const displayName = msg.displayName || msg.username || 'User';
         const initial = displayName.trim().charAt(0).toUpperCase();
         
-        // Render content based on message type
         let htmlContent = '';
         if (msg.type === 'STICKER') {
-            const stickerUrl = msg.content || '';
-            htmlContent = `<img src="${escapeHtml(stickerUrl)}" class="message-sticker" alt="Sticker" loading="lazy" />`;
+            htmlContent = `<img src="${escapeHtml(msg.content)}" class="message-sticker" loading="lazy" />`;
         } else {
-            const rawContent = msg.content || '';
-            htmlContent = window.CocoCordMarkdown 
-                ? window.CocoCordMarkdown.render(rawContent)
-                : escapeHtml(rawContent);
+            const rawContent = (msg.content || '').trim();
+            htmlContent = window.CocoCordMarkdown ? window.CocoCordMarkdown.render(rawContent) : escapeHtml(rawContent);
         }
+        
+        const attachmentsHtml = renderAttachments(msg); // Hàm helper ở dưới
 
-        // Render attachments if any
-        let attachmentsHtml = '';
-        if (msg.attachments && msg.attachments.length > 0) {
-            attachmentsHtml = '<div class="message-attachments">';
-            
-            msg.attachments.forEach(att => {
-                const fileUrl = escapeHtml(att.fileUrl);
-                const fileName = escapeHtml(att.fileName);
-                const fileType = att.fileType || '';
-                const fileSize = formatFileSize(att.fileSize || 0);
-                
-                if (fileType.startsWith('image/')) {
-                    attachmentsHtml += `
-                        <div class="attachment-item">
-                            <a href="${fileUrl}" target="_blank" rel="noopener noreferrer">
-                                <img src="${fileUrl}" alt="${fileName}" class="attachment-image" loading="lazy">
-                            </a>
-                        </div>
-                    `;
-                } else if (fileType.startsWith('video/')) {
-                    attachmentsHtml += `
-                        <div class="attachment-item">
-                            <video src="${fileUrl}" controls class="attachment-video"></video>
-                        </div>
-                    `;
-                } else {
-                    // Generic file
-                    attachmentsHtml += `
-                        <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="attachment-file">
-                            <div class="attachment-file-icon">
-                                <i class="bi bi-file-earmark-text"></i>
-                            </div>
-                            <div class="attachment-file-info">
-                                <span class="attachment-file-name" title="${fileName}">${fileName}</span>
-                                <span class="attachment-file-size">${fileSize}</span>
-                            </div>
-                            <i class="bi bi-download" style="margin-left: auto; color: var(--text-muted);"></i>
-                        </a>
-                    `;
-                }
-            });
-            
-            attachmentsHtml += '</div>';
-        }
-
+        const avatarHtml = msg.avatarUrl 
+            ? `<img src="${escapeHtml(msg.avatarUrl)}" class="avatar-img" alt="Avatar">`
+            : `<div class="avatar-placeholder">${initial}</div>`;
+        const timeShort = new Date(msg.createdAt || msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         return `
-            <div class="message-row ${isContinued ? 'continued' : ''}" data-message-id="${msg.id}" data-user-id="${msg.userId || msg.senderId || ''}" data-username="${msg.username || ''}">
-                <div class="message-avatar">
-                    ${!isContinued ? (msg.avatarUrl ? `<img src="${escapeHtml(msg.avatarUrl)}" alt="${escapeHtml(displayName)}">` : initial) : ''}
+            <div class="message-row ${isContinued ? 'continued' : ''}" data-message-id="${msg.id}" data-user-id="${currentId}">
+                <div class="message-avatar" onclick="showUserProfile('${currentId}')">
+                    ${avatarHtml} 
+                    <span class="timestamp-hover">${timeShort}</span>
                 </div>
                 <div class="message-body">
-                    ${!isContinued ? `
-                    <div class="message-header">
-                        <span class="message-author" title="${escapeHtml(msg.username || 'user')}#${discriminatorFromId(msg.userId || msg.senderId)}">${escapeHtml(displayName)}</span>
-                        <span class="message-timestamp">${formatTime(msg.createdAt)}</span>
-                        ${msg.editedAt ? '<span class="message-edited">(đã chỉnh sửa)</span>' : ''}
-                    </div>
-                    ` : ''}
-                    <div class="message-content markdown-content">
-                        ${htmlContent}
-                        ${attachmentsHtml}
-                    </div>
+                    ${!isContinued ? `<div class="message-header"><span class="message-author" onclick="showUserProfile('${currentId}')">${escapeHtml(displayName)}</span><span class="message-timestamp">${formatTime(msg.createdAt)}</span></div>` : ''}
+                    <div class="message-content markdown-content">${htmlContent}${attachmentsHtml}</div>
                 </div>
-            </div>
-        `;
+            </div>`;
+    }
+
+    // Hàm phụ trợ giữ cho code gọn
+    function renderAttachments(msg) {
+        if (!msg.attachments || msg.attachments.length === 0) return '';
+        let html = '<div class="message-attachments">';
+        msg.attachments.forEach(att => {
+            const fileUrl = escapeHtml(att.fileUrl);
+            const fileName = escapeHtml(att.fileName);
+            if (att.fileType && att.fileType.startsWith('image/')) {
+                html += `<div class="attachment-item"><a href="${fileUrl}" target="_blank"><img src="${fileUrl}" alt="${fileName}" class="attachment-image" loading="lazy"></a></div>`;
+            } else {
+                html += `<div class="attachment-item"><a href="${fileUrl}" target="_blank" class="attachment-file"><i class="bi bi-file-earmark"></i> ${fileName}</a></div>`;
+            }
+        });
+        html += '</div>';
+        return html;
     }
 
     // Helper to format file size
