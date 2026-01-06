@@ -653,14 +653,26 @@
             const container = this.modal.querySelector('#rolesList');
             if (!container) return;
             
-            container.innerHTML = this.roles.map(role => `
-                <div class="role-item ${role.id === this.selectedRoleId ? 'active' : ''}" 
-                     data-role-id="${role.id}">
+            // Sort roles: @Admin first, @everyone last, others in between
+            const sortedRoles = [...this.roles].sort((a, b) => {
+                if (a.name === '@Admin') return -1;
+                if (b.name === '@Admin') return 1;
+                if (a.name === '@everyone') return 1;
+                if (b.name === '@everyone') return -1;
+                return (b.position || 0) - (a.position || 0);
+            });
+            
+            container.innerHTML = sortedRoles.map(role => {
+                const isLocked = role.name === '@Admin' || role.name === '@everyone';
+                return `
+                <div class="role-item ${String(role.id) === String(this.selectedRoleId) ? 'active' : ''} ${isLocked ? 'locked' : ''}" 
+                     data-role-id="${role.id}" data-locked="${isLocked}">
                     <div class="role-color" style="background-color: ${role.color || '#99aab5'}"></div>
                     <span class="role-name">${this._escapeHtml(role.name)}</span>
+                    ${isLocked ? '<i class="bi bi-lock-fill role-lock-icon" title="Vai trò mặc định"></i>' : ''}
                     <span class="role-count">${role.memberCount || 0}</span>
                 </div>
-            `).join('');
+            `}).join('');
             
             // Bind click events
             container.querySelectorAll('.role-item').forEach(item => {
@@ -678,7 +690,7 @@
             
             // Update list selection
             this.modal.querySelectorAll('.role-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.roleId === roleId);
+                item.classList.toggle('active', String(item.dataset.roleId) === String(roleId));
             });
             
             // Show editor
@@ -690,27 +702,60 @@
             content.style.flexDirection = 'column';
             content.style.height = '100%';
             
+            // Check if role is locked (@Admin or @everyone)
+            const isAdmin = role.name === '@Admin';
+            const isLocked = isAdmin || role.name === '@everyone';
+            
             // Populate editor
             this.modal.querySelector('#editingRoleName').textContent = role.name;
-            this.modal.querySelector('#roleNameInput').value = role.name;
-            this.modal.querySelector('#roleColorInput').value = role.color || '#99aab5';
+            
+            const roleNameInput = this.modal.querySelector('#roleNameInput');
+            const roleColorInput = this.modal.querySelector('#roleColorInput');
+            const deleteRoleBtn = this.modal.querySelector('#btnDeleteRole');
+            
+            roleNameInput.value = role.name.replace(/^@/, ''); // Remove @ prefix for display
+            roleColorInput.value = role.color || '#99aab5';
+            
+            // Disable inputs for locked roles
+            roleNameInput.disabled = isLocked;
+            roleColorInput.disabled = isAdmin; // @Admin color cannot change
+            deleteRoleBtn.style.display = isLocked ? 'none' : 'flex';
+            
+            // Show lock notice for @Admin
+            let lockNotice = this.modal.querySelector('.role-lock-notice');
+            if (isAdmin) {
+                if (!lockNotice) {
+                    lockNotice = document.createElement('div');
+                    lockNotice.className = 'role-lock-notice';
+                    content.querySelector('.roles-editor-header').insertAdjacentElement('afterend', lockNotice);
+                }
+                lockNotice.innerHTML = '<i class="bi bi-shield-lock"></i> Vai trò @Admin có tất cả quyền và không thể chỉnh sửa';
+                lockNotice.style.display = 'block';
+            } else if (lockNotice) {
+                lockNotice.style.display = 'none';
+            }
             
             // Set permissions
-            const permissions = role.permissions || 0;
             this.modal.querySelectorAll('[data-permission]').forEach(checkbox => {
                 const permKey = checkbox.dataset.permission;
-                // Check if permission bit is set (simplified - you'd need actual bitmask logic)
-                checkbox.checked = role.permissionsList?.includes(permKey) || false;
+                if (isAdmin) {
+                    // @Admin has ALL permissions, always checked and disabled
+                    checkbox.checked = true;
+                    checkbox.disabled = true;
+                } else {
+                    checkbox.checked = role.permissionsList?.includes(permKey) || false;
+                    checkbox.disabled = false;
+                }
             });
         }
 
         _createNewRole() {
             const newRole = {
                 id: 'new_' + Date.now(),
-                name: 'Vai trò mới',
+                name: '@VaiTroMoi',
                 color: ROLE_COLORS[Math.floor(Math.random() * ROLE_COLORS.length)],
                 permissions: 0,
-                permissionsList: [],
+                permissionsList: ['VIEW_CHANNELS', 'SEND_MESSAGES', 'READ_MESSAGE_HISTORY'],
                 memberCount: 0,
                 isNew: true
             };
@@ -721,14 +766,40 @@
             this._checkForChanges();
         }
 
+        // Validate role name - only letters, numbers, Vietnamese characters allowed
+        _validateRoleName(name) {
+            // Remove @ prefix if present
+            const cleanName = name.replace(/^@/, '').trim();
+            
+            // Check for empty name
+            if (!cleanName) {
+                return { valid: false, error: 'Tên vai trò không được để trống' };
+            }
+            
+            // Only allow letters, numbers, Vietnamese chars, spaces
+            // No special characters or SQL injection patterns
+            const validPattern = /^[a-zA-Z0-9\u00C0-\u024F\u1E00-\u1EFF\s]+$/;
+            if (!validPattern.test(cleanName)) {
+                return { valid: false, error: 'Tên vai trò chỉ được chứa chữ cái và số, không có ký tự đặc biệt' };
+            }
+            
+            // Check length
+            if (cleanName.length < 2 || cleanName.length > 50) {
+                return { valid: false, error: 'Tên vai trò phải từ 2-50 ký tự' };
+            }
+            
+            return { valid: true, cleanName };
+        }
+
         _deleteSelectedRole() {
             if (!this.selectedRoleId) return;
             
             const role = this.roles.find(r => String(r.id) === String(this.selectedRoleId));
             if (!role) return;
             
-            if (role.name === '@everyone') {
-                this._showToast('Không thể xóa vai trò @everyone', 'error');
+            // Cannot delete default roles
+            if (role.name === '@everyone' || role.name === '@Admin') {
+                this._showToast(`Không thể xóa vai trò mặc định ${role.name}`, 'error');
                 return;
             }
             
@@ -751,12 +822,34 @@
             const role = this.roles.find(r => String(r.id) === String(this.selectedRoleId));
             if (!role) return;
             
-            role.name = name;
-            this.modal.querySelector('#editingRoleName').textContent = name;
+            // Don't allow editing locked roles
+            if (role.name === '@Admin' || role.name === '@everyone') {
+                return;
+            }
+            
+            // Validate name
+            const validation = this._validateRoleName(name);
+            if (!validation.valid) {
+                // Show validation error but don't block typing
+                const input = this.modal.querySelector('#roleNameInput');
+                input.classList.add('invalid');
+                input.title = validation.error;
+                return;
+            }
+            
+            // Clear validation error
+            const input = this.modal.querySelector('#roleNameInput');
+            input.classList.remove('invalid');
+            input.title = '';
+            
+            // Auto-prefix with @ if not already present
+            const formattedName = '@' + validation.cleanName;
+            role.name = formattedName;
+            this.modal.querySelector('#editingRoleName').textContent = formattedName;
             
             // Update list
             const listItem = this.modal.querySelector(`.role-item[data-role-id="${this.selectedRoleId}"] .role-name`);
-            if (listItem) listItem.textContent = name;
+            if (listItem) listItem.textContent = formattedName;
             
             this._checkForChanges();
         }
@@ -1053,16 +1146,45 @@
                 return;
             }
 
-            container.innerHTML = this.filteredMembers.map(member => `
-                <div class="member-item" data-user-id="${member.userId}">
+            container.innerHTML = this.filteredMembers.map(member => {
+                const isAdmin = member.roleName === '@Admin';
+                const isOwner = this.serverData && String(member.userId) === String(this.serverData.ownerId);
+                const canChangeRole = !isOwner; // Owner's role cannot be changed
+                
+                // Filter roles for non-owners: they can't be assigned @Admin
+                const availableRoles = isOwner 
+                    ? this.roles 
+                    : this.roles.filter(r => r.name !== '@Admin' || r.name === member.roleName);
+                
+                return `
+                <div class="member-item ${isAdmin ? 'is-admin' : ''} ${isOwner ? 'is-owner' : ''}" data-user-id="${member.userId}" data-member-id="${member.id}">
                     <div class="member-info">
                         <img src="${member.avatarUrl || '/images/default-avatar.png'}" alt="" class="member-avatar">
                         <div class="member-details">
-                            <span class="member-name">${this._escapeHtml(member.displayName || member.username)}</span>
+                            <span class="member-name">
+                                ${this._escapeHtml(member.displayName || member.username)}
+                                ${isOwner ? '<i class="bi bi-crown-fill owner-crown" title="Chủ server"></i>' : ''}
+                            </span>
                             <span class="member-username">@${this._escapeHtml(member.username)}</span>
                         </div>
                     </div>
-                    <div class="member-role">${member.roleName || '@everyone'}</div>
+                    <div class="member-role-wrapper">
+                        ${canChangeRole ? `
+                            <select class="member-role-select" data-member-id="${member.id}" data-user-id="${member.userId}">
+                                ${availableRoles.map(role => `
+                                    <option value="${role.id}" ${role.name === member.roleName ? 'selected' : ''}>
+                                        ${this._escapeHtml(role.name)}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        ` : `
+                            <span class="member-role-locked" title="Vai trò của chủ server không thể thay đổi">
+                                <i class="bi bi-lock-fill"></i> ${this._escapeHtml(member.roleName)}
+                            </span>
+                        `}
+                    </div>
+                    <!-- Hide action buttons for @Admin members (Admin is king) -->
+                    ${!isAdmin ? `
                     <div class="member-actions">
                         <button class="btn-member-action" title="Cấm chat" data-action="mute" data-user-id="${member.userId}">
                             <i class="bi bi-mic-mute"></i>
@@ -1074,8 +1196,13 @@
                             <i class="bi bi-person-x"></i>
                         </button>
                     </div>
+                    ` : `
+                    <div class="member-actions admin-protected">
+                        <span class="admin-badge" title="Admin không thể bị xử phạt"><i class="bi bi-shield-fill"></i></span>
+                    </div>
+                    `}
                 </div>
-            `).join('');
+            `}).join('');
 
             // Bind action events
             container.querySelectorAll('.btn-member-action').forEach(btn => {
@@ -1087,6 +1214,38 @@
                     else if (action === 'ban') this._showBanDialog(userId);
                 });
             });
+
+            // Bind role change events
+            container.querySelectorAll('.member-role-select').forEach(select => {
+                select.addEventListener('change', async (e) => {
+                    const memberId = e.target.dataset.memberId;
+                    const roleId = e.target.value;
+                    await this._updateMemberRole(memberId, roleId);
+                });
+            });
+        }
+
+        async _updateMemberRole(memberId, roleId) {
+            try {
+                const response = await fetch(`/api/servers/${this.serverId}/members/${memberId}/role?roleId=${roleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + (localStorage.getItem('accessToken') || '')
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || 'Không thể thay đổi vai trò');
+                }
+
+                this._showToast('Đã cập nhật vai trò thành viên', 'success');
+                await this._loadMembers(); // Refresh list
+            } catch (error) {
+                console.error('[ServerSettings] Update member role failed:', error);
+                this._showToast(error.message || 'Không thể thay đổi vai trò', 'error');
+                await this._loadMembers(); // Reset to original state
+            }
         }
 
         _showMuteDialog(userId) {

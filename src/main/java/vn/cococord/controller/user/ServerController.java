@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -355,5 +357,64 @@ public class ServerController {
         String username = authentication.getName();
         boolean canAccess = serverService.canAccessServerSettings(serverId, username);
         return ResponseEntity.ok(Map.of("canAccess", canAccess));
+    }
+
+    // ==================== ICON/BANNER UPLOAD ====================
+
+    /**
+     * Upload server icon
+     */
+    @PostMapping("/{serverId}/icon")
+    public ResponseEntity<Map<String, String>> uploadServerIcon(
+            @PathVariable Long serverId,
+            @RequestParam("icon") MultipartFile file,
+            Authentication authentication) {
+        String username = authentication.getName();
+        String iconUrl = serverService.uploadServerIcon(serverId, file, username);
+        return ResponseEntity.ok(Map.of("iconUrl", iconUrl));
+    }
+
+    /**
+     * Upload server banner
+     */
+    @PostMapping("/{serverId}/banner")
+    public ResponseEntity<Map<String, String>> uploadServerBanner(
+            @PathVariable Long serverId,
+            @RequestParam("banner") MultipartFile file,
+            Authentication authentication) {
+        String username = authentication.getName();
+        String bannerUrl = serverService.uploadServerBanner(serverId, file, username);
+        return ResponseEntity.ok(Map.of("bannerUrl", bannerUrl));
+    }
+
+    // ==================== MEMBER ROLE MANAGEMENT ====================
+
+    /**
+     * Update a member's role
+     */
+    @PutMapping("/{serverId}/members/{memberId}/role")
+    public ResponseEntity<ServerMemberResponse> updateMemberRole(
+            @PathVariable Long serverId,
+            @PathVariable Long memberId,
+            @RequestParam Long roleId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        ServerMemberResponse member = serverService.updateMemberRole(serverId, memberId, roleId, username);
+        return ResponseEntity.ok(member);
+    }
+
+    // ==================== OWNERSHIP TRANSFER ====================
+
+    /**
+     * Transfer server ownership to another member
+     */
+    @PostMapping("/{serverId}/transfer-ownership")
+    public ResponseEntity<Map<String, String>> transferOwnership(
+            @PathVariable Long serverId,
+            @RequestParam Long newOwnerId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        serverService.transferOwnership(serverId, newOwnerId, username);
+        return ResponseEntity.ok(Map.of("message", "Ownership transferred successfully"));
     }
 }
