@@ -59,7 +59,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
   <tr>
     <td width="40%">
        <!-- [CHÈN GIF: Thao tác Voice Chat] -->
-       <img src="https://via.placeholder.com/400x300?text=Voice+Chat+GIF" width="100%" />
+       <img src="src/main/resources/static/images/chat.gif" width="100%" />
     </td>
     <td width="60%">
       <h3>🎙️ Voice Chat & Media</h3>
@@ -122,33 +122,6 @@ graph TD
 
 ---
 
-## 📂 Cấu trúc Thư mục (Folder Structure)
-
-```bash
-cococord-website/
-├── src/
-│   ├── main/
-│   │   ├── java/vn/cococord/
-│   │   │   ├── config/          # Cấu hình (Security, WebSocket, Redis)
-│   │   │   ├── controller/      # REST & View Controllers
-│   │   │   ├── dto/             # Data Transfer Objects (Request/Response)
-│   │   │   ├── entity/          # JPA & Mongo Entities
-│   │   │   ├── repository/      # Data Access Layer
-│   │   │   ├── security/        # JWT Providers & Filters
-│   │   │   ├── service/         # Business Logic
-│   │   │   └── utils/           # Helper classes
-│   │   ├── resources/
-│   │   │   ├── static/          # CSS, JS, Images (Public)
-│   │   │   ├── templates/       # Email Templates
-│   │   │   └── application.properties
-│   │   └── webapp/WEB-INF/      # JSP Views & Decorators
-│   └── test/                    # Unit & Integration Tests
-├── pom.xml                      # Maven Dependencies
-└── README.md                    # Tài liệu dự án
-```
-
----
-
 ## ⚡ Cài đặt & Triển khai (Installation)
 
 ### Yêu cầu hệ thống
@@ -158,16 +131,6 @@ cococord-website/
 | Maven | 3.8+ |
 | MySQL | 8.0 |
 | MongoDB | 5.0+ |
-
-### Biến môi trường (Environment Variables)
-Tạo file cấu hình hoặc set environment variables:
-
-| Biến | Mô tả | Mặc định |
-| :--- | :--- | :--- |
-| `DB_HOST` | MySQL Host | `localhost` |
-| `DB_PORT` | MySQL Port | `3306` |
-| `MONGO_URI` | MongoDB Connection String | `mongodb://localhost:27017/cococord` |
-| `JWT_SECRET` | Secret key ký Token | `(random_string)` |
 
 ### Chạy Local (Development)
 
@@ -187,15 +150,10 @@ Tạo file cấu hình hoặc set environment variables:
 
 4. **Truy cập**:
    - App: `http://localhost:8080`
-   - Admin: `http://localhost:8080/admin`
 
 ---
 
-## � Thư viện ảnh (Gallery)
-
-<details>
-<summary><strong>👇 Xem thêm ảnh chụp màn hình chi tiết</strong></summary>
-<br/>
+## Thư viện ảnh (Gallery)
 
 | **Login Screen** | **Register Screen** |
 |:---:|:---:|
@@ -209,30 +167,12 @@ Tạo file cấu hình hoặc set environment variables:
 |:---:|:---:|
 | <img src="https://via.placeholder.com/400x250?text=Create+Server" width="100%"> | <img src="https://via.placeholder.com/400x250?text=Channel+Settings" width="100%"> |
 
-</details>
 
 ---
 
-## 🤝 Đóng góp (Contributing)
-
-Chúng tôi rất hoan nghênh mọi đóng góp! Vui lòng đọc kỹ hướng dẫn:
-
-1. Fork dự án.
-2. Tạo nhánh tính năng (`git checkout -b feature/AmazingFeature`).
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`).
-4. Push lên nhánh (`git push origin feature/AmazingFeature`).
-5. Mở Pull Request.
-
----
-
-## � License
-
-Dự án này được cấp phép theo giấy phép **MIT**. Xem file `LICENSE` để biết thêm chi tiết.
-
----
 
 <div align="center">
-  <p>Thực hiện bởi <strong>Nguyễn Văn A</strong> và nhóm phát triển.</p>
+  <p>Thực hiện bởi <strong>Phùng Lê Thanh Quân</strong> và nhóm phát triển.</p>
   <p>
     <a href="#">
       <img src="https://img.shields.io/badge/Facebook-Connect-blue?style=flat&logo=facebook" alt="Facebook" />
