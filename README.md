@@ -155,15 +155,15 @@ graph TD
 
 | **Login Screen** | **Register Screen** |
 |:---:|:---:|
-| <img src="https://via.placeholder.com/400x250?text=Login" width="100%"> | <img src="https://via.placeholder.com/400x250?text=Register" width="100%"> |
+| <img src="src/main/resources/static/images/login.png" width="100%"> | <img src="src/main/resources/static/images/register.png" width="100%"> |
 
 | **Direct Message** | **User Settings** |
 |:---:|:---:|
-| <img src="https://via.placeholder.com/400x250?text=Direct+Message" width="100%"> | <img src="https://via.placeholder.com/400x250?text=Settings" width="100%"> |
+| <img src="src/main/resources/static/images/dm.png" width="100%"> | <img src="src/main/resources/static/images/usersetting.png" width="100%"> |
 
 | **Create Server Modal** | **Channel Settings** |
 |:---:|:---:|
-| <img src="https://via.placeholder.com/400x250?text=Create+Server" width="100%"> | <img src="https://via.placeholder.com/400x250?text=Channel+Settings" width="100%"> |
+| <img src="src/main/resources/static/images/createmodal.png" width="100%"> | <img src="src/main/resources/static/images/serversetting.png" width="100%"> |
 
 
 ---
