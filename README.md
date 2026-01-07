@@ -92,6 +92,43 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
 
 ---
 
+## 🛠️ Công nghệ sử dụng (Tech Stack)
+
+### Backend (Java Spring Boot)
+| Công nghệ | Phiên bản | Mô tả |
+| :--- | :--- | :--- |
+| **Java JDK** | 21 (LTS) | Ngôn ngữ core, tận dụng Virtual Threads |
+| **Spring Boot** | 3.5.9 | Framework phát triển ứng dụng nhanh |
+| **Spring Security** | 6.x | Bảo mật, Authentication & Authorization |
+| **Spring Data JPA** | Latest | ORM, giao tiếp với MySQL |
+| **Spring Data MongoDB**| Latest | Giao tiếp với MongoDB |
+| **Spring WebSocket** | Latest | Xử lý kết nối Realtime (STOMP) |
+| **JWT (jjwt)** | 0.12.6 | JSON Web Token cho Stateless Auth |
+| **Lombok** | Latest | Giảm thiểu Boilerplate code |
+| **Thumbnailator** | 0.4.20 | Xử lý, nén và resize ảnh |
+| **Spring GraphQL** | Latest | (Experimental) API Query linh hoạt |
+
+### Frontend (Client-side)
+| Công nghệ | Mô tả |
+| :--- | :--- |
+| **JSP / JSTL** | Server-side Rendering view engine |
+| **Sitemesh 3** | Layout & Decorator engine (Header, Footer, Sidebar) |
+| **Tailwind CSS** | Utility-first CSS Framework (Styling chính) |
+| **Bootstrap 5** | Grid system và Components bổ trợ |
+| **Bootstrap Icons** | Hệ thống icon vector |
+| **Vanilla JS** | Xử lý logic Client (ES6+ Modules) |
+| **SockJS + StompWS** | Thư viện Client để kết nối WebSocket |
+
+### Database & Infrastructure
+| Công nghệ | Mô tả |
+| :--- | :--- |
+| **MySQL 8.0** | Hệ quản trị CSDL quan hệ (Users, Servers, Channels) |
+| **MongoDB 6.0** | CSDL NoSQL (Lưu trữ Chat History, Logs) |
+| **Redis** | In-memory Cache & Pub/Sub cho WebSocket Scaling |
+| **Maven** | Quản lý phụ thuộc và Build tool |
+
+---
+
 ## 🏗️ Kiến trúc Hệ thống (System Architecture)
 
 Chúng tôi sử dụng mô hình Layered Architecture hiện đại, dễ dàng mở rộng sang Microservices.
