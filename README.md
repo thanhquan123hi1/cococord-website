@@ -80,7 +80,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
     </td>
     <td width="50%">
        <!-- [CHÈN GIF: Server Settings & Roles] -->
-       <img src="https://via.placeholder.com/400x300?text=Admin+Dashboard+GIF" width="100%" /> 
+       <img src="src/main/resources/static/images/server.gif" width="100%" /> 
     </td>
   </tr>
 </table>
@@ -89,7 +89,6 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
 - **Hybrid Database**: Kết hợp sức mạnh ràng buộc của SQL và tốc độ của NoSQL.
 - **Message Actions**: Reply, Edit, Soft-Delete, Reactions (Emoji).
 - **Security**: JWT Rotation, CSRF Protection, XSS Filtering.
-- **UI/UX**: Dark Mode mặc định, Responsive 100% trên Mobile/Tablet.
 
 ---
 
@@ -171,7 +170,9 @@ graph TD
 
 
 <div align="center">
-  <p>Thực hiện bởi <strong>Phùng Lê Thanh Quân</strong> và nhóm phát triển.</p>
+  <p>Thực hiện bởi <strong>Phùng Lê Thanh Quân</strong> <br/>
+  <strong>Đặng Gia Nguyên</strong> <br/> 
+  <strong>Nguyễn Đức Thịnh</strong> </p>
   <p>
     <a href="#">
       <img src="https://img.shields.io/badge/Facebook-Connect-blue?style=flat&logo=facebook" alt="Facebook" />
