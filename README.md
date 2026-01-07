@@ -1,10 +1,9 @@
 <div align="center">
 
-  <img src="https://via.placeholder.com/150x150?text=CoCo" alt="logo" width="120" height="120" />
+  <img src="src/main/resources/static/images/cococord-logo.png" alt="logo" width="120" height="120" />
   <h1>✨ CoCoCord</h1>
-  
   <p>
-    <strong>Nền tảng giao tiếp thời gian thực thế hệ mới</strong>
+    <strong>Nền tảng giao tiếp thời gian thực</strong>
   </p>
 
   <p>
@@ -24,23 +23,7 @@
       <img src="https://img.shields.io/badge/Redis-Latest-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
     </a>
   </p>
-
-  <p>
-    <img src="https://img.shields.io/github/license/username/cococord?style=flat-square" alt="License" />
-    <img src="https://img.shields.io/github/issues/username/cococord?style=flat-square" alt="Issues" />
-    <img src="https://img.shields.io/github/stars/username/cococord?style=flat-square" alt="Stars" />
-    <img src="https://img.shields.io/github/forks/username/cococord?style=flat-square" alt="Forks" />
-  </p>
   
-  <br />
-
-  <p>
-    <a href="#-giới-thiệu">Giới thiệu</a> •
-    <a href="#-tính-năng">Tính năng</a> •
-    <a href="#-kiến-trúc-hệ-thống">Kiến trúc</a> •
-    <a href="#-cài-đặt">Cài đặt</a> •
-    <a href="#-hình-ảnh">Hình ảnh</a>
-  </p>
 
   <!-- [CHÈN GIF: Demo tổng quan (Hero Video)] -->
   <img src="https://via.placeholder.com/1000x500?text=Insert+Hero+Demo+GIF+Here+1080p" alt="CoCoCord Demo" width="100%" style="border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);" />
