@@ -676,28 +676,54 @@
     flex: 1;
 }
 
-/* Permissions Section */
+/* ==================== PERMISSIONS SECTION (Enhanced) ==================== */
+
 .permissions-section {
     margin-bottom: 24px;
 }
 
 .permissions-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 12px;
     font-weight: 700;
     color: var(--text-muted, #72767d);
     text-transform: uppercase;
     letter-spacing: 0.02em;
     margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.permissions-section-title i {
+    color: var(--discord-blurple, #5865f2);
+    font-size: 14px;
+}
+
+.permissions-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(88, 101, 242, 0.2), transparent);
 }
 
 .permission-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    padding: 12px;
+    padding: 14px 16px;
     background: var(--bg-tertiary, #202225);
-    border-radius: 4px;
-    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    transition: all 0.2s ease;
+}
+
+.permission-item:hover {
+    background: rgba(32, 34, 37, 0.8);
+    border-color: rgba(255, 255, 255, 0.05);
+    transform: translateX(2px);
 }
 
 .permission-info {
@@ -717,6 +743,160 @@
     color: var(--text-muted, #72767d);
     line-height: 1.4;
 }
+
+/* ==================== TRI-STATE PERMISSION BUTTONS ==================== */
+
+.tri-state-buttons {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.btn-perm {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(43, 45, 49, 0.6);
+    color: #6d6f78;
+}
+
+.btn-perm:hover {
+    transform: scale(1.08);
+    z-index: 2;
+}
+
+.btn-perm:active {
+    transform: scale(0.95);
+}
+
+/* Deny */
+.btn-deny {
+    border-color: rgba(218, 55, 60, 0.15);
+}
+
+.btn-deny:hover {
+    background: rgba(218, 55, 60, 0.15);
+    border-color: rgba(218, 55, 60, 0.4);
+    color: #f23f43;
+    box-shadow: 0 0 15px rgba(218, 55, 60, 0.1);
+}
+
+.btn-deny.active {
+    background: linear-gradient(135deg, #da373c 0%, #a12d31 100%);
+    border-color: #da373c;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(218, 55, 60, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+/* Default/Inherit */
+.btn-default {
+    border-color: rgba(78, 80, 88, 0.25);
+}
+
+.btn-default:hover {
+    background: rgba(78, 80, 88, 0.3);
+    border-color: rgba(78, 80, 88, 0.5);
+    color: #b5bac1;
+}
+
+.btn-default.active {
+    background: linear-gradient(135deg, #5c5e66 0%, #4a4c52 100%);
+    border-color: #5c5e66;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(78, 80, 88, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transform: scale(1.05);
+}
+
+/* Allow */
+.btn-allow {
+    border-color: rgba(35, 165, 89, 0.15);
+}
+
+.btn-allow:hover {
+    background: rgba(35, 165, 89, 0.15);
+    border-color: rgba(35, 165, 89, 0.4);
+    color: #23a559;
+    box-shadow: 0 0 15px rgba(35, 165, 89, 0.1);
+}
+
+.btn-allow.active {
+    background: linear-gradient(135deg, #23a559 0%, #1a7d43 100%);
+    border-color: #23a559;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(35, 165, 89, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+/* Active state hover enhancement */
+.btn-perm.active:hover {
+    transform: scale(1.1);
+}
+
+/* Ripple effect container */
+.btn-perm .ripple {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%);
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.btn-perm .ripple.animate {
+    animation: permRipple 0.4s ease-out;
+}
+
+@keyframes permRipple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* Permission item animation on load */
+.permission-item {
+    animation: permItemFadeIn 0.3s ease-out backwards;
+}
+
+@keyframes permItemFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Stagger animation delays */
+.permission-item:nth-child(1) { animation-delay: 0.05s; }
+.permission-item:nth-child(2) { animation-delay: 0.1s; }
+.permission-item:nth-child(3) { animation-delay: 0.15s; }
+.permission-item:nth-child(4) { animation-delay: 0.2s; }
+.permission-item:nth-child(5) { animation-delay: 0.25s; }
+.permission-item:nth-child(6) { animation-delay: 0.3s; }
+.permission-item:nth-child(7) { animation-delay: 0.35s; }
+.permission-item:nth-child(8) { animation-delay: 0.4s; }
 
 /* Toggle Switch */
 .toggle-switch {
@@ -762,73 +942,159 @@
     background: white;
 }
 
-/* ==================== SAVE CHANGES BAR ==================== */
+/* ==================== SAVE CHANGES BAR (Enhanced Glassmorphism) ==================== */
 
 .save-changes-bar {
     position: fixed;
     bottom: 20px;
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
+    transform: translateX(-50%) translateY(120px);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 12px 16px;
-    background: var(--bg-tertiary, #202225);
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    padding: 14px 16px 14px 20px;
+    background: linear-gradient(135deg, 
+                    rgba(24, 25, 28, 0.95) 0%, 
+                    rgba(17, 18, 20, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     z-index: 2100;
     opacity: 0;
     visibility: hidden;
-    transition: transform 0.3s, opacity 0.3s, visibility 0.3s;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease,
+                visibility 0.3s;
+}
+
+.save-changes-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    padding: 1px;
+    background: linear-gradient(135deg, 
+                    rgba(88, 101, 242, 0.3) 0%, 
+                    transparent 50%,
+                    rgba(35, 165, 89, 0.2) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+                  linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
 }
 
 .save-changes-bar.show {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
     visibility: visible;
+    animation: saveBarBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes saveBarBounceIn {
+    0% {
+        transform: translateX(-50%) translateY(120px);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-50%) translateY(-8px);
+        opacity: 1;
+    }
+    80% {
+        transform: translateX(-50%) translateY(4px);
+    }
+    100% {
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 .save-changes-bar span {
     font-size: 14px;
-    color: var(--text-muted, #72767d);
+    font-weight: 500;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.save-changes-bar span::before {
+    content: '\F33A';
+    font-family: 'bootstrap-icons';
+    color: #faa61a;
+    font-size: 16px;
 }
 
 .save-changes-bar .btn-reset {
-    padding: 8px 16px;
+    padding: 10px 16px;
     background: transparent;
     border: none;
-    color: var(--text-normal, #dcddde);
+    border-radius: 4px;
+    color: #b5bac1;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.15s;
+    transition: all 0.2s ease;
 }
 
 .save-changes-bar .btn-reset:hover {
-    color: white;
-    text-decoration: underline;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .save-changes-bar .btn-save {
-    padding: 8px 16px;
-    background: var(--discord-green, #3ba55d);
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #23a559 0%, #1e8e4a 100%);
     border: none;
     border-radius: 4px;
     color: white;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(35, 165, 89, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.save-changes-bar .btn-save::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+                    transparent, 
+                    rgba(255, 255, 255, 0.2), 
+                    transparent);
+    transition: left 0.5s ease;
 }
 
 .save-changes-bar .btn-save:hover {
-    background: #2d7d46;
+    background: linear-gradient(135deg, #28b962 0%, #23a559 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(35, 165, 89, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.save-changes-bar .btn-save:hover::before {
+    left: 100%;
+}
+
+.save-changes-bar .btn-save:active {
+    transform: translateY(0);
 }
 
 .save-changes-bar .btn-save:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* ==================== MOBILE RESPONSIVE ==================== */
