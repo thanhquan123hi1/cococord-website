@@ -346,10 +346,16 @@ public class PermissionServiceImpl implements IPermissionService {
 
     /**
      * Helper: Get base server permissions from user's roles
+     * If user has no role permissions, grant default basic permissions
      */
     private long getBaseServerPermissions(Long userId, Long serverId) {
         // Get all permission names from server roles
         Set<String> permissionNames = getUserPermissions(userId, serverId);
+
+        // If user has "ALL_PERMISSIONS" special marker (server owner)
+        if (permissionNames.contains("ALL_PERMISSIONS")) {
+            return PermissionBit.getAllPermissions();
+        }
 
         // Convert to bitmask
         long bitmask = 0L;
@@ -358,6 +364,21 @@ public class PermissionServiceImpl implements IPermissionService {
             if (bit != null) {
                 bitmask |= bit.getValue();
             }
+        }
+
+        // IMPORTANT: If user is a member but has no explicit permissions from roles,
+        // grant default basic permissions (VIEW_CHANNEL, SEND_MESSAGES,
+        // READ_MESSAGE_HISTORY)
+        // This prevents new users from being locked out of basic channel access
+        if (bitmask == 0L) {
+            log.debug("User {} has no role permissions in server {}, granting default basic permissions", userId,
+                    serverId);
+            bitmask = PermissionBit.VIEW_CHANNEL.getValue()
+                    | PermissionBit.SEND_MESSAGES.getValue()
+                    | PermissionBit.READ_MESSAGE_HISTORY.getValue()
+                    | PermissionBit.EMBED_LINKS.getValue()
+                    | PermissionBit.ATTACH_FILES.getValue()
+                    | PermissionBit.ADD_REACTIONS.getValue();
         }
 
         return bitmask;
