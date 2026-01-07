@@ -25,7 +25,6 @@
   </p>
   
 
-  <!-- [CHÈN GIF: Demo tổng quan (Hero Video)] -->
   <img src="src/main/resources/static/images/landing-page.gif" alt="CoCoCord Demo" width="100%" style="border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);" />
 
 </div>
@@ -45,7 +44,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
 <table>
   <tr>
     <td width="60%">
-      <h3>� Tốc độ & Real-time (Thời gian thực)</h3>
+      <h3>⚡ Tốc độ & Real-time (Thời gian thực)</h3>
       <ul>
         <li>Hệ thống <strong>WebSocket (STOMP)</strong> tối ưu hóa, độ trễ tin nhắn dưới 50ms.</li>
         <li>Thông báo tức thì (Push Notifications) khi có tin nhắn mới, lời mời kết bạn.</li>
