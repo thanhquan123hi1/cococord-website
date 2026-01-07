@@ -39,7 +39,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
 
 ---
 
-## ✨ Tính năng Đột phá (Key Features)
+## ✨ Tính năng chính (Key Features)
 
 <table>
   <tr>
