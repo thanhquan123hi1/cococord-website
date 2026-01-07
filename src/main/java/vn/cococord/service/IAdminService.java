@@ -9,6 +9,7 @@ import vn.cococord.dto.request.AdminSettingsRequest;
 import vn.cococord.dto.response.*;
 import vn.cococord.entity.mysql.AdminAuditLog;
 
+import java.util.List;
 import java.util.Map;
 
 public interface IAdminService {
@@ -213,6 +214,11 @@ public interface IAdminService {
      * Get audit logs with filters
      */
     Page<AdminAuditLogResponse> getAuditLogs(Pageable pageable, String actionType, Long actorId);
+
+    /**
+     * Get recent audit logs (for dashboard)
+     */
+    List<AdminAuditLogResponse> getRecentAuditLogs(int limit);
 
     /**
      * Log admin action

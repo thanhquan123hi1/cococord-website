@@ -414,6 +414,12 @@ public class AdminApiController {
         return ResponseEntity.ok(adminService.getAuditLogs(pageable, actionType, actorId));
     }
 
+    @GetMapping("/audit-log/recent")
+    public ResponseEntity<List<AdminAuditLogResponse>> getRecentAuditLogs(
+            @RequestParam(defaultValue = "3") int limit) {
+        return ResponseEntity.ok(adminService.getRecentAuditLogs(limit));
+    }
+
     // ================== Settings ==================
 
     @GetMapping("/settings")

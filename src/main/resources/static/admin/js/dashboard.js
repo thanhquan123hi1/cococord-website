@@ -21,7 +21,8 @@ var AdminDashboard = window.AdminDashboard || (function() {
   const API = {
     summary: '/api/admin/dashboard/summary',
     stats: '/api/admin/dashboard/stats',
-    users: '/api/admin/users'
+    users: '/api/admin/users',
+    recentAuditLogs: '/api/admin/audit-log/recent'
   };
 
   // ========================================
@@ -140,31 +141,65 @@ var AdminDashboard = window.AdminDashboard || (function() {
   // Activity List
   // ========================================
 
-  function renderActivity() {
-    const container = document.getElementById('dashboard-activity');
+  async function renderActivity() {
+    const container = document.getElementById('activity-list');
+    const badge = document.querySelector('[data-stat="activityCount"]');
+    
     if (!container) return;
     
-    const activities = dashboardData?.recentActivity || [];
-    
-    if (activities.length === 0) {
-      container.innerHTML = '<div class="empty-activity">No recent activity</div>';
-      return;
-    }
-    
-    container.innerHTML = activities.slice(0, 5).map(activity => `
-      <div class="activity-item">
-        <div class="activity-avatar" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--admin-primary);">
-          ${AdminUtils.getInitials(activity.user)}
-        </div>
-        <div class="activity-content">
-          <div class="activity-text">
-            <strong>${activity.user}</strong> ${activity.action}
-            ${activity.target ? `<span class="activity-target">${activity.target}</span>` : ''}
+    try {
+      // Fetch recent audit logs from API
+      const auditLogs = await AdminUtils.api.get(`${API.recentAuditLogs}?limit=3`);
+      
+      // Update badge
+      if (badge) {
+        badge.textContent = auditLogs.length;
+      }
+      
+      // Render
+      if (auditLogs.length === 0) {
+        container.innerHTML = '<div class="empty-activity">Không có hoạt động gần đây</div>';
+        return;
+      }
+      
+      container.innerHTML = auditLogs.map(log => {
+        const actionMap = {
+          'USER_BAN': 'đã cấm người dùng',
+          'USER_UNBAN': 'đã bỏ cấm người dùng',
+          'USER_DELETE': 'đã xóa người dùng',
+          'SERVER_SUSPEND': 'đã tạm ngưng server',
+          'SERVER_UNSUSPEND': 'đã kích hoạt lại server',
+          'SERVER_DELETE': 'đã xóa server',
+          'REPORT_RESOLVE': 'đã xử lý báo cáo',
+          'MESSAGE_DELETE': 'đã xóa tin nhắn',
+          'SETTINGS_UPDATE': 'đã cập nhật cài đặt'
+        };
+        
+        const actionText = actionMap[log.actionType] || log.description;
+        const userName = log.actorUsername || 'Hệ thống';
+        const targetName = log.targetName || '';
+        
+        return `
+          <div class="activity-item">
+            <div class="activity-avatar" style="background: var(--admin-surface-accent); display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--admin-primary);">
+              ${AdminUtils.getInitials(userName)}
+            </div>
+            <div class="activity-content">
+              <div class="activity-text">
+                <strong>${userName}</strong> ${actionText}
+                ${targetName ? `<span class="activity-target">${targetName}</span>` : ''}
+              </div>
+              <div class="activity-time">${AdminUtils.timeAgo(log.createdAt)}</div>
+            </div>
           </div>
-          <div class="activity-time">${AdminUtils.timeAgo(activity.timestamp)}</div>
-        </div>
-      </div>
-    `).join('');
+        `;
+      }).join('');
+      
+    } catch (error) {
+      console.error('[AdminDashboard] Failed to load recent activity:', error);
+      container.innerHTML = '<div class="empty-activity">Không thể tải hoạt động</div>';
+      if (badge) badge.textContent = '0';
+    }
   }
 
   // ========================================
