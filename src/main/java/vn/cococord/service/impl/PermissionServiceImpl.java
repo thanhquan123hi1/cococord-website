@@ -549,21 +549,56 @@ public class PermissionServiceImpl implements IPermissionService {
 
     /**
      * Convert Set<String> permission names to bitmask
+     * Enhanced with debug logging and robust matching
      */
     private long convertPermissionsToBitmask(Set<String> permissionNames) {
         if (permissionNames == null || permissionNames.isEmpty()) {
+            log.debug("convertPermissionsToBitmask: Input is null or empty, returning 0");
             return 0L;
         }
 
+        log.info("convertPermissionsToBitmask: Processing {} permissions: {}", permissionNames.size(), permissionNames);
+
         long bitmask = 0L;
         for (String permName : permissionNames) {
-            PermissionBit bit = PermissionBit.fromName(permName);
+            log.debug("  Processing permission string: '{}'", permName);
+
+            PermissionBit bit = null;
+
+            // Strategy 1: Try fromName (case-sensitive match on name field)
+            bit = PermissionBit.fromName(permName);
+
+            // Strategy 2: Try valueOf (matches enum constant name)
+            if (bit == null) {
+                try {
+                    bit = PermissionBit.valueOf(permName.toUpperCase().trim());
+                    log.debug("    Found via valueOf: {}", bit);
+                } catch (IllegalArgumentException e) {
+                    // Not found via valueOf either
+                }
+            }
+
+            // Strategy 3: Try case-insensitive fromName
+            if (bit == null) {
+                for (PermissionBit b : PermissionBit.values()) {
+                    if (b.getName().equalsIgnoreCase(permName.trim())) {
+                        bit = b;
+                        log.debug("    Found via case-insensitive match: {}", bit);
+                        break;
+                    }
+                }
+            }
+
             if (bit != null) {
                 bitmask |= bit.getValue();
+                log.debug("    ✅ Matched '{}' -> {} (value: {})", permName, bit.name(), bit.getValue());
             } else {
-                log.warn("Unknown permission name: {}", permName);
+                log.warn("    ❌ Permission Name Mismatch: Frontend sent '{}' but no matching PermissionBit found!",
+                        permName);
             }
         }
+
+        log.info("convertPermissionsToBitmask: Final bitmask = {} (binary: {})", bitmask, Long.toBinaryString(bitmask));
         return bitmask;
     }
 

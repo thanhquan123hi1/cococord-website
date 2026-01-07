@@ -2033,6 +2033,26 @@
                 }
               );
 
+              // Subscribe to user-specific error queue for permission denied and other errors
+              stompClient.subscribe(
+                "/user/queue/errors",
+                (message) => {
+                  try {
+                    const errorMessage = message.body;
+                    console.error("[WebSocket Error]", errorMessage);
+
+                    // Show error toast to user
+                    if (typeof showToast === 'function') {
+                      showToast(errorMessage, 'error');
+                    } else {
+                      alert("Lỗi: " + errorMessage);
+                    }
+                  } catch (e) {
+                    console.error("Error handling WS error message:", e);
+                  }
+                }
+              );
+
               resolve();
             } catch (e) {
               console.error("Failed to subscribe to presence:", e);

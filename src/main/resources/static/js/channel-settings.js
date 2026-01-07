@@ -20,18 +20,12 @@
             console.log("Opening Channel Settings for channel:", channelId);
             this.channelId = channelId;
             try {
-                // Fetch channel data
+                // Fetch channel data (includes permissions mapping)
                 const channel = await this._fetchChannelData(channelId);
                 this.initialData = { ...channel };
 
-                // Initialize Permissions State (Mock for now, defaulting to 'inherit')
-                this.initialData.permissions = {
-                    'view_channel': 'inherit',
-                    'send_messages': 'inherit',
-                    'attach_files': 'inherit',
-                    'embed_links': 'inherit',
-                    'read_message_history': 'inherit'
-                };
+                // _fetchChannelData already sets channel.permissions from backend overrides
+                // DO NOT override it here with hardcoded values!
 
                 // Map backend fields to frontend state if needed
                 // Backend: name, topic, bitrate, userLimit
@@ -65,6 +59,9 @@
                 const permRes = await fetchFn(`/api/channels/${channelId}/permissions`);
                 if (permRes.ok) {
                     overrides = await permRes.json();
+                    console.log('[ChannelSettings] Fetched permission overrides:', overrides);
+                } else {
+                    console.warn('[ChannelSettings] Permission fetch failed:', permRes.status, permRes.statusText);
                 }
             } catch (e) {
                 console.warn("Could not fetch permissions", e);
@@ -78,21 +75,35 @@
                 const serverRes = await fetchFn(`/api/servers/${channel.serverId}`);
                 if (serverRes.ok) {
                     const server = await serverRes.json();
+                    console.log('[ChannelSettings] Server data:', server);
                     if (server.roles) {
                         const defaultRole = server.roles.find(r => r.isDefault);
-                        if (defaultRole) everyoneRoleId = defaultRole.id;
+                        if (defaultRole) {
+                            everyoneRoleId = defaultRole.id;
+                            console.log('[ChannelSettings] Found @everyone role ID:', everyoneRoleId);
+                        } else {
+                            console.warn('[ChannelSettings] No default role found in server.roles');
+                        }
+                    } else {
+                        console.warn('[ChannelSettings] server.roles is missing');
                     }
                 } else if (window.servers) {
                     // Fallback to global state
                     const server = window.servers.find(s => s.id == channel.serverId);
                     if (server && server.roles) {
                         const defaultRole = server.roles.find(r => r.isDefault);
-                        if (defaultRole) everyoneRoleId = defaultRole.id;
+                        if (defaultRole) {
+                            everyoneRoleId = defaultRole.id;
+                            console.log('[ChannelSettings] Found @everyone role ID from global state:', everyoneRoleId);
+                        }
                     }
                 }
             } catch (e) {
                 console.warn("Could not fetch server roles", e);
             }
+
+            console.log('[ChannelSettings] Final everyoneRoleId:', everyoneRoleId);
+            console.log('[ChannelSettings] Total overrides:', overrides.length);
 
             // 4. Map Overrides to UI State
             // We only care about the @everyone role override for this simple UI
@@ -105,23 +116,33 @@
             };
 
             if (everyoneRoleId) {
-                const override = overrides.find(o => Number(o.targetId) === Number(everyoneRoleId) && o.type === 'ROLE');
+                console.log('[ChannelSettings] Looking for override with targetId:', everyoneRoleId);
+                console.log('[ChannelSettings] Available overrides:', overrides.map(o => ({ targetId: o.targetId, targetType: o.targetType })));
+
+                const override = overrides.find(o => Number(o.targetId) === Number(everyoneRoleId) && o.targetType === 'ROLE');
+                console.log('[ChannelSettings] Everyone role override:', override);
+
                 if (override) {
                     // Map Allowed
                     if (override.allowedPermissions) {
+                        console.log('[ChannelSettings] Allowed permissions from backend:', override.allowedPermissions);
                         override.allowedPermissions.forEach(p => {
                             const key = p.toLowerCase();
+                            console.log(`  Mapping '${p}' -> '${key}' -> ${myPermissions[key] !== undefined ? 'FOUND' : 'NOT FOUND in UI'}`);
                             if (myPermissions[key] !== undefined) myPermissions[key] = 'allow';
                         });
                     }
                     // Map Denied
                     if (override.deniedPermissions) {
+                        console.log('[ChannelSettings] Denied permissions from backend:', override.deniedPermissions);
                         override.deniedPermissions.forEach(p => {
                             const key = p.toLowerCase();
+                            console.log(`  Mapping '${p}' -> '${key}' -> ${myPermissions[key] !== undefined ? 'FOUND' : 'NOT FOUND in UI'}`);
                             if (myPermissions[key] !== undefined) myPermissions[key] = 'deny';
                         });
                     }
                 }
+                console.log('[ChannelSettings] Final myPermissions:', myPermissions);
             }
             channel.permissions = myPermissions;
             channel.everyoneRoleId = everyoneRoleId; // Store for saving
