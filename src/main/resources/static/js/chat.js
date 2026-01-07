@@ -1704,6 +1704,7 @@
       }
                 </div>
                 <div class="message-content markdown-content">${htmlContent}</div>
+                ${window.MessageActionsManager ? window.MessageActionsManager.generateReactionsHtml(msg.reactions || [], currentUser?.id) : ''}
             </div>
         `;
 
@@ -2293,6 +2294,15 @@
           }
 
           // Handle different event types
+          if (eventType === "MESSAGE_REACTION_UPDATED") {
+            if (window.messageActionsInstance && window.MessageActionsManager) {
+              // Ensure payload has action/count if possible, or handleReactionUpdate logic handles it
+              // Payload from backend: ReactionEvent { messageId, emoji, userId, username, action, count }
+              window.messageActionsInstance.handleReactionUpdate(payload, currentUser?.id);
+            }
+            return;
+          }
+
           if (eventType === "message.deleted") {
             const row = document.querySelector(
               `[data-message-id="${payload}"]`

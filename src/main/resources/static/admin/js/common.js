@@ -476,8 +476,357 @@
     initSidebar();
     initSearch();
     initLogout();
+    initAdminProfile();
 
     console.log('[Admin] UI initialized');
   });
+
+  // ========================================
+  // Admin Profile Dropdown
+  // ========================================
+
+  function initAdminProfile() {
+    const profileTrigger = document.getElementById('adminProfileTrigger');
+    const profileDropdown = document.getElementById('adminProfileDropdown');
+    
+    if (!profileTrigger || !profileDropdown) return;
+
+    // Toggle dropdown
+    profileTrigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const isOpen = profileDropdown.style.display === 'block';
+      
+      if (isOpen) {
+        profileDropdown.style.display = 'none';
+        profileTrigger.classList.remove('active');
+      } else {
+        profileDropdown.style.display = 'block';
+        profileTrigger.classList.add('active');
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!profileTrigger.contains(e.target) && !profileDropdown.contains(e.target)) {
+        profileDropdown.style.display = 'none';
+        profileTrigger.classList.remove('active');
+      }
+    });
+
+    // Handle dropdown actions
+    const dropdownItems = profileDropdown.querySelectorAll('[data-action]');
+    dropdownItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const action = this.dataset.action;
+        
+        profileDropdown.style.display = 'none';
+        profileTrigger.classList.remove('active');
+        
+        switch(action) {
+          case 'profile':
+            handleProfileClick();
+            break;
+          case 'change-password':
+            handleChangePasswordClick();
+            break;
+          case 'logout':
+            handleLogoutClick();
+            break;
+        }
+      });
+    });
+
+    // Load admin info
+    loadAdminProfile();
+    
+    // Setup account modal close handlers
+    setupAccountModalHandlers();
+  }
+
+  function setupAccountModalHandlers() {
+    const modal = document.getElementById('adminAccountModal');
+    const overlay = document.getElementById('adminAccountModalOverlay');
+    const closeBtn = document.getElementById('btnCloseAccountModal');
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeAdminAccountModal);
+    }
+    
+    if (overlay) {
+      overlay.addEventListener('click', closeAdminAccountModal);
+    }
+    
+    // ESC key to close
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+        closeAdminAccountModal();
+      }
+    });
+  }
+
+  function loadAdminProfile() {
+    // Use accessToken as per auth.js convention
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    
+    if (!token) {
+      console.warn('[Admin] No token found, using default profile');
+      updateAdminProfileUI({
+        displayName: 'Admin',
+        username: 'admin',
+        profilePicture: null
+      });
+      return;
+    }
+
+    console.log('[Admin] Token found, fetching profile...');
+
+    // Fetch from API to get fresh data
+    fetch('/api/auth/me', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to fetch user info: ' + response.status);
+      }
+      return response.json();
+    })
+    .then(user => {
+      console.log('[Admin] User profile loaded successfully');
+      updateAdminProfileUI(user);
+      // Cache for modal use
+      window.currentAdminUser = user;
+    })
+    .catch(error => {
+      console.error('[Admin] Error loading profile:', error);
+      // Try localStorage as fallback
+      const userStr = localStorage.getItem('cococord_user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          updateAdminProfileUI(user);
+          window.currentAdminUser = user;
+          return;
+        } catch (e) {}
+      }
+      // Use default values
+      const defaultUser = {
+        displayName: 'Admin',
+        username: 'admin',
+        profilePicture: null
+      };
+      updateAdminProfileUI(defaultUser);
+      window.currentAdminUser = defaultUser;
+    });
+  }
+
+  function updateAdminProfileUI(user) {
+    const nameEl = document.getElementById('adminProfileName');
+    const avatarEl = document.getElementById('adminProfileAvatar');
+    
+    if (nameEl) {
+      nameEl.textContent = user.displayName || user.username || 'Admin';
+    }
+    
+    if (avatarEl) {
+      // Use avatarUrl field from API response
+      const avatarUrl = user.avatarUrl || user.profilePicture;
+      
+      if (avatarUrl) {
+        avatarEl.innerHTML = `<img src="${avatarUrl}" alt="${user.displayName || 'Admin'}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+      } else {
+        // Show initial letter
+        const initial = (user.displayName || user.username || 'A').charAt(0).toUpperCase();
+        avatarEl.innerHTML = `<span>${initial}</span>`;
+        avatarEl.style.fontSize = '16px';
+        avatarEl.style.fontWeight = '600';
+      }
+    }
+  }
+
+  function handleProfileClick() {
+    openAdminAccountModal();
+  }
+
+  function openAdminAccountModal() {
+    const modal = document.getElementById('adminAccountModal');
+    const modalBody = document.getElementById('adminAccountModalBody');
+    
+    if (!modal || !modalBody) return;
+    
+    // Show modal with loading state
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    modalBody.innerHTML = `
+      <div class="admin-account-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Đang tải thông tin...</p>
+      </div>
+    `;
+    
+    // Fetch fresh admin data
+    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    
+    if (!token) {
+      showAdminAccountError('Không tìm thấy phiên đăng nhập');
+      return;
+    }
+    
+    console.log('[Admin] Fetching account details...');
+    
+    fetch('/api/auth/me', {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch admin info');
+      return response.json();
+    })
+    .then(user => {
+      renderAdminAccountDetails(user);
+    })
+    .catch(error => {
+      console.error('[Admin] Error loading account details:', error);
+      // Try to use cached data
+      if (window.currentAdminUser) {
+        renderAdminAccountDetails(window.currentAdminUser);
+      } else {
+        showAdminAccountError('Không thể tải thông tin tài khoản');
+      }
+    });
+  }
+
+  function renderAdminAccountDetails(user) {
+    const modalBody = document.getElementById('adminAccountModalBody');
+    if (!modalBody) return;
+    
+    const displayName = user.displayName || user.username || 'Admin';
+    const username = user.username || 'admin';
+    const email = user.email || 'Chưa cập nhật';
+    const createdAt = user.createdAt ? formatDateTime(user.createdAt) : 'Không rõ';
+    const lastLogin = user.lastLogin ? formatDateTime(user.lastLogin) : 'Không rõ';
+    
+    // Avatar HTML - use avatarUrl field from API
+    const avatarUrl = user.avatarUrl || user.profilePicture;
+    let avatarHTML;
+    
+    if (avatarUrl) {
+      avatarHTML = `<img src="${avatarUrl}" alt="${displayName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+    } else {
+      const initial = displayName.charAt(0).toUpperCase();
+      avatarHTML = initial;
+    }
+    
+    modalBody.innerHTML = `
+      <!-- Profile Header -->
+      <div class="admin-account-profile">
+        <div class="admin-account-profile-avatar">
+          ${avatarHTML}
+        </div>
+        <div class="admin-account-profile-info">
+          <div class="admin-account-profile-name">${escapeHtml(displayName)}</div>
+          <div class="admin-account-profile-role">
+            <i class="fas fa-shield-alt"></i>
+            Quản trị viên
+          </div>
+        </div>
+      </div>
+      
+      <!-- Account Details -->
+      <div class="admin-account-info-grid">
+        <div class="admin-account-info-item">
+          <div class="admin-account-info-label">Tên đăng nhập</div>
+          <div class="admin-account-info-value">
+            <i class="fas fa-user"></i>
+            ${escapeHtml(username)}
+          </div>
+        </div>
+        
+        <div class="admin-account-info-item">
+          <div class="admin-account-info-label">Email</div>
+          <div class="admin-account-info-value">
+            <i class="fas fa-envelope"></i>
+            ${escapeHtml(email)}
+          </div>
+        </div>
+        
+        <div class="admin-account-info-item">
+          <div class="admin-account-info-label">Ngày tạo tài khoản</div>
+          <div class="admin-account-info-value">
+            <i class="fas fa-calendar-plus"></i>
+            ${createdAt}
+          </div>
+        </div>
+        
+        <div class="admin-account-info-item">
+          <div class="admin-account-info-label">Lần đăng nhập gần nhất</div>
+          <div class="admin-account-info-value">
+            <i class="fas fa-clock"></i>
+            ${lastLogin}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function showAdminAccountError(message) {
+    const modalBody = document.getElementById('adminAccountModalBody');
+    if (!modalBody) return;
+    
+    modalBody.innerHTML = `
+      <div class="admin-account-loading">
+        <i class="fas fa-exclamation-circle" style="color: var(--admin-danger);"></i>
+        <p>${escapeHtml(message)}</p>
+      </div>
+    `;
+  }
+
+  function closeAdminAccountModal() {
+    const modal = document.getElementById('adminAccountModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatDateTime(dateStr) {
+    if (!dateStr) return 'Không rõ';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return 'Không rõ';
+    }
+  }
+
+  function handleChangePasswordClick() {
+    // Show toast for now - can implement modal later
+    if (window.AdminUtils && window.AdminUtils.showToast) {
+      AdminUtils.showToast('Tính năng đang phát triển', 'info');
+    } else {
+      alert('Tính năng Đổi mật khẩu đang được phát triển');
+    }
+  }
+
+  function handleLogoutClick() {
+    // Use existing logout functionality
+    logout();
+  }
 
 })();

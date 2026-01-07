@@ -68,6 +68,55 @@
 }
 
 /* ========================================
+   STATS BAR
+   ======================================== */
+
+.audit-stats-bar {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding: 0 var(--space-2);
+}
+
+.audit-stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--admin-surface-2);
+  border-radius: var(--admin-radius-lg);
+  flex: 1;
+}
+
+.audit-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--admin-radius-md);
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+}
+
+.audit-stat-info {
+  flex: 1;
+}
+
+.audit-stat-label {
+  font-size: 13px;
+  color: var(--admin-muted);
+  margin-bottom: var(--space-1);
+}
+
+.audit-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+/* ========================================
    FILTER BAR
    ======================================== */
 

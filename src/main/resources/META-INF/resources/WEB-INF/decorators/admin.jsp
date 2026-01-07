@@ -13,6 +13,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;600;700;900&display=swap" rel="stylesheet">
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Admin CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/admin/css/admin.css">
 
@@ -29,10 +32,35 @@
          SIDEBAR - Never reloads (SPA pattern)
          ============================================ -->
     <aside class="admin-sidebar" aria-label="Admin navigation">
-        <!-- Brand -->
-        <div class="admin-sidebar-logo admin-sidebar-logo--top" aria-label="CoCoCord">
-            <span class="logo-icon">🎮</span>
-            <span class="logo-text">CoCoCord</span>
+        <!-- Admin Profile -->
+        <div class="admin-profile-header" id="adminProfileHeader">
+            <button class="admin-profile-trigger" id="adminProfileTrigger" type="button">
+                <div class="admin-profile-avatar" id="adminProfileAvatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="admin-profile-info">
+                    <div class="admin-profile-name" id="adminProfileName">Admin</div>
+                    <div class="admin-profile-role">Quản trị viên</div>
+                </div>
+                <i class="fas fa-chevron-down admin-profile-arrow"></i>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div class="admin-profile-dropdown" id="adminProfileDropdown" style="display: none;">
+                <a href="#" class="admin-profile-dropdown-item" data-action="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Thông tin tài khoản</span>
+                </a>
+                <a href="#" class="admin-profile-dropdown-item" data-action="change-password">
+                    <i class="fas fa-key"></i>
+                    <span>Đổi mật khẩu</span>
+                </a>
+                <div class="admin-profile-dropdown-divider"></div>
+                <a href="#" class="admin-profile-dropdown-item admin-profile-dropdown-item--danger" data-action="logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng xuất</span>
+                </a>
+            </div>
         </div>
 
         <!-- Tabs: Favorites / Recently -->
@@ -175,6 +203,29 @@
         </div>
 
     </aside>
+
+    <!-- ============================================
+         ADMIN ACCOUNT DETAIL MODAL
+         ============================================ -->
+    <div class="admin-account-modal" id="adminAccountModal" style="display: none;">
+        <div class="admin-account-modal-overlay" id="adminAccountModalOverlay"></div>
+        <div class="admin-account-modal-content">
+            <div class="admin-account-modal-header">
+                <h2 class="admin-account-modal-title">Thông tin tài khoản</h2>
+                <button class="admin-account-modal-close" id="btnCloseAccountModal" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="admin-account-modal-body" id="adminAccountModalBody">
+                <!-- Loading state -->
+                <div class="admin-account-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Đang tải thông tin...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ============================================
          MAIN CONTENT AREA - Only this part changes

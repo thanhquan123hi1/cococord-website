@@ -425,4 +425,20 @@ public class DirectMessageController {
         response.put("message", muted ? "DM group muted" : "DM group unmuted");
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Toggle reaction on a direct message
+     */
+    @PostMapping("/messages/{messageId}/reactions")
+    public ResponseEntity<Map<String, String>> toggleReaction(
+            @PathVariable String messageId,
+            @Valid @RequestBody vn.cococord.dto.request.AddReactionRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getUserIdFromUsername(userDetails.getUsername());
+        directMessageService.toggleReaction(messageId, request.getEmoji(), userId);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Reaction toggled successfully");
+        return ResponseEntity.ok(response);
+    }
 }

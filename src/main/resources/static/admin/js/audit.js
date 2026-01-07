@@ -29,6 +29,8 @@ var AdminAudit = window.AdminAudit || (function() {
   };
 
   let auditLogs = [];
+  let allLoadedLogs = []; // Store all loaded logs for infinite scroll
+  let displayCount = 20; // Initial display count
   let pagination = {
     page: 0,
     size: CONFIG.pageSize,
@@ -36,6 +38,7 @@ var AdminAudit = window.AdminAudit || (function() {
     totalPages: 0
   };
   let isLoading = false;
+  let hasMoreLogs = true;
 
   // ========================================
   // Vietnamese Action Map
@@ -304,25 +307,19 @@ var AdminAudit = window.AdminAudit || (function() {
   // ========================================
 
   function init() {
-    console.log('[AdminAudit] Khởi tạo Audit Log...');
-    
     // Create modal if it doesn't exist
     ensureModalExists();
     
     setupEventListeners();
+    setupInfiniteScroll();
     fetchAuditLogs();
-    
-    console.log('[AdminAudit] Đã khởi tạo thành công');
   }
 
   function ensureModalExists() {
     // Check if modal already exists
     if (document.getElementById('auditModal')) {
-      console.log('[AdminAudit] Modal đã tồn tại');
       return;
     }
-
-    console.log('[AdminAudit] Tạo modal mới...');
 
     // Create modal HTML and append to body
     const modalHTML = `
@@ -344,7 +341,6 @@ var AdminAudit = window.AdminAudit || (function() {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('[AdminAudit] Đã tạo modal thành công');
   }
 
   // ========================================
@@ -366,29 +362,87 @@ var AdminAudit = window.AdminAudit || (function() {
       const response = await AdminUtils.api.get(`${CONFIG.apiBase}/audit-log?${params}`);
       
       if (response && response.content) {
-        auditLogs = response.content;
+        allLoadedLogs = response.content;
         pagination.totalElements = response.totalElements || 0;
         pagination.totalPages = response.totalPages || 0;
       } else if (Array.isArray(response)) {
-        auditLogs = response;
+        allLoadedLogs = response;
         pagination.totalElements = response.length;
         pagination.totalPages = 1;
       } else {
-        console.warn('[AdminAudit] API returned unexpected format, using mock data');
         generateMockData();
       }
       
-      renderTimeline();
-      updatePagination();
+      // Reset display count and render initial items
+      displayCount = 20;
+      updateDisplayedLogs();
+      updateStats();
     } catch (error) {
       console.error('[AdminAudit] Lỗi khi tải audit log:', error);
       // Fallback to mock data
       generateMockData();
-      renderTimeline();
-      updatePagination();
+      displayCount = 20;
+      updateDisplayedLogs();
+      updateStats();
     } finally {
       isLoading = false;
     }
+  }
+
+  function updateDisplayedLogs() {
+    // Get filtered logs
+    const filtered = applyFilters();
+    // Only show first 'displayCount' items
+    auditLogs = filtered.slice(0, displayCount);
+    hasMoreLogs = filtered.length > displayCount;
+    
+    renderTimeline();
+  }
+
+  function updateStats() {
+    const totalEl = document.getElementById('totalAuditLogs');
+    const displayedEl = document.getElementById('displayedAuditLogs');
+    
+    if (totalEl) {
+      totalEl.textContent = pagination.totalElements.toLocaleString('vi-VN');
+    }
+    
+    if (displayedEl) {
+      displayedEl.textContent = auditLogs.length.toLocaleString('vi-VN');
+    }
+  }
+
+  function setupInfiniteScroll() {
+    const container = document.getElementById('auditTimeline');
+    if (!container) return;
+    
+    // Detect scroll to bottom
+    container.addEventListener('scroll', function() {
+      if (isLoading || !hasMoreLogs) return;
+      
+      const scrollTop = container.scrollTop;
+      const scrollHeight = container.scrollHeight;
+      const clientHeight = container.clientHeight;
+      
+      // Load more when scrolled to bottom (with 100px threshold)
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        loadMoreLogs();
+      }
+    });
+  }
+
+  function loadMoreLogs() {
+    if (isLoading || !hasMoreLogs) return;
+    
+    isLoading = true;
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      displayCount += 20;
+      updateDisplayedLogs();
+      updateStats();
+      isLoading = false;
+    }, 300);
   }
 
   // ========================================
@@ -406,7 +460,7 @@ var AdminAudit = window.AdminAudit || (function() {
     const actions = Object.keys(ACTION_MAP);
     const targets = ['user_123', 'server_gaming', 'user_xyz', 'server_cococord', 'role_moderator', null];
     
-    auditLogs = [];
+    allLoadedLogs = [];
     const now = new Date();
     
     for (let i = 0; i < 50; i++) {
@@ -414,7 +468,7 @@ var AdminAudit = window.AdminAudit || (function() {
       const actionType = actions[Math.floor(Math.random() * actions.length)];
       const date = new Date(now - Math.random() * 7 * 24 * 60 * 60 * 1000);
       
-      auditLogs.push({
+      allLoadedLogs.push({
         id: i + 1,
         actor: actor.email,
         actorName: actor.name,
@@ -435,9 +489,9 @@ var AdminAudit = window.AdminAudit || (function() {
     }
     
     // Sort by timestamp desc
-    auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    pagination.totalElements = auditLogs.length;
-    pagination.totalPages = Math.ceil(auditLogs.length / pagination.size);
+    allLoadedLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    pagination.totalElements = allLoadedLogs.length;
+    pagination.totalPages = Math.ceil(allLoadedLogs.length / pagination.size);
   }
 
   // ========================================
@@ -486,7 +540,6 @@ var AdminAudit = window.AdminAudit || (function() {
     // Attach click listeners
     document.querySelectorAll('.audit-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        console.log('[AdminAudit] Click on item, id:', item.dataset.id);
         if (!e.target.closest('.audit-more')) {
           openModal(item.dataset.id);
         }
@@ -500,6 +553,17 @@ var AdminAudit = window.AdminAudit || (function() {
         showMoreOptions(btn.closest('.audit-item').dataset.id);
       });
     });
+    
+    // Show loading indicator if more logs available
+    if (hasMoreLogs && !isLoading) {
+      const loadingIndicator = document.createElement('div');
+      loadingIndicator.className = 'audit-load-more';
+      loadingIndicator.innerHTML = `
+        <i class="fas fa-arrow-down"></i>
+        Cuộn xuống để xem thêm
+      `;
+      container.appendChild(loadingIndicator);
+    }
   }
 
   function renderTimelineItem(log) {
@@ -584,7 +648,7 @@ var AdminAudit = window.AdminAudit || (function() {
   // ========================================
 
   function applyFilters() {
-    let filtered = [...auditLogs];
+    let filtered = [...allLoadedLogs];
     
     // Search filter
     if (currentFilters.search) {
@@ -828,27 +892,14 @@ var AdminAudit = window.AdminAudit || (function() {
   // ========================================
 
   function openModal(logId) {
-    console.log('[AdminAudit] openModal called with id:', logId);
-    console.log('[AdminAudit] auditLogs count:', auditLogs.length);
+    const log = allLoadedLogs.find(l => l.id == logId);
     
-    const log = auditLogs.find(l => l.id == logId);
-    console.log('[AdminAudit] Found log:', log);
-    
-    if (!log) {
-      console.warn('[AdminAudit] Không tìm thấy log với ID:', logId);
-      return;
-    }
+    if (!log) return;
     
     const modal = document.getElementById('auditModal');
     const modalBody = document.getElementById('auditModalBody');
     
-    console.log('[AdminAudit] Modal element:', modal);
-    console.log('[AdminAudit] Modal body element:', modalBody);
-    
-    if (!modal || !modalBody) {
-      console.warn('[AdminAudit] Không tìm thấy modal elements');
-      return;
-    }
+    if (!modal || !modalBody) return;
     
     const actionInfo = getActionInfo(log);
     const actor = log.actorName || log.actor || 'Hệ thống';
@@ -860,6 +911,14 @@ var AdminAudit = window.AdminAudit || (function() {
     
     // Build target section HTML
     const targetHtml = buildTargetSection(log);
+    
+    // Actor avatar HTML
+    let actorAvatarHtml;
+    if (log.actorAvatarUrl) {
+      actorAvatarHtml = `<img src="${log.actorAvatarUrl}" alt="${actor}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+    } else {
+      actorAvatarHtml = actorInitial;
+    }
     
     modalBody.innerHTML = `
       <!-- Action Type -->
@@ -875,7 +934,7 @@ var AdminAudit = window.AdminAudit || (function() {
       <div class="modal-section">
         <div class="modal-section-title">Người thực hiện</div>
         <div class="modal-actor-info">
-          <div class="modal-actor-avatar">${actorInitial}</div>
+          <div class="modal-actor-avatar">${actorAvatarHtml}</div>
           <div class="modal-actor-details">
             <div class="modal-actor-name">${actor}</div>
             <div class="modal-actor-role">${actorRole}</div>

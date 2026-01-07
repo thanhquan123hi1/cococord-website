@@ -40,6 +40,7 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
     private final IDirectMessageRepository directMessageRepository;
     private final IUserRepository userRepository;
     private final INotificationService notificationService;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -323,7 +324,8 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
      * @param senderId       the sender's user ID
      * @param content        the message content (for sticker/gif, this is the URL)
      * @param attachmentUrls list of attachment URLs
-     * @param type           message type: TEXT, IMAGE, FILE, STICKER, GIF, AUDIO, VIDEO
+     * @param type           message type: TEXT, IMAGE, FILE, STICKER, GIF, AUDIO,
+     *                       VIDEO
      * @param metadata       JSON string with additional metadata for sticker/gif
      * @return the saved DirectMessage
      */
@@ -575,6 +577,88 @@ public class DirectMessageServiceImpl implements IDirectMessageService {
         } catch (IllegalArgumentException e) {
             log.warn("Unknown message type '{}', defaulting to TEXT", type);
             return DirectMessage.MessageType.TEXT;
+        }
+    }
+
+    @Override
+    @Transactional
+    public void toggleReaction(String messageId, String emoji, Long userId) {
+        DirectMessage message = directMessageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Message not found"));
+
+        // Verify user is member of DM group
+        if (!dmGroupRepository.isUserMemberOfGroup(message.getDmGroupId(), userId)) {
+            throw new ForbiddenException("You are not a member of this DM group");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (message.getReactions() == null) {
+            message.setReactions(new java.util.ArrayList<>());
+        }
+
+        // Check if user already reacted
+        DirectMessage.Reaction existingReaction = message.getReactions().stream()
+                .filter(r -> r.getEmoji().equals(emoji))
+                .findFirst()
+                .orElse(null);
+
+        boolean added = false;
+        if (existingReaction != null) {
+            if (existingReaction.getUserIds().contains(userId)) {
+                // Remove reaction
+                existingReaction.getUserIds().remove(userId);
+                existingReaction.setCount(existingReaction.getUserIds().size());
+                added = false;
+            } else {
+                // Add to existing
+                existingReaction.getUserIds().add(userId);
+                existingReaction.setCount(existingReaction.getUserIds().size());
+                added = true;
+            }
+        } else {
+            // New reaction
+            DirectMessage.Reaction newReaction = DirectMessage.Reaction.builder()
+                    .emoji(emoji)
+                    .count(1)
+                    .userIds(new HashSet<>(List.of(userId)))
+                    .build();
+            message.getReactions().add(newReaction);
+            added = true;
+        }
+
+        // Clean up empty reactions
+        message.getReactions().removeIf(r -> r.getCount() == 0 || r.getUserIds().isEmpty());
+
+        directMessageRepository.save(message);
+
+        // Broadcast event
+        // Use "MESSAGE_REACTION_UPDATED" as requested
+        String action = added ? "ADD" : "REMOVE";
+        // existingReaction might be null or stale?
+        // `message` object is updated.
+        int count = message.getReactions().stream()
+                .filter(r -> r.getEmoji().equals(emoji))
+                .findFirst()
+                .map(r -> r.getCount())
+                .orElse(0);
+
+        vn.cococord.dto.websocket.WebSocketEvent event = new vn.cococord.dto.websocket.WebSocketEvent(
+                "MESSAGE_REACTION_UPDATED",
+                vn.cococord.dto.websocket.ReactionEvent.builder()
+                        .messageId(messageId)
+                        .emoji(emoji)
+                        .userId(userId)
+                        .username(user.getUsername())
+                        .action(action)
+                        .count(count)
+                        .build());
+        String destination = "/topic/dm/" + message.getDmGroupId();
+        try {
+            messagingTemplate.convertAndSend(destination, event);
+        } catch (Exception e) {
+            log.error("Failed to broadcast reaction update to {}: {}", destination, e.getMessage());
         }
     }
 }
