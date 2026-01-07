@@ -262,7 +262,16 @@ public class PermissionServiceImpl implements IPermissionService {
                 .map(m -> m.getRole().getId())
                 .collect(Collectors.toList());
 
-        log.debug("User {} has roles {} in server {}", userId, roleIds, serverId);
+        // IMPORTANT: Always include @everyone role (is_default=true) for channel
+        // permission overrides
+        // @everyone applies to ALL members, even if not explicitly assigned
+        Optional<vn.cococord.entity.mysql.Role> everyoneRole = roleRepository.findDefaultRoleByServerId(serverId);
+        if (everyoneRole.isPresent() && !roleIds.contains(everyoneRole.get().getId())) {
+            roleIds.add(everyoneRole.get().getId());
+            log.debug("Added @everyone role {} to roleIds for channel permission lookup", everyoneRole.get().getId());
+        }
+
+        log.debug("User {} has roles {} in server {} (including @everyone)", userId, roleIds, serverId);
 
         // STEP 1: Get base permissions from server roles
         long baseBitmask = getBaseServerPermissions(userId, serverId);
@@ -346,10 +355,16 @@ public class PermissionServiceImpl implements IPermissionService {
 
     /**
      * Helper: Get base server permissions from user's roles
+     * If user has no role permissions, grant default basic permissions
      */
     private long getBaseServerPermissions(Long userId, Long serverId) {
         // Get all permission names from server roles
         Set<String> permissionNames = getUserPermissions(userId, serverId);
+
+        // If user has "ALL_PERMISSIONS" special marker (server owner)
+        if (permissionNames.contains("ALL_PERMISSIONS")) {
+            return PermissionBit.getAllPermissions();
+        }
 
         // Convert to bitmask
         long bitmask = 0L;
@@ -358,6 +373,21 @@ public class PermissionServiceImpl implements IPermissionService {
             if (bit != null) {
                 bitmask |= bit.getValue();
             }
+        }
+
+        // IMPORTANT: If user is a member but has no explicit permissions from roles,
+        // grant default basic permissions (VIEW_CHANNEL, SEND_MESSAGES,
+        // READ_MESSAGE_HISTORY)
+        // This prevents new users from being locked out of basic channel access
+        if (bitmask == 0L) {
+            log.debug("User {} has no role permissions in server {}, granting default basic permissions", userId,
+                    serverId);
+            bitmask = PermissionBit.VIEW_CHANNEL.getValue()
+                    | PermissionBit.SEND_MESSAGES.getValue()
+                    | PermissionBit.READ_MESSAGE_HISTORY.getValue()
+                    | PermissionBit.EMBED_LINKS.getValue()
+                    | PermissionBit.ATTACH_FILES.getValue()
+                    | PermissionBit.ADD_REACTIONS.getValue();
         }
 
         return bitmask;
@@ -386,7 +416,19 @@ public class PermissionServiceImpl implements IPermissionService {
 
     @Override
     public boolean canSendMessagesInChannel(Long userId, Long channelId) {
-        return hasChannelPermission(userId, channelId, PermissionBit.SEND_MESSAGES);
+        ComputedPermissionsDTO permissions = computeChannelPermissions(userId, channelId);
+        boolean canSend = PermissionBit.SEND_MESSAGES.isSet(permissions.getFinalBitmask());
+
+        log.info("=== PERMISSION CHECK: canSendMessagesInChannel ===");
+        log.info("  userId: {}, channelId: {}", userId, channelId);
+        log.info("  finalBitmask: {} (binary: {})", permissions.getFinalBitmask(),
+                Long.toBinaryString(permissions.getFinalBitmask()));
+        log.info("  SEND_MESSAGES bit position: {}, value: {}", PermissionBit.SEND_MESSAGES.getBitPosition(),
+                PermissionBit.SEND_MESSAGES.getValue());
+        log.info("  Result: canSend = {}", canSend);
+        log.info("=================================================");
+
+        return canSend;
     }
 
     @Override
