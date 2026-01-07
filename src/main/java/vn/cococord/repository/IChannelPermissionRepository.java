@@ -4,9 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import vn.cococord.entity.mysql.ChannelPermission;
 import vn.cococord.entity.mysql.ChannelPermission.TargetType;
@@ -79,7 +82,7 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @return Danh sách permission overrides cho roles
         */
        default List<ChannelPermission> findRoleOverridesByChannelId(Long channelId) {
-              return findByChannelIdAndTargetType(channelId, TargetType.ROLE);
+              return findByChannel_IdAndTargetType(channelId, TargetType.ROLE);
        }
 
        /**
@@ -89,13 +92,18 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @return Danh sách permission overrides cho users
         */
        default List<ChannelPermission> findUserOverridesByChannelId(Long channelId) {
-              return findByChannelIdAndTargetType(channelId, TargetType.USER);
+              return findByChannel_IdAndTargetType(channelId, TargetType.USER);
        }
 
        /**
-        * Internal generic finder by list
+        * Internal generic finder by list - uses underscore for nested property
         */
-       List<ChannelPermission> findByChannelIdAndTargetType(Long channelId, TargetType targetType);
+       List<ChannelPermission> findByChannel_IdAndTargetType(Long channelId, TargetType targetType);
+
+       /**
+        * Also provide underscore version for Channel.id lookup
+        */
+       List<ChannelPermission> findByChannel_Id(Long channelId);
 
        /**
         * Xóa tất cả permission overrides của một target (User hoặc Role)
@@ -104,7 +112,7 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @param targetType Loại target (USER hoặc ROLE)
         * @param targetId   ID của target
         */
-       void deleteByChannelIdAndTargetTypeAndTargetId(
+       void deleteByChannel_IdAndTargetTypeAndTargetId(
                      Long channelId,
                      TargetType targetType,
                      Long targetId);
@@ -114,7 +122,7 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * 
         * @param channelId ID của channel
         */
-       void deleteByChannelId(Long channelId);
+       void deleteByChannel_Id(Long channelId);
 
        /**
         * Kiểm tra xem có permission override cho target không
@@ -124,7 +132,7 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @param targetId   ID của target
         * @return true nếu tồn tại
         */
-       boolean existsByChannelIdAndTargetTypeAndTargetId(
+       boolean existsByChannel_IdAndTargetTypeAndTargetId(
                      Long channelId,
                      TargetType targetType,
                      Long targetId);
@@ -149,8 +157,8 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * 
         * @param roleId ID của role
         */
-       @org.springframework.data.jpa.repository.Modifying
-       @org.springframework.transaction.annotation.Transactional
+       @Modifying // Bắt buộc phải có cho lệnh DELETE/UPDATE
+       @Transactional
        @Query("DELETE FROM ChannelPermission cp WHERE cp.targetType = :targetType AND cp.targetId = :roleId")
        void deleteByRoleId(@Param("roleId") Long roleId, @Param("targetType") TargetType targetType);
 
@@ -164,8 +172,8 @@ public interface IChannelPermissionRepository extends JpaRepository<ChannelPermi
         * @param userId   ID của user
         * @param serverId ID của server
         */
-       @org.springframework.data.jpa.repository.Modifying
-       @org.springframework.transaction.annotation.Transactional
+       @Modifying // Bắt buộc phải có cho lệnh DELETE/UPDATE
+    @Transactional
        @Query("DELETE FROM ChannelPermission cp WHERE cp.targetType = :userType " +
                      "AND cp.targetId = :userId AND cp.channel.server.id = :serverId")
        void deleteByUserIdAndServerId(@Param("userId") Long userId, @Param("serverId") Long serverId,

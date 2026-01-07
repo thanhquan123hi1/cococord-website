@@ -406,7 +406,7 @@ public class PermissionServiceImpl implements IPermissionService {
 
     @Override
     public List<ChannelPermissionDTO> getChannelPermissionOverrides(Long channelId) {
-        List<ChannelPermission> overrides = channelPermissionRepository.findByChannelId(channelId);
+        List<ChannelPermission> overrides = channelPermissionRepository.findByChannel_Id(channelId);
 
         return overrides.stream()
                 .map(this::convertToDTO)
@@ -429,16 +429,27 @@ public class PermissionServiceImpl implements IPermissionService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
-        // Get or create permission override
-        ChannelPermission permission = channelPermissionRepository
-                .findByChannelIdAndUserId(channelId, userId)
-                .orElse(ChannelPermission.builder()
-                        .channel(channel)
-                        .targetType(ChannelPermission.TargetType.USER)
-                        .targetId(userId)
-                        .allowBitmask(0L)
-                        .denyBitmask(0L)
-                        .build());
+        // Get or create permission override - USE UNDERSCORE METHOD EXPLICITLY
+        log.debug("Looking up existing permission for channel={}, user={}", channelId, userId);
+        Optional<ChannelPermission> existingOpt = channelPermissionRepository
+                .findByChannel_IdAndTargetTypeAndTargetId(channelId, ChannelPermission.TargetType.USER, userId);
+
+        log.debug("Existing permission found: {}", existingOpt.isPresent());
+
+        ChannelPermission permission;
+        if (existingOpt.isPresent()) {
+            permission = existingOpt.get();
+            log.debug("Updating existing permission ID={}", permission.getId());
+        } else {
+            permission = ChannelPermission.builder()
+                    .channel(channel)
+                    .targetType(ChannelPermission.TargetType.USER)
+                    .targetId(userId)
+                    .allowBitmask(0L)
+                    .denyBitmask(0L)
+                    .build();
+            log.debug("Creating new permission for channel={}, user={}", channelId, userId);
+        }
 
         // Convert permission names to bitmasks
         long allowBitmask = convertPermissionsToBitmask(allowedPermissions);
@@ -447,9 +458,14 @@ public class PermissionServiceImpl implements IPermissionService {
         permission.setAllowBitmask(allowBitmask);
         permission.setDenyBitmask(denyBitmask);
 
-        permission = channelPermissionRepository.save(permission);
-
-        log.info("Updated user {} permissions in channel {}", userId, channelId);
+        try {
+            permission = channelPermissionRepository.save(permission);
+            log.info("Updated user {} permissions in channel {}, permission ID={}", userId, channelId,
+                    permission.getId());
+        } catch (Exception e) {
+            log.error("Failed to save permission for channel={}, user={}: {}", channelId, userId, e.getMessage(), e);
+            throw e;
+        }
 
         return convertToDTO(permission);
     }
@@ -470,16 +486,27 @@ public class PermissionServiceImpl implements IPermissionService {
         roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
 
-        // Get or create permission override
-        ChannelPermission permission = channelPermissionRepository
-                .findByChannelIdAndRoleId(channelId, roleId)
-                .orElse(ChannelPermission.builder()
-                        .channel(channel)
-                        .targetType(ChannelPermission.TargetType.ROLE)
-                        .targetId(roleId)
-                        .allowBitmask(0L)
-                        .denyBitmask(0L)
-                        .build());
+        // Get or create permission override - USE UNDERSCORE METHOD EXPLICITLY
+        log.debug("Looking up existing permission for channel={}, role={}", channelId, roleId);
+        Optional<ChannelPermission> existingOpt = channelPermissionRepository
+                .findByChannel_IdAndTargetTypeAndTargetId(channelId, ChannelPermission.TargetType.ROLE, roleId);
+
+        log.debug("Existing permission found: {}", existingOpt.isPresent());
+
+        ChannelPermission permission;
+        if (existingOpt.isPresent()) {
+            permission = existingOpt.get();
+            log.debug("Updating existing permission ID={}", permission.getId());
+        } else {
+            permission = ChannelPermission.builder()
+                    .channel(channel)
+                    .targetType(ChannelPermission.TargetType.ROLE)
+                    .targetId(roleId)
+                    .allowBitmask(0L)
+                    .denyBitmask(0L)
+                    .build();
+            log.debug("Creating new permission for channel={}, role={}", channelId, roleId);
+        }
 
         // Convert permission names to bitmasks
         long allowBitmask = convertPermissionsToBitmask(allowedPermissions);
@@ -488,9 +515,14 @@ public class PermissionServiceImpl implements IPermissionService {
         permission.setAllowBitmask(allowBitmask);
         permission.setDenyBitmask(denyBitmask);
 
-        permission = channelPermissionRepository.save(permission);
-
-        log.info("Updated role {} permissions in channel {}", roleId, channelId);
+        try {
+            permission = channelPermissionRepository.save(permission);
+            log.info("Updated role {} permissions in channel {}, permission ID={}", roleId, channelId,
+                    permission.getId());
+        } catch (Exception e) {
+            log.error("Failed to save permission for channel={}, role={}: {}", channelId, roleId, e.getMessage(), e);
+            throw e;
+        }
 
         return convertToDTO(permission);
     }
@@ -499,7 +531,7 @@ public class PermissionServiceImpl implements IPermissionService {
     @Transactional
     public void removeUserChannelPermissions(Long channelId, Long userId) {
         log.debug("Removing user {} permissions from channel {}", userId, channelId);
-        channelPermissionRepository.deleteByChannelIdAndTargetTypeAndTargetId(
+        channelPermissionRepository.deleteByChannel_IdAndTargetTypeAndTargetId(
                 channelId, ChannelPermission.TargetType.USER, userId);
         log.info("Removed user {} permissions from channel {}", userId, channelId);
     }
@@ -508,7 +540,7 @@ public class PermissionServiceImpl implements IPermissionService {
     @Transactional
     public void removeRoleChannelPermissions(Long channelId, Long roleId) {
         log.debug("Removing role {} permissions from channel {}", roleId, channelId);
-        channelPermissionRepository.deleteByChannelIdAndTargetTypeAndTargetId(
+        channelPermissionRepository.deleteByChannel_IdAndTargetTypeAndTargetId(
                 channelId, ChannelPermission.TargetType.ROLE, roleId);
         log.info("Removed role {} permissions from channel {}", roleId, channelId);
     }
@@ -572,13 +604,13 @@ public class PermissionServiceImpl implements IPermissionService {
     public void grantAllPermissionsToRole(Long roleId) {
         vn.cococord.entity.mysql.Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
-        
+
         // Get all permissions from database
         List<vn.cococord.entity.mysql.Permission> allPermissions = permissionRepository.findAll();
-        
+
         // Delete existing role permissions
         rolePermissionRepository.deleteByRoleId(roleId);
-        
+
         // Grant all permissions
         for (vn.cococord.entity.mysql.Permission permission : allPermissions) {
             vn.cococord.entity.mysql.RolePermission rolePermission = vn.cococord.entity.mysql.RolePermission.builder()
@@ -588,7 +620,7 @@ public class PermissionServiceImpl implements IPermissionService {
                     .build();
             rolePermissionRepository.save(rolePermission);
         }
-        
+
         log.info("Granted all permissions to role {}", role.getName());
     }
 
@@ -597,18 +629,19 @@ public class PermissionServiceImpl implements IPermissionService {
     public void grantPermissionsToRole(Long roleId, Set<String> permissionNames) {
         vn.cococord.entity.mysql.Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleId));
-        
+
         for (String permissionName : permissionNames) {
             vn.cococord.entity.mysql.Permission permission = permissionRepository.findByName(permissionName)
                     .orElse(null);
-            
+
             if (permission != null) {
                 // Check if already exists
                 boolean exists = rolePermissionRepository.findByRoleId(roleId).stream()
                         .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
-                
+
                 if (!exists) {
-                    vn.cococord.entity.mysql.RolePermission rolePermission = vn.cococord.entity.mysql.RolePermission.builder()
+                    vn.cococord.entity.mysql.RolePermission rolePermission = vn.cococord.entity.mysql.RolePermission
+                            .builder()
                             .role(role)
                             .permission(permission)
                             .isAllowed(true)
@@ -619,7 +652,7 @@ public class PermissionServiceImpl implements IPermissionService {
                 log.warn("Permission not found: {}", permissionName);
             }
         }
-        
+
         log.info("Granted permissions {} to role {}", permissionNames, role.getName());
     }
 

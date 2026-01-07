@@ -171,6 +171,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle data integrity violations (duplicate key, foreign key constraints,
+     * etc.)
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<MessageResponse> handleDataIntegrityViolationException(
+            org.springframework.dao.DataIntegrityViolationException ex,
+            jakarta.servlet.http.HttpServletRequest request) {
+        log.error("Data integrity violation at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(MessageResponse.error("Database constraint violation: " + rootCauseMessage));
+    }
+
+    /**
      * Handle all other exceptions
      */
     /**
