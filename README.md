@@ -43,7 +43,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
 
 <table>
   <tr>
-    <td width="60%">
+    <td width="50%">
       <h3>⚡ Tốc độ & Real-time (Thời gian thực)</h3>
       <ul>
         <li>Hệ thống <strong>WebSocket (STOMP)</strong> tối ưu hóa, độ trễ tin nhắn dưới 50ms.</li>
@@ -51,16 +51,16 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
         <li>Trạng thái hoạt động (Presence) và Typing Indicator chính xác theo mili-giây.</li>
       </ul>
     </td>
-    <td width="40%">
+    <td width="50%">
        <!-- [CHÈN GIF: Chat nhanh như chớp] -->
        <img src="src/main/resources/static/images/chat.gif" width="100%" /> 
     </td>
   </tr>
   <tr>
-    <td width="40%">
+    <td width="50%">
        <img src="src/main/resources/static/images/video-call.gif" width="100%" />
     </td>
-    <td width="60%">
+    <td width="50%">
       <h3>🎙️ Voice Chat & Media</h3>
       <ul>
         <li>Đàm thoại âm thanh chất lượng cao (WebRTC P2P).</li>
@@ -70,7 +70,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
     </td>
   </tr>
     <tr>
-    <td width="60%">
+    <td width="50%">
       <h3>🛡️ Quản trị Cộng đồng (Community)</h3>
       <ul>
         <li>Phân quyền role chi tiết (Admin, Mod, Member, Guest).</li>
@@ -78,7 +78,7 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
         <li>Audit Log ghi lại mọi hành động quan trọng trong Server.</li>
       </ul>
     </td>
-    <td width="40%">
+    <td width="50%">
        <!-- [CHÈN GIF: Server Settings & Roles] -->
        <img src="https://via.placeholder.com/400x300?text=Admin+Dashboard+GIF" width="100%" /> 
     </td>
