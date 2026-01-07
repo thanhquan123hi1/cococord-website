@@ -1,0 +1,113 @@
+/* Platform Overview Stats */
+#platform-overview-panel {
+    margin-bottom: 1.5rem;
+}
+
+.platform-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.platform-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.5));
+    border-radius: 12px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    transition: all 0.2s ease;
+}
+
+.platform-stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.platform-stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--primary-light, #e3f2fd);
+    color: var(--primary, #2196f3);
+    flex-shrink: 0;
+}
+
+.platform-stat-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.platform-stat-icon.success {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.platform-stat-icon.warning {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.platform-stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.platform-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary, #1f2937);
+    line-height: 1.2;
+}
+
+.platform-stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #6b7280);
+    font-weight: 500;
+}
+
+/* Dark theme support */
+[data-theme="dark"] .platform-stat-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .platform-stat-icon {
+    background: rgba(33, 150, 243, 0.15);
+    color: #64b5f6;
+}
+
+[data-theme="dark"] .platform-stat-icon.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .platform-stat-icon.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .platform-stat-value {
+    color: var(--text-primary-dark, #f9fafb);
+}
+
+[data-theme="dark"] .platform-stat-label {
+    color: var(--text-secondary-dark, #9ca3af);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .platform-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .platform-stat-value {
+        font-size: 1.25rem;
+    }
+}

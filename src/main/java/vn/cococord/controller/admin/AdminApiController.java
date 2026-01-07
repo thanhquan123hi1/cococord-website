@@ -426,6 +426,11 @@ public class AdminApiController {
         return ResponseEntity.ok(adminService.getRecentAuditLogs(limit));
     }
 
+    @GetMapping("/platform-stats")
+    public ResponseEntity<PlatformStatsResponse> getPlatformStats() {
+        return ResponseEntity.ok(adminService.getPlatformStats());
+    }
+
     // ================== Settings ==================
 
     @GetMapping("/settings")

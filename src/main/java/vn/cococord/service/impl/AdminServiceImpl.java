@@ -1244,6 +1244,22 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PlatformStatsResponse getPlatformStats() {
+        long totalChannels = channelRepository.count();
+        long totalServers = serverRepository.count();
+        long suspendedServers = serverRepository.countByIsSuspendedTrue();
+        long activeServers = totalServers - suspendedServers;
+
+        return PlatformStatsResponse.builder()
+                .totalChannels(totalChannels)
+                .totalServers(totalServers)
+                .activeServers(activeServers)
+                .suspendedServers(suspendedServers)
+                .build();
+    }
+
+    @Override
     public void logAdminAction(AdminAuditLog.AdminActionType actionType, String description,
             String targetType, Long targetId, String targetName,
             String changes, String adminUsername, String ipAddress) {

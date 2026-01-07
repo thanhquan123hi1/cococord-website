@@ -226,6 +226,11 @@ public interface IAdminService {
     List<AdminAuditLogResponse> getRecentAuditLogs(int limit);
 
     /**
+     * Get platform stats (for dashboard)
+     */
+    PlatformStatsResponse getPlatformStats();
+
+    /**
      * Log admin action
      */
     void logAdminAction(AdminAuditLog.AdminActionType actionType, String description,
