@@ -1,7 +1,7 @@
 <div align="center">
 
   <img src="src/main/resources/static/images/cococord-logo.png" alt="logo" width="120" height="120" />
-  <h1>✨ CoCoCord</h1>
+  <h1>CoCoCord</h1>
   <p>
     <strong>Nền tảng giao tiếp thời gian thực</strong>
   </p>
@@ -26,7 +26,7 @@
   
 
   <!-- [CHÈN GIF: Demo tổng quan (Hero Video)] -->
-  <img src="https://via.placeholder.com/1000x500?text=Insert+Hero+Demo+GIF+Here+1080p" alt="CoCoCord Demo" width="100%" style="border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);" />
+  <img src="src/main/resources/static/images/landing-page.gif" alt="CoCoCord Demo" width="100%" style="border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);" />
 
 </div>
 
