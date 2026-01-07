@@ -1,19 +1,43 @@
 /* Message Actions & Reactions CSS */
 
+/* Ensure message rows/content have relative positioning for absolute hover bar */
+.message-row,
+.dm-message-row,
+.message-item {
+    position: relative;
+}
+
+.message-content,
+.message-body,
+.dm-message-content,
+.message-content-wrapper {
+    position: relative;
+}
+
 /* Reaction Bar (Hover) */
 .message-reaction-bar {
     position: absolute;
     top: -16px;
     right: 16px;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-tertiary);
+    background-color: var(--background-secondary, #2b2d31);
+    border: 1px solid var(--background-tertiary, #1e1f22);
     border-radius: 4px;
     display: flex;
     align-items: center;
     padding: 2px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 10;
-    transition: opacity 0.2s;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+/* Show on hover */
+.message-row:hover .message-reaction-bar,
+.dm-message-row:hover .message-reaction-bar,
+.message-item:hover .message-reaction-bar {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .reaction-bar-btn,

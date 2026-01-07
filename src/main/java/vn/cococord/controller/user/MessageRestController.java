@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import vn.cococord.annotation.CheckChannelAccess;
 import vn.cococord.dto.response.ChatMessageResponse;
 import vn.cococord.service.IMessageService;
 
@@ -25,8 +26,10 @@ public class MessageRestController {
     /**
      * GET /api/messages/channel/{channelId}
      * Get message history for a channel (paginated)
+     * Requires VIEW_CHANNEL permission
      */
     @GetMapping("/channel/{channelId}")
+    @CheckChannelAccess(permission = "VIEW_CHANNEL", channelIdParam = "channelId")
     public ResponseEntity<Page<ChatMessageResponse>> getChannelMessages(
             @PathVariable Long channelId,
             @RequestParam(defaultValue = "0") int page,

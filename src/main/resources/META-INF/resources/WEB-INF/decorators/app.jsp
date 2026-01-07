@@ -57,6 +57,9 @@
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/chat-input.css">
                     <!-- Message Context Menu & Reactions CSS -->
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/message-context-menu.css">
+                    <!-- Message Actions (Reaction Bar, Pills, Emoji Picker) -->
+                    <link rel="stylesheet"
+                        href="${pageContext.request.contextPath}/css/message-actions.css?v=20260107a">
                     <!-- Forum Channel CSS -->
                     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/forum-channel.css">
 

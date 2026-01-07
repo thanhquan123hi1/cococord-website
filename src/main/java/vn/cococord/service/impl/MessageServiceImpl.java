@@ -62,6 +62,15 @@ public class MessageServiceImpl implements IMessageService {
             throw new UnauthorizedException("You don't have access to this channel");
         }
 
+        // Get user first for permission check
+        User user = getUserByUsername(username);
+
+        // Check if user has SEND_MESSAGES permission in this channel
+        if (!permissionService.canSendMessagesInChannel(user.getId(), request.getChannelId())) {
+            log.warn("User {} denied SEND_MESSAGES in channel {}", username, request.getChannelId());
+            throw new UnauthorizedException("Bạn không có quyền gửi tin nhắn trong kênh này");
+        }
+
         // Validate that either content or attachments is present
         boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
         boolean hasAttachments = request.getAttachments() != null && !request.getAttachments().isEmpty();
@@ -70,7 +79,7 @@ public class MessageServiceImpl implements IMessageService {
             throw new IllegalArgumentException("Message must have either content or attachments");
         }
 
-        User user = getUserByUsername(username);
+        // user already declared above for permission check
 
         Message message = convertToEntity(
                 request,

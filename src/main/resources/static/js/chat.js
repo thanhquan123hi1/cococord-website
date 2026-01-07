@@ -839,6 +839,29 @@
   }
 
   /**
+   * Initialize Message Actions Manager (reactions, context menu)
+   */
+  function initMessageActionsManager() {
+    if (typeof MessageActionsManager === 'undefined') {
+      console.warn('[Chat] MessageActionsManager not loaded');
+      return;
+    }
+
+    // Create global instance for WebSocket handlers to access
+    window.messageActionsInstance = new MessageActionsManager({
+      containerSelector: '#messageList',
+      messageSelector: '.message-row',
+      chatType: 'SERVER',
+      getCurrentUserId: () => currentUser?.id,
+      onReply: (messageId, messageEl) => {
+        // TODO: Implement reply functionality
+        console.log('[Chat] Reply to message:', messageId);
+      },
+    });
+    console.log('[Chat] MessageActionsManager initialized');
+  }
+
+  /**
    * Initialize Server Settings Manager
    */
   function initServerSettings() {
@@ -997,6 +1020,7 @@
                     <div class="message-content markdown-content">${htmlContent}${renderAttachments(
         msg
       )}</div>
+                    ${window.MessageActionsManager ? window.MessageActionsManager.generateReactionsHtml(msg.reactions || [], currentUser?.id) : ''}
                 </div>
             </div>`;
   }
@@ -2187,6 +2211,26 @@
                     }
                   } catch (e) {
                     /* ignore */
+                  }
+                }
+              );
+
+              // Subscribe to user-specific error queue for permission denied and other errors
+              stompClient.subscribe(
+                "/user/queue/errors",
+                (message) => {
+                  try {
+                    const errorMessage = message.body;
+                    console.error("[WebSocket Error]", errorMessage);
+
+                    // Show error toast to user
+                    if (typeof showToast === 'function') {
+                      showToast(errorMessage, 'error');
+                    } else {
+                      alert("Lỗi: " + errorMessage);
+                    }
+                  } catch (e) {
+                    console.error("Error handling WS error message:", e);
                   }
                 }
               );
@@ -5740,6 +5784,9 @@
 
     // Initialize Server Settings Manager
     initServerSettings();
+
+    // Initialize Message Actions Manager (reactions, context menu)
+    initMessageActionsManager();
 
     // Subscribe to channel updates and load history (don't block on WebSocket errors)
     try {

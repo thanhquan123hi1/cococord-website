@@ -171,6 +171,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle data integrity violations (duplicate key, foreign key constraints,
+     * etc.)
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<MessageResponse> handleDataIntegrityViolationException(
+            org.springframework.dao.DataIntegrityViolationException ex,
+            jakarta.servlet.http.HttpServletRequest request) {
+        log.error("Data integrity violation at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(MessageResponse.error("Database constraint violation: " + rootCauseMessage));
+    }
+
+    /**
      * Handle all other exceptions
      */
     /**
@@ -179,9 +194,28 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MessageResponse> handleGlobalException(Exception ex,
             jakarta.servlet.http.HttpServletRequest request) {
+        // Print full stack trace to server console for debugging
+        ex.printStackTrace();
         log.error("Unexpected error occurred at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+
+        // Build detailed error message for frontend debugging
+        String errorDetail = ex.getClass().getSimpleName() + ": " + ex.getMessage();
+
+        // Add first stack trace element for context
+        if (ex.getStackTrace() != null && ex.getStackTrace().length > 0) {
+            StackTraceElement firstElement = ex.getStackTrace()[0];
+            errorDetail += " [at " + firstElement.getClassName() + "." + firstElement.getMethodName()
+                    + ":" + firstElement.getLineNumber() + "]";
+        }
+
+        // Add root cause if available
+        Throwable rootCause = ex.getCause();
+        if (rootCause != null) {
+            errorDetail += " | Caused by: " + rootCause.getClass().getSimpleName() + ": " + rootCause.getMessage();
+        }
+
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponse.error("Error: " + ex.getClass().getSimpleName() + ": " + ex.getMessage()));
+                .body(MessageResponse.error(errorDetail));
     }
 }
