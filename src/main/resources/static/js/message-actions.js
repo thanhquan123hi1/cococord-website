@@ -26,38 +26,48 @@
             this.activeContextMenu = null;
             this.activeMessageId = null;
 
+            // Bind handlers
+            this._handleMouseOver = this._onMouseOver.bind(this);
+            this._handleContextMenu = this._onContextMenu.bind(this);
+            this._handleClickOutside = this._onClickOutside.bind(this);
+
             this._init();
         }
 
         _init() {
-            this._injectReactionBars();
-            this._bindContextMenu();
-            this._bindClickOutside();
+            document.addEventListener('mouseover', this._handleMouseOver);
+            document.addEventListener('contextmenu', this._handleContextMenu);
+            document.addEventListener('click', this._handleClickOutside);
         }
 
         /**
          * Add reaction bar to each message on hover
          */
-        _injectReactionBars() {
-            // Use event delegation for dynamically loaded messages
-            document.addEventListener('mouseover', (e) => {
-                const messageEl = e.target.closest(this.messageSelector);
-                if (!messageEl) return;
+        _onMouseOver(e) {
+            const messageEl = e.target.closest(this.messageSelector);
+            if (!messageEl) return;
 
-                // Check if reaction bar already exists
-                if (messageEl.querySelector('.message-reaction-bar')) return;
+            // Check if reaction bar already exists
+            if (messageEl.querySelector('.message-reaction-bar')) return;
 
-                const reactionBar = this._createReactionBar(messageEl);
+            const reactionBar = this._createReactionBar(messageEl);
 
-                // Position relative to message
-                const messageContent = messageEl.querySelector('.message-content, .dm-message-content') || messageEl;
-                messageContent.style.position = 'relative';
-                messageContent.appendChild(reactionBar);
-            });
+            // Position relative to message
+            const messageContent = messageEl.querySelector('.message-content, .dm-message-content') || messageEl;
+            messageContent.style.position = 'relative';
+            messageContent.appendChild(reactionBar);
         }
 
         _createReactionBar(messageEl) {
             const messageId = messageEl.dataset.messageId || messageEl.dataset.id;
+            const authorId = messageEl.dataset.authorId || messageEl.dataset.userId;
+            const currentUserId = this.getCurrentUserId();
+            const isOwnMessage = authorId && currentUserId && String(authorId) === String(currentUserId);
+            
+            // DEBUG: ownership check
+            if (!isOwnMessage) {
+                 console.log(`[MessageActions] Not own message. MsgId: ${messageId}, Author: ${authorId}, Me: ${currentUserId}, RawAuthor: ${messageEl.getAttribute('data-author-id')}, dataset:`, messageEl.dataset);
+            }
 
             const bar = document.createElement('div');
             bar.className = 'message-reaction-bar';
@@ -74,6 +84,11 @@
                 <button class="reaction-bar-btn reply-btn" title="Trả lời">
                     <i class="bi bi-reply"></i>
                 </button>
+                ${isOwnMessage ? `
+                <button class="reaction-bar-btn delete-btn" title="Xóa" style="color: #ef4444;">
+                    <i class="bi bi-trash"></i>
+                </button>
+                ` : ''}
                 <button class="reaction-bar-btn more-btn" title="Thêm">
                     <i class="bi bi-three-dots"></i>
                 </button>
@@ -98,7 +113,21 @@
             bar.querySelector('.reply-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (this.onReply) this.onReply(messageId, messageEl);
+                else {
+                     // Fallback if no handler: trigger global event or log
+                     const event = new CustomEvent('message-reply', { detail: { messageId, messageEl } });
+                     document.dispatchEvent(event);
+                }
             });
+
+            // Delete button
+            const deleteBtn = bar.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._confirmDelete(messageId, messageEl);
+                });
+            }
 
             // More button (context menu)
             bar.querySelector('.more-btn').addEventListener('click', (e) => {
@@ -112,17 +141,15 @@
         /**
          * Right-click context menu
          */
-        _bindContextMenu() {
-            document.addEventListener('contextmenu', (e) => {
-                const messageEl = e.target.closest(this.messageSelector);
-                if (!messageEl) return;
+        _onContextMenu(e) {
+            const messageEl = e.target.closest(this.messageSelector);
+            if (!messageEl) return;
 
-                // Don't show context menu on links/buttons
-                if (e.target.closest('a, button')) return;
+            // Don't show context menu on links/buttons
+            if (e.target.closest('a, button')) return;
 
-                e.preventDefault();
-                this._showContextMenu(messageEl, e.clientX, e.clientY);
-            });
+            e.preventDefault();
+            this._showContextMenu(messageEl, e.clientX, e.clientY);
         }
 
         _showContextMenu(messageEl, x, y) {
@@ -219,14 +246,10 @@
             this.activeMessageId = null;
         }
 
-        _bindClickOutside() {
-            document.addEventListener('click', () => {
+        _onClickOutside(e) {
+            if (this.activeContextMenu && !e.target.closest('.message-context-menu')) {
                 this._hideContextMenu();
-            });
-
-            document.addEventListener('scroll', () => {
-                this._hideContextMenu();
-            }, true);
+            }
         }
 
         /**
@@ -452,7 +475,8 @@
          * Confirm and delete message
          */
         _confirmDelete(messageId, messageEl) {
-            if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return;
+            // User requested no confirmation
+            // if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return;
 
             this._deleteMessage(messageId, messageEl);
         }
@@ -466,18 +490,29 @@
                     }
                 });
 
-                if (!response.ok) throw new Error('Failed to delete');
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[MessageActions] Delete failed:', response.status, errorText);
+                    throw new Error('Failed to delete: ' + response.status);
+                }
 
-                // Animate removal
-                messageEl.style.transition = 'opacity 0.2s, transform 0.2s';
-                messageEl.style.opacity = '0';
-                messageEl.style.transform = 'translateX(-20px)';
+                // Don't remove element directly, let the app handle state update via onDelete
+                // or just update content to show it's deleted
+                
+                if (this.onDelete) {
+                    this.onDelete(messageId);
+                } else {
+                    // Fallback if no handler: update UI to show deleted state
+                    const contentEl = messageEl.querySelector('.message-content, .dm-message-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = '<em style="color: #999;">Tin nhắn đã bị xóa</em>';
+                        messageEl.classList.add('message-deleted-placeholder');
+                        // Remove actions
+                        const reactionBar = messageEl.querySelector('.message-reaction-bar');
+                        if (reactionBar) reactionBar.remove();
+                    }
+                }
 
-                setTimeout(() => {
-                    messageEl.remove();
-                }, 200);
-
-                if (this.onDelete) this.onDelete(messageId);
                 this._showToast('Đã xóa tin nhắn', 'success');
             } catch (error) {
                 console.error('[MessageActions] Failed to delete message:', error);
@@ -509,6 +544,9 @@
 
         destroy() {
             this._hideContextMenu();
+            document.removeEventListener('mouseover', this._handleMouseOver);
+            document.removeEventListener('contextmenu', this._handleContextMenu);
+            document.removeEventListener('click', this._handleClickOutside);
         }
     }
 

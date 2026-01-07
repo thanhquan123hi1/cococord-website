@@ -62,4 +62,17 @@ public class MessageRestController {
         List<ChatMessageResponse> replies = messageService.getMessageReplies(messageId);
         return ResponseEntity.ok(replies);
     }
+
+    /**
+     * DELETE /api/messages/{messageId}
+     * Delete a message
+     */
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable String messageId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        messageService.deleteMessage(messageId, userDetails.getUsername());
+        return ResponseEntity.ok().build();
+    }
 }

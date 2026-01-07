@@ -152,6 +152,10 @@
 
   // Server Settings Modal
   let serverSettingsManager = null;
+  
+  // Reply state
+  let replyToMessage = null;
+  let messageActionsManager = null;
 
   // ==================== UTILITIES ====================
   function getQueryParams() {
@@ -441,6 +445,118 @@
     });
   }
 
+  function initMessageActions() {
+    if (messageActionsManager) messageActionsManager.destroy();
+
+    // Destroy global auto-instance from message-actions.js if it exists
+    if (window.messageActionsInstance) {
+        window.messageActionsInstance.destroy();
+        window.messageActionsInstance = null;
+    }
+
+    // Ensure MessageActionsManager is loaded
+    if (typeof MessageActionsManager === 'undefined') return;
+
+    messageActionsManager = new MessageActionsManager({
+        containerSelector: '#messageList',
+        messageSelector: '.message-row',
+        getCurrentUserId: () => {
+            // Priority: chat.js local state -> window.currentUser -> window.state.currentUser
+            const uid = currentUser?.id || window.currentUser?.id || window.state?.currentUser?.id;
+            console.log('[MessageActions] Resolving currentUserId:', uid);
+            return uid;
+        },
+        onReply: (messageId, messageEl) => {
+            // Find message data
+            const msg = messages.find(m => String(m.id) === String(messageId));
+            if (msg) showReplyPreview(msg);
+            else {
+                // Fallback using DOM data
+                 const username = messageEl.querySelector('.username')?.textContent;
+                 const content = messageEl.querySelector('.message-content')?.textContent;
+                 showReplyPreview({ id: messageId, username, content });
+            }
+        },
+        onDelete: (messageId) => {
+             // Mark as deleted locally and update view
+             const msg = messages.find(m => String(m.id) === String(messageId));
+             if (msg) {
+                 msg.isDeletedLocal = true;
+                 if (virtualScroller) virtualScroller.setItems(messages);
+                 else {
+                     // Fallback for non-virtual reference
+                     const row = document.querySelector(`[data-message-id="${messageId}"]`);
+                     if (row) {
+                         const content = row.querySelector('.message-content');
+                         if (content) {
+                             content.innerHTML = '<em style="color: #72767d;">Tin nhắn đã bị xóa</em>';
+                             row.classList.add('message-deleted-placeholder');
+                         }
+                     }
+                 }
+             }
+        }
+    });
+  }
+
+  function showReplyPreview(message) {
+    cancelReply();
+    replyToMessage = message;
+    
+    // Find composer to attach
+    const composer = el.chatComposer || document.getElementById('chatComposer');
+    if (!composer) return;
+
+    const preview = document.createElement('div');
+    preview.id = 'replyPreview';
+    preview.className = 'reply-preview-bar';
+    // Improved styles: ensure it sits above logic
+    preview.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        background: #2f3136; /* Dark background matching Discord */
+        border-bottom: 1px solid #202225;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: 0;
+        font-size: 0.85rem;
+        color: #b9bbbe;
+        width: 100%;
+        box-sizing: border-box;
+    `;
+    
+    // Attempt to get displayName
+    const name = message.displayName || message.username || 'User';
+    
+    preview.innerHTML = `
+        <div class="reply-info" style="display:flex;align-items:center;gap:8px;overflow:hidden;flex:1;">
+            <span class="reply-label" style="white-space:nowrap;opacity:0.8;">Đang trả lời</span>
+            <span class="reply-username" style="font-weight:600;color:white;">@${escapeHtml(name)}</span>
+        </div>
+        <button class="reply-close-btn" type="button" style="background:none;border:none;color:#b9bbbe;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    `;
+
+    // Insert as the first child of the composer form. 
+    // This assumes the composer handles its children via flex-col or similar, or we might pushing the input down.
+    composer.insertBefore(preview, composer.firstChild);
+    
+    // If composer is flex-row, we might need to change flex-direction or wrap?
+    // Let's force composer to be valid if possible.
+    // If layout breaks, user will report. But usually composer is a block/flex container.
+    
+    preview.querySelector('.reply-close-btn').addEventListener('click', cancelReply);
+    if (el.chatInput) el.chatInput.focus();
+  }
+
+  function cancelReply() {
+    replyToMessage = null;
+    const preview = document.getElementById('replyPreview');
+    if (preview) preview.remove();
+  }
+
   /**
    * Check if sending messages is allowed (server not locked/suspended)
    * @returns {boolean}
@@ -474,7 +590,11 @@
       stompClient.send(
         "/app/chat.sendMessage",
         {},
-        JSON.stringify({ channelId: activeChannelId, content: text })
+        JSON.stringify({ 
+            channelId: activeChannelId, 
+            content: text,
+            replyToMessageId: replyToMessage?.id || null
+        })
       );
 
       // Clear input ONLY after successful send
@@ -549,6 +669,7 @@
             channelId: activeChannelId,
             content: text || "",
             attachments: uploadedFiles,
+            replyToMessageId: replyToMessage?.id || null
           })
         );
         console.log("[Chat] Message with attachments sent successfully");
@@ -771,13 +892,35 @@
    */
   function renderMessageItem(msg, index) {
     if (!msg) return "";
+
+    // Handle locally deleted messages
+    if (msg.isDeletedLocal) {
+        return `
+            <div class="message-row message-deleted-placeholder" data-message-id="${msg.id}">
+                 <div class="message-body" style="padding: 4px 0;">
+                     <div class="message-content" style="color: #72767d; font-style: italic; font-size: 0.9em;">
+                         Tin nhắn đã bị xóa
+                     </div>
+                 </div>
+            </div>`;
+    }
+
     // --- LOGIC ---
     const prevMsg =
       index > 0 && messages[index - 1] ? messages[index - 1] : null;
-    const currentId = String(msg.userId || msg.senderId || "");
-    const prevId = prevMsg
-      ? String(prevMsg.userId || prevMsg.senderId || "")
-      : null;
+    
+    // Robust ID retrieval
+    const getMsgUserId = (m) => {
+        if (!m) return "";
+        const id = String(m.userId || m.senderId || m.sender?.id || m.author?.id || "");
+        if (!id || id === "undefined") {
+            console.warn("[Chat] Message missing userID:", m);
+        }
+        return id;
+    };
+
+    const currentId = getMsgUserId(msg);
+    const prevId = getMsgUserId(prevMsg);
     const currentTime = new Date(msg.createdAt || msg.timestamp).getTime();
     const prevTime = prevMsg
       ? new Date(prevMsg.createdAt || prevMsg.timestamp).getTime()
@@ -786,7 +929,7 @@
     const isContinued =
       prevMsg && currentId === prevId && currentTime - prevTime < 5 * 60 * 1000;
 
-    const displayName = msg.displayName || msg.username || "User";
+    const displayName = msg.displayName || msg.username || msg.sender?.displayName || msg.sender?.username || "User";
     const initial = displayName.trim().charAt(0).toUpperCase();
 
     let htmlContent = "";
@@ -811,8 +954,31 @@
     const timeShort = new Date(
       msg.createdAt || msg.timestamp
     ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    // --- REPLY RENDERING ---
+    let replyHtml = "";
+    if (msg.replyTo) {
+        // replyTo structure: { id, username, displayName, content, ... }
+        const rUser = msg.replyTo.displayName || msg.replyTo.username || "Unknown";
+        // Convert to plain text for preview (simple truncation)
+        let rContent = msg.replyTo.content || "Click to see attachment";
+        if (rContent.length > 50) rContent = rContent.substring(0, 50) + "...";
+        
+        replyHtml = `
+            <div class="message-reply-context" onclick="scrollToMessage('${msg.replyTo.id}')">
+                <div class="reply-line"></div>
+                <i class="bi bi-arrow-return-right reply-icon"></i>
+                <img src="${msg.replyTo.avatarUrl || ''}" class="reply-avatar-tiny" onerror="this.style.display='none'">
+                <span class="reply-username">@${escapeHtml(rUser)}</span>
+                <span class="reply-content">${escapeHtml(rContent)}</span>
+            </div>
+        `;
+    }
+
+    // Add data-author-id to row for permission checks
     return `
-            <div class="message-row" data-message-id="${msg.id}">
+            <div class="message-row ${msg.replyTo ? 'has-reply' : ''}" data-message-id="${msg.id}" data-author-id="${currentId}">
+                ${replyHtml}
                 <div class="message-avatar" onclick="showUserProfile('${currentId}')">
                     ${msg.avatarUrl
         ? `<img src="${escapeHtml(msg.avatarUrl)}">`
@@ -834,6 +1000,22 @@
                 </div>
             </div>`;
   }
+
+  // Make scrollToMessage global or accessible
+  window.scrollToMessage = function(messageId) {
+      if (!messageId) return;
+      
+      const row = document.querySelector(`.message-row[data-message-id="${messageId}"]`);
+      if (row) {
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight effect
+          row.classList.add('message-highlight');
+          setTimeout(() => row.classList.remove('message-highlight'), 2000);
+      } else {
+          showToast("Tin nhắn không nằm trong vùng hiển thị hiện tại.", "info");
+          // TODO: Load history to find message?
+      }
+  };
 
   // Hàm phụ trợ giữ cho code gọn
   function renderAttachments(msg) {
@@ -2203,12 +2385,25 @@
       (message) => {
         try {
           const messageId = message.body.replace(/"/g, "");
-          const row = document.querySelector(
-            `[data-message-id="${messageId}"]`
-          );
-          if (row) {
-            row.classList.add("message-deleted");
-            setTimeout(() => row.remove(), 300);
+          
+          // Update local state
+          const msg = messages.find(m => String(m.id) === String(messageId));
+          if (msg) {
+              msg.isDeletedLocal = true;
+              if (virtualScroller) virtualScroller.setItems(messages);
+          }
+
+          // Fallback DOM update if not covered by scroller immediate update
+          const row = document.querySelector(`[data-message-id="${messageId}"]`);
+          if (row && !row.classList.contains('message-deleted-placeholder')) {
+             const content = row.querySelector('.message-content');
+             if (content) {
+                 content.innerHTML = '<em style="color: #72767d;">Tin nhắn đã bị xóa</em>';
+                 row.classList.add('message-deleted-placeholder');
+                 // Remove any action bars if open
+                 const bar = row.querySelector('.message-reaction-bar');
+                 if (bar) bar.remove();
+             }
           }
         } catch (e) {
           /* ignore */
@@ -5529,6 +5724,9 @@
 
     // Initialize Header Toolbar (member list toggle, threads, pins, notifications, help)
     initHeaderToolbar();
+
+    // Initialize Message Actions (Reply, Delete, etc.)
+    initMessageActions();
 
     // Initialize Server Settings Manager
     initServerSettings();
