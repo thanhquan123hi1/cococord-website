@@ -229,21 +229,22 @@
             </div>
         </div>
 
-        <!-- Pending Reports -->
-        <div class="admin-panel white" id="pending-reports-panel">
+        <!-- Top Servers -->
+        <div class="admin-panel white" id="top-servers-panel">
             <div class="section-title">
-                <h3>Báo cáo đang chờ xử lý</h3>
-                <span class="badge badge-warning" data-stat="pendingReports">0</span>
+                <h3>Server hàng đầu</h3>
+                <span class="badge badge-info" data-stat="topServersCount">0</span>
             </div>
-            <div class="reports-list" id="reports-list">
-                <!-- Reports will be loaded dynamically -->
-                <div class="reports-loading">
+            <div class="servers-list" id="top-servers-list">
+                <!-- Top servers will be loaded dynamically -->
+                <div class="servers-loading">
+                    <div class="skeleton skeleton-text"></div>
                     <div class="skeleton skeleton-text"></div>
                     <div class="skeleton skeleton-text"></div>
                 </div>
             </div>
-            <div class="reports-footer">
-                <a href="${pageContext.request.contextPath}/admin/reports" class="btn btn-ghost btn-sm">Xem tất cả</a>
+            <div class="servers-footer">
+                <a href="${pageContext.request.contextPath}/admin#servers" class="btn btn-ghost btn-sm">Xem tất cả</a>
             </div>
         </div>
 

@@ -984,6 +984,16 @@ public class AdminServiceImpl implements IAdminService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ServerResponse> getTopServers(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<Server> topServers = serverRepository.findTopServersByMemberCount(pageable);
+        return topServers.getContent().stream()
+                .map(this::mapServerToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<AdminAuditLogResponse> getServerAuditLog(Long serverId, Pageable pageable) {
         // Verify server exists
         serverRepository.findById(serverId)

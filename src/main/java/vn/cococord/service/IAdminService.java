@@ -143,6 +143,11 @@ public interface IAdminService {
     Map<String, Object> getServerStats();
 
     /**
+     * Get top servers by member count
+     */
+    List<ServerResponse> getTopServers(int limit);
+
+    /**
      * Get audit log for a specific server
      */
     Page<AdminAuditLogResponse> getServerAuditLog(Long serverId, Pageable pageable);

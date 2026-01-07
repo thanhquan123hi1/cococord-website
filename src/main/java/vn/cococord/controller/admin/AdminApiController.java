@@ -168,6 +168,12 @@ public class AdminApiController {
         return ResponseEntity.ok(adminService.getServerById(serverId));
     }
 
+    @GetMapping("/servers/top")
+    public ResponseEntity<List<ServerResponse>> getTopServers(
+            @RequestParam(defaultValue = "3") int limit) {
+        return ResponseEntity.ok(adminService.getTopServers(limit));
+    }
+
     @PostMapping("/servers/{serverId}/lock")
     public ResponseEntity<MessageResponse> lockServer(
             @PathVariable Long serverId,

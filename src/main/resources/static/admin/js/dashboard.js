@@ -22,7 +22,8 @@ var AdminDashboard = window.AdminDashboard || (function() {
     summary: '/api/admin/dashboard/summary',
     stats: '/api/admin/dashboard/stats',
     users: '/api/admin/users',
-    recentAuditLogs: '/api/admin/audit-log/recent'
+    recentAuditLogs: '/api/admin/audit-log/recent',
+    topServers: '/api/admin/servers/top'
   };
 
   // ========================================
@@ -46,6 +47,7 @@ var AdminDashboard = window.AdminDashboard || (function() {
     // Update UI (will use mock data if API failed)
     updateStats();
     renderActivity();
+    renderTopServers();
     renderNewUsers();
     
     // Setup event listeners
@@ -198,6 +200,65 @@ var AdminDashboard = window.AdminDashboard || (function() {
     } catch (error) {
       console.error('[AdminDashboard] Failed to load recent activity:', error);
       container.innerHTML = '<div class="empty-activity">Không thể tải hoạt động</div>';
+      if (badge) badge.textContent = '0';
+    }
+  }
+
+  // ========================================
+  // Top Servers List
+  // ========================================
+
+  async function renderTopServers() {
+    const container = document.getElementById('top-servers-list');
+    const badge = document.querySelector('[data-stat="topServersCount"]');
+    
+    if (!container) return;
+    
+    try {
+      // Fetch top servers from API
+      const servers = await AdminUtils.api.get(`${API.topServers}?limit=3`);
+      
+      // Update badge
+      if (badge) {
+        badge.textContent = servers.length;
+      }
+      
+      // Render
+      if (servers.length === 0) {
+        container.innerHTML = '<div class="empty-activity">Không có server nào</div>';
+        return;
+      }
+      
+      container.innerHTML = servers.map(server => {
+        const memberCount = server.memberCount || 0;
+        const serverName = server.name || 'Unknown Server';
+        const ownerName = server.ownerUsername || 'Unknown';
+        
+        return `
+          <div class="server-item">
+            <div class="server-avatar">
+              ${server.iconUrl ? 
+                `<img src="${server.iconUrl}" alt="${serverName}">` : 
+                `<div class="server-avatar-placeholder">${AdminUtils.getInitials(serverName)}</div>`
+              }
+            </div>
+            <div class="server-info">
+              <div class="server-name">${serverName}</div>
+              <div class="server-meta">
+                <span class="server-owner">Owner: ${ownerName}</span>
+                <span class="server-members">${memberCount} thành viên</span>
+              </div>
+            </div>
+            <button class="admin-btn admin-btn-sm admin-btn-ghost" onclick="AdminRouter?.navigateTo('servers')">
+              View
+            </button>
+          </div>
+        `;
+      }).join('');
+      
+    } catch (error) {
+      console.error('[AdminDashboard] Failed to load top servers:', error);
+      container.innerHTML = '<div class="empty-activity">Không thể tải servers</div>';
       if (badge) badge.textContent = '0';
     }
   }
