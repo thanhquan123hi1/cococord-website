@@ -53,13 +53,12 @@ Dự án là sự kết tinh của các công nghệ Java Web hiện đại nh�
     </td>
     <td width="40%">
        <!-- [CHÈN GIF: Chat nhanh như chớp] -->
-       <img src="https://via.placeholder.com/400x300?text=Realtime+Chat+GIF" width="100%" /> 
+       <img src="src/main/resources/static/images/chat.gif" width="100%" /> 
     </td>
   </tr>
   <tr>
     <td width="40%">
-       <!-- [CHÈN GIF: Thao tác Voice Chat] -->
-       <img src="src/main/resources/static/images/chat.gif" width="100%" />
+       <img src="src/main/resources/static/images/video-call.gif" width="100%" />
     </td>
     <td width="60%">
       <h3>🎙️ Voice Chat & Media</h3>
