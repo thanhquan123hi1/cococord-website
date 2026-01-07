@@ -170,7 +170,7 @@ graph TD
 
 
 <div align="center">
-  <p>Thực hiện bởi <strong>Phùng Lê Thanh Quân</strong> <br/>
+  <p>Made by <br/> <strong>Phùng Lê Thanh Quân</strong> <br/>
   <strong>Đặng Gia Nguyên</strong> <br/> 
   <strong>Nguyễn Đức Thịnh</strong> </p>
   <p>
