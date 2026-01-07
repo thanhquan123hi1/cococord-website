@@ -9,6 +9,7 @@ import vn.cococord.dto.request.AdminSettingsRequest;
 import vn.cococord.dto.response.*;
 import vn.cococord.entity.mysql.AdminAuditLog;
 
+import java.util.List;
 import java.util.Map;
 
 public interface IAdminService {
@@ -142,6 +143,11 @@ public interface IAdminService {
     Map<String, Object> getServerStats();
 
     /**
+     * Get top servers by member count
+     */
+    List<ServerResponse> getTopServers(int limit);
+
+    /**
      * Get audit log for a specific server
      */
     Page<AdminAuditLogResponse> getServerAuditLog(Long serverId, Pageable pageable);
@@ -213,6 +219,16 @@ public interface IAdminService {
      * Get audit logs with filters
      */
     Page<AdminAuditLogResponse> getAuditLogs(Pageable pageable, String actionType, Long actorId);
+
+    /**
+     * Get recent audit logs (for dashboard)
+     */
+    List<AdminAuditLogResponse> getRecentAuditLogs(int limit);
+
+    /**
+     * Get platform stats (for dashboard)
+     */
+    PlatformStatsResponse getPlatformStats();
 
     /**
      * Log admin action

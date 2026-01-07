@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -983,6 +984,16 @@ public class AdminServiceImpl implements IAdminService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ServerResponse> getTopServers(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<Server> topServers = serverRepository.findTopServersByMemberCount(pageable);
+        return topServers.getContent().stream()
+                .map(this::mapServerToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<AdminAuditLogResponse> getServerAuditLog(Long serverId, Pageable pageable) {
         // Verify server exists
         serverRepository.findById(serverId)
@@ -1220,6 +1231,32 @@ public class AdminServiceImpl implements IAdminService {
         logs = auditLogRepository.findWithFilters(type, actorId, null, pageable);
 
         return logs.map(this::mapAuditLogToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminAuditLogResponse> getRecentAuditLogs(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<AdminAuditLog> logs = auditLogRepository.findAll(pageable);
+        return logs.getContent().stream()
+                .map(this::mapAuditLogToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PlatformStatsResponse getPlatformStats() {
+        long totalChannels = channelRepository.count();
+        long totalServers = serverRepository.count();
+        long suspendedServers = serverRepository.countByIsSuspendedTrue();
+        long activeServers = totalServers - suspendedServers;
+
+        return PlatformStatsResponse.builder()
+                .totalChannels(totalChannels)
+                .totalServers(totalServers)
+                .activeServers(activeServers)
+                .suspendedServers(suspendedServers)
+                .build();
     }
 
     @Override

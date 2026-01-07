@@ -41,6 +41,12 @@ public interface IServerRepository extends JpaRepository<Server, Long> {
         long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
 
+        @Query("SELECT s FROM Server s " +
+                        "LEFT JOIN s.members m " +
+                        "GROUP BY s.id " +
+                        "ORDER BY COUNT(m) DESC")
+        Page<Server> findTopServersByMemberCount(Pageable pageable);
+
         @Query("SELECT DATE(s.createdAt) as date, COUNT(s) as count FROM Server s " +
                         "WHERE s.createdAt >= :startDate GROUP BY DATE(s.createdAt) ORDER BY date")
         List<Object[]> countNewServersByDay(@Param("startDate") LocalDateTime startDate);

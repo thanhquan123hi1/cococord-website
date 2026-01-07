@@ -178,17 +178,17 @@ var DashboardV2 = window.DashboardV2 || (function() {
         updateRecentActivity(activityData);
       }
       
-      // Fetch pending reports
-      const reportsResponse = await fetch(`${CONFIG.apiBase}/reports?status=PENDING&page=0&size=5`, {
+      // Fetch platform stats
+      const platformStatsResponse = await fetch(`${CONFIG.apiBase}/platform-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (reportsResponse.ok) {
-        const reportsData = await reportsResponse.json();
-        updatePendingReports(reportsData);
+      if (platformStatsResponse.ok) {
+        const platformData = await platformStatsResponse.json();
+        updatePlatformStats(platformData);
       }
       
       // Fetch top servers
@@ -434,33 +434,14 @@ var DashboardV2 = window.DashboardV2 || (function() {
     return actionMap[actionType] || 'đã thực hiện thao tác';
   }
   
-  function updatePendingReports(data) {
-    const container = document.getElementById('reports-list');
-    if (!container) return;
+  function updatePlatformStats(data) {
+    if (!data) return;
     
-    if (!data || !data.content || data.content.length === 0) {
-      container.innerHTML = '<div class="no-data">Không có báo cáo đang chờ</div>';
-      return;
-    }
-    
-    container.innerHTML = data.content.map(report => `
-      <div class="report-item">
-        <div class="report-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-        </div>
-        <div class="report-content">
-          <div class="report-reason">${escapeHtml(report.reason || 'Không có lý do')}</div>
-          <div class="report-meta">
-            <span>Báo cáo bởi ${escapeHtml(report.reporter?.username || 'Ẩn danh')}</span>
-            <span>${formatTimeAgo(report.createdAt)}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
+    // Update platform overview stats
+    updateStatElement('totalChannels', data.totalChannels || 0);
+    updateStatElement('totalServers', data.totalServers || 0);
+    updateStatElement('activeServers', data.activeServers || 0);
+    updateStatElement('suspendedServers', data.suspendedServers || 0);
   }
   
   function updateTopServers(data) {

@@ -229,21 +229,61 @@
             </div>
         </div>
 
-        <!-- Pending Reports -->
-        <div class="admin-panel white" id="pending-reports-panel">
+        <!-- Platform Overview -->
+        <div class="admin-panel white" id="platform-overview-panel">
             <div class="section-title">
-                <h3>Báo cáo đang chờ xử lý</h3>
-                <span class="badge badge-warning" data-stat="pendingReports">0</span>
+                <h3>Tổng quan nền tảng</h3>
+                <span class="badge badge-default">Realtime</span>
             </div>
-            <div class="reports-list" id="reports-list">
-                <!-- Reports will be loaded dynamically -->
-                <div class="reports-loading">
-                    <div class="skeleton skeleton-text"></div>
-                    <div class="skeleton skeleton-text"></div>
+            <div class="platform-stats">
+                <div class="platform-stat-item">
+                    <div class="platform-stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="platform-stat-info">
+                        <span class="platform-stat-value" data-stat="totalChannels">--</span>
+                        <span class="platform-stat-label">Tổng số kênh</span>
+                    </div>
                 </div>
-            </div>
-            <div class="reports-footer">
-                <a href="${pageContext.request.contextPath}/admin/reports" class="btn btn-ghost btn-sm">Xem tất cả</a>
+                <div class="platform-stat-item">
+                    <div class="platform-stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                    </div>
+                    <div class="platform-stat-info">
+                        <span class="platform-stat-value" data-stat="totalServers">--</span>
+                        <span class="platform-stat-label">Tổng số Server</span>
+                    </div>
+                </div>
+                <div class="platform-stat-item">
+                    <div class="platform-stat-icon success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="platform-stat-info">
+                        <span class="platform-stat-value" data-stat="activeServers">--</span>
+                        <span class="platform-stat-label">Server hoạt động</span>
+                    </div>
+                </div>
+                <div class="platform-stat-item">
+                    <div class="platform-stat-icon warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <div class="platform-stat-info">
+                        <span class="platform-stat-value" data-stat="suspendedServers">--</span>
+                        <span class="platform-stat-label">Server bị khóa</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -251,15 +291,18 @@
         <div class="admin-panel white" id="top-servers-panel">
             <div class="section-title">
                 <h3>Server hàng đầu</h3>
-                <a href="${pageContext.request.contextPath}/admin/servers" class="btn btn-ghost btn-sm">Xem tất cả</a>
+                <span class="badge badge-info" data-stat="topServersCount">0</span>
             </div>
-            <div class="list" id="top-servers-list">
+            <div class="servers-list" id="top-servers-list">
                 <!-- Top servers will be loaded dynamically -->
                 <div class="servers-loading">
                     <div class="skeleton skeleton-text"></div>
                     <div class="skeleton skeleton-text"></div>
                     <div class="skeleton skeleton-text"></div>
                 </div>
+            </div>
+            <div class="servers-footer">
+                <a href="${pageContext.request.contextPath}/admin#servers" class="btn btn-ghost btn-sm">Xem tất cả</a>
             </div>
         </div>
     </div>

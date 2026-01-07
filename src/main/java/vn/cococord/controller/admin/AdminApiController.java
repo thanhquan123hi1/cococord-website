@@ -168,6 +168,12 @@ public class AdminApiController {
         return ResponseEntity.ok(adminService.getServerById(serverId));
     }
 
+    @GetMapping("/servers/top")
+    public ResponseEntity<List<ServerResponse>> getTopServers(
+            @RequestParam(defaultValue = "3") int limit) {
+        return ResponseEntity.ok(adminService.getTopServers(limit));
+    }
+
     @PostMapping("/servers/{serverId}/lock")
     public ResponseEntity<MessageResponse> lockServer(
             @PathVariable Long serverId,
@@ -412,6 +418,17 @@ public class AdminApiController {
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(adminService.getAuditLogs(pageable, actionType, actorId));
+    }
+
+    @GetMapping("/audit-log/recent")
+    public ResponseEntity<List<AdminAuditLogResponse>> getRecentAuditLogs(
+            @RequestParam(defaultValue = "3") int limit) {
+        return ResponseEntity.ok(adminService.getRecentAuditLogs(limit));
+    }
+
+    @GetMapping("/platform-stats")
+    public ResponseEntity<PlatformStatsResponse> getPlatformStats() {
+        return ResponseEntity.ok(adminService.getPlatformStats());
     }
 
     // ================== Settings ==================
