@@ -1,6 +1,7 @@
 package vn.cococord.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,21 +15,26 @@ import vn.cococord.repository.IUserRepository;
 @ConditionalOnProperty(name = "app.seed.admin.enabled", havingValue = "true", matchIfMissing = true)
 public class AdminUserSeeder implements ApplicationRunner {
 
-    private static final String ADMIN_USERNAME = "admin";
-    private static final String ADMIN_EMAIL = "admin@cococord.local";
-    private static final String ADMIN_PASSWORD = "admin123";
+    @Value("${ADMIN_USERNAME:admin}")
+    private String adminUsername;
+
+    @Value("${ADMIN_EMAIL:admin@cococord.local}")
+    private String adminEmail;
+
+    @Value("${ADMIN_PASSWORD:admin123}")
+    private String adminPassword;
 
     private final IUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(ApplicationArguments args) {
-        User admin = userRepository.findByUsernameOrEmail(ADMIN_USERNAME, ADMIN_EMAIL)
+        User admin = userRepository.findByUsernameOrEmail(adminUsername, adminEmail)
                 .orElseGet(() -> User.builder()
-                        .username(ADMIN_USERNAME)
-                        .email(ADMIN_EMAIL)
+                        .username(adminUsername)
+                        .email(adminEmail)
                         .displayName("Administrator")
-                        .password(passwordEncoder.encode(ADMIN_PASSWORD))
+                        .password(passwordEncoder.encode(adminPassword))
                         .role(User.Role.ADMIN)
                         .isActive(true)
                         .isBanned(false)

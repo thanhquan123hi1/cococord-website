@@ -173,17 +173,29 @@ graph TD
    - Tạo schema MySQL: `CREATE DATABASE cococord_db;`
    - (MongoDB tự động tạo khi chạy).
 
-2. **Cài đặt dependencies**:
+2. **Cấu hình Environment Variables**:
+   ```bash
+   # Copy file .env.example thành .env
+   cp .env.example .env
+   ```
+   - Mở file `.env` và điền các thông tin cần thiết:
+     - MySQL password
+     - Gmail App Password (xem hướng dẫn trong file .env.example)
+     - JWT Secret (có thể tạo bằng: `openssl rand -base64 64`)
+     - Cloudinary credentials (đăng ký miễn phí tại https://cloudinary.com)
+     - Admin username/password (tùy chọn)
+
+3. **Cài đặt dependencies**:
    ```bash
    mvn clean install
    ```
 
-3. **Chạy ứng dụng**:
+4. **Chạy ứng dụng**:
    ```bash
    mvn spring-boot:run
    ```
 
-4. **Truy cập**:
+5. **Truy cập**:
    - App: `http://localhost:8080`
 
 ---

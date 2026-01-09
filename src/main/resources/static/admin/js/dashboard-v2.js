@@ -3,13 +3,13 @@
  * Realtime updates via WebSocket, animations, data fetching
  */
 
-var DashboardV2 = window.DashboardV2 || (function() {
+var DashboardV2 = window.DashboardV2 || (function () {
   'use strict';
 
   // ========================================
   // Configuration
   // ========================================
-  
+
   const CONFIG = {
     apiBase: '/api/admin',
     wsEndpoint: '/ws',
@@ -29,29 +29,29 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function init() {
     console.log('[DashboardV2] Initializing...');
-    
+
     // Setup UI interactions
     setupNavTabs();
     setupViewAllButtons();
     setupQuickActions();
-    
+
     // Initialize animations
     animateOnLoad();
-    
+
     // Connect WebSocket for realtime updates
     connectWebSocket();
-    
+
     // Fetch initial data
     fetchDashboardData();
-    
+
     // Setup auto-refresh
     startAutoRefresh();
-    
+
     // Initialize New Users Chart
     if (window.AdminNewUsersChart) {
       AdminNewUsersChart.init();
     }
-    
+
     console.log('[DashboardV2] Initialized successfully');
   }
 
@@ -95,7 +95,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
     isConnected = false;
     console.error('[DashboardV2] WebSocket error:', error);
     updateLiveIndicator(false);
-    
+
     // Retry connection after 5 seconds
     setTimeout(connectWebSocket, 5000);
   }
@@ -123,9 +123,9 @@ var DashboardV2 = window.DashboardV2 || (function() {
   // ========================================
 
   function getAuthToken() {
-    return localStorage.getItem('accessToken') || 
-           document.cookie.match(/accessToken=([^;]+)/)?.[1] || 
-           null;
+    return localStorage.getItem('accessToken') ||
+      document.cookie.match(/accessToken=([^;]+)/)?.[1] ||
+      null;
   }
 
   async function fetchDashboardData() {
@@ -151,7 +151,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
       } else {
         console.error('[DashboardV2] Overview API failed:', overviewResponse.status);
       }
-      
+
       // Fetch summary data (platform overview, resources, charts)
       const summaryResponse = await fetch(`${CONFIG.apiBase}/dashboard/summary`, {
         headers: {
@@ -177,7 +177,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
         const activityData = await activityResponse.json();
         updateRecentActivity(activityData);
       }
-      
+
       // Fetch platform stats
       const platformStatsResponse = await fetch(`${CONFIG.apiBase}/platform-stats`, {
         headers: {
@@ -190,7 +190,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
         const platformData = await platformStatsResponse.json();
         updatePlatformStats(platformData);
       }
-      
+
       // Fetch top servers
       const serversResponse = await fetch(`${CONFIG.apiBase}/servers?page=0&size=5&sort=memberCount,desc`, {
         headers: {
@@ -207,7 +207,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
       console.error('[DashboardV2] Error fetching dashboard data:', err);
     }
   }
-  
+
   function updateOverviewKPIs(data) {
     console.log('[DashboardV2] updateOverviewKPIs called with:', data);
     // Update all KPI cards with guaranteed non-null values
@@ -215,30 +215,30 @@ var DashboardV2 = window.DashboardV2 || (function() {
     const totalUsers = data.totalUsers ?? 0;
     const newUsersLast7Days = data.newUsersLast7Days ?? 0;
     const onlineUsers = data.onlineUsers ?? 0;
-    
+
     console.log('[DashboardV2] Extracted values:', {
       totalMessages, totalUsers, newUsersLast7Days, onlineUsers
     });
-    
+
     updateStatElement('totalMessages', formatNumber(totalMessages));
     updateStatElement('totalUsers', formatNumber(totalUsers));
     updateStatElement('newUsersLast7Days', formatNumber(newUsersLast7Days));
     updateStatElement('onlineUsers', formatNumber(onlineUsers));
-    
+
     // Update growth indicators with safe values
     const growth = data.growth || {};
     const messagesGrowth = growth.messages ?? 0;
     const usersGrowth = growth.users ?? 0;
     const newUsersGrowth = growth.newUsers ?? 0;
-    
+
     updateGrowthElement('messagesGrowth', messagesGrowth, 'so với tuần trước');
     updateGrowthElement('usersGrowth', usersGrowth, 'so với tuần trước');
     updateGrowthElement('newUsersGrowth', newUsersGrowth, 'so với 7 ngày trước');
-    
+
     // Calculate and display active users percentage
-    const activePercent = totalUsers > 0 
-        ? Math.round((onlineUsers / totalUsers) * 100) 
-        : 0;
+    const activePercent = totalUsers > 0
+      ? Math.round((onlineUsers / totalUsers) * 100)
+      : 0;
     updateStatElement('activeUsersPercent', `${activePercent}% tổng số người dùng`);
   }
 
@@ -248,7 +248,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
     updateStatElement('totalServers', formatNumber(data.totalServers ?? 0));
     updateStatElement('activeServers', formatNumber(data.activeServers ?? 0));
     updateStatElement('lockedServers', formatNumber(data.lockedServers ?? 0));
-    
+
     // Resources
     updateStatElement('bannedUsers', formatNumber(data.bannedUsers ?? 0));
     updateStatElement('suspendedServers', formatNumber(data.suspendedServers ?? 0));
@@ -256,45 +256,45 @@ var DashboardV2 = window.DashboardV2 || (function() {
     updateStatElement('activeUsers24h', formatNumber(data.activeUsers24h ?? 0));
     updateStatElement('pendingReports', data.pendingReports ?? 0);
     updateStatElement('activityCount', data.recentActivity?.length ?? 0);
-    
+
     // Update percentage bars with safe calculations
     const totalUsers = data.totalUsers ?? 1; // Avoid division by zero
     const totalServers = data.totalServers ?? 1;
-    
+
     updateResourceBar('bannedUsersPercent', data.bannedUsers ?? 0, totalUsers);
     updateResourceBar('suspendedServersPercent', data.suspendedServers ?? 0, totalServers);
     updateResourceBar('newServersTodayPercent', data.newServersToday ?? 0, totalServers, 20);
     updateResourceBar('activeUsers24hPercent', data.activeUsers24h ?? 0, totalUsers);
-    
+
     // Update Server Activity Chart
     if (data.serverActivityChart && data.serverActivityChart.length > 0) {
       updateServerActivityChart(data.serverActivityChart);
     }
   }
-  
+
   function updateGrowthElement(statKey, value, suffix) {
     const el = document.querySelector(`[data-stat="${statKey}"]`);
     if (el) {
       const sign = value >= 0 ? '+' : '';
       el.textContent = `${sign}${value.toFixed(1)}% ${suffix}`;
-      
+
       // Update parent delta class
       const delta = el.closest('.delta');
       if (delta) {
         delta.classList.remove('up', 'down');
         delta.classList.add(value >= 0 ? 'up' : 'down');
-        
+
         // Update SVG direction
         const svg = delta.querySelector('svg path');
         if (svg) {
-          svg.setAttribute('d', value >= 0 
-              ? 'M6 9V3m0 0L3 6m3-3l3 3' 
-              : 'M6 3v6m0 0l3-3m-3 3L3 6');
+          svg.setAttribute('d', value >= 0
+            ? 'M6 9V3m0 0L3 6m3-3l3 3'
+            : 'M6 3v6m0 0l3-3m-3 3L3 6');
         }
       }
     }
   }
-  
+
   function updateResourceBar(statKey, value, total, maxPercent = 100) {
     const el = document.querySelector(`[data-stat="${statKey}"]`);
     if (el && total > 0) {
@@ -304,21 +304,21 @@ var DashboardV2 = window.DashboardV2 || (function() {
       el.style.width = `${percent}%`;
     }
   }
-  
+
   function updateServerActivityChart(chartData) {
     const canvas = document.getElementById('serverActivityChart');
     if (!canvas || typeof Chart === 'undefined') return;
-    
+
     // Destroy existing chart
     const existingChart = Chart.getChart(canvas);
     if (existingChart) {
       existingChart.destroy();
     }
-    
+
     const labels = chartData.map(d => d.dayLabel);
     const messagesData = chartData.map(d => d.messageCount);
     const userJoinsData = chartData.map(d => d.userJoins);
-    
+
     new Chart(canvas, {
       type: 'bar',
       data: {
@@ -372,7 +372,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
             },
             ticks: {
               color: 'rgba(255, 255, 255, 0.6)',
-              callback: function(value) {
+              callback: function (value) {
                 return formatCompactNumber(value);
               }
             }
@@ -381,24 +381,24 @@ var DashboardV2 = window.DashboardV2 || (function() {
       }
     });
   }
-  
+
   function updateRecentActivity(data) {
     const container = document.getElementById('activity-list');
     if (!container) return;
-    
+
     if (!data || !data.content || data.content.length === 0) {
       container.innerHTML = '<div class="no-data">Chưa có hoạt động nào</div>';
       return;
     }
-    
+
     container.innerHTML = data.content.map(audit => createActivityItemFromAudit(audit)).join('');
   }
-  
+
   function createActivityItemFromAudit(audit) {
     const actionText = formatActionTypeVi(audit.actionType);
     const timeAgo = formatTimeAgo(audit.createdAt);
     const initials = getInitials(audit.actor?.username || 'SYS');
-    
+
     return `
       <div class="activity-item">
         <div class="avatar">${initials}</div>
@@ -413,7 +413,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
       </div>
     `;
   }
-  
+
   function formatActionTypeVi(actionType) {
     const actionMap = {
       'USER_CREATED': 'đã tạo người dùng',
@@ -433,26 +433,26 @@ var DashboardV2 = window.DashboardV2 || (function() {
     };
     return actionMap[actionType] || 'đã thực hiện thao tác';
   }
-  
+
   function updatePlatformStats(data) {
     if (!data) return;
-    
+
     // Update platform overview stats
     updateStatElement('totalChannels', data.totalChannels || 0);
     updateStatElement('totalServers', data.totalServers || 0);
     updateStatElement('activeServers', data.activeServers || 0);
     updateStatElement('suspendedServers', data.suspendedServers || 0);
   }
-  
+
   function updateTopServers(data) {
     const container = document.getElementById('top-servers-list');
     if (!container) return;
-    
+
     if (!data || !data.content || data.content.length === 0) {
       container.innerHTML = '<div class="no-data">Chưa có server nào</div>';
       return;
     }
-    
+
     container.innerHTML = data.content.map(server => `
       <div class="list-item">
         <div class="avatar">${getInitials(server.name)}</div>
@@ -466,7 +466,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
       </div>
     `).join('');
   }
-  
+
   function formatTimeAgo(dateStr) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -475,19 +475,19 @@ var DashboardV2 = window.DashboardV2 || (function() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
+
     if (diffMins < 1) return 'Vừa xong';
     if (diffMins < 60) return `${diffMins} phút trước`;
     if (diffHours < 24) return `${diffHours} giờ trước`;
     if (diffDays < 7) return `${diffDays} ngày trước`;
     return date.toLocaleDateString('vi-VN');
   }
-  
+
   function getInitials(name) {
     if (!name) return '??';
     return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
   }
-  
+
   function formatCompactNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
@@ -570,20 +570,20 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function updateChartFromStats(data) {
     if (!data || !data.messageStats) return;
-    
+
     const bars = document.querySelectorAll('.dash-bar');
     const tooltips = document.querySelectorAll('.dash-bar-tooltip');
     const dailyCounts = data.messageStats.dailyCounts || [];
-    
+
     // Find max value for scaling
     const maxValue = Math.max(...dailyCounts, 3000);
-    
+
     dailyCounts.forEach((value, index) => {
       if (bars[index]) {
         const percentage = (value / maxValue) * 100;
         bars[index].style.height = `${Math.min(percentage, 100)}%`;
         bars[index].dataset.value = value;
-        
+
         // Highlight the highest bar
         if (value === Math.max(...dailyCounts)) {
           bars[index].classList.add('highlight');
@@ -614,29 +614,29 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function updateDonutChart(data) {
     if (!data) return;
-    
+
     // Calculate resource distribution
     const totalUsers = data.userStats?.totalUsers || 0;
     const totalServers = data.serverStats?.totalServers || 0;
     const totalChannels = data.serverStats?.totalChannels || 0;
     const totalMessages = data.messageStats?.totalMessages || 0;
-    
+
     const total = totalUsers + totalServers + totalChannels + (totalMessages / 1000);
     if (total === 0) return;
-    
+
     const serverPercent = Math.round((totalServers / total) * 100);
-    
+
     // Update donut progress
     const donutProgress = document.querySelector('.dash-donut-progress');
     const donutValue = document.querySelector('[data-donut-value]');
-    
+
     if (donutProgress) {
       const circumference = 327; // 2 * PI * 52
       const offset = circumference - (serverPercent / 100 * circumference);
       donutProgress.setAttribute('stroke-dasharray', `${circumference - offset} ${circumference}`);
       donutProgress.dataset.progress = serverPercent;
     }
-    
+
     if (donutValue) {
       donutValue.textContent = `${serverPercent}%`;
     }
@@ -644,17 +644,17 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function updateActivityFromAudit(data) {
     if (!data || !data.content) return;
-    
+
     const container = document.getElementById('dash-recent-activity');
     if (!container) return;
-    
+
     const activities = data.content.map(audit => ({
       type: mapAuditTypeToActivityType(audit.actionType),
       title: formatAuditTitle(audit),
       detail: audit.details || audit.targetId || '',
       change: audit.actionType?.includes('DELETE') ? -1 : 1
     }));
-    
+
     container.innerHTML = activities.map(activity => createActivityItem(activity)).join('');
   }
 
@@ -695,7 +695,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
     Object.entries(statElements).forEach(([key, value]) => {
       if (value === null) return;
-      
+
       const el = document.querySelector(`[data-stat="${key}"]`);
       if (el) {
         const formattedValue = typeof value === 'number' ? formatNumber(value) : value;
@@ -710,10 +710,10 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function updateChart(chartData) {
     if (!chartData) return;
-    
+
     const bars = document.querySelectorAll('.dash-bar');
     const tooltips = document.querySelectorAll('.dash-bar-tooltip');
-    
+
     chartData.forEach((value, index) => {
       if (bars[index]) {
         const percentage = (value / 3000) * 100;
@@ -728,32 +728,32 @@ var DashboardV2 = window.DashboardV2 || (function() {
 
   function updateActivity(activities) {
     if (!activities || !activities.length) return;
-    
+
     const container = document.getElementById('dash-recent-activity');
     if (!container) return;
-    
+
     container.innerHTML = activities.map(activity => createActivityItem(activity)).join('');
   }
 
   function addActivityItem(activity) {
     const container = document.getElementById('dash-recent-activity');
     if (!container) return;
-    
+
     const item = document.createElement('div');
     item.innerHTML = createActivityItem(activity);
     const newItem = item.firstElementChild;
     newItem.style.opacity = '0';
     newItem.style.transform = 'translateY(-10px)';
-    
+
     container.insertBefore(newItem, container.firstChild);
-    
+
     // Animate in
     requestAnimationFrame(() => {
       newItem.style.transition = 'all 0.3s ease';
       newItem.style.opacity = '1';
       newItem.style.transform = 'translateY(0)';
     });
-    
+
     // Remove oldest if more than 5
     const items = container.querySelectorAll('.dash-transaction-item');
     if (items.length > 5) {
@@ -835,11 +835,11 @@ var DashboardV2 = window.DashboardV2 || (function() {
     const activityItems = document.querySelectorAll('.dash-transaction-item');
     activityItems.forEach(item => {
       const type = item.dataset.activityType;
-      const shouldShow = tab === 'all' || 
-                         (tab === 'servers' && type === 'server') ||
-                         (tab === 'users' && type === 'user') ||
-                         (tab === 'reports' && type === 'report');
-      
+      const shouldShow = tab === 'all' ||
+        (tab === 'servers' && type === 'server') ||
+        (tab === 'users' && type === 'user') ||
+        (tab === 'reports' && type === 'report');
+
       item.style.display = shouldShow ? 'flex' : 'none';
     });
   }
@@ -951,7 +951,7 @@ var DashboardV2 = window.DashboardV2 || (function() {
 })(); // Close IIFE
 
 // Auto-initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // Only init if we're on the dashboard page
   const dashboardPage = document.querySelector('.admin-page.dashboard-v2');
   if (dashboardPage) {
@@ -960,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Re-initialize when navigated to dashboard (SPA pattern)
-document.addEventListener('admin:page-loaded', function(e) {
+document.addEventListener('admin:page-loaded', function (e) {
   if (e.detail && e.detail.page === 'dashboard') {
     DashboardV2.init();
   }

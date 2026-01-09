@@ -32,6 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+### Environment Variables ###
+.env
+
+
 discord-creator-hub-main
 *.bmp
 *.tiff

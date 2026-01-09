@@ -3,7 +3,7 @@
  * Handles rendering and updating the New Users Per Day chart
  */
 
-var AdminNewUsersChart = window.AdminNewUsersChart || (function() {
+var AdminNewUsersChart = window.AdminNewUsersChart || (function () {
   'use strict';
 
   // ========================================
@@ -29,10 +29,10 @@ var AdminNewUsersChart = window.AdminNewUsersChart || (function() {
 
   function init() {
     console.log('[AdminNewUsersChart] Initializing...');
-    
+
     setupEventListeners();
     fetchNewUsersData();
-    
+
     console.log('[AdminNewUsersChart] Initialized');
   }
 
@@ -151,12 +151,12 @@ var AdminNewUsersChart = window.AdminNewUsersChart || (function() {
             padding: 12,
             displayColors: false,
             callbacks: {
-              title: function(context) {
+              title: function (context) {
                 const index = context[0].dataIndex;
                 const fullDate = chartData.data[index].fullDate;
                 return fullDate || context[0].label;
               },
-              label: function(context) {
+              label: function (context) {
                 const count = context.parsed.y;
                 return count === 1 ? '1 new user' : `${count} new users`;
               }
@@ -183,7 +183,7 @@ var AdminNewUsersChart = window.AdminNewUsersChart || (function() {
                 size: 11
               },
               stepSize: Math.ceil(maxValue / 5),
-              callback: function(value) {
+              callback: function (value) {
                 return Number.isInteger(value) ? value : null;
               }
             },
@@ -218,13 +218,13 @@ var AdminNewUsersChart = window.AdminNewUsersChart || (function() {
 
   function generateMockData(days) {
     const data = [];
-    const labels = days === 7 
+    const labels = days === 7
       ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
       : Array.from({ length: days }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (days - 1 - i));
-          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        });
+        const date = new Date();
+        date.setDate(date.getDate() - (days - 1 - i));
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
 
     for (let i = 0; i < days; i++) {
       data.push({
@@ -242,7 +242,7 @@ var AdminNewUsersChart = window.AdminNewUsersChart || (function() {
 
     const totalNewUsers = chartData.data.reduce((sum, d) => sum + d.count, 0);
     const avgPerDay = (totalNewUsers / chartData.data.length).toFixed(1);
-    
+
     // Update summary text if elements exist
     const totalElement = document.getElementById('new-users-total');
     const avgElement = document.getElementById('new-users-avg');
