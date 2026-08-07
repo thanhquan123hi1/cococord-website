@@ -62,3 +62,5 @@ discord-creator-hub-main
 *.cmd
 mvnw
 mvnw.cmd
+*.jpg
+*.png
