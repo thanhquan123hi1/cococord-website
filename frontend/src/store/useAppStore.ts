@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
 
 /** Numeric identifier used by the MySQL-backed Cococord domain. */
 export type MysqlId = number;
@@ -22,7 +22,7 @@ export interface AppState {
 const initialNavigation = {
   activeServerId: null,
   activeChannelId: null,
-} satisfies Pick<AppState, 'activeServerId' | 'activeChannelId'>;
+} satisfies Pick<AppState, "activeServerId" | "activeChannelId">;
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -39,19 +39,19 @@ export const useAppStore = create<AppState>()(
                 : null,
           }),
           false,
-          'navigation/setActiveServerId',
+          "navigation/setActiveServerId",
         ),
 
       setActiveChannelId: (channelId) =>
         set(
           { activeChannelId: channelId },
           false,
-          'navigation/setActiveChannelId',
+          "navigation/setActiveChannelId",
         ),
 
       resetNavigation: () =>
-        set(initialNavigation, false, 'navigation/resetNavigation'),
+        set(initialNavigation, false, "navigation/resetNavigation"),
     }),
-    { name: 'cococord-app-store' },
+    { name: "cococord-app-store" },
   ),
 );

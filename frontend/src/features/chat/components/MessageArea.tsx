@@ -1,13 +1,17 @@
 import { useMemo } from "react";
 
+import { useAuthStore } from "../../../store/useAuthStore";
 import { useAppStore } from "../../../store/useAppStore";
+import {
+  useServers,
+  type ChannelSummary,
+} from "../../navigation/hooks/useServers";
+import { VoiceChannelArea } from "../../voice/components/VoiceChannelArea";
 import { useChatSocket } from "../hooks/useChatSocket";
 import { useMessages } from "../hooks/useMessages";
 import { MessageInput } from "./MessageInput";
 
 export interface MessageAreaProps {
-  /** Access token used only for the STOMP CONNECT header. */
-  accessToken: string | null;
   channelName?: string | null;
 }
 
@@ -28,14 +32,39 @@ function initials(displayName?: string | null, username?: string): string {
   return value.slice(0, 2).toUpperCase();
 }
 
-export function MessageArea({ accessToken, channelName }: MessageAreaProps) {
+function isTextChannel(channel: ChannelSummary | null): boolean {
+  if (!channel) return false;
+  return ["TEXT", "ANNOUNCEMENT", "FORUM"].includes(channel.type.toUpperCase());
+}
+
+function isVoiceChannel(channel: ChannelSummary | null): boolean {
+  if (!channel) return false;
+  return ["VOICE", "STAGE"].includes(channel.type.toUpperCase());
+}
+
+export function MessageArea({ channelName }: MessageAreaProps) {
   const activeChannelId = useAppStore((state) => state.activeChannelId);
-  const messagesQuery = useMessages(activeChannelId);
+  const serversQuery = useServers();
+  const accessToken = useAuthStore.getState().accessToken;
+  const activeChannel = useMemo(() => {
+    const servers = serversQuery.data ?? [];
+    for (const server of servers) {
+      const found = server.channels.find((channel) => channel.id === activeChannelId);
+      if (found) return found;
+    }
+    return null;
+  }, [activeChannelId, serversQuery.data]);
+
+  const textChannelId =
+    activeChannelId !== null && isTextChannel(activeChannel)
+      ? activeChannelId
+      : null;
+  const messagesQuery = useMessages(textChannelId);
   const socket = useChatSocket(
-    activeChannelId,
-    accessToken,
-    activeChannelId !== null && accessToken !== null,
+    textChannelId,
+    textChannelId !== null && accessToken !== null,
   );
+  const isVoiceRoom = isVoiceChannel(activeChannel);
 
   const messages = useMemo(
     () =>
@@ -58,6 +87,15 @@ export function MessageArea({ accessToken, channelName }: MessageAreaProps) {
           </p>
         </div>
       </section>
+    );
+  }
+
+  if (isVoiceRoom) {
+    return (
+      <VoiceChannelArea
+        channelId={activeChannelId}
+        channelName={activeChannel?.name ?? channelName ?? null}
+      />
     );
   }
 

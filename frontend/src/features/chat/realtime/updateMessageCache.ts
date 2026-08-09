@@ -1,4 +1,4 @@
-import type { InfiniteData } from '@tanstack/react-query';
+import type { InfiniteData } from "@tanstack/react-query";
 
 export type MongoId = string;
 export type MysqlId = number;
@@ -122,4 +122,3 @@ export function upsertMessageInCache(
     }),
   };
 }
-
